@@ -1,20 +1,23 @@
 # Nestobi Sync Status
 
-Last sync: 2026-05-11 09:58 Asia/Taipei
+Last sync: 2026-05-11 10:06 Asia/Taipei
 
 ## Production
 
 - Netlify site: https://nestobi.netlify.app
-- Netlify deploy id: `6a013787f3932685cc38f7b9`
+- Netlify deploy id: `6a013994513ca06268f35b75`
 - Deploy state: `ready`
-- Built bundle verified: `assets/index-DvQMhZs6.js`
+- Built bundle verified: `assets/index-CMYD_Uq0.js`
 - Supabase project URL: `https://qthciyizquumeufrujyp.supabase.co`
 
 ## Latest Fix
 
+- Restarted the local Vite dev server on `http://localhost:5174` to clear stale HMR failures.
+- Verified the local login page returns HTTP 200 and no current HMR syntax errors remain.
+- Verified Supabase Auth accepts the superadmin account through the project API.
+- Wrapped local Supabase login network failures so the UI shows the generic login error instead of raw `TypeError: Failed to fetch`.
 - Restored superadmin sidebar labels that had been corrupted into mojibake.
 - Verified the production bundle contains `商品管理`, `商品分類管理`, and `超級管理後台`.
-- Verified the old garbled sidebar marker is no longer present in the production bundle.
 
 ## Netlify Public List Check
 
@@ -39,5 +42,7 @@ Last sync: 2026-05-11 09:58 Asia/Taipei
 
 - TypeScript check: passed
 - Vite production build: passed
-- Production routes `/`, `/shop`, `/blog`, `/rooms`: HTTP 200 with latest bundle
+- Local `/auth/login?redirect=%2Fsuperadmin`: HTTP 200
+- Production login route loads latest bundle
+- Production `public-list?resource=products`: HTTP 200, 64 items from Supabase
 - Netlify deploy validation: no secret scan matches
