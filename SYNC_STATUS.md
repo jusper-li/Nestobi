@@ -1,14 +1,20 @@
 # Nestobi Sync Status
 
-Last sync: 2026-05-11 09:50 Asia/Taipei
+Last sync: 2026-05-11 09:58 Asia/Taipei
 
 ## Production
 
 - Netlify site: https://nestobi.netlify.app
-- Netlify deploy id: `6a0134f888b9f93644df0c55`
+- Netlify deploy id: `6a013787f3932685cc38f7b9`
 - Deploy state: `ready`
-- Built bundle verified: `assets/index-SOTyE-Jx.js`
+- Built bundle verified: `assets/index-DvQMhZs6.js`
 - Supabase project URL: `https://qthciyizquumeufrujyp.supabase.co`
+
+## Latest Fix
+
+- Restored superadmin sidebar labels that had been corrupted into mojibake.
+- Verified the production bundle contains `商品管理`, `商品分類管理`, and `超級管理後台`.
+- Verified the old garbled sidebar marker is no longer present in the production bundle.
 
 ## Netlify Public List Check
 
