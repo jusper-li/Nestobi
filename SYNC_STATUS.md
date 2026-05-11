@@ -1,24 +1,24 @@
 # Nestobi Sync Status
 
-Last sync: 2026-05-11 10:11 Asia/Taipei
+Last sync: 2026-05-11 10:15 Asia/Taipei
 
 ## Production
 
 - Netlify site: https://nestobi.netlify.app
-- Netlify deploy id: `6a013a9b2ddfc9091c4a10ca`
+- Netlify deploy id: `6a013b8f268dda4f2f869833`
 - Deploy state: `ready`
-- Built bundle verified: `assets/index-Dc_PMurr.js`
+- Built bundle verified: `assets/index-wijiU_ed.js`
 - Supabase project URL: `https://qthciyizquumeufrujyp.supabase.co`
 
 ## Latest Fix
 
-- Changed frontend login to use `secure-login` instead of direct browser `supabase.auth.signInWithPassword()`.
-- Localhost now calls `https://nestobi.netlify.app/.netlify/functions/secure-login` for login.
-- Updated `secure-login` to support CORS for `http://localhost:5174` and Netlify deploy previews.
-- Verified CORS preflight from localhost returns 204 with `access-control-allow-origin: http://localhost:5174`.
-- Verified secure login POST from localhost origin returns 200 with a session for the superadmin account.
+- Added Vite dev proxy for `/.netlify/functions/*` to `https://nestobi.netlify.app`.
+- Added Vite dev proxy for `/supabase/*` to `https://qthciyizquumeufrujyp.supabase.co/*`.
+- Changed local Supabase client URL to `window.location.origin + '/supabase'` on localhost.
+- Changed login to use same-origin `/.netlify/functions/secure-login` in both local and production.
 - Restarted the local Vite dev server on `http://localhost:5174`.
-- Verified local `AuthContext.tsx` no longer contains `signInWithPassword` and uses `getSecureLoginUrl`.
+- Verified local proxied categories request returns HTTP 200 with 85 categories.
+- Verified local proxied secure login returns HTTP 200 with a session for the superadmin account.
 
 ## Netlify Public List Check
 
