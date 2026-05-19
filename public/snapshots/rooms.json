@@ -1,0 +1,514 @@
+[
+  {
+    "id": "ff25a32f-424f-44b2-b888-3ccc68fbdee0",
+    "name": "201 田園美景雙人房",
+    "description": "採光良好，窗景可欣賞田園與山景。寵物友善。",
+    "room_type": "double",
+    "capacity": 2,
+    "min_capacity": 2,
+    "price_per_night": 3300,
+    "weekend_price": 3800,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/f7fe6b82-2527-4b48-9387-04569583e648.jpeg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/f7fe6b82-2527-4b48-9387-04569583e648.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/6212262c-2854-4e87-8ac6-3f42083cd0e5.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/2f2b4596-b549-48e6-995d-d2aaf3c95746.jpeg"
+    ],
+    "location": "",
+    "is_available": true,
+    "amenities": [
+      "頂級眠豆腐床",
+      "AH 實木柚木床架",
+      "Dyson Supersonic 吹風機",
+      "TOTO 暖氣浴室",
+      "TOTO 免治馬桶",
+      "DAIKIN 冷暖空調",
+      "4K HDR SmartTV SONY 電視",
+      "寵物友善"
+    ],
+    "hotels": {
+      "id": "df73db6c-6151-402a-8cf8-4c2036468aed",
+      "city": "宜蘭",
+      "name": "根本家民宿Villa",
+      "star_rating": 4
+    }
+  },
+  {
+    "id": "8bd80e73-6e8d-4744-9086-6cdb2a1a5bfa",
+    "name": "202 泡澡雙人房",
+    "description": "房內配置泡澡浴缸與完整衛浴設備。寵物友善。",
+    "room_type": "family",
+    "capacity": 4,
+    "min_capacity": 2,
+    "price_per_night": 3900,
+    "weekend_price": 5000,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/f7bec0b6-daad-4e63-a0b1-262421cf5688.jpeg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/f7bec0b6-daad-4e63-a0b1-262421cf5688.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/adfdded9-c2f4-436e-9945-bf6f4658841c.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/8f968dc0-9db5-4609-b7fe-6a1da1776381.jpeg"
+    ],
+    "location": "",
+    "is_available": true,
+    "amenities": [
+      "頂級眠豆腐床",
+      "AH 實木柚木床架",
+      "Dyson Supersonic 吹風機",
+      "TOTO 暖氣浴室",
+      "TOTO 免治馬桶",
+      "DAIKIN 冷暖空調",
+      "4K HDR SmartTV SONY 電視",
+      "泡澡浴缸",
+      "寵物友善"
+    ],
+    "hotels": {
+      "id": "df73db6c-6151-402a-8cf8-4c2036468aed",
+      "city": "宜蘭",
+      "name": "根本家民宿Villa",
+      "star_rating": 4
+    }
+  },
+  {
+    "id": "20127271-79fb-41e2-ba6d-4ec2e24ed8b9",
+    "name": "203 山田美景雙人房",
+    "description": "採光良好，窗景可欣賞田園與山景。寵物友善。",
+    "room_type": "double",
+    "capacity": 2,
+    "min_capacity": 2,
+    "price_per_night": 3300,
+    "weekend_price": 3800,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/230319c5-0255-4b23-898d-9b4de579c30f.jpeg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/230319c5-0255-4b23-898d-9b4de579c30f.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/43fdb37c-6805-4c12-8f20-11f9de483e58.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/c09f177c-737b-498a-8fae-66fb87cd667e.jpeg"
+    ],
+    "location": "",
+    "is_available": true,
+    "amenities": [
+      "頂級眠豆腐床",
+      "AH 實木柚木床架",
+      "TOTO 免治馬桶",
+      "DAIKIN 冷暖空調",
+      "4K HDR SmartTV SONY 電視",
+      "高速 WiFi 上網",
+      "寵物友善",
+      "寶寶澡盆"
+    ],
+    "hotels": {
+      "id": "df73db6c-6151-402a-8cf8-4c2036468aed",
+      "city": "宜蘭",
+      "name": "根本家民宿Villa",
+      "star_rating": 4
+    }
+  },
+  {
+    "id": "fda5f46d-7870-4ee2-ab0a-9e4e2cfbcdd2",
+    "name": "301 超大四人房",
+    "description": "房內配置泡澡浴缸與完整衛浴設備。寵物友善。",
+    "room_type": "family",
+    "capacity": 6,
+    "min_capacity": 4,
+    "price_per_night": 4900,
+    "weekend_price": 5900,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/9945d08a-41e0-4583-92cf-142e5620fdd5.jpeg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/9945d08a-41e0-4583-92cf-142e5620fdd5.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/aa6d2453-709d-43f0-a6e4-6ce0c58f81b7.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/85fad136-1476-46d0-97ef-58b4c361ff28.jpeg"
+    ],
+    "location": "",
+    "is_available": true,
+    "amenities": [
+      "頂級眠豆腐床",
+      "AH 實木柚木床架",
+      "Dyson Supersonic 吹風機",
+      "TOTO 免治馬桶",
+      "DAIKIN 冷暖空調",
+      "4K HDR SmartTV SONY 電視",
+      "泡澡浴缸",
+      "寵物友善"
+    ],
+    "hotels": {
+      "id": "df73db6c-6151-402a-8cf8-4c2036468aed",
+      "city": "宜蘭",
+      "name": "根本家民宿Villa",
+      "star_rating": 4
+    }
+  },
+  {
+    "id": "70b45505-b184-414a-900b-ad701ac070e0",
+    "name": "101 和風雙人房",
+    "description": "一樓和風雙人房，適合兩人安靜入住。寵物友善。",
+    "room_type": "family",
+    "capacity": 4,
+    "min_capacity": 2,
+    "price_per_night": 3300,
+    "weekend_price": 3800,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/15590452-e293-4b19-b7d6-c4593c44a943.jpeg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/15590452-e293-4b19-b7d6-c4593c44a943.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/7fa1ae27-1647-4fe0-93f4-6cbc0f9fa13f.jpeg"
+    ],
+    "location": "",
+    "is_available": true,
+    "amenities": [
+      "頂級眠豆腐芝麻床",
+      "AH 實木柚木床架",
+      "Dyson Supersonic 吹風機",
+      "TOTO 免治馬桶",
+      "DAIKIN 冷暖空調",
+      "4K HDR SmartTV SONY 電視",
+      "高速 WiFi 上網",
+      "寵物友善"
+    ],
+    "hotels": {
+      "id": "df73db6c-6151-402a-8cf8-4c2036468aed",
+      "city": "宜蘭",
+      "name": "根本家民宿Villa",
+      "star_rating": 4
+    }
+  },
+  {
+    "id": "8964902d-a720-47a8-8e36-48a3a76fe46e",
+    "name": "301 山田美景泡湯",
+    "description": "採光良好，窗景可欣賞田園與山景。房內配置泡澡浴缸與完整衛浴設備。",
+    "room_type": "double",
+    "capacity": 2,
+    "min_capacity": 2,
+    "price_per_night": 4900,
+    "weekend_price": 5900,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/e009a227-f15b-4e75-9ebf-9ea39e684e88.jpeg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/e009a227-f15b-4e75-9ebf-9ea39e684e88.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/239881d5-586e-4b57-8cbc-48b9ac90ce98.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/f7d1f873-ac32-4680-ab26-15799fc26cf0.jpeg"
+    ],
+    "location": "",
+    "is_available": true,
+    "amenities": [
+      "高速 WiFi 上網"
+    ],
+    "hotels": {
+      "id": "4b75feef-7e2f-4a45-ba09-437d18e3e1bd",
+      "city": "宜蘭",
+      "name": "小K咖啡B&B",
+      "star_rating": 4
+    }
+  },
+  {
+    "id": "dd932ac3-00c1-4b13-a663-333766437b43",
+    "name": "201 泡湯雙人房",
+    "description": "房內配置泡澡浴缸與完整衛浴設備。",
+    "room_type": "double",
+    "capacity": 2,
+    "min_capacity": 2,
+    "price_per_night": 0,
+    "weekend_price": 0,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/1b63eec7-5a3f-4b91-8aae-759d26c577e2.jpeg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/1b63eec7-5a3f-4b91-8aae-759d26c577e2.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/364493e4-93f0-4963-acde-34aea7d9347f.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/2da0574f-2013-450a-af5c-c9f800323431.jpeg"
+    ],
+    "location": "",
+    "is_available": true,
+    "amenities": [
+      "高速 WiFi 上網"
+    ],
+    "hotels": {
+      "id": "4b75feef-7e2f-4a45-ba09-437d18e3e1bd",
+      "city": "宜蘭",
+      "name": "小K咖啡B&B",
+      "star_rating": 4
+    }
+  },
+  {
+    "id": "cf132fe1-1b25-4dc4-bbb5-647410918291",
+    "name": "202 泡湯雙人房",
+    "description": "房內配置泡澡浴缸與完整衛浴設備。寵物友善。",
+    "room_type": "double",
+    "capacity": 2,
+    "min_capacity": 2,
+    "price_per_night": 0,
+    "weekend_price": 0,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/eb837473-4a36-4559-b3a5-6bfa8484e24c.jpeg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/eb837473-4a36-4559-b3a5-6bfa8484e24c.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/49a7f05b-f9f8-42bd-ad54-2a5f85325686.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/a6926be0-0bf9-49c5-91d9-44ce6c2e3bef.jpeg"
+    ],
+    "location": "",
+    "is_available": true,
+    "amenities": [
+      "4K HDR SmartTV SONY 電視",
+      "高速 WiFi 上網",
+      "寵物友善"
+    ],
+    "hotels": {
+      "id": "4b75feef-7e2f-4a45-ba09-437d18e3e1bd",
+      "city": "宜蘭",
+      "name": "小K咖啡B&B",
+      "star_rating": 4
+    }
+  },
+  {
+    "id": "b248ae2b-25e4-4dd4-b292-418f7934c69a",
+    "name": "柯林小屋本棟",
+    "description": "獨棟農舍，8 人餐桌，過山車電動麻將，客廳 4K 視聽娛樂，每房冷暖空調，高速 WiFi。",
+    "room_type": "family",
+    "capacity": 14,
+    "min_capacity": 14,
+    "price_per_night": 15900,
+    "weekend_price": 22900,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/11d64158-2102-4628-9932-7717912eac05.jpeg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/11d64158-2102-4628-9932-7717912eac05.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/7643119d-d9eb-4972-8498-65a2bc7f077a.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/4ba62e09-a231-4527-bda3-ad2545c81dcb.jpeg"
+    ],
+    "location": "宜蘭冬山",
+    "is_available": true,
+    "amenities": [
+      "精油洗沐",
+      "毛巾浴巾",
+      "高速 WiFi",
+      "娛樂設施",
+      "寬敞餐廳",
+      "停車便利",
+      "幼兒友善",
+      "續住九折"
+    ],
+    "hotels": {
+      "id": "0591a5be-7f1a-4b13-84d0-fa40027c2858",
+      "city": "宜蘭",
+      "name": "Colin's Cottage 科林小屋",
+      "star_rating": 4
+    }
+  },
+  {
+    "id": "bef37f57-6714-4889-a6a8-e5ff4c6591ef",
+    "name": "木屋閣樓親子",
+    "description": "兒童遊戲木屋閣樓，滿滿童書，孩子的秘密基地，大人的安靜午後。",
+    "room_type": "family",
+    "capacity": 4,
+    "min_capacity": 2,
+    "price_per_night": 0,
+    "weekend_price": 0,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/5ba57df1-8a16-4832-88f7-6a3258ff7275.jpeg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/5ba57df1-8a16-4832-88f7-6a3258ff7275.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/e7eed17f-1456-465c-b68b-85bf6994f5fa.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/7a3e8336-d72d-466e-be2a-511434be6816.jpeg"
+    ],
+    "location": "宜蘭冬山",
+    "is_available": true,
+    "amenities": [
+      "獨立衛浴",
+      "冷暖空調",
+      "高速 WiFi",
+      "精油洗沐"
+    ],
+    "hotels": {
+      "id": "0591a5be-7f1a-4b13-84d0-fa40027c2858",
+      "city": "宜蘭",
+      "name": "Colin's Cottage 科林小屋",
+      "star_rating": 4
+    }
+  },
+  {
+    "id": "c44ff712-8602-458e-bee8-76d0adee89ae",
+    "name": "日式和風景觀",
+    "description": "山田美景落地窗，純正日式格局，讓旅行帶著一點慢下來的理由。",
+    "room_type": "single",
+    "capacity": 2,
+    "min_capacity": 2,
+    "price_per_night": 0,
+    "weekend_price": 0,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/44f56625-b467-4ad5-a26f-0b69f05ee371.jpeg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/44f56625-b467-4ad5-a26f-0b69f05ee371.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/55ee645d-c037-4b07-9446-e28240597afd.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/68876f3d-d8a4-4cac-a0ce-5ad02ccb600f.jpeg"
+    ],
+    "location": "宜蘭冬山",
+    "is_available": true,
+    "amenities": [
+      "獨立衛浴",
+      "冷暖空調",
+      "高速 WiFi",
+      "精油洗沐"
+    ],
+    "hotels": {
+      "id": "0591a5be-7f1a-4b13-84d0-fa40027c2858",
+      "city": "宜蘭",
+      "name": "Colin's Cottage 科林小屋",
+      "star_rating": 4
+    }
+  },
+  {
+    "id": "3fac470d-bd24-48ae-99ab-1af6a566d36c",
+    "name": "家庭大房",
+    "description": "二樓整層的家庭大房，有浴缸、有落地窗、有一整夜都能看著山的夜燈。",
+    "room_type": "suite",
+    "capacity": 4,
+    "min_capacity": 2,
+    "price_per_night": 0,
+    "weekend_price": 0,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/41adbbb0-4bdb-4029-931f-479cb9544b81.jpeg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/41adbbb0-4bdb-4029-931f-479cb9544b81.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/d390a821-7c69-451e-bd68-e66441a2adfd.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/1b485f04-68e1-4e79-a93b-c8f0fdfb4dfa.jpeg"
+    ],
+    "location": "宜蘭冬山",
+    "is_available": true,
+    "amenities": [
+      "浴缸浴室",
+      "4K HDR 電視",
+      "冷暖空調",
+      "高速 WiFi",
+      "精油洗沐"
+    ],
+    "hotels": {
+      "id": "0591a5be-7f1a-4b13-84d0-fa40027c2858",
+      "city": "宜蘭",
+      "name": "Colin's Cottage 科林小屋",
+      "star_rating": 4
+    }
+  },
+  {
+    "id": "944fa21e-44d3-478c-8562-8c85c711f488",
+    "name": "田園全景四人",
+    "description": "大窗落地、田野一覽無遺。四人住得開闊，兩人住得奢侈。",
+    "room_type": "family",
+    "capacity": 4,
+    "min_capacity": 4,
+    "price_per_night": 3900,
+    "weekend_price": 5000,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/125031ae-ace9-46b2-b76c-87da2f97a0aa.jpeg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/125031ae-ace9-46b2-b76c-87da2f97a0aa.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/6766729a-00f0-4433-939e-c02374ad9c16.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/8f3b126c-0db3-4a29-8b01-daed212050bb.jpeg"
+    ],
+    "location": "宜蘭",
+    "is_available": true,
+    "amenities": [
+      "頂級訂製床",
+      "乾濕分離浴室",
+      "茶籽堂精油洗沐",
+      "Panasonic 浴室暖氣",
+      "HITACHI 冷暖空調",
+      "SONY 4K 大電視",
+      "高速 WiFi"
+    ],
+    "hotels": {
+      "id": "e9ecb30a-ba5c-455d-9435-74e101a9c0e7",
+      "city": "宜蘭",
+      "name": "五分鈿＋五分醒民宿",
+      "star_rating": 4
+    }
+  },
+  {
+    "id": "01b9b7df-6ba0-4d8a-8290-ca2a029c5917",
+    "name": "山田美景雙人",
+    "description": "遠山、稻田、與一張給兩個人的頂級訂製床。",
+    "room_type": "double",
+    "capacity": 2,
+    "min_capacity": 2,
+    "price_per_night": 3600,
+    "weekend_price": 4500,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/3352cb5b-1343-4542-b3b5-432df971e09e.jpeg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/3352cb5b-1343-4542-b3b5-432df971e09e.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/08de3186-049b-4e1c-89bc-805396d26c56.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/180d5d4d-9c3f-4e90-b2b1-f7c5ac44ccc3.jpeg"
+    ],
+    "location": "宜蘭",
+    "is_available": true,
+    "amenities": [
+      "頂級訂製床",
+      "乾濕分離浴室",
+      "茶籽堂精油洗沐",
+      "Panasonic 浴室暖氣",
+      "HITACHI 冷暖空調",
+      "SONY 4K 大電視",
+      "高速 WiFi"
+    ],
+    "hotels": {
+      "id": "e9ecb30a-ba5c-455d-9435-74e101a9c0e7",
+      "city": "宜蘭",
+      "name": "五分鈿＋五分醒民宿",
+      "star_rating": 4
+    }
+  },
+  {
+    "id": "e64f0b8a-8f29-44d2-9241-52d4bc2e9ca4",
+    "name": "四人房",
+    "description": "眠豆腐頂級芝麻豆腐床，山田美景大窗，泡湯浴缸——給四個旅伴最闊氣的一晚。",
+    "room_type": "family",
+    "capacity": 4,
+    "min_capacity": 4,
+    "price_per_night": 13900,
+    "weekend_price": 20900,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/39e9f84a-f54b-4aec-80ca-528f5262940d.jpeg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/39e9f84a-f54b-4aec-80ca-528f5262940d.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/45f9de6b-5eea-4683-86ac-29418892aaad.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/98072011-ae15-40ad-bf02-98333936a40b.jpeg"
+    ],
+    "location": "宜蘭",
+    "is_available": true,
+    "amenities": [
+      "眠豆腐芝麻豆腐床",
+      "山田美景大窗",
+      "乾濕分離浴室",
+      "泡湯大浴缸",
+      "4K HDR SmartTV",
+      "Panasonic 冷暖空調",
+      "高速 WiFi",
+      "寵物友善"
+    ],
+    "hotels": {
+      "id": "4625d8ff-8277-410f-97e4-3af4b952aa4c",
+      "city": "宜蘭",
+      "name": "根本町＋桃月屋民宿",
+      "star_rating": 4
+    }
+  },
+  {
+    "id": "9697ed86-1abc-49e6-ba29-3740c5a89efd",
+    "name": "兩人房",
+    "description": "田園美景落地窗露台，兩人住得舒服。可加 2 人，最多 4 位入住。",
+    "room_type": "double",
+    "capacity": 4,
+    "min_capacity": 2,
+    "price_per_night": 13900,
+    "weekend_price": 20900,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/853dbba7-f339-4447-a6ce-3bdb86530793.jpeg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/853dbba7-f339-4447-a6ce-3bdb86530793.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/cbd3ad8e-73f6-4d93-9729-7d685df19612.jpeg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/rooms/143da5fa-222c-4aa5-ad91-061f47b75daa.jpeg"
+    ],
+    "location": "宜蘭",
+    "is_available": true,
+    "amenities": [
+      "眠豆腐芝麻豆腐床",
+      "田園美景落地窗露台",
+      "獨立浴室",
+      "4K HDR SmartTV",
+      "大電視",
+      "Panasonic 冷暖空調",
+      "高速 WiFi",
+      "寵物友善"
+    ],
+    "hotels": {
+      "id": "4625d8ff-8277-410f-97e4-3af4b952aa4c",
+      "city": "宜蘭",
+      "name": "根本町＋桃月屋民宿",
+      "star_rating": 4
+    }
+  }
+]

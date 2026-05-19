@@ -1,0 +1,407 @@
+[
+  {
+    "id": "60ce6c80-98e3-4446-b839-87f7ed588adf",
+    "name": "咖啡旅行",
+    "slug": "coffee-travel",
+    "is_active": true,
+    "parent_id": null,
+    "description": "日本與各地咖啡店、咖啡城市散策。",
+    "display_order": 10
+  },
+  {
+    "id": "59d77f19-0057-4f3f-8ff9-4864ecb6400f",
+    "name": "日本各地咖啡廳介紹",
+    "slug": "coffee-travel-japan-cafes",
+    "is_active": true,
+    "parent_id": "60ce6c80-98e3-4446-b839-87f7ed588adf",
+    "description": "Vocus 房間「日本各地咖啡廳介紹」。",
+    "display_order": 11
+  },
+  {
+    "id": "90cdde01-89ba-4cdd-b77d-42de4fc0a0b8",
+    "name": "日本旅行",
+    "slug": "japan-travel",
+    "is_active": true,
+    "parent_id": null,
+    "description": "日本旅遊、美食、伴手禮與菜單翻譯。",
+    "display_order": 20
+  },
+  {
+    "id": "580d854a-e9d9-4200-8fe2-932deb0298b9",
+    "name": "美食/伴手禮/菜單中文翻譯",
+    "slug": "japan-travel-food-souvenirs-menu",
+    "is_active": true,
+    "parent_id": "90cdde01-89ba-4cdd-b77d-42de4fc0a0b8",
+    "description": "Vocus 房間「美食/伴手禮/菜單中文翻譯」。",
+    "display_order": 21
+  },
+  {
+    "id": "6dc96419-6ae3-4821-8a83-0d3460723765",
+    "name": "沖繩美好旅行",
+    "slug": "okinawa-travel",
+    "is_active": true,
+    "parent_id": null,
+    "description": "沖繩在地推薦、景點、美食與生活散策。",
+    "display_order": 30
+  },
+  {
+    "id": "4dcc63b0-342a-4aae-88df-b075162c8295",
+    "name": "在地人推薦",
+    "slug": "okinawa-local-guide",
+    "is_active": true,
+    "parent_id": "6dc96419-6ae3-4821-8a83-0d3460723765",
+    "description": "Vocus 房間「在地人推薦」。",
+    "display_order": 31
+  },
+  {
+    "id": "ed50e814-c23f-4ceb-89cb-9fff2b5ba709",
+    "name": "在宅咖啡",
+    "slug": "home-coffee",
+    "is_active": true,
+    "parent_id": null,
+    "description": "在家沖煮、咖啡器具與咖啡豆知識。",
+    "display_order": 40
+  },
+  {
+    "id": "f6e6b9aa-55e6-4b65-9b72-9107be5ccf95",
+    "name": "咖啡新手的豆知識",
+    "slug": "home-coffee-basics",
+    "is_active": true,
+    "parent_id": "ed50e814-c23f-4ceb-89cb-9fff2b5ba709",
+    "description": "Vocus 房間「咖啡新手的豆知識」。",
+    "display_order": 41
+  },
+  {
+    "id": "c0354d02-ae2c-4e32-831d-132771235fdc",
+    "name": "職人故事",
+    "slug": "craftsman-stories",
+    "is_active": true,
+    "parent_id": null,
+    "description": "那些堅持與努力的職人們。",
+    "display_order": 50
+  },
+  {
+    "id": "8b26fbec-4641-45c3-9d65-b78bba2cff3e",
+    "name": "那些堅持與努力的職人們",
+    "slug": "craftsman-stories-people",
+    "is_active": true,
+    "parent_id": "c0354d02-ae2c-4e32-831d-132771235fdc",
+    "description": "Vocus 房間「那些堅持與努力的職人們」。",
+    "display_order": 51
+  },
+  {
+    "id": "3cc90713-cb7f-4be6-9308-fc69457d423b",
+    "name": "沖繩咖啡廳",
+    "slug": "coffee-cafes-okinawa",
+    "is_active": true,
+    "parent_id": "59d77f19-0057-4f3f-8ff9-4864ecb6400f",
+    "description": "咖啡旅行房間的沖繩咖啡店文章。",
+    "display_order": 111
+  },
+  {
+    "id": "61b37ed9-b49f-48ec-a292-0aa0e62109d8",
+    "name": "福岡咖啡廳",
+    "slug": "coffee-cafes-fukuoka",
+    "is_active": true,
+    "parent_id": "59d77f19-0057-4f3f-8ff9-4864ecb6400f",
+    "description": "咖啡旅行房間的福岡咖啡店文章。",
+    "display_order": 112
+  },
+  {
+    "id": "c2b513d2-db2a-4917-9a60-4e0796fbe19e",
+    "name": "京都咖啡廳",
+    "slug": "coffee-cafes-kyoto",
+    "is_active": true,
+    "parent_id": "59d77f19-0057-4f3f-8ff9-4864ecb6400f",
+    "description": "咖啡旅行房間的京都咖啡店文章。",
+    "display_order": 113
+  },
+  {
+    "id": "12c49568-81f7-4b48-b9c1-78e71922f43a",
+    "name": "大阪咖啡廳",
+    "slug": "coffee-cafes-osaka",
+    "is_active": true,
+    "parent_id": "59d77f19-0057-4f3f-8ff9-4864ecb6400f",
+    "description": "咖啡旅行房間的大阪咖啡店文章。",
+    "display_order": 114
+  },
+  {
+    "id": "1d33807f-f234-4b45-ae55-4eb273ebe33b",
+    "name": "神戶咖啡廳",
+    "slug": "coffee-cafes-kobe",
+    "is_active": true,
+    "parent_id": "59d77f19-0057-4f3f-8ff9-4864ecb6400f",
+    "description": "咖啡旅行房間的神戶咖啡店文章。",
+    "display_order": 115
+  },
+  {
+    "id": "a05c0116-0089-409c-9e50-e2590bf23b39",
+    "name": "東京咖啡廳",
+    "slug": "coffee-cafes-tokyo",
+    "is_active": true,
+    "parent_id": "59d77f19-0057-4f3f-8ff9-4864ecb6400f",
+    "description": "咖啡旅行房間的東京咖啡店文章。",
+    "display_order": 116
+  },
+  {
+    "id": "7e70e4c6-beba-4c5a-9965-8b53e0d72e0f",
+    "name": "神奈川咖啡廳",
+    "slug": "coffee-cafes-kanagawa",
+    "is_active": true,
+    "parent_id": "59d77f19-0057-4f3f-8ff9-4864ecb6400f",
+    "description": "咖啡旅行房間的神奈川咖啡店文章。",
+    "display_order": 117
+  },
+  {
+    "id": "98aff926-6eb5-4939-80ea-11ce366d619c",
+    "name": "北陸咖啡廳",
+    "slug": "coffee-cafes-hokuriku",
+    "is_active": true,
+    "parent_id": "59d77f19-0057-4f3f-8ff9-4864ecb6400f",
+    "description": "咖啡旅行房間的北陸咖啡店文章。",
+    "display_order": 118
+  },
+  {
+    "id": "3a820afb-863f-44bb-8c33-c3b84b34a8f7",
+    "name": "北海道咖啡廳",
+    "slug": "coffee-cafes-hokkaido",
+    "is_active": true,
+    "parent_id": "59d77f19-0057-4f3f-8ff9-4864ecb6400f",
+    "description": "咖啡旅行房間的北海道咖啡店文章。",
+    "display_order": 119
+  },
+  {
+    "id": "f137b22b-dac9-4710-99cc-0b5118e29a2d",
+    "name": "台灣咖啡廳",
+    "slug": "coffee-cafes-taiwan",
+    "is_active": true,
+    "parent_id": "59d77f19-0057-4f3f-8ff9-4864ecb6400f",
+    "description": "咖啡旅行房間的台灣咖啡店文章。",
+    "display_order": 120
+  },
+  {
+    "id": "7e322cff-6d56-4bbc-8f04-f156a53ef370",
+    "name": "北海道",
+    "slug": "japan-travel-hokkaido",
+    "is_active": true,
+    "parent_id": "580d854a-e9d9-4200-8fe2-932deb0298b9",
+    "description": "日本旅行房間的北海道文章。",
+    "display_order": 211
+  },
+  {
+    "id": "3508cf36-7191-45a3-ad11-0216e399ed83",
+    "name": "東北",
+    "slug": "japan-travel-tohoku",
+    "is_active": true,
+    "parent_id": "580d854a-e9d9-4200-8fe2-932deb0298b9",
+    "description": "日本旅行房間的東北文章。",
+    "display_order": 212
+  },
+  {
+    "id": "ea5cf96f-b384-4a3c-abdc-376a744c82a0",
+    "name": "北陸",
+    "slug": "japan-travel-hokuriku",
+    "is_active": true,
+    "parent_id": "580d854a-e9d9-4200-8fe2-932deb0298b9",
+    "description": "日本旅行房間的北陸文章。",
+    "display_order": 213
+  },
+  {
+    "id": "042a56f5-da39-496c-8255-7d6de76cfb83",
+    "name": "東京",
+    "slug": "japan-travel-tokyo",
+    "is_active": true,
+    "parent_id": "580d854a-e9d9-4200-8fe2-932deb0298b9",
+    "description": "日本旅行房間的東京文章。",
+    "display_order": 214
+  },
+  {
+    "id": "df331539-4612-4183-9317-e882abc84aae",
+    "name": "神奈川",
+    "slug": "japan-travel-kanagawa",
+    "is_active": true,
+    "parent_id": "580d854a-e9d9-4200-8fe2-932deb0298b9",
+    "description": "日本旅行房間的神奈川文章。",
+    "display_order": 215
+  },
+  {
+    "id": "b59b66e4-e2e5-4a67-8410-8976aa3168ac",
+    "name": "京都",
+    "slug": "japan-travel-kyoto",
+    "is_active": true,
+    "parent_id": "580d854a-e9d9-4200-8fe2-932deb0298b9",
+    "description": "日本旅行房間的京都文章。",
+    "display_order": 216
+  },
+  {
+    "id": "300e8f5c-4178-4c5f-b681-087c5a5460aa",
+    "name": "大阪",
+    "slug": "japan-travel-osaka",
+    "is_active": true,
+    "parent_id": "580d854a-e9d9-4200-8fe2-932deb0298b9",
+    "description": "日本旅行房間的大阪文章。",
+    "display_order": 217
+  },
+  {
+    "id": "741e5daa-a16c-4587-ada0-561404a6a76b",
+    "name": "神戶",
+    "slug": "japan-travel-kobe",
+    "is_active": true,
+    "parent_id": "580d854a-e9d9-4200-8fe2-932deb0298b9",
+    "description": "日本旅行房間的神戶文章。",
+    "display_order": 218
+  },
+  {
+    "id": "b11d1fca-31e7-4b22-a764-ce8bcb81b753",
+    "name": "福岡",
+    "slug": "japan-travel-fukuoka",
+    "is_active": true,
+    "parent_id": "580d854a-e9d9-4200-8fe2-932deb0298b9",
+    "description": "日本旅行房間的福岡文章。",
+    "display_order": 219
+  },
+  {
+    "id": "9aa078fd-0440-412c-a8b2-66416833ce5d",
+    "name": "沖繩",
+    "slug": "japan-travel-okinawa",
+    "is_active": true,
+    "parent_id": "580d854a-e9d9-4200-8fe2-932deb0298b9",
+    "description": "日本旅行房間的沖繩文章。",
+    "display_order": 220
+  },
+  {
+    "id": "00802303-fb55-45ae-a913-e64557b4a155",
+    "name": "日本甜點",
+    "slug": "japan-travel-desserts",
+    "is_active": true,
+    "parent_id": "580d854a-e9d9-4200-8fe2-932deb0298b9",
+    "description": "日本旅行房間的甜點文章。",
+    "display_order": 231
+  },
+  {
+    "id": "2d1ba498-448a-4382-9035-99cd5c39d75f",
+    "name": "日本美食",
+    "slug": "japan-travel-food",
+    "is_active": true,
+    "parent_id": "580d854a-e9d9-4200-8fe2-932deb0298b9",
+    "description": "日本旅行房間的美食文章。",
+    "display_order": 232
+  },
+  {
+    "id": "3d8f79dc-bd4d-4c2d-bbb2-be0952f4cbee",
+    "name": "日本伴手禮",
+    "slug": "japan-travel-souvenirs",
+    "is_active": true,
+    "parent_id": "580d854a-e9d9-4200-8fe2-932deb0298b9",
+    "description": "日本旅行房間的伴手禮文章。",
+    "display_order": 233
+  },
+  {
+    "id": "6a7c57aa-cceb-4517-8292-e6826d76ebc7",
+    "name": "日本菜單中文翻譯",
+    "slug": "japan-travel-menu-translation",
+    "is_active": true,
+    "parent_id": "580d854a-e9d9-4200-8fe2-932deb0298b9",
+    "description": "日本旅行房間的菜單翻譯文章。",
+    "display_order": 234
+  },
+  {
+    "id": "a42f078a-171e-4888-a743-e08cf13c0881",
+    "name": "沖繩咖啡",
+    "slug": "okinawa-coffee",
+    "is_active": true,
+    "parent_id": "4dcc63b0-342a-4aae-88df-b075162c8295",
+    "description": "沖繩咖啡店與咖啡相關文章。",
+    "display_order": 311
+  },
+  {
+    "id": "a4f684ea-1129-48ca-8a78-06b4786fba56",
+    "name": "沖繩甜點",
+    "slug": "okinawa-desserts",
+    "is_active": true,
+    "parent_id": "4dcc63b0-342a-4aae-88df-b075162c8295",
+    "description": "沖繩甜點、鬆餅、冰品與和菓子文章。",
+    "display_order": 312
+  },
+  {
+    "id": "55d7e611-c476-4a70-920e-0226b2282999",
+    "name": "沖繩美食",
+    "slug": "okinawa-food",
+    "is_active": true,
+    "parent_id": "4dcc63b0-342a-4aae-88df-b075162c8295",
+    "description": "沖繩麵、食堂、餐廳與在地美食文章。",
+    "display_order": 313
+  },
+  {
+    "id": "035764f6-310e-4d76-9dc9-888acdb7ba1d",
+    "name": "沖繩伴手禮",
+    "slug": "okinawa-souvenirs",
+    "is_active": true,
+    "parent_id": "4dcc63b0-342a-4aae-88df-b075162c8295",
+    "description": "沖繩伴手禮、土產與限定商品文章。",
+    "display_order": 314
+  },
+  {
+    "id": "58b31e01-e1eb-40c1-8e67-bd3e5243e609",
+    "name": "沖繩海灘",
+    "slug": "okinawa-beaches",
+    "is_active": true,
+    "parent_id": "4dcc63b0-342a-4aae-88df-b075162c8295",
+    "description": "沖繩海灘、海景與海邊散策文章。",
+    "display_order": 315
+  },
+  {
+    "id": "1a0084dc-6278-40bc-8989-71fa6cddf401",
+    "name": "沖繩景點",
+    "slug": "okinawa-attractions",
+    "is_active": true,
+    "parent_id": "4dcc63b0-342a-4aae-88df-b075162c8295",
+    "description": "沖繩景點、城跡、城鎮與觀光文章。",
+    "display_order": 316
+  },
+  {
+    "id": "5a1464ec-70f2-4a91-95c7-6b9fdff218eb",
+    "name": "沖繩住宿",
+    "slug": "okinawa-accommodations",
+    "is_active": true,
+    "parent_id": "4dcc63b0-342a-4aae-88df-b075162c8295",
+    "description": "沖繩飯店、住宿與度假村文章。",
+    "display_order": 317
+  },
+  {
+    "id": "d6eea524-48c3-42ad-9fd2-913e90100629",
+    "name": "沖繩職人故事",
+    "slug": "okinawa-craftsman-stories",
+    "is_active": true,
+    "parent_id": "4dcc63b0-342a-4aae-88df-b075162c8295",
+    "description": "沖繩職人、器物與地方故事文章。",
+    "display_order": 318
+  },
+  {
+    "id": "95278a88-bbf7-4bf1-9c3d-ab51000338f4",
+    "name": "豆知識",
+    "slug": "home-coffee-bean-knowledge",
+    "is_active": true,
+    "parent_id": "f6e6b9aa-55e6-4b65-9b72-9107be5ccf95",
+    "description": "咖啡豆、處理法、烘焙與萃取知識。",
+    "display_order": 411
+  },
+  {
+    "id": "45695e4f-3dee-4132-a0d1-453c880778c9",
+    "name": "咖啡器具",
+    "slug": "home-coffee-tools",
+    "is_active": true,
+    "parent_id": "f6e6b9aa-55e6-4b65-9b72-9107be5ccf95",
+    "description": "手沖器具、濾杯、濾紙與沖煮工具。",
+    "display_order": 412
+  },
+  {
+    "id": "23c0ba55-38ff-414f-909e-fba5bb455876",
+    "name": "咖啡調飲",
+    "slug": "home-coffee-drinks",
+    "is_active": true,
+    "parent_id": "f6e6b9aa-55e6-4b65-9b72-9107be5ccf95",
+    "description": "拿鐵、冷萃、特調與咖啡飲品。",
+    "display_order": 413
+  }
+]

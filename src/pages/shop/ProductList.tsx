@@ -1,0 +1,478 @@
+﻿import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { AlertCircle, ChevronRight, Eye, Loader2, Package, Search, ShoppingCart, SlidersHorizontal, Sparkles, Tag, X } from 'lucide-react';
+import Footer from '../../components/Footer';
+import Navigation from '../../components/Navigation';
+import SEOHead from '../../components/SEOHead';
+import { useCart } from '../../contexts/CartContext';
+import { useProgressiveList } from '../../hooks/useProgressiveList';
+import { supabase } from '../../lib/supabase';
+import { PRODUCT_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
+import { fetchPublicList, fetchSnapshotList, readCachedList, withRetry, writeCachedList } from '../../lib/listData';
+import { getCategoryDepth, getDescendantCategoryIds, getProductCategoryIds, sortCategoriesForTree } from '../../lib/categoryTree';
+import { formatCurrency } from '../../lib/utils';
+
+interface Product {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  image_url: string | null;
+  stock_quantity: number;
+  category_id: string | null;
+  origin?: string | null;
+  roast_level?: string | null;
+  processing_method?: string | null;
+  flavor_notes?: string[] | null;
+  tags?: string[] | null;
+  product_category_links?: { category_id: string | null }[] | null;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  parent_id: string | null;
+}
+
+type SortMode = 'recommended' | 'price-asc' | 'price-desc' | 'stock';
+const PRODUCTS_CACHE_KEY = 'nestobi:list:products:v7';
+const CATEGORIES_CACHE_KEY = 'nestobi:list:categories:v7';
+const PRODUCTS_SNAPSHOT_PATH = '/snapshots/products.json';
+const CATEGORIES_SNAPSHOT_PATH = '/snapshots/categories.json';
+
+function productSearchText(product: Product) {
+  return [
+    product.name,
+    product.description || '',
+    product.origin || '',
+    product.roast_level || '',
+    product.processing_method || '',
+    ...(product.flavor_notes || []),
+    ...(product.tags || []),
+  ].join(' ').toLowerCase();
+}
+
+function stripHtml(value: string | null | undefined) {
+  if (!value) return '';
+  return value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function sortProducts(products: Product[], sortMode: SortMode) {
+  const sorted = [...products];
+  if (sortMode === 'price-asc') return sorted.sort((a, b) => a.price - b.price);
+  if (sortMode === 'price-desc') return sorted.sort((a, b) => b.price - a.price);
+  if (sortMode === 'stock') return sorted.sort((a, b) => b.stock_quantity - a.stock_quantity);
+
+  return sorted.sort((a, b) => Number(b.stock_quantity > 0) - Number(a.stock_quantity > 0));
+}
+
+export default function ProductList() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [sortMode, setSortMode] = useState<SortMode>('recommended');
+  const [search, setSearch] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSummary, setAiSummary] = useState('');
+  const [aiError, setAiError] = useState('');
+  const [addingId, setAddingId] = useState<string | null>(null);
+  const [dataNotice, setDataNotice] = useState('');
+  const { addItem } = useCart();
+
+  useEffect(() => {
+    let cancelled = false;
+    let receivedFreshProducts = false;
+    let receivedFreshCategories = false;
+    const cachedProducts = readCachedList<Product>(PRODUCTS_CACHE_KEY);
+    const cachedCategories = readCachedList<Category>(CATEGORIES_CACHE_KEY);
+
+    if (cachedProducts?.length) {
+      setProducts(cachedProducts);
+      setLoading(false);
+    }
+    if (cachedCategories?.length) setCategories(cachedCategories);
+
+    fetchSnapshotList<Product>(PRODUCTS_SNAPSHOT_PATH)
+      .then(snapshotProducts => {
+        if (cancelled || receivedFreshProducts || snapshotProducts.length === 0 || cachedProducts?.length) return;
+        setProducts(snapshotProducts);
+        setLoading(false);
+        setDataNotice('目前先顯示快速快照資料，正在背景更新最新商品。');
+      })
+      .catch(() => {});
+
+    fetchSnapshotList<Category>(CATEGORIES_SNAPSHOT_PATH)
+      .then(snapshotCategories => {
+        if (cancelled || receivedFreshCategories || snapshotCategories.length === 0 || cachedCategories?.length) return;
+        setCategories(snapshotCategories);
+      })
+      .catch(() => {});
+
+    withRetry(() => fetchPublicList<Product>('products', async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*,product_category_links(category_id)')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(360);
+      if (error) throw error;
+      return (data as Product[]) || [];
+    }))
+      .then(freshProducts => {
+        if (cancelled) return;
+        receivedFreshProducts = true;
+        setProducts(freshProducts);
+        writeCachedList(PRODUCTS_CACHE_KEY, freshProducts);
+        setDataNotice('');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        if (!cachedProducts?.length) setDataNotice('Supabase 連線暫時不穩，已改用快照商品加速顯示。');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    withRetry(() => fetchPublicList<Category>('categories', async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id,name,slug,parent_id')
+        .order('name', { ascending: true })
+        .limit(120);
+      if (error) throw error;
+      return (data as Category[]) || [];
+    }))
+      .then(freshCategories => {
+        if (cancelled) return;
+        receivedFreshCategories = true;
+        setCategories(freshCategories);
+        writeCachedList(CATEGORIES_CACHE_KEY, freshCategories);
+      })
+      .catch(() => {});
+
+    return () => { cancelled = true; };
+  }, []);
+
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const selectedCategoryIds = selectedCategory === 'all'
+      ? null
+      : getDescendantCategoryIds(categories, selectedCategory);
+    const matches = products.filter(product => {
+      const categoryMatches = !selectedCategoryIds
+        || Array.from(getProductCategoryIds(product)).some(categoryId => selectedCategoryIds.has(categoryId));
+      const queryMatches = !query || productSearchText(product).includes(query);
+
+      return categoryMatches && queryMatches;
+    });
+
+    return sortProducts(matches, sortMode);
+  }, [products, categories, search, selectedCategory, sortMode]);
+  const orderedCategories = useMemo(() => sortCategoriesForTree(categories), [categories]);
+  const categoryById = useMemo(() => new Map(categories.map(category => [category.id, category])), [categories]);
+  const activeCategory = selectedCategory === 'all' ? null : categoryById.get(selectedCategory) || null;
+  const activePath = useMemo(() => {
+    if (!activeCategory) return [] as Category[];
+    const path = [activeCategory];
+    let current = activeCategory;
+    let guard = 0;
+
+    while (current.parent_id && categoryById.has(current.parent_id) && guard < 8) {
+      current = categoryById.get(current.parent_id)!;
+      path.unshift(current);
+      guard += 1;
+    }
+
+    return path;
+  }, [activeCategory, categoryById]);
+  const activeRoot = activePath[0] || null;
+  const rootCategories = useMemo(
+    () => orderedCategories.filter(category => getCategoryDepth(category, categories) === 0),
+    [orderedCategories, categories],
+  );
+  const childCategories = useMemo(
+    () => activeCategory ? orderedCategories.filter(category => category.parent_id === activeCategory.id) : [],
+    [activeCategory, orderedCategories],
+  );
+  const handleCategoryChange = (nextCategoryId: string) => {
+    setSelectedCategory(nextCategoryId);
+    setSearch('');
+    setAiSummary('');
+    setAiError('');
+  };
+  const { visibleItems: visibleProducts, visibleCount, hasMore, sentinelRef, loadMore } = useProgressiveList(filtered, { initialCount: 12, increment: 12 });
+
+  const inStockCount = filtered.filter(product => product.stock_quantity > 0).length;
+
+  const handleAddToCart = async (productId: string) => {
+    setAddingId(productId);
+    try {
+      await addItem(productId, 1);
+    } finally {
+      setAddingId(null);
+    }
+  };
+
+  const handleAISearch = async () => {
+    if (!search.trim()) return;
+    setAiLoading(true);
+    setAiError('');
+    setAiSummary('');
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-proxy`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'product-search', query: search }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'AI 搜尋暫時無法使用');
+
+      setAiSummary(json.result?.summary || '已依照你的描述整理商品結果');
+    } catch (error) {
+      setAiError(error instanceof Error ? error.message : 'AI 搜尋暫時無法使用');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <SEOHead
+        title="旅行選物商店"
+        description="精選咖啡、茶點、器物與旅途好物，支援搜尋、分類、排序與快速加入購物車。"
+        keywords="旅行選物, 咖啡商品, 旅遊購物, Nestobi"
+        ogType="website"
+        pageType="list"
+      />
+      <Navigation />
+
+      <section className="bg-[#FEF9EC] px-4 py-14">
+        <div className="mx-auto max-w-5xl text-center">
+          <p className="section-label">Travel Shop</p>
+          <h1 className="section-title text-4xl md:text-5xl">旅行選物商店</h1>
+          <span className="gold-bar-center" />
+          <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-[#2C1F10]/65">
+            從產地咖啡、茶點到旅行器物，把旅程中的味道和日常用品一起帶回家。
+          </p>
+
+          <div className={`mx-auto mt-8 flex max-w-2xl items-center rounded-2xl bg-white shadow-card transition ${aiLoading ? 'ring-2 ring-[#C09A6A]/40' : 'focus-within:ring-2 focus-within:ring-[#C09A6A]/30'}`}>
+            <div className="pl-4 text-[#C09A6A]">
+              {aiLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+            </div>
+            <input
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+              onKeyDown={event => event.key === 'Enter' && handleAISearch()}
+              placeholder="試試：果香咖啡、送禮茶包、沖繩旅行紀念品"
+              className="min-w-0 flex-1 bg-transparent px-3 py-4 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none"
+            />
+            {search && (
+              <button type="button" onClick={() => { setSearch(''); setAiSummary(''); setAiError(''); }} className="p-2 text-gray-400 transition hover:text-gray-600">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleAISearch}
+              disabled={aiLoading || !search.trim()}
+              className="m-1.5 inline-flex items-center gap-1.5 rounded-xl bg-[#C09A6A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#8B6840] disabled:opacity-50"
+            >
+              <Search className="h-4 w-4" />
+              搜尋
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <AnimatePresence>
+          {aiError && (
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mb-5 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              {aiError}
+              <button type="button" onClick={() => setAiError('')} className="ml-auto"><X className="h-4 w-4" /></button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {aiSummary && (
+          <div className="mb-5 flex flex-wrap items-center gap-2 rounded-2xl border border-[#8B6840]/25 bg-white px-5 py-4 shadow-sm">
+            <Sparkles className="h-4 w-4 text-[#8B6840]" />
+            <span className="text-sm font-semibold text-[#2C1F10]">{aiSummary}</span>
+            <button type="button" onClick={() => setAiSummary('')} className="ml-auto text-sm font-semibold text-slate-500 hover:text-slate-700">
+              清除提示
+            </button>
+          </div>
+        )}
+
+        {dataNotice && (
+          <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+            {dataNotice}
+          </div>
+        )}
+
+        <div className="mb-6">
+          <div className="mb-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => handleCategoryChange('all')}
+              className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
+                selectedCategory === 'all'
+                  ? 'bg-[#8B6840] text-white shadow-sm'
+                  : 'border border-slate-200 bg-white text-slate-600 hover:border-[#8B6840]/40 hover:text-[#8B6840]'
+              }`}
+            >
+              全部商品
+            </button>
+            {rootCategories.map(category => (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => handleCategoryChange(category.id)}
+                className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
+                  activeRoot?.id === category.id
+                    ? 'bg-[#8B6840] text-white shadow-sm'
+                    : 'border border-slate-200 bg-white text-slate-600 hover:border-[#8B6840]/40 hover:text-[#8B6840]'
+                }`}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+
+          {childCategories.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1 text-xs text-slate-400">
+                <ChevronRight className="h-3 w-3" />
+                <span>次分類</span>
+              </div>
+              {childCategories.map(category => (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => handleCategoryChange(category.id)}
+                  className={`flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-all ${
+                    selectedCategory === category.id
+                      ? 'border-[#8B6840] bg-[#8B6840] text-white shadow-sm'
+                      : 'border-slate-200 bg-white text-slate-500 hover:border-[#8B6840]/40 hover:text-[#8B6840]'
+                  }`}
+                >
+                  <Tag className="h-2.5 w-2.5" />
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {selectedCategory !== 'all' && activeCategory && (
+          <div className="mb-5 flex items-center gap-1.5 text-xs text-slate-400">
+            <button type="button" onClick={() => handleCategoryChange('all')} className="transition hover:text-[#8B6840]">全部商品</button>
+            {activePath.map((category, index) => (
+              <span key={category.id} className="inline-flex items-center gap-1.5">
+                <ChevronRight className="h-3 w-3" />
+                {index === activePath.length - 1 ? (
+                  <span className="font-medium text-[#8B6840]">{category.name}</span>
+                ) : (
+                  <button type="button" onClick={() => handleCategoryChange(category.id)} className="transition hover:text-[#8B6840]">{category.name}</button>
+                )}
+              </span>
+            ))}
+            <span className="ml-auto text-slate-300">已顯示 {Math.min(visibleCount, filtered.length)} / {filtered.length} 件</span>
+          </div>
+        )}
+
+        <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-bold text-gray-900">
+              找到 {filtered.length} 件商品
+              <span className="ml-2 text-xs font-semibold text-slate-500">已顯示 {Math.min(visibleCount, filtered.length)} 件，其中 {inStockCount} 件可購買</span>
+            </p>
+            <p className="mt-0.5 text-xs font-medium text-slate-500">商品可依庫存、價格與分類快速篩選。</p>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <SlidersHorizontal className="h-4 w-4 text-[#8B6840]" />
+            <select value={sortMode} onChange={event => setSortMode(event.target.value as SortMode)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none transition focus:border-[#8B6840] focus:ring-2 focus:ring-[#8B6840]/20">
+              <option value="recommended">推薦排序</option>
+              <option value="price-asc">價格由低到高</option>
+              <option value="price-desc">價格由高到低</option>
+              <option value="stock">庫存最多</option>
+            </select>
+          </label>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-24">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#C09A6A] border-t-transparent" />
+          </div>
+        ) : filtered.length > 0 ? (
+          <>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="columns-1 gap-5 sm:columns-2 lg:columns-3 xl:columns-4">
+            {visibleProducts.map((product, index) => (
+              <motion.article key={product.id} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index, 11) * 0.02 }} className="group mb-5 inline-block w-full break-inside-avoid overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-card" style={{ contentVisibility: 'auto', containIntrinsicSize: '340px' }}>
+                <Link to={`/shop/${product.id}`} className="relative block h-52 overflow-hidden bg-gray-100">
+                  <img src={product.image_url || PRODUCT_FALLBACK_IMAGE} alt={product.name} loading={index < 6 ? 'eager' : 'lazy'} decoding="async" onError={event => useFallbackImage(event, PRODUCT_FALLBACK_IMAGE)} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                  {product.stock_quantity <= 5 && product.stock_quantity > 0 && <span className="absolute right-3 top-3 rounded-full bg-orange-500 px-2.5 py-1 text-xs font-bold text-white">僅剩 {product.stock_quantity}</span>}
+                  {product.stock_quantity === 0 && <div className="absolute inset-0 flex items-center justify-center bg-black/45"><span className="rounded-full bg-white px-4 py-1.5 text-sm font-bold text-gray-800">售完</span></div>}
+                </Link>
+                <div className="flex flex-1 flex-col p-4">
+                  <Link to={`/shop/${product.id}`} className="line-clamp-2 text-sm font-bold leading-6 text-gray-900 transition hover:text-[#8B6840]">
+                    {product.name}
+                  </Link>
+                  {product.description && <p className="mt-2 line-clamp-2 text-xs font-medium leading-6 text-slate-600">{stripHtml(product.description)}</p>}
+                  {(product.origin || product.roast_level || product.flavor_notes?.length) && (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {([product.origin, product.roast_level, ...(product.flavor_notes || []).slice(0, 2)].filter(Boolean) as string[]).map(label => (
+                        <span key={label} className="rounded-full border border-[#8B6840]/15 bg-[#F0E4C8] px-2 py-0.5 text-[11px] font-bold text-[#6F4F2B]">{label}</span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-auto flex items-end justify-between gap-3 pt-5">
+                    <span className="text-lg font-bold text-[#8B6840]">{formatCurrency(product.price)}</span>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <Link to={`/shop/${product.id}`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#F0E4C8] hover:text-[#2C1F10]">
+                        <Eye className="h-3.5 w-3.5" />
+                        詳情
+                      </Link>
+                      <button type="button" onClick={() => handleAddToCart(product.id)} disabled={product.stock_quantity === 0 || addingId === product.id} className="inline-flex items-center gap-1.5 rounded-xl bg-[#8B6840] px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#6F4F2B] disabled:bg-gray-200 disabled:text-gray-500">
+                        {addingId === product.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShoppingCart className="h-3.5 w-3.5" />}
+                        加購
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.article>
+            ))}
+          </motion.div>
+          {hasMore && (
+            <div ref={sentinelRef} className="flex justify-center py-8">
+              <button type="button" onClick={loadMore} className="inline-flex items-center gap-2 rounded-full border border-[#8B6840]/25 bg-white px-5 py-2 text-sm font-bold text-[#8B6840] shadow-sm transition hover:bg-[#FEF9EC]">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                載入更多商品
+              </button>
+            </div>
+          )}
+          </>
+        ) : (
+          <div className="py-24 text-center text-slate-500">
+            <Package className="mx-auto mb-3 h-12 w-12 opacity-50" />
+            <p className="text-sm font-medium">沒有符合條件的商品。</p>
+            <button type="button" onClick={() => { setSearch(''); handleCategoryChange('all'); }} className="mt-3 text-sm font-bold text-[#8B6840] hover:underline">
+              清除篩選
+            </button>
+          </div>
+        )}
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
+

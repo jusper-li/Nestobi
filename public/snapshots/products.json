@@ -1,0 +1,4020 @@
+[
+  {
+    "id": "bd88de50-6191-4c04-a52a-95de91770cce",
+    "category_id": "7bf4f35e-bb7e-4c29-b36b-e4d20528cb4b",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "茶根本 - 坪林文山包種茶 立體茶包",
+    "description": "<p>茶根本 - 坪林文山包種茶 立體茶包</p><ul><li><strong>產地：</strong>台灣坪林//寬宇茶莊</li><li><strong>規格：</strong>隨身茶包 2.5 G</li><li><strong>製造日期：</strong>2023/09/10</li><li><strong>有效期限：</strong>2年</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 65,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-box-teapack-pouchong-tea-1-3f09c230eb91.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-box-teapack-pouchong-tea-1-3f09c230eb91.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-box-teapack-pouchong-tea-4-fdb404eb876f.jpg"
+    ],
+    "stock_quantity": 108,
+    "is_active": true,
+    "sku": "658013e5965f7e0014881a00",
+    "origin": "台灣坪林//寬宇茶莊",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 5,
+    "tags": [
+      "DLAL 所有品牌",
+      "茶品"
+    ],
+    "source_url": "https://www.dlalshop.com/products/tea-at-all-box-teapack-pouchong-tea",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:22.035894+00:00",
+    "updated_at": "2026-05-08T08:26:48.567557+00:00",
+    "product_category_links": [
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7bf4f35e-bb7e-4c29-b36b-e4d20528cb4b"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      }
+    ]
+  },
+  {
+    "id": "60a70c04-3f1b-4869-80c4-1039f687417b",
+    "category_id": "7bf4f35e-bb7e-4c29-b36b-e4d20528cb4b",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "茶根本 - 南投 杉林溪 輕焙烏龍茶",
+    "description": "<p>茶根本 - 南投 杉林溪 輕焙烏龍茶</p><ul><li><strong>產地：</strong>台灣南投</li><li><strong>規格：</strong>隨身茶包 3 G</li><li><strong>製造日期：</strong>2025/06/12</li><li><strong>有效期限：</strong>2年</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 65,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-nantou-sun-link-sea-light-roasted-oolong-tea-1-b0e155910dd1.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-nantou-sun-link-sea-light-roasted-oolong-tea-1-b0e155910dd1.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-nantou-sun-link-sea-light-roasted-oolong-tea-4-69044e19419a.jpg"
+    ],
+    "stock_quantity": 22,
+    "is_active": true,
+    "sku": "6899a616f562d8000afbee58",
+    "origin": "台灣南投",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 3,
+    "tags": [
+      "DLAL 所有品牌",
+      "茶品"
+    ],
+    "source_url": "https://www.dlalshop.com/products/tea-at-all-nantou-sun-link-sea-light-roasted-oolong-tea",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:21.736104+00:00",
+    "updated_at": "2026-05-08T08:26:48.567557+00:00",
+    "product_category_links": [
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7bf4f35e-bb7e-4c29-b36b-e4d20528cb4b"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      }
+    ]
+  },
+  {
+    "id": "fb293b52-0dd8-4642-8838-5e58c985dd7c",
+    "category_id": "7bf4f35e-bb7e-4c29-b36b-e4d20528cb4b",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "茶根本 - 坪林東方美人茶 立體茶包",
+    "description": "<p>茶根本 - 坪林東方美人茶 立體茶包</p><ul><li><strong>產地：</strong>台灣坪林//寬宇茶莊</li><li><strong>規格：</strong>隨身茶包 2.5 G</li><li><strong>製造日期：</strong>2023/09/10</li><li><strong>有效期限：</strong>2年</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 65,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-box-teapack-oriental-beauty-tea-1-733a13ff2fd8.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-box-teapack-oriental-beauty-tea-1-733a13ff2fd8.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-box-teapack-oriental-beauty-tea-4-fdb404eb876f.jpg"
+    ],
+    "stock_quantity": 109,
+    "is_active": true,
+    "sku": "658012b5fb0d54000ecc5c9e",
+    "origin": "台灣坪林//寬宇茶莊",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 5,
+    "tags": [
+      "DLAL 所有品牌",
+      "茶品"
+    ],
+    "source_url": "https://www.dlalshop.com/products/tea-at-all-box-teapack-oriental-beauty-tea",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:21.491268+00:00",
+    "updated_at": "2026-05-08T08:26:48.567557+00:00",
+    "product_category_links": [
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7bf4f35e-bb7e-4c29-b36b-e4d20528cb4b"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      }
+    ]
+  },
+  {
+    "id": "d5aa6e1c-8854-4710-b5da-8d7f524fc311",
+    "category_id": "7bf4f35e-bb7e-4c29-b36b-e4d20528cb4b",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "茶根本 - 京都 烘焙茶 立體茶包",
+    "description": "<p>茶根本 - 京都 烘焙茶 立體茶包</p><ul><li><strong>產地：</strong>日本京都//北川半兵衛</li><li><strong>規格：</strong>隨身茶包 2.5 G</li><li><strong>製造日期：</strong>2023/09/10</li><li><strong>有效期限：</strong>2年</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 50,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-box-teapack-houjicya-1-6464be5c7dde.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-box-teapack-houjicya-1-6464be5c7dde.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-box-teapack-houjicya-4-fdb404eb876f.jpg"
+    ],
+    "stock_quantity": 109,
+    "is_active": true,
+    "sku": "658014b026db880017ff7f25",
+    "origin": "日本京都//北川半兵衛",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 5,
+    "tags": [
+      "DLAL 所有品牌",
+      "茶品"
+    ],
+    "source_url": "https://www.dlalshop.com/products/tea-at-all-box-teapack-houjicya",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:19.529437+00:00",
+    "updated_at": "2026-05-08T08:26:48.567557+00:00",
+    "product_category_links": [
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7bf4f35e-bb7e-4c29-b36b-e4d20528cb4b"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      }
+    ]
+  },
+  {
+    "id": "4c6135dd-b84d-4afc-9454-15684c83b8c3",
+    "category_id": "7bf4f35e-bb7e-4c29-b36b-e4d20528cb4b",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "茶根本 - 京都 抹茶入玄米茶 立體茶包",
+    "description": "<p>茶根本 - 京都 抹茶入玄米茶 立體茶包</p><ul><li><strong>產地：</strong>日本京都//北川半兵衛</li><li><strong>規格：</strong>隨身茶包 2.5 G</li><li><strong>製造日期：</strong>2023/09/10</li><li><strong>有效期限：</strong>2年</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 50,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-box-teapack-genmaicya-1-6464be5c7dde.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-box-teapack-genmaicya-1-6464be5c7dde.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-box-teapack-genmaicya-4-fdb404eb876f.jpg"
+    ],
+    "stock_quantity": 110,
+    "is_active": true,
+    "sku": "6580146dc854ad01b21d52d5",
+    "origin": "日本京都//北川半兵衛",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 5,
+    "tags": [
+      "DLAL 所有品牌",
+      "茶品"
+    ],
+    "source_url": "https://www.dlalshop.com/products/tea-at-all-box-teapack-genmaicya",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:19.450622+00:00",
+    "updated_at": "2026-05-08T08:26:48.567557+00:00",
+    "product_category_links": [
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7bf4f35e-bb7e-4c29-b36b-e4d20528cb4b"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      }
+    ]
+  },
+  {
+    "id": "6552cd2d-8996-4a4e-86a6-9a0f76e2e7b6",
+    "category_id": "7bf4f35e-bb7e-4c29-b36b-e4d20528cb4b",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "茶根本 - 京坪茶聚禮盒（袋茶Ver.）",
+    "description": "<p>茶根本 - 京坪茶聚禮盒（袋茶Ver.）</p><ul><li><strong>禮盒內容：</strong>「北川半兵衛 後昔 抹茶粉」40g 原廠罐裝</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 1799,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-gift-box-light-1-1-a0caded0235c.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-gift-box-light-1-1-a0caded0235c.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-gift-box-light-1-4-f65113fc938b.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-gift-box-light-1-7-84716d03264d.jpg"
+    ],
+    "stock_quantity": 9,
+    "is_active": true,
+    "sku": "659f91bbe9e53d0023c481dc",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "茶品"
+    ],
+    "source_url": "https://www.dlalshop.com/products/tea-at-all-gift-box-light-1",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:19.274916+00:00",
+    "updated_at": "2026-05-08T08:26:48.567557+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7bf4f35e-bb7e-4c29-b36b-e4d20528cb4b"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "a76b4ba8-05e1-482b-a9a8-ce5cf93a4ea6"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      }
+    ]
+  },
+  {
+    "id": "8a707c5d-59c9-4ea7-9034-2fd28dfc8942",
+    "category_id": "7bf4f35e-bb7e-4c29-b36b-e4d20528cb4b",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "茶根本 - 文化百科禮盒",
+    "description": "<p>茶根本 - 文化百科禮盒</p><ul><li><strong>禮盒內容：</strong>北川半兵衛//焙茶隨身茶包2.5克 x 2入</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 699,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-gift-box-teapack-1-00fd9ae9c8ad.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-gift-box-teapack-1-00fd9ae9c8ad.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-gift-box-teapack-4-fdb404eb876f.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-gift-box-teapack-7-8d11bcd6981f.jpg"
+    ],
+    "stock_quantity": 4,
+    "is_active": true,
+    "sku": "65045397e169a30023197883",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "茶品"
+    ],
+    "source_url": "https://www.dlalshop.com/products/tea-at-all-gift-box-teapack",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:18.877686+00:00",
+    "updated_at": "2026-05-08T08:26:48.567557+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7bf4f35e-bb7e-4c29-b36b-e4d20528cb4b"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "a76b4ba8-05e1-482b-a9a8-ce5cf93a4ea6"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      }
+    ]
+  },
+  {
+    "id": "cd4aa157-54a1-4457-a956-3ea4b656dbae",
+    "category_id": "7bf4f35e-bb7e-4c29-b36b-e4d20528cb4b",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "茶根本 - 京坪茶聚禮盒",
+    "description": "<p>茶根本 - 京坪茶聚禮盒</p><ul><li><strong>禮盒內容：</strong>寬宇茶莊//坪林包種茶散茶 75g</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 2199,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-gift-box-light-1-10bd69edf299.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-gift-box-light-1-10bd69edf299.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-gift-box-light-4-f65113fc938b.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tea-at-all-gift-box-light-7-bc5e77de1f37.jpg"
+    ],
+    "stock_quantity": 6,
+    "is_active": true,
+    "sku": "650452453fbb9f001a7af1fa",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "茶品"
+    ],
+    "source_url": "https://www.dlalshop.com/products/tea-at-all-gift-box-light",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:17.232343+00:00",
+    "updated_at": "2026-05-08T08:26:48.567557+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7bf4f35e-bb7e-4c29-b36b-e4d20528cb4b"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "a76b4ba8-05e1-482b-a9a8-ce5cf93a4ea6"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      }
+    ]
+  },
+  {
+    "id": "292a7051-e447-4a75-b534-eb099f3e7da0",
+    "category_id": "f30760da-d0e9-464b-a5c2-42791ba73818",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "【限定】時報出版 根本在旅行",
+    "description": "<p>【限定】時報出版 根本在旅行</p><ul><li><strong>作者：</strong>口述｜涼子；執筆｜克里歐</li><li><strong>出版社：</strong>時報出版</li><li><strong>跨界熱情推薦：</strong>WHOSMiNG品牌藝術家│MiNG ；沖繩旅遊達人│史丹利 ；旅日作家│歐陽靖</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 300,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-ryokodlal-1-b02f3c71d419.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-ryokodlal-1-b02f3c71d419.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-ryokodlal-4-a0437e336f93.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-ryokodlal-7-593abcd459a3.jpg"
+    ],
+    "stock_quantity": 97,
+    "is_active": true,
+    "sku": "62baecd5bfec130024deba1c",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 最新消息"
+    ],
+    "source_url": "https://www.dlalshop.com/products/ryokodlal",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:17.086061+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "03003c7b-4501-4959-bdc4-1b989577d91a"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "408efd43-dbf1-4ab8-990a-1859fb402d07"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "a76b4ba8-05e1-482b-a9a8-ce5cf93a4ea6"
+      },
+      {
+        "category_id": "f30760da-d0e9-464b-a5c2-42791ba73818"
+      }
+    ]
+  },
+  {
+    "id": "5dc61211-876b-43c0-a055-9dd0785f75ad",
+    "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "Rootopia - 手沖精品茶禮盒",
+    "description": "<p>Rootopia - 手沖精品茶禮盒</p><p>此商品由來源頁商品資料建立，保留原始商品網址供後台追蹤。</p><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 70,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-rootopia-pour-over-tea-1-8cabdaa7951f.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-rootopia-pour-over-tea-1-8cabdaa7951f.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-rootopia-pour-over-tea-4-db9c22f6d9e8.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-rootopia-pour-over-tea-7-5c74fb18eef4.jpg"
+    ],
+    "stock_quantity": 26,
+    "is_active": true,
+    "sku": "668ba5dcb44d9a000d1ac5d4",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "茶品"
+    ],
+    "source_url": "https://www.dlalshop.com/products/rootopia-pour-over-tea",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:16.916949+00:00",
+    "updated_at": "2026-05-11T02:36:08.662+00:00",
+    "product_category_links": [
+      {
+        "category_id": "03003c7b-4501-4959-bdc4-1b989577d91a"
+      },
+      {
+        "category_id": "14218464-e210-4618-8b2c-10d3d9b8786b"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "408efd43-dbf1-4ab8-990a-1859fb402d07"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      }
+    ]
+  },
+  {
+    "id": "6babae43-a45b-4ae2-8806-37a69c972003",
+    "category_id": "852f582a-83b7-41e4-a6da-01b2c3f4ffaf",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "Weekenders - 歌劇院配方豆",
+    "description": "<p>Weekenders - 歌劇院配方豆</p><ul><li><strong>烘焙度：</strong>深烘焙</li><li><strong>風味：</strong>黑巧克力、巧克力蛋糕、口感豐富層次</li><li><strong>烘焙日：</strong>2025/7/14</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 470,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-weekenders-opera-blend-1-7de993786ed3.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-weekenders-opera-blend-1-7de993786ed3.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-weekenders-opera-blend-4-ebb39042c23c.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-weekenders-opera-blend-7-c9247c366478.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "60e2d780c2da93001d026170",
+    "origin": "",
+    "roast_level": "深烘焙",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "黑巧克力",
+      "巧克力蛋糕",
+      "口感豐富層次"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "黑巧克力",
+      "巧克力蛋糕",
+      "口感豐富層次"
+    ],
+    "source_url": "https://www.dlalshop.com/products/weekenders-opera-blend",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:16.424858+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3361e681-7229-4d4a-b139-e023c8f20b0f"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "5168075f-207d-4613-a475-79d7a12e12db"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "852f582a-83b7-41e4-a6da-01b2c3f4ffaf"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "d8609ca6-e82b-4f11-aac4-f3fecad40ceb"
+      }
+    ]
+  },
+  {
+    "id": "a69e6f69-ce2a-4f50-bbf9-ee75a5ec9559",
+    "category_id": "69b6b452-6845-4df6-8282-5a084b578125",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "和珈屋 - 咖啡掛耳包（和珈屋配方 感謝圖示）",
+    "description": "<p>和珈屋 - 咖啡掛耳包（和珈屋配方 感謝圖示）</p><ul><li><strong>烘焙度：</strong>中烘焙</li><li><strong>風味：</strong>人氣No.1，醇厚、柔和的味道。香濃、易入口、回甘、平衡</li><li><strong>賞味期限：</strong>2025/12/20</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 70,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-wakaya-drip-bag-wakoya-blend-1-4715399ca620.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-wakaya-drip-bag-wakoya-blend-1-4715399ca620.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-wakaya-drip-bag-wakoya-blend-4-612a4c752193.jpg"
+    ],
+    "stock_quantity": 5,
+    "is_active": true,
+    "sku": "657ad8be5936f6001a1a31bb",
+    "origin": "",
+    "roast_level": "中烘焙",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "人氣No.1",
+      "醇厚",
+      "柔和的味道。香濃",
+      "易入口",
+      "回甘",
+      "平衡"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 所有品牌",
+      "掛耳包",
+      "咖啡豆",
+      "人氣No.1",
+      "醇厚",
+      "柔和的味道。香濃",
+      "易入口"
+    ],
+    "source_url": "https://www.dlalshop.com/products/wakaya-drip-bag-wakoya-blend",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:14.850618+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "8ed74d48-c523-433c-a922-132171199a4a"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "f2b7bd8b-7da0-4418-9f22-84e85346e3b1"
+      },
+      {
+        "category_id": "f5dcffc4-e862-4a1d-8dcb-e010624e3ab9"
+      }
+    ]
+  },
+  {
+    "id": "48b5a940-35cd-436b-abd6-ff14589de579",
+    "category_id": "dbf37aa6-68f0-4b85-80b7-282ba72b1bb7",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "和珈屋 男子氣概配方豆",
+    "description": "<p>和珈屋 男子氣概配方豆</p><ul><li><strong>容量：</strong>100g</li><li><strong>烘焙度：</strong>中深焙</li><li><strong>風味：</strong>微苦的男子氣概感。濃厚巧克力、甜感、平衡</li><li><strong>烘焙日：</strong>2025/1/19</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 530,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-wakaya-odokomae-blend-1-2d5de045c123.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-wakaya-odokomae-blend-1-2d5de045c123.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-wakaya-odokomae-blend-4-0f86e0514cf2.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "6570188ffb3c2d0017f7ed43",
+    "origin": "",
+    "roast_level": "中深焙",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "微苦的男子氣概感。濃厚巧克力",
+      "甜感",
+      "平衡"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "微苦的男子氣概感。濃厚巧克力",
+      "甜感",
+      "平衡"
+    ],
+    "source_url": "https://www.dlalshop.com/products/wakaya-odokomae-blend",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:14.830066+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3361e681-7229-4d4a-b139-e023c8f20b0f"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "5168075f-207d-4613-a475-79d7a12e12db"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "8ed74d48-c523-433c-a922-132171199a4a"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "dbf37aa6-68f0-4b85-80b7-282ba72b1bb7"
+      },
+      {
+        "category_id": "f5dcffc4-e862-4a1d-8dcb-e010624e3ab9"
+      }
+    ]
+  },
+  {
+    "id": "a4495e4f-ca0d-4499-a3cf-13eb10127ddf",
+    "category_id": "69b6b452-6845-4df6-8282-5a084b578125",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "和珈屋 - 咖啡掛耳包（金賞摩卡配方）",
+    "description": "<p>和珈屋 - 咖啡掛耳包（金賞摩卡配方）</p><ul><li><strong>烘焙度：</strong>中烘焙</li><li><strong>風味：</strong>花香、水蜜桃、黑糖、甘甜、水果茶、果汁感</li><li><strong>賞味期限：</strong>2025/12/20</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 70,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-wakaya-drip-bag-wakoya-blend-1-1-990099ccecd8.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-wakaya-drip-bag-wakoya-blend-1-1-990099ccecd8.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-wakaya-drip-bag-wakoya-blend-1-4-362c42d0793a.jpg"
+    ],
+    "stock_quantity": 1,
+    "is_active": true,
+    "sku": "683aa3d39e96ef0011599fcd",
+    "origin": "",
+    "roast_level": "中烘焙",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "花香",
+      "水蜜桃",
+      "黑糖",
+      "甘甜",
+      "水果茶",
+      "果汁感"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 所有品牌",
+      "掛耳包",
+      "咖啡豆",
+      "花香",
+      "水蜜桃",
+      "黑糖",
+      "甘甜"
+    ],
+    "source_url": "https://www.dlalshop.com/products/wakaya-drip-bag-wakoya-blend-1",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:14.62387+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "f2b7bd8b-7da0-4418-9f22-84e85346e3b1"
+      },
+      {
+        "category_id": "f5dcffc4-e862-4a1d-8dcb-e010624e3ab9"
+      }
+    ]
+  },
+  {
+    "id": "70695304-99af-4626-92c5-eceabd8ccf5b",
+    "category_id": "f30760da-d0e9-464b-a5c2-42791ba73818",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "TOKADO - 豆香洞配方豆",
+    "description": "<p>TOKADO - 豆香洞配方豆</p><p>此商品由來源頁商品資料建立，保留原始商品網址供後台追蹤。</p><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 1230,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tokado-tokado-blend-1-1-c8b6e0c7dfa0.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tokado-tokado-blend-1-1-c8b6e0c7dfa0.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tokado-tokado-blend-1-2-9d016a42f291.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "64906ef3060fe200177bb67b",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌"
+    ],
+    "source_url": "https://www.dlalshop.com/products/tokado-tokado-blend-1",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:12.948921+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3361e681-7229-4d4a-b139-e023c8f20b0f"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "aebea2b6-c4d6-4220-821c-55a6aea5d376"
+      },
+      {
+        "category_id": "f30760da-d0e9-464b-a5c2-42791ba73818"
+      }
+    ]
+  },
+  {
+    "id": "ff0d63ae-8e62-4e3c-968d-84e9c5e883b9",
+    "category_id": "f2b7bd8b-7da0-4418-9f22-84e85346e3b1",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "和珈屋 - 金賞摩卡配方豆",
+    "description": "<p>和珈屋 - 金賞摩卡配方豆</p><ul><li><strong>烘焙度：</strong>中烘焙</li><li><strong>風味：</strong>水果風味、檸檬茶</li><li><strong>簡介：</strong>ICT 2013 金賞，8個參賽國只有日本獲得金賞</li><li><strong>最佳賞味期限：</strong>2025/04/19</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 670,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-wakaya-coffee-gold-medal-mocha-blend-1-1a6c68ff0a53.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-wakaya-coffee-gold-medal-mocha-blend-1-1a6c68ff0a53.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-wakaya-coffee-gold-medal-mocha-blend-4-49c88f9e92ca.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-wakaya-coffee-gold-medal-mocha-blend-7-a10e6e3a5bee.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "65701680edec6b00111c3df2",
+    "origin": "",
+    "roast_level": "中烘焙",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "水果風味",
+      "檸檬茶"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "水果風味",
+      "檸檬茶"
+    ],
+    "source_url": "https://www.dlalshop.com/products/wakaya-coffee-gold-medal-mocha-blend",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:12.875262+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3361e681-7229-4d4a-b139-e023c8f20b0f"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "f2b7bd8b-7da0-4418-9f22-84e85346e3b1"
+      },
+      {
+        "category_id": "f5dcffc4-e862-4a1d-8dcb-e010624e3ab9"
+      }
+    ]
+  },
+  {
+    "id": "eac7b89a-e8cb-475a-bef5-d73e96075463",
+    "category_id": "4b563783-5f1e-47c8-93d1-de6a67d1136a",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "TOKADO - 衣索比亞 Haire Selassie",
+    "description": "<p>TOKADO - 衣索比亞 Haire Selassie</p><ul><li><strong>烘焙度：</strong>淺中焙</li><li><strong>處理法：</strong>水洗處理法</li><li><strong>產地：</strong>--</li><li><strong>豆種：</strong>--</li><li><strong>風味：</strong>花香、熱帶水果、莓果、紅酒、飽滿甜味</li><li><strong>烘焙日：</strong>2025/04/01</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 1390,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tokado-ethiopia-haire-selassie-1-91e80b10dee0.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tokado-ethiopia-haire-selassie-1-91e80b10dee0.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tokado-ethiopia-haire-selassie-4-477b536f6169.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "62d7f2431f725e0014552308",
+    "origin": "--",
+    "roast_level": "淺中焙",
+    "processing_method": "水洗處理法",
+    "altitude": "",
+    "variety": [
+      "--"
+    ],
+    "flavor_notes": [
+      "花香",
+      "熱帶水果",
+      "莓果",
+      "紅酒",
+      "飽滿甜味"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "花香",
+      "熱帶水果",
+      "莓果",
+      "紅酒"
+    ],
+    "source_url": "https://www.dlalshop.com/products/tokado-ethiopia-haire-selassie",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:12.626357+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3361e681-7229-4d4a-b139-e023c8f20b0f"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "4b563783-5f1e-47c8-93d1-de6a67d1136a"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "9f5373af-efae-4d71-b700-4548d96706d8"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "a76b4ba8-05e1-482b-a9a8-ce5cf93a4ea6"
+      },
+      {
+        "category_id": "ad10ae98-b901-4bb6-afb9-35f5e5b5f01c"
+      },
+      {
+        "category_id": "aebea2b6-c4d6-4220-821c-55a6aea5d376"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b57858d4-fea8-437d-93f3-66ab6c9f95f2"
+      }
+    ]
+  },
+  {
+    "id": "9f38b373-f778-4237-aea7-198160a877b1",
+    "category_id": "a1318655-9548-46ba-868d-bc8a61f628bf",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "TOKADO - 海地 Malebranche",
+    "description": "<p>TOKADO - 海地 Malebranche</p><ul><li><strong>烘焙度：</strong>淺焙</li><li><strong>處理法：</strong>水洗</li><li><strong>產地：</strong>Thiotte Malebranche</li><li><strong>豆種：</strong>鐵比卡</li><li><strong>風味：</strong>茶感、烤土司、白葡萄、若草、口感輕盈</li><li><strong>烘焙日：</strong>2025/08/16</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 1470,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tokado-haiti-malebranche-1-c3da54019e7c.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tokado-haiti-malebranche-1-c3da54019e7c.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-tokado-haiti-malebranche-4-2d5a3a140632.jpg"
+    ],
+    "stock_quantity": 1,
+    "is_active": true,
+    "sku": "63631243775cab002ef790ee",
+    "origin": "Thiotte Malebranche",
+    "roast_level": "淺焙",
+    "processing_method": "水洗",
+    "altitude": "",
+    "variety": [
+      "鐵比卡"
+    ],
+    "flavor_notes": [
+      "茶感",
+      "烤土司",
+      "白葡萄",
+      "若草",
+      "口感輕盈"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "茶感",
+      "烤土司",
+      "白葡萄",
+      "若草"
+    ],
+    "source_url": "https://www.dlalshop.com/products/tokado-haiti-malebranche",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:12.541541+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3361e681-7229-4d4a-b139-e023c8f20b0f"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "5168075f-207d-4613-a475-79d7a12e12db"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "a1318655-9548-46ba-868d-bc8a61f628bf"
+      },
+      {
+        "category_id": "ad10ae98-b901-4bb6-afb9-35f5e5b5f01c"
+      },
+      {
+        "category_id": "aebea2b6-c4d6-4220-821c-55a6aea5d376"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b57858d4-fea8-437d-93f3-66ab6c9f95f2"
+      }
+    ]
+  },
+  {
+    "id": "4a90c603-fa02-4c32-b84a-7adc4077d480",
+    "category_id": "f2b7bd8b-7da0-4418-9f22-84e85346e3b1",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "Marumi Coffee 丸美 - 丸美配方豆",
+    "description": "<p>Marumi Coffee 丸美 - 丸美配方豆</p><ul><li><strong>烘焙度：</strong>中烘焙</li><li><strong>產地：</strong>瓜地馬拉、哥斯大黎加、宏都拉斯</li><li><strong>風味：</strong>圓滿、醇厚、平衡，適合每天喝也不會膩。</li><li><strong>賞味期限：</strong>2026/02</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 500,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-marumi-coffee-marumi-blend-1-1d34ebd9131c.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-marumi-coffee-marumi-blend-1-1d34ebd9131c.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-marumi-coffee-marumi-blend-4-d75d75309557.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "6568649d6aa48b00239ba15b",
+    "origin": "瓜地馬拉、哥斯大黎加、宏都拉斯",
+    "roast_level": "中烘焙",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "圓滿",
+      "醇厚",
+      "平衡",
+      "適合每天喝也不會膩。"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "圓滿",
+      "醇厚",
+      "平衡",
+      "適合每天喝也不會膩。"
+    ],
+    "source_url": "https://www.dlalshop.com/products/marumi-coffee-marumi-blend",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:11.254998+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3361e681-7229-4d4a-b139-e023c8f20b0f"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "8ed74d48-c523-433c-a922-132171199a4a"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b80cda01-b964-4b94-9513-7dac2e902e89"
+      },
+      {
+        "category_id": "f2b7bd8b-7da0-4418-9f22-84e85346e3b1"
+      }
+    ]
+  },
+  {
+    "id": "605e33f5-1808-478d-9d2b-a23b5b2707d5",
+    "category_id": "4b563783-5f1e-47c8-93d1-de6a67d1136a",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "Marumi Coffee 丸美 - 珈福配方豆",
+    "description": "<p>Marumi Coffee 丸美 - 珈福配方豆</p><ul><li><strong>烘焙度：</strong>淺中焙</li><li><strong>產地：</strong>衣索比亞、哥斯大黎加、宏都拉斯</li><li><strong>風味：</strong>希望喝下的人能展現笑容。華麗香氣、醇厚、水果微酸</li><li><strong>賞味期限：</strong>2026/02</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 500,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-marumi-coffee-happiness-blend-1-16a659800818.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-marumi-coffee-happiness-blend-1-16a659800818.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-marumi-coffee-happiness-blend-4-bb61967d5f61.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "65701a39ae50e4000ed4dabd",
+    "origin": "衣索比亞、哥斯大黎加、宏都拉斯",
+    "roast_level": "淺中焙",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "希望喝下的人能展現笑容。華麗香氣",
+      "醇厚",
+      "水果微酸"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "希望喝下的人能展現笑容。華麗香氣",
+      "醇厚",
+      "水果微酸"
+    ],
+    "source_url": "https://www.dlalshop.com/products/marumi-coffee-happiness-blend",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:11.210022+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3361e681-7229-4d4a-b139-e023c8f20b0f"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "4b563783-5f1e-47c8-93d1-de6a67d1136a"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b80cda01-b964-4b94-9513-7dac2e902e89"
+      }
+    ]
+  },
+  {
+    "id": "5902ac5b-8d3d-490b-a6c2-bcc29f8e6763",
+    "category_id": "852f582a-83b7-41e4-a6da-01b2c3f4ffaf",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "MAME POLEPOLE - 招牌 Gajumaru 配方豆",
+    "description": "<p>MAME POLEPOLE - 招牌 Gajumaru 配方豆</p><ul><li><strong>烘焙度：</strong>深烘焙</li><li><strong>處理法：</strong>--</li><li><strong>產地：</strong>印尼、巴西等</li><li><strong>豆種：</strong>--</li><li><strong>風味：</strong>月桂、香料、巧克力、雪松</li><li><strong>最佳賞味期限：</strong>2026/5/25</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 580,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-mame-polepole-gajumaru-blend-1-077db9b5d08b.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-mame-polepole-gajumaru-blend-1-077db9b5d08b.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-mame-polepole-gajumaru-blend-4-b1fa9b72ca47.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "60e1f48fece7890026b6490a",
+    "origin": "印尼、巴西等",
+    "roast_level": "深烘焙",
+    "processing_method": "--",
+    "altitude": "",
+    "variety": [
+      "--"
+    ],
+    "flavor_notes": [
+      "月桂",
+      "香料",
+      "巧克力",
+      "雪松"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "月桂",
+      "香料",
+      "巧克力",
+      "雪松"
+    ],
+    "source_url": "https://www.dlalshop.com/products/mame-polepole-gajumaru-blend",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:10.602093+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3361e681-7229-4d4a-b139-e023c8f20b0f"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "5168075f-207d-4613-a475-79d7a12e12db"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "852f582a-83b7-41e4-a6da-01b2c3f4ffaf"
+      },
+      {
+        "category_id": "9f5373af-efae-4d71-b700-4548d96706d8"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b57858d4-fea8-437d-93f3-66ab6c9f95f2"
+      },
+      {
+        "category_id": "fd2456f9-f134-4f1f-a2e6-f1869d550018"
+      }
+    ]
+  },
+  {
+    "id": "3d05742e-2083-4ce1-af4e-dee5b964edd7",
+    "category_id": "f2b7bd8b-7da0-4418-9f22-84e85346e3b1",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "MAME POLEPOLE - 招牌衣索比亞 兄弟配方豆",
+    "description": "<p>MAME POLEPOLE - 招牌衣索比亞 兄弟配方豆</p><ul><li><strong>烘焙度：</strong>中烘焙</li><li><strong>處理法：</strong>水洗處理法</li><li><strong>產地：</strong>衣索比亞</li><li><strong>豆種：</strong>衣索比亞原生種</li><li><strong>風味：</strong>柳橙、橘子、紅茶、牛奶巧克力、草莓</li><li><strong>最佳賞味期限：</strong>2026/5/25</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 650,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-mame-polepole-ethiopian-brothers-blend-1-0f93c3a191c2.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-mame-polepole-ethiopian-brothers-blend-1-0f93c3a191c2.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-mame-polepole-ethiopian-brothers-blend-4-b763989a2cfa.jpg"
+    ],
+    "stock_quantity": 2,
+    "is_active": true,
+    "sku": "60e27c523790840026049b61",
+    "origin": "衣索比亞",
+    "roast_level": "中烘焙",
+    "processing_method": "水洗處理法",
+    "altitude": "",
+    "variety": [
+      "衣索比亞原生種"
+    ],
+    "flavor_notes": [
+      "柳橙",
+      "橘子",
+      "紅茶",
+      "牛奶巧克力",
+      "草莓"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "柳橙",
+      "橘子",
+      "紅茶",
+      "牛奶巧克力"
+    ],
+    "source_url": "https://www.dlalshop.com/products/mame-polepole-ethiopian-brothers-blend",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:10.533557+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3361e681-7229-4d4a-b139-e023c8f20b0f"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "5168075f-207d-4613-a475-79d7a12e12db"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "ad10ae98-b901-4bb6-afb9-35f5e5b5f01c"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b57858d4-fea8-437d-93f3-66ab6c9f95f2"
+      },
+      {
+        "category_id": "f2b7bd8b-7da0-4418-9f22-84e85346e3b1"
+      },
+      {
+        "category_id": "fd2456f9-f134-4f1f-a2e6-f1869d550018"
+      }
+    ]
+  },
+  {
+    "id": "6e738695-799a-40a3-85ae-67bf6f29c699",
+    "category_id": "a1318655-9548-46ba-868d-bc8a61f628bf",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "LUMI UMI - 台灣阿里山 香香久溢（森明美穗烘豆）",
+    "description": "<p>LUMI UMI - 台灣阿里山 香香久溢（森明美穗烘豆）</p><ul><li><strong>容量：</strong>100g</li><li><strong>烘焙度：</strong>淺烘焙</li><li><strong>處理法：</strong>日曬</li><li><strong>產地：</strong>阿里山</li><li><strong>豆種：</strong>鐵皮卡＋SL34</li><li><strong>風味：</strong>鳳梨、百香果、西瓜、棕色香料、花香</li><li><strong>烘焙日期：</strong>2025/11/7</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 790,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-lumiumi-taiwan-alishan-n-miho-1-37c1b64a2887.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-lumiumi-taiwan-alishan-n-miho-1-37c1b64a2887.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-lumiumi-taiwan-alishan-n-miho-4-f5131a09ea3a.jpg"
+    ],
+    "stock_quantity": 2,
+    "is_active": true,
+    "sku": "694393e03f24ec5a608f5bf7",
+    "origin": "阿里山",
+    "roast_level": "淺烘焙",
+    "processing_method": "日曬",
+    "altitude": "",
+    "variety": [
+      "鐵皮卡＋SL34"
+    ],
+    "flavor_notes": [
+      "鳳梨",
+      "百香果",
+      "西瓜",
+      "棕色香料",
+      "花香"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "鳳梨",
+      "百香果",
+      "西瓜",
+      "棕色香料"
+    ],
+    "source_url": "https://www.dlalshop.com/products/lumiumi-taiwan-alishan-n-miho",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:09.092878+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "14218464-e210-4618-8b2c-10d3d9b8786b"
+      },
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "9f5373af-efae-4d71-b700-4548d96706d8"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "a1318655-9548-46ba-868d-bc8a61f628bf"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b57858d4-fea8-437d-93f3-66ab6c9f95f2"
+      },
+      {
+        "category_id": "e28cdf8a-d746-4c33-a01a-64704b987732"
+      }
+    ]
+  },
+  {
+    "id": "8b446ff0-f16f-4220-8401-8f6af680cb0d",
+    "category_id": "a1318655-9548-46ba-868d-bc8a61f628bf",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "LIWEI - 東京配方豆",
+    "description": "<p>LIWEI - 東京配方豆</p><ul><li><strong>烘焙度：</strong>淺烘焙</li><li><strong>風味：</strong>百香果、桃子、桂花香</li><li><strong>烘焙日：</strong>2024/7/10</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 510,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-liwei-tokyo-blend-1-569900381422.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-liwei-tokyo-blend-1-569900381422.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-liwei-tokyo-blend-4-37a491f8ba77.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "682038453e7962000dc0b795",
+    "origin": "",
+    "roast_level": "淺烘焙",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "百香果",
+      "桃子",
+      "桂花香"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "百香果",
+      "桃子",
+      "桂花香"
+    ],
+    "source_url": "https://www.dlalshop.com/products/liwei-tokyo-blend",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:08.819178+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3361e681-7229-4d4a-b139-e023c8f20b0f"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "a1318655-9548-46ba-868d-bc8a61f628bf"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b783b626-f21a-4a23-bd8d-57f65d9f43d4"
+      }
+    ]
+  },
+  {
+    "id": "facb67c3-042f-4a3e-94bf-d4577e541d1b",
+    "category_id": "69b6b452-6845-4df6-8282-5a084b578125",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "Lilo｜咖啡掛耳包（藍色淺烘焙｜花香果香調）",
+    "description": "<p>Lilo｜咖啡掛耳包（藍色淺烘焙｜花香果香調）</p><ul><li><strong>烘焙度：</strong>淺烘焙</li><li><strong>處理法：</strong>依產區豆種不同而異</li><li><strong>產地：</strong>哥斯大黎加、烏干達、衣索比亞</li><li><strong>風味：</strong>花香、果香</li><li><strong>商品規格：</strong>1包</li><li><strong>最佳賞味期限：</strong>2025/12/12</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 70,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-lilo-drip-pack-light-roast-1-e9109519ed18.png",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-lilo-drip-pack-light-roast-1-e9109519ed18.png",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-lilo-drip-pack-light-roast-4-3ab01aad89ee.png",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-lilo-drip-pack-light-roast-7-74a607bb2a67.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "68303c48a41101000a9c3972",
+    "origin": "哥斯大黎加、烏干達、衣索比亞",
+    "roast_level": "淺烘焙",
+    "processing_method": "依產區豆種不同而異",
+    "altitude": "-",
+    "variety": [],
+    "flavor_notes": [
+      "花香",
+      "果香"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 所有品牌",
+      "掛耳包",
+      "咖啡豆",
+      "花香",
+      "果香"
+    ],
+    "source_url": "https://www.dlalshop.com/products/lilo-drip-pack-light-roast",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:08.505673+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "a1318655-9548-46ba-868d-bc8a61f628bf"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b57858d4-fea8-437d-93f3-66ab6c9f95f2"
+      },
+      {
+        "category_id": "bd5e65eb-7faf-4884-bf0e-dad8c93748a5"
+      }
+    ]
+  },
+  {
+    "id": "a753002b-8e7d-4a10-902d-1ec10d969cc0",
+    "category_id": "dbf37aa6-68f0-4b85-80b7-282ba72b1bb7",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "LIWEI - 李維配方豆",
+    "description": "<p>LIWEI - 李維配方豆</p><ul><li><strong>烘焙度：</strong>中深焙</li><li><strong>風味：</strong>果香、焦糖牛奶、可可</li><li><strong>烘焙日：</strong>2024/04/17</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 430,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-liwei-liwei-blend-1-8fe269514612.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-liwei-liwei-blend-1-8fe269514612.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-liwei-liwei-blend-4-37a491f8ba77.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "6820640a01c69d000d974b50",
+    "origin": "",
+    "roast_level": "中深焙",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "果香",
+      "焦糖牛奶",
+      "可可"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "果香",
+      "焦糖牛奶",
+      "可可"
+    ],
+    "source_url": "https://www.dlalshop.com/products/liwei-liwei-blend",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:08.330625+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3361e681-7229-4d4a-b139-e023c8f20b0f"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "5168075f-207d-4613-a475-79d7a12e12db"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b783b626-f21a-4a23-bd8d-57f65d9f43d4"
+      },
+      {
+        "category_id": "dbf37aa6-68f0-4b85-80b7-282ba72b1bb7"
+      }
+    ]
+  },
+  {
+    "id": "39c3aa9d-1403-4b0c-b4da-886c8bb54859",
+    "category_id": "852f582a-83b7-41e4-a6da-01b2c3f4ffaf",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "LiLo - 東帝汶 Asico",
+    "description": "<p>LiLo - 東帝汶 Asico</p><ul><li><strong>烘焙度：</strong>深烘焙</li><li><strong>處理法：</strong>水洗</li><li><strong>產地：</strong>埃爾梅拉市</li><li><strong>標高：</strong>1450M</li><li><strong>豆種：</strong>東帝汶混種品種</li><li><strong>風味：</strong>黑巧克力、太妃糖、核桃仁、葡萄</li><li><strong>烘焙日：</strong>2025/05/15</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 530,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-lilo-coffee-roasters-east-timor-asico-1-68658c4a7e6e.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-lilo-coffee-roasters-east-timor-asico-1-68658c4a7e6e.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-lilo-coffee-roasters-east-timor-asico-4-f1bb4ef7c856.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "60e66f79ba3508002fcc0a8d",
+    "origin": "埃爾梅拉市",
+    "roast_level": "深烘焙",
+    "processing_method": "水洗",
+    "altitude": "1450M",
+    "variety": [
+      "東帝汶混種品種"
+    ],
+    "flavor_notes": [
+      "黑巧克力",
+      "太妃糖",
+      "核桃仁",
+      "葡萄"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "黑巧克力",
+      "太妃糖",
+      "核桃仁",
+      "葡萄"
+    ],
+    "source_url": "https://www.dlalshop.com/products/lilo-coffee-roasters-east-timor-asico",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:06.590041+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3361e681-7229-4d4a-b139-e023c8f20b0f"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "5168075f-207d-4613-a475-79d7a12e12db"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "852f582a-83b7-41e4-a6da-01b2c3f4ffaf"
+      },
+      {
+        "category_id": "ad10ae98-b901-4bb6-afb9-35f5e5b5f01c"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b57858d4-fea8-437d-93f3-66ab6c9f95f2"
+      },
+      {
+        "category_id": "bd5e65eb-7faf-4884-bf0e-dad8c93748a5"
+      }
+    ]
+  },
+  {
+    "id": "eef15fa3-82e0-436c-b25a-b7753788e150",
+    "category_id": "f2b7bd8b-7da0-4418-9f22-84e85346e3b1",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "LANDMADE - 春風配方",
+    "description": "<p>LANDMADE - 春風配方</p><ul><li><strong>烘焙度：</strong>中烘焙</li><li><strong>風味：</strong>柑橘、桃子、紅茶、黑糖</li><li><strong>最佳賞味期限：</strong>2026/05/27</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 600,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-landmade-spring-blend-1-0eeb243aed27.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-landmade-spring-blend-1-0eeb243aed27.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-landmade-spring-blend-4-f1acba6a61d8.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "69b8e6a8c683900504bcfaf0",
+    "origin": "",
+    "roast_level": "中烘焙",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "柑橘",
+      "桃子",
+      "紅茶",
+      "黑糖"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "咖啡豆",
+      "柑橘",
+      "桃子",
+      "紅茶",
+      "黑糖"
+    ],
+    "source_url": "https://www.dlalshop.com/products/landmade-spring-blend",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:06.287146+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "14218464-e210-4618-8b2c-10d3d9b8786b"
+      },
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "f2b7bd8b-7da0-4418-9f22-84e85346e3b1"
+      }
+    ]
+  },
+  {
+    "id": "d3baec30-5feb-4df6-9611-4214e70f7114",
+    "category_id": "69b6b452-6845-4df6-8282-5a084b578125",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "LANDMADE - 咖啡掛耳包（甜美配方）",
+    "description": "<p>LANDMADE - 咖啡掛耳包（甜美配方）</p><ul><li><strong>烘焙度：</strong>中烘焙</li><li><strong>風味：</strong>草莓、檸檬、白葡萄、果汁感</li><li><strong>最佳賞味期限：</strong>2026/12/04</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 75,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-landmade-sweet-blend-drip-bag-1-33d38c8a48c0.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-landmade-sweet-blend-drip-bag-1-33d38c8a48c0.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-landmade-sweet-blend-drip-bag-4-f1acba6a61d8.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "69b922f5022cd8fef5738ce1",
+    "origin": "",
+    "roast_level": "中烘焙",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "草莓",
+      "檸檬",
+      "白葡萄",
+      "果汁感"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "掛耳包",
+      "咖啡豆",
+      "草莓",
+      "檸檬",
+      "白葡萄",
+      "果汁感"
+    ],
+    "source_url": "https://www.dlalshop.com/products/landmade-sweet-blend-drip-bag",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:05.986173+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "14218464-e210-4618-8b2c-10d3d9b8786b"
+      },
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "f2b7bd8b-7da0-4418-9f22-84e85346e3b1"
+      }
+    ]
+  },
+  {
+    "id": "cc4daea9-0065-4525-8530-3d8b06871678",
+    "category_id": "69b6b452-6845-4df6-8282-5a084b578125",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "LANDMADE - 咖啡掛耳包（感心配方）",
+    "description": "<p>LANDMADE - 咖啡掛耳包（感心配方）</p><ul><li><strong>烘焙度：</strong>深烘焙</li><li><strong>風味：</strong>巧克力、甜感</li><li><strong>最佳賞味期限：</strong>2027/02/12</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 75,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-landmade-gift-blend-drip-bag-1-cdfe7b68c808.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-landmade-gift-blend-drip-bag-1-cdfe7b68c808.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-landmade-gift-blend-drip-bag-4-f1acba6a61d8.jpg"
+    ],
+    "stock_quantity": 5,
+    "is_active": true,
+    "sku": "69bbbea65c1018827e26f091",
+    "origin": "",
+    "roast_level": "深烘焙",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "巧克力",
+      "甜感"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "掛耳包",
+      "咖啡豆",
+      "巧克力",
+      "甜感"
+    ],
+    "source_url": "https://www.dlalshop.com/products/landmade-gift-blend-drip-bag",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:05.586194+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "14218464-e210-4618-8b2c-10d3d9b8786b"
+      },
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "5168075f-207d-4613-a475-79d7a12e12db"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "852f582a-83b7-41e4-a6da-01b2c3f4ffaf"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      }
+    ]
+  },
+  {
+    "id": "8a8a42c0-3ac1-43fd-9cbf-236be189195f",
+    "category_id": "a1318655-9548-46ba-868d-bc8a61f628bf",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "GLITCH - 雲南 Dehong Yuan Yi Yuan",
+    "description": "<p>GLITCH - 雲南 Dehong Yuan Yi Yuan</p><ul><li><strong>內容量：</strong>100g</li><li><strong>烘焙度：</strong>淺烘焙</li><li><strong>處理法：</strong>發酵蜜處理</li><li><strong>產地：</strong>雲南 德宏</li><li><strong>標高：</strong>1400 - 1580 M</li><li><strong>豆種：</strong>卡地摩P4 (7963)</li><li><strong>風味：</strong>烏龍茶、荔枝、水蜜桃、茶感、滑順</li><li><strong>烘焙日：</strong>2025/12/17</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 700,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-glitch-coffee-and-roasters-china-dehong-yuan-yi-yuan-1-d3a5ad7e7fad.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-glitch-coffee-and-roasters-china-dehong-yuan-yi-yuan-1-d3a5ad7e7fad.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-glitch-coffee-and-roasters-china-dehong-yuan-yi-yuan-4-841f4820e27b.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "6969e337dcff384ef390e7c9",
+    "origin": "雲南 德宏",
+    "roast_level": "淺烘焙",
+    "processing_method": "發酵蜜處理",
+    "altitude": "1400 - 1580 M",
+    "variety": [
+      "卡地摩P4 (7963)"
+    ],
+    "flavor_notes": [
+      "烏龍茶",
+      "荔枝",
+      "水蜜桃",
+      "茶感",
+      "滑順"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "烏龍茶",
+      "荔枝",
+      "水蜜桃",
+      "茶感"
+    ],
+    "source_url": "https://www.dlalshop.com/products/glitch-coffee-and-roasters-china-dehong-yuan-yi-yuan",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:04.309396+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "14218464-e210-4618-8b2c-10d3d9b8786b"
+      },
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3361e681-7229-4d4a-b139-e023c8f20b0f"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "5b96450c-b11e-47f3-bee7-7381ff7c3555"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "76efe242-098c-48fa-b8b4-18d9e4b51db6"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "8ed74d48-c523-433c-a922-132171199a4a"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "a1318655-9548-46ba-868d-bc8a61f628bf"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b57858d4-fea8-437d-93f3-66ab6c9f95f2"
+      }
+    ]
+  },
+  {
+    "id": "d5508a3c-29f9-4e3a-8fa1-87cd3e6771eb",
+    "category_id": "dbf37aa6-68f0-4b85-80b7-282ba72b1bb7",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "ITUKA - 台灣焙煎所 - 森之音配方",
+    "description": "<p>ITUKA - 台灣焙煎所 - 森之音配方</p><ul><li><strong>烘焙度：</strong>中深焙</li><li><strong>產地：</strong>哥倫比亞、衣索比亞</li><li><strong>風味：</strong>莓果香、柑橘、焦糖、牛奶巧克力</li><li><strong>烘焙日：</strong>2025/01/17</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 620,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-ituka-forest-sound-blend-1-841caec2bc13.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-ituka-forest-sound-blend-1-841caec2bc13.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-ituka-forest-sound-blend-4-b68920e002e7.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "6794b7e0915b7a000d330576",
+    "origin": "哥倫比亞、衣索比亞",
+    "roast_level": "中深焙",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "莓果香",
+      "柑橘",
+      "焦糖",
+      "牛奶巧克力"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "莓果香",
+      "柑橘",
+      "焦糖",
+      "牛奶巧克力"
+    ],
+    "source_url": "https://www.dlalshop.com/products/ituka-forest-sound-blend",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:04.209741+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "5168075f-207d-4613-a475-79d7a12e12db"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "dbf37aa6-68f0-4b85-80b7-282ba72b1bb7"
+      },
+      {
+        "category_id": "e99b1b1f-8a68-4117-b5d2-7742795e762d"
+      }
+    ]
+  },
+  {
+    "id": "d29ab1f9-71b2-4260-9dc1-3ded9b49de2f",
+    "category_id": "69b6b452-6845-4df6-8282-5a084b578125",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "Lilo｜咖啡掛耳包（紅色中烘焙｜焦糖可可調）",
+    "description": "<p>Lilo｜咖啡掛耳包（紅色中烘焙｜焦糖可可調）</p><ul><li><strong>烘焙度：</strong>中烘焙</li><li><strong>處理法：</strong>依批次而異</li><li><strong>產地：</strong>巴西</li><li><strong>風味：</strong>焦糖、可可</li><li><strong>商品規格：</strong>1包</li><li><strong>最佳賞味期限：</strong>2026/02/03</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 70,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-drip-bag-medium-roasted-ef-bc-88red-1-597186fabb1d.png",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-drip-bag-medium-roasted-ef-bc-88red-1-597186fabb1d.png",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-drip-bag-medium-roasted-ef-bc-88red-4-1c679a296df4.png",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-drip-bag-medium-roasted-ef-bc-88red-7-9f32269a8a28.png"
+    ],
+    "stock_quantity": 5,
+    "is_active": true,
+    "sku": "68303ffe958e81001100ed13",
+    "origin": "巴西",
+    "roast_level": "中烘焙",
+    "processing_method": "依批次而異",
+    "altitude": "-",
+    "variety": [],
+    "flavor_notes": [
+      "焦糖",
+      "可可"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 所有品牌",
+      "掛耳包",
+      "咖啡豆",
+      "焦糖",
+      "可可"
+    ],
+    "source_url": "https://www.dlalshop.com/products/drip-bag-medium-roasted%EF%BC%88red",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:03.783415+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "5168075f-207d-4613-a475-79d7a12e12db"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b57858d4-fea8-437d-93f3-66ab6c9f95f2"
+      },
+      {
+        "category_id": "bd5e65eb-7faf-4884-bf0e-dad8c93748a5"
+      },
+      {
+        "category_id": "f2b7bd8b-7da0-4418-9f22-84e85346e3b1"
+      }
+    ]
+  },
+  {
+    "id": "4e54d4a8-b045-4e85-8aaf-e9c5001879c4",
+    "category_id": "a1318655-9548-46ba-868d-bc8a61f628bf",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "GLITCH - 肯亞 Kiambu Handage AA",
+    "description": "<p>GLITCH - 肯亞 Kiambu Handage AA</p><ul><li><strong>烘焙度：</strong>淺烘焙</li><li><strong>處理法：</strong>全水洗</li><li><strong>標高：</strong>1700-1800 M</li><li><strong>豆種：</strong>SL28、SL34、魯伊魯11、巴蒂安</li><li><strong>風味：</strong>番茄、葡萄柚、葡萄乾、果汁感、風味平衡</li><li><strong>烘焙日：</strong>2026/2/25</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 620,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-glitch-coffee-and-roasters-colombia-huila-monteblanco-tropical-washed-1-1-35bd2364eb60.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-glitch-coffee-and-roasters-colombia-huila-monteblanco-tropical-washed-1-1-35bd2364eb60.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-glitch-coffee-and-roasters-colombia-huila-monteblanco-tropical-washed-1-4-532017f9748c.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "69b7728a41bba45f40ce8c37",
+    "origin": "",
+    "roast_level": "淺烘焙",
+    "processing_method": "全水洗",
+    "altitude": "1700-1800 M",
+    "variety": [
+      "SL28",
+      "SL34",
+      "魯伊魯11",
+      "巴蒂安"
+    ],
+    "flavor_notes": [
+      "番茄",
+      "葡萄柚",
+      "葡萄乾",
+      "果汁感",
+      "風味平衡"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "番茄",
+      "葡萄柚",
+      "葡萄乾",
+      "果汁感"
+    ],
+    "source_url": "https://www.dlalshop.com/products/glitch-coffee-and-roasters-colombia-huila-monteblanco-tropical-washed-1",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:03.312543+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "14218464-e210-4618-8b2c-10d3d9b8786b"
+      },
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "5b96450c-b11e-47f3-bee7-7381ff7c3555"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "8ed74d48-c523-433c-a922-132171199a4a"
+      },
+      {
+        "category_id": "a1318655-9548-46ba-868d-bc8a61f628bf"
+      },
+      {
+        "category_id": "ad10ae98-b901-4bb6-afb9-35f5e5b5f01c"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b57858d4-fea8-437d-93f3-66ab6c9f95f2"
+      }
+    ]
+  },
+  {
+    "id": "9edaf45f-cef6-41b4-a0cd-abe1566709e5",
+    "category_id": "69b6b452-6845-4df6-8282-5a084b578125",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "Lilo｜咖啡掛耳包（黑色深烘焙｜堅果巧克力調）",
+    "description": "<p>Lilo｜咖啡掛耳包（黑色深烘焙｜堅果巧克力調）</p><ul><li><strong>烘焙度：</strong>深烘焙</li><li><strong>處理法：</strong>依批次而異</li><li><strong>產地：</strong>印尼、東帝汶、緬甸、烏干達</li><li><strong>風味：</strong>堅果、巧克力</li><li><strong>商品規格：</strong>1包</li><li><strong>最佳賞味期限：</strong>2025/11/26</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 70,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-drip-bag-dark-roasted-black-1-83a55362cfe0.png",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-drip-bag-dark-roasted-black-1-83a55362cfe0.png",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-drip-bag-dark-roasted-black-4-24f1c28f4356.png",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-drip-bag-dark-roasted-black-7-0495df8cc81d.png"
+    ],
+    "stock_quantity": 20,
+    "is_active": true,
+    "sku": "683042b9ccd623000da70a6f",
+    "origin": "印尼、東帝汶、緬甸、烏干達",
+    "roast_level": "深烘焙",
+    "processing_method": "依批次而異",
+    "altitude": "-",
+    "variety": [],
+    "flavor_notes": [
+      "堅果",
+      "巧克力"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 所有品牌",
+      "掛耳包",
+      "咖啡豆",
+      "堅果",
+      "巧克力"
+    ],
+    "source_url": "https://www.dlalshop.com/products/drip-bag-dark-roasted-black",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:01.716817+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "5168075f-207d-4613-a475-79d7a12e12db"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "852f582a-83b7-41e4-a6da-01b2c3f4ffaf"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b57858d4-fea8-437d-93f3-66ab6c9f95f2"
+      },
+      {
+        "category_id": "bd5e65eb-7faf-4884-bf0e-dad8c93748a5"
+      }
+    ]
+  },
+  {
+    "id": "74a04ca7-09f9-41a8-bf3b-7a3dc5bbdbda",
+    "category_id": "69b6b452-6845-4df6-8282-5a084b578125",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "根本在旅行 - 台灣 北平山林咖啡掛耳",
+    "description": "<p>根本在旅行 - 台灣 北平山林咖啡掛耳</p><ul><li><strong>烘焙度：</strong>淺中焙</li><li><strong>處理法：</strong>低溫有氧日曬法</li><li><strong>產地：</strong>台灣 新竹縣新埔鎮</li><li><strong>豆種：</strong>SL34</li><li><strong>標高：</strong>230m</li><li><strong>風味：</strong>烏梅、柑橘、蔗糖、核桃</li><li><strong>有效日期：</strong>2027/02/03</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 65,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-drink-like-a-local-taiwan-the-northpeace-woodland-1-91e838415176.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-drink-like-a-local-taiwan-the-northpeace-woodland-1-91e838415176.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-drink-like-a-local-taiwan-the-northpeace-woodland-4-1ca65319fc9b.jpg"
+    ],
+    "stock_quantity": 20,
+    "is_active": true,
+    "sku": "689c3c0a94689a0014dc704d",
+    "origin": "台灣 新竹縣新埔鎮",
+    "roast_level": "淺中焙",
+    "processing_method": "低溫有氧日曬法",
+    "altitude": "230m",
+    "variety": [
+      "SL34"
+    ],
+    "flavor_notes": [
+      "烏梅",
+      "柑橘",
+      "蔗糖",
+      "核桃"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "掛耳包",
+      "咖啡豆",
+      "烏梅",
+      "柑橘",
+      "蔗糖",
+      "核桃"
+    ],
+    "source_url": "https://www.dlalshop.com/products/drink-like-a-local-taiwan-the-northpeace-woodland",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:01.285528+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "14218464-e210-4618-8b2c-10d3d9b8786b"
+      },
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "4b563783-5f1e-47c8-93d1-de6a67d1136a"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b57858d4-fea8-437d-93f3-66ab6c9f95f2"
+      },
+      {
+        "category_id": "e28cdf8a-d746-4c33-a01a-64704b987732"
+      }
+    ]
+  },
+  {
+    "id": "4fd71654-0e7b-471d-9497-1be3a9d17132",
+    "category_id": "f2b7bd8b-7da0-4418-9f22-84e85346e3b1",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "Cerrado - 2nd 配方豆",
+    "description": "<p>Cerrado - 2nd 配方豆</p><ul><li><strong>烘焙度：</strong>中烘焙</li><li><strong>產地：</strong>衣索比亞、哥倫比亞、宏都拉斯、巴西</li><li><strong>風味：</strong>純淨、口感滑順溫潤、溫度冷卻仍保持美味</li><li><strong>最佳賞味期限：</strong>2025/06/18</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 490,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cerrado-coffee-blend-the-2nd-1-8caec129187b.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cerrado-coffee-blend-the-2nd-1-8caec129187b.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cerrado-coffee-blend-the-2nd-4-08aa8d61b7cf.jpg"
+    ],
+    "stock_quantity": 1,
+    "is_active": true,
+    "sku": "60e69703fe27590014e40c87",
+    "origin": "衣索比亞、哥倫比亞、宏都拉斯、巴西",
+    "roast_level": "中烘焙",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "純淨",
+      "口感滑順溫潤",
+      "溫度冷卻仍保持美味"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "純淨",
+      "口感滑順溫潤",
+      "溫度冷卻仍保持美味"
+    ],
+    "source_url": "https://www.dlalshop.com/products/cerrado-coffee-blend-the-2nd",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:00.844256+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "14218464-e210-4618-8b2c-10d3d9b8786b"
+      },
+      {
+        "category_id": "1a73d9de-4f25-47f3-8f95-a0c696d082b8"
+      },
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3361e681-7229-4d4a-b139-e023c8f20b0f"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "8ed74d48-c523-433c-a922-132171199a4a"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "f2b7bd8b-7da0-4418-9f22-84e85346e3b1"
+      }
+    ]
+  },
+  {
+    "id": "0572cb96-d665-4f61-bbd0-4ffd82fe9c5a",
+    "category_id": "a1318655-9548-46ba-868d-bc8a61f628bf",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "Cerrado - 春季櫻花配方",
+    "description": "<p>Cerrado - 春季櫻花配方</p><ul><li><strong>烘焙度：</strong>淺焙</li><li><strong>產地：</strong>衣索比亞、哥斯大黎加</li><li><strong>風味：</strong>花香、櫻花、梅花、紅茶、杯感乾淨、口感滑順、尾韻深長</li><li><strong>最佳賞味期限：</strong>2026/05/27</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 570,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cerrado-spring-season-limited-1-d0861bc3b6e1.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cerrado-spring-season-limited-1-d0861bc3b6e1.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cerrado-spring-season-limited-4-e38fd72ade82.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "67ee462354716f0010b8b000",
+    "origin": "衣索比亞、哥斯大黎加",
+    "roast_level": "淺焙",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "花香",
+      "櫻花",
+      "梅花",
+      "紅茶",
+      "杯感乾淨",
+      "口感滑順",
+      "尾韻深長"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "花香",
+      "櫻花",
+      "梅花",
+      "紅茶"
+    ],
+    "source_url": "https://www.dlalshop.com/products/cerrado-spring-season-limited",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:49:00.1977+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "14218464-e210-4618-8b2c-10d3d9b8786b"
+      },
+      {
+        "category_id": "1a73d9de-4f25-47f3-8f95-a0c696d082b8"
+      },
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "8ed74d48-c523-433c-a922-132171199a4a"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "a1318655-9548-46ba-868d-bc8a61f628bf"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      }
+    ]
+  },
+  {
+    "id": "a241b22d-a99c-4abb-8ccc-18011e7bd339",
+    "category_id": "4b563783-5f1e-47c8-93d1-de6a67d1136a",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "ABOUT US - 季節配方豆 夢見草配方",
+    "description": "<p>ABOUT US - 季節配方豆 夢見草配方</p><ul><li><strong>烘焙度：</strong>淺中焙</li><li><strong>產地：</strong>衣索比亞、瓜地馬拉</li><li><strong>風味：</strong>櫻花、伯爵茶、香檸、明亮順口、蜂蜜、綠茶</li><li><strong>烘焙日：</strong>2025/07/14</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 540,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-about-us---season-limited--e3-80-8cyumemigusa-blend-e3-80-8d-1-64f2ea720f0b.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-about-us---season-limited--e3-80-8cyumemigusa-blend-e3-80-8d-1-64f2ea720f0b.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-about-us---season-limited--e3-80-8cyumemigusa-blend-e3-80-8d-4-fbf9a69ec55c.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-about-us---season-limited--e3-80-8cyumemigusa-blend-e3-80-8d-7-6f85f8d9d439.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "60e2d39ef16fbe366ce5a8b2",
+    "origin": "衣索比亞、瓜地馬拉",
+    "roast_level": "淺中焙",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "櫻花",
+      "伯爵茶",
+      "香檸",
+      "明亮順口",
+      "蜂蜜",
+      "綠茶"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "櫻花",
+      "伯爵茶",
+      "香檸",
+      "明亮順口"
+    ],
+    "source_url": "https://www.dlalshop.com/products/about-us---season-limited-%E3%80%8Cyumemigusa-blend%E3%80%8D",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:58.426683+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3361e681-7229-4d4a-b139-e023c8f20b0f"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "4b563783-5f1e-47c8-93d1-de6a67d1136a"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "8ed74d48-c523-433c-a922-132171199a4a"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "eedb6ef2-dade-404f-9802-b71ae73203ac"
+      }
+    ]
+  },
+  {
+    "id": "7e637d85-ae0f-43b7-8368-ebe064c41708",
+    "category_id": "69b6b452-6845-4df6-8282-5a084b578125",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "ABOUT US - 咖啡包 桃花朵朵配方",
+    "description": "<p>ABOUT US - 咖啡包 桃花朵朵配方</p><ul><li><strong>烘焙度：</strong>中淺焙</li><li><strong>處理法：</strong>--</li><li><strong>產地：</strong>--</li><li><strong>豆種：</strong>--</li><li><strong>風味：</strong>花香、蔓越莓、核果、熟成柑橘、伯爵茶、尾韻悠長</li><li><strong>賞味期限：</strong>2026/02/27</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 70,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-about-us---drip-style-blend--e2-80-9chappiness-bloom-e2-80-9d-1-353457206a6f.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-about-us---drip-style-blend--e2-80-9chappiness-bloom-e2-80-9d-1-353457206a6f.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-about-us---drip-style-blend--e2-80-9chappiness-bloom-e2-80-9d-4-04844b987e07.jpg"
+    ],
+    "stock_quantity": 1,
+    "is_active": true,
+    "sku": "62f34a923d5e8f001faf926b",
+    "origin": "--",
+    "roast_level": "中淺焙",
+    "processing_method": "--",
+    "altitude": "",
+    "variety": [
+      "--"
+    ],
+    "flavor_notes": [
+      "花香",
+      "蔓越莓",
+      "核果",
+      "熟成柑橘",
+      "伯爵茶",
+      "尾韻悠長"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "花香",
+      "蔓越莓",
+      "核果",
+      "熟成柑橘"
+    ],
+    "source_url": "https://www.dlalshop.com/products/about-us---drip-style-blend-%E2%80%9Chappiness-bloom%E2%80%9D",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:57.128853+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "5168075f-207d-4613-a475-79d7a12e12db"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "9f901d94-6f29-47b4-822d-2d96f03ec907"
+      },
+      {
+        "category_id": "a1318655-9548-46ba-868d-bc8a61f628bf"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b57858d4-fea8-437d-93f3-66ab6c9f95f2"
+      },
+      {
+        "category_id": "eedb6ef2-dade-404f-9802-b71ae73203ac"
+      },
+      {
+        "category_id": "f2b7bd8b-7da0-4418-9f22-84e85346e3b1"
+      }
+    ]
+  },
+  {
+    "id": "233a09c3-0f57-4a39-932b-b8b383597bd3",
+    "category_id": "2321376a-1a32-45fc-997b-4d0ea016523b",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "[定期便單月體驗]咖啡豆-輕巧旅行組(200g)",
+    "description": "<p>[定期便單月體驗]咖啡豆-輕巧旅行組(200g)</p><ul><li><strong>定期便內容：</strong>每月配送根本在旅行嚴選日本各地咖啡豆</li><li><strong>配送量：</strong>200公克/月 (2~3種咖啡豆)</li><li><strong>風味：</strong>可選擇烘焙度，淺中焙、中深焙、不指定(推薦)</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 1199,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-try-our-monthly-subscription-1-65246dacdc3d.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-try-our-monthly-subscription-1-65246dacdc3d.jpg"
+    ],
+    "stock_quantity": 99,
+    "is_active": true,
+    "sku": "69538a41db41e59cbf8c9601",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "可選擇烘焙度",
+      "淺中焙",
+      "中深焙",
+      "不指定(推薦)"
+    ],
+    "weight_grams": 200,
+    "tags": [
+      "DLAL 咖啡定期便",
+      "DLAL 最新消息",
+      "定期便",
+      "咖啡豆",
+      "可選擇烘焙度",
+      "淺中焙",
+      "中深焙",
+      "不指定(推薦)"
+    ],
+    "source_url": "https://www.dlalshop.com/products/try-our-monthly-subscription",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:56.860814+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "14218464-e210-4618-8b2c-10d3d9b8786b"
+      },
+      {
+        "category_id": "2321376a-1a32-45fc-997b-4d0ea016523b"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "3efa4443-0d4b-4043-973a-ed150c5da725"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "a9868afd-9a0f-4faa-abf0-9bdcdfac1c4e"
+      }
+    ]
+  },
+  {
+    "id": "621b73dc-c234-487a-be2f-648775e6165e",
+    "category_id": "69b6b452-6845-4df6-8282-5a084b578125",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "ABOUT US - 咖啡包 小確幸配方",
+    "description": "<p>ABOUT US - 咖啡包 小確幸配方</p><ul><li><strong>烘焙度：</strong>中焙</li><li><strong>處理法：</strong>--</li><li><strong>產地：</strong>--</li><li><strong>豆種：</strong>--</li><li><strong>風味：</strong>李子、桃子、牛奶巧克力、烤堅果</li><li><strong>賞味期限：</strong>2026/04/29</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 70,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-about-us---drip-style-blend--e2-80-9cdaily-little-happiness-e2-80-9d-1-a0e981a37641.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-about-us---drip-style-blend--e2-80-9cdaily-little-happiness-e2-80-9d-1-a0e981a37641.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-about-us---drip-style-blend--e2-80-9cdaily-little-happiness-e2-80-9d-4-f6ee30ffccac.jpg"
+    ],
+    "stock_quantity": 1,
+    "is_active": true,
+    "sku": "62f34cc2fe066b001096084e",
+    "origin": "--",
+    "roast_level": "中焙",
+    "processing_method": "--",
+    "altitude": "",
+    "variety": [
+      "--"
+    ],
+    "flavor_notes": [
+      "李子",
+      "桃子",
+      "牛奶巧克力",
+      "烤堅果"
+    ],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 選購咖啡",
+      "DLAL 所有品牌",
+      "咖啡豆",
+      "李子",
+      "桃子",
+      "牛奶巧克力",
+      "烤堅果"
+    ],
+    "source_url": "https://www.dlalshop.com/products/about-us---drip-style-blend-%E2%80%9Cdaily-little-happiness%E2%80%9D",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:56.833013+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2e55cdef-9edc-4509-b577-0082a22ece1e"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "5168075f-207d-4613-a475-79d7a12e12db"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "7af0df0e-d0e0-44e0-a4ef-9ce57d302d1e"
+      },
+      {
+        "category_id": "b281bd61-e7b3-4c8f-abd0-766604cd3aa9"
+      },
+      {
+        "category_id": "b57858d4-fea8-437d-93f3-66ab6c9f95f2"
+      },
+      {
+        "category_id": "eedb6ef2-dade-404f-9802-b71ae73203ac"
+      },
+      {
+        "category_id": "f2b7bd8b-7da0-4418-9f22-84e85346e3b1"
+      }
+    ]
+  },
+  {
+    "id": "d78a1674-1f21-44b7-b6aa-a42250e9ea4b",
+    "category_id": "50565f61-9b12-4a16-bd68-5d246bd7e106",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "[定期便 6期]咖啡豆-奢華探險組(400g)",
+    "description": "<p>[定期便 6期]咖啡豆-奢華探險組(400g)</p><p>此商品由來源頁商品資料建立，保留原始商品網址供後台追蹤。</p><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 1749,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-luxury-adventure-coffee-400g-6-months-subscription-1-496a6ca6f9b3.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-luxury-adventure-coffee-400g-6-months-subscription-1-496a6ca6f9b3.jpg"
+    ],
+    "stock_quantity": 99,
+    "is_active": true,
+    "sku": "66e179ea299722000d9d7186",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 400,
+    "tags": [
+      "DLAL 咖啡定期便",
+      "定期便",
+      "咖啡豆"
+    ],
+    "source_url": "https://www.dlalshop.com/products/luxury-adventure-coffee-400g-6-months-subscription",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:55.776832+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "50565f61-9b12-4a16-bd68-5d246bd7e106"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "9b02f884-3253-417d-8825-2332a95f4de4"
+      },
+      {
+        "category_id": "a1be0400-7a27-4062-9595-216578853ae6"
+      },
+      {
+        "category_id": "a9868afd-9a0f-4faa-abf0-9bdcdfac1c4e"
+      }
+    ]
+  },
+  {
+    "id": "8733f6e0-b75d-4064-bb75-7e9977b807a8",
+    "category_id": "50565f61-9b12-4a16-bd68-5d246bd7e106",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "[定期便 3期]咖啡豆-奢華探險組(400g)",
+    "description": "<p>[定期便 3期]咖啡豆-奢華探險組(400g)</p><p>此商品由來源頁商品資料建立，保留原始商品網址供後台追蹤。</p><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 1799,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-luxury-adventure-coffee-400g-3-months-subscription-1-f1a611a45822.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-luxury-adventure-coffee-400g-3-months-subscription-1-f1a611a45822.jpg"
+    ],
+    "stock_quantity": 99,
+    "is_active": true,
+    "sku": "66e17981ff2b5200107f2079",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 400,
+    "tags": [
+      "DLAL 咖啡定期便",
+      "定期便",
+      "咖啡豆"
+    ],
+    "source_url": "https://www.dlalshop.com/products/luxury-adventure-coffee-400g-3-months-subscription",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:55.067453+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "50565f61-9b12-4a16-bd68-5d246bd7e106"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "65f38299-3bf3-4fca-a3be-84c9578a93b8"
+      },
+      {
+        "category_id": "9b02f884-3253-417d-8825-2332a95f4de4"
+      },
+      {
+        "category_id": "a9868afd-9a0f-4faa-abf0-9bdcdfac1c4e"
+      }
+    ]
+  },
+  {
+    "id": "45b8923f-38f4-4be8-8afc-12eb3f1a8087",
+    "category_id": "2321376a-1a32-45fc-997b-4d0ea016523b",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "[定期便 6期]咖啡豆-輕巧旅行組(200g)",
+    "description": "<p>[定期便 6期]咖啡豆-輕巧旅行組(200g)</p><ul><li><strong>定期便內容：</strong>每月配送根本在旅行嚴選日本各地咖啡豆</li><li><strong>配送量：</strong>200公克/月 (2~3種咖啡豆)</li><li><strong>訂閱時間：</strong>6期，一期為一個月</li><li><strong>風味：</strong>可選擇烘焙度，淺中焙、中深焙、不指定(推薦)</li><li><strong>每月出貨日：</strong>第1期：</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 1049,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-lightweight-travel-coffee-200g-6-months-subscription-1-e767365dd6c6.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-lightweight-travel-coffee-200g-6-months-subscription-1-e767365dd6c6.jpg"
+    ],
+    "stock_quantity": 99,
+    "is_active": true,
+    "sku": "66e178a9664770001cdcb543",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "可選擇烘焙度",
+      "淺中焙",
+      "中深焙",
+      "不指定(推薦)"
+    ],
+    "weight_grams": 200,
+    "tags": [
+      "DLAL 咖啡定期便",
+      "定期便",
+      "咖啡豆",
+      "可選擇烘焙度",
+      "淺中焙",
+      "中深焙",
+      "不指定(推薦)"
+    ],
+    "source_url": "https://www.dlalshop.com/products/lightweight-travel-coffee-200g-6-months-subscription",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:54.814474+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2321376a-1a32-45fc-997b-4d0ea016523b"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "9b02f884-3253-417d-8825-2332a95f4de4"
+      },
+      {
+        "category_id": "a1be0400-7a27-4062-9595-216578853ae6"
+      },
+      {
+        "category_id": "a9868afd-9a0f-4faa-abf0-9bdcdfac1c4e"
+      }
+    ]
+  },
+  {
+    "id": "4ac307b7-cda4-434a-880c-4478dac48ea8",
+    "category_id": "50565f61-9b12-4a16-bd68-5d246bd7e106",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "[定期便 12期]咖啡豆-奢華探險組(400g)",
+    "description": "<p>[定期便 12期]咖啡豆-奢華探險組(400g)</p><p>此商品由來源頁商品資料建立，保留原始商品網址供後台追蹤。</p><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 1699,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-luxury-adventure-coffee-400g-12-months-subscription-1-55a9e4922e46.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-luxury-adventure-coffee-400g-12-months-subscription-1-55a9e4922e46.jpg"
+    ],
+    "stock_quantity": 99,
+    "is_active": true,
+    "sku": "66e17a5b37e29a0016429995",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 400,
+    "tags": [
+      "DLAL 咖啡定期便",
+      "定期便",
+      "咖啡豆"
+    ],
+    "source_url": "https://www.dlalshop.com/products/luxury-adventure-coffee-400g-12-months-subscription",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:54.710698+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "50565f61-9b12-4a16-bd68-5d246bd7e106"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "6ef49786-8606-48b8-94a9-9754d4d77e1a"
+      },
+      {
+        "category_id": "9b02f884-3253-417d-8825-2332a95f4de4"
+      },
+      {
+        "category_id": "a9868afd-9a0f-4faa-abf0-9bdcdfac1c4e"
+      }
+    ]
+  },
+  {
+    "id": "968864a3-bdc5-421f-98f0-cb1036367ec8",
+    "category_id": "2321376a-1a32-45fc-997b-4d0ea016523b",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "[定期便 3期]咖啡豆-輕巧旅行組(200g)",
+    "description": "<p>[定期便 3期]咖啡豆-輕巧旅行組(200g)</p><ul><li><strong>定期便內容：</strong>每月配送根本在旅行嚴選日本各地咖啡豆</li><li><strong>配送量：</strong>200公克/月 (2~3種咖啡豆)</li><li><strong>訂閱時間：</strong>3期，一期為一個月</li><li><strong>風味：</strong>可選擇烘焙度，淺中焙、中深焙、不指定(推薦)</li><li><strong>每月出貨日：</strong>第1期：</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 1099,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-lightweight-travel-coffee-200g-3-months-subscription-1-3c3f09d0fb2e.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-lightweight-travel-coffee-200g-3-months-subscription-1-3c3f09d0fb2e.jpg"
+    ],
+    "stock_quantity": 99,
+    "is_active": true,
+    "sku": "66e17849f1392d0016a2abb9",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "可選擇烘焙度",
+      "淺中焙",
+      "中深焙",
+      "不指定(推薦)"
+    ],
+    "weight_grams": 200,
+    "tags": [
+      "DLAL 咖啡定期便",
+      "定期便",
+      "咖啡豆",
+      "可選擇烘焙度",
+      "淺中焙",
+      "中深焙",
+      "不指定(推薦)"
+    ],
+    "source_url": "https://www.dlalshop.com/products/lightweight-travel-coffee-200g-3-months-subscription",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:53.876898+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2321376a-1a32-45fc-997b-4d0ea016523b"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "65f38299-3bf3-4fca-a3be-84c9578a93b8"
+      },
+      {
+        "category_id": "9b02f884-3253-417d-8825-2332a95f4de4"
+      },
+      {
+        "category_id": "a9868afd-9a0f-4faa-abf0-9bdcdfac1c4e"
+      }
+    ]
+  },
+  {
+    "id": "b222af82-71de-4508-b656-55f1aac872fa",
+    "category_id": "2321376a-1a32-45fc-997b-4d0ea016523b",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "[定期便 12期]咖啡豆-輕巧旅行組(200g)",
+    "description": "<p>[定期便 12期]咖啡豆-輕巧旅行組(200g)</p><ul><li><strong>定期便內容：</strong>每月配送根本在旅行嚴選日本各地咖啡豆</li><li><strong>配送量：</strong>200公克/月 (2~3種咖啡豆)</li><li><strong>訂閱時間：</strong>12期，一期為一個月</li><li><strong>風味：</strong>可選擇烘焙度，淺中焙、中深焙、不指定(推薦)</li><li><strong>每月出貨日：</strong>第1期：</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 999,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-lightweight-travel-coffee-200g-12-months-subscription-1-a87063837e7c.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-lightweight-travel-coffee-200g-12-months-subscription-1-a87063837e7c.jpg"
+    ],
+    "stock_quantity": 99,
+    "is_active": true,
+    "sku": "66e1791037e29a001f4297f1",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [
+      "可選擇烘焙度",
+      "淺中焙",
+      "中深焙",
+      "不指定(推薦)"
+    ],
+    "weight_grams": 200,
+    "tags": [
+      "DLAL 咖啡定期便",
+      "定期便",
+      "咖啡豆",
+      "可選擇烘焙度",
+      "淺中焙",
+      "中深焙",
+      "不指定(推薦)"
+    ],
+    "source_url": "https://www.dlalshop.com/products/lightweight-travel-coffee-200g-12-months-subscription",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:53.62584+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "2321376a-1a32-45fc-997b-4d0ea016523b"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "6ef49786-8606-48b8-94a9-9754d4d77e1a"
+      },
+      {
+        "category_id": "9b02f884-3253-417d-8825-2332a95f4de4"
+      },
+      {
+        "category_id": "a9868afd-9a0f-4faa-abf0-9bdcdfac1c4e"
+      }
+    ]
+  },
+  {
+    "id": "7b2e284a-f2f3-4664-ba65-8f03f6dde53c",
+    "category_id": "afde86cc-e99e-4223-9c7f-c6871a524ffd",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "[定期便 6期]咖啡濾掛包-環島饗宴(20包)",
+    "description": "<p>[定期便 6期]咖啡濾掛包-環島饗宴(20包)</p><p>此商品由來源頁商品資料建立，保留原始商品網址供後台追蹤。</p><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 1420,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-coffee-ear-drip-filter-bag-pack-of-20-6-months-subscription-1-a192b7396ec8.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-coffee-ear-drip-filter-bag-pack-of-20-6-months-subscription-1-a192b7396ec8.jpg"
+    ],
+    "stock_quantity": 99,
+    "is_active": true,
+    "sku": "66ebfa7f1cabc3002226c4d3",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 咖啡定期便",
+      "掛耳包",
+      "定期便"
+    ],
+    "source_url": "https://www.dlalshop.com/products/coffee-ear-drip-filter-bag-pack-of-20-6-months-subscription",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:53.417415+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "9b02f884-3253-417d-8825-2332a95f4de4"
+      },
+      {
+        "category_id": "a1be0400-7a27-4062-9595-216578853ae6"
+      },
+      {
+        "category_id": "a9868afd-9a0f-4faa-abf0-9bdcdfac1c4e"
+      },
+      {
+        "category_id": "afde86cc-e99e-4223-9c7f-c6871a524ffd"
+      }
+    ]
+  },
+  {
+    "id": "b558602d-3726-449c-9a2b-1c908a4f556b",
+    "category_id": "afde86cc-e99e-4223-9c7f-c6871a524ffd",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "[定期便 3期]咖啡濾掛包-環島饗宴(20包)",
+    "description": "<p>[定期便 3期]咖啡濾掛包-環島饗宴(20包)</p><p>此商品由來源頁商品資料建立，保留原始商品網址供後台追蹤。</p><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 1450,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-coffee-ear-drip-filter-bag-pack-of-20-3-months-subscription-1-da5a4e7d3084.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-coffee-ear-drip-filter-bag-pack-of-20-3-months-subscription-1-da5a4e7d3084.jpg"
+    ],
+    "stock_quantity": 99,
+    "is_active": true,
+    "sku": "66ebf9c655e0b5000d2ff56d",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 咖啡定期便",
+      "掛耳包",
+      "定期便"
+    ],
+    "source_url": "https://www.dlalshop.com/products/coffee-ear-drip-filter-bag-pack-of-20-3-months-subscription",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:53.387308+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "65f38299-3bf3-4fca-a3be-84c9578a93b8"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "9b02f884-3253-417d-8825-2332a95f4de4"
+      },
+      {
+        "category_id": "a9868afd-9a0f-4faa-abf0-9bdcdfac1c4e"
+      },
+      {
+        "category_id": "afde86cc-e99e-4223-9c7f-c6871a524ffd"
+      }
+    ]
+  },
+  {
+    "id": "3c4e4875-ef21-4351-9bfc-5089e1b5dbb0",
+    "category_id": "afde86cc-e99e-4223-9c7f-c6871a524ffd",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "[定期便 12期]咖啡濾掛包-環島饗宴(20包)",
+    "description": "<p>[定期便 12期]咖啡濾掛包-環島饗宴(20包)</p><p>此商品由來源頁商品資料建立，保留原始商品網址供後台追蹤。</p><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 1400,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-coffee-ear-drip-filter-bag-pack-of-20-12-months-subscription-1-169c108bc214.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-coffee-ear-drip-filter-bag-pack-of-20-12-months-subscription-1-169c108bc214.jpg"
+    ],
+    "stock_quantity": 99,
+    "is_active": true,
+    "sku": "66ebfb12f03b710016957987",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 咖啡定期便",
+      "掛耳包",
+      "定期便"
+    ],
+    "source_url": "https://www.dlalshop.com/products/coffee-ear-drip-filter-bag-pack-of-20-12-months-subscription",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:52.730198+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "6ef49786-8606-48b8-94a9-9754d4d77e1a"
+      },
+      {
+        "category_id": "9b02f884-3253-417d-8825-2332a95f4de4"
+      },
+      {
+        "category_id": "a9868afd-9a0f-4faa-abf0-9bdcdfac1c4e"
+      },
+      {
+        "category_id": "afde86cc-e99e-4223-9c7f-c6871a524ffd"
+      }
+    ]
+  },
+  {
+    "id": "34211f3b-118f-482f-9711-8262e8331db6",
+    "category_id": "afde86cc-e99e-4223-9c7f-c6871a524ffd",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "[定期便 6期]咖啡濾掛包-小旅隨行(10包)",
+    "description": "<p>[定期便 6期]咖啡濾掛包-小旅隨行(10包)</p><p>此商品由來源頁商品資料建立，保留原始商品網址供後台追蹤。</p><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 739,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-coffee-ear-drip-filter-bag-pack-of-10-6-months-subscription-1-4ebe20a33a5d.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-coffee-ear-drip-filter-bag-pack-of-10-6-months-subscription-1-4ebe20a33a5d.jpg"
+    ],
+    "stock_quantity": 99,
+    "is_active": true,
+    "sku": "66ebf82282d0f30019607ade",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 咖啡定期便",
+      "掛耳包",
+      "定期便"
+    ],
+    "source_url": "https://www.dlalshop.com/products/coffee-ear-drip-filter-bag-pack-of-10-6-months-subscription",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:52.568033+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "9b02f884-3253-417d-8825-2332a95f4de4"
+      },
+      {
+        "category_id": "a1be0400-7a27-4062-9595-216578853ae6"
+      },
+      {
+        "category_id": "a9868afd-9a0f-4faa-abf0-9bdcdfac1c4e"
+      },
+      {
+        "category_id": "afde86cc-e99e-4223-9c7f-c6871a524ffd"
+      }
+    ]
+  },
+  {
+    "id": "daf73169-e7e1-4542-8a9f-c7e020b38c6d",
+    "category_id": "afde86cc-e99e-4223-9c7f-c6871a524ffd",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "[定期便 12期]咖啡濾掛包-小旅隨行(10包)",
+    "description": "<p>[定期便 12期]咖啡濾掛包-小旅隨行(10包)</p><p>此商品由來源頁商品資料建立，保留原始商品網址供後台追蹤。</p><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 729,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-coffee-ear-drip-filter-bag-pack-of-10-12-months-subscription-1-98ccd5c792e7.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-coffee-ear-drip-filter-bag-pack-of-10-12-months-subscription-1-98ccd5c792e7.jpg"
+    ],
+    "stock_quantity": 99,
+    "is_active": true,
+    "sku": "66ebf8cf66cdda0016ce0dd0",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 咖啡定期便",
+      "掛耳包",
+      "定期便"
+    ],
+    "source_url": "https://www.dlalshop.com/products/coffee-ear-drip-filter-bag-pack-of-10-12-months-subscription",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:51.861268+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "6ef49786-8606-48b8-94a9-9754d4d77e1a"
+      },
+      {
+        "category_id": "9b02f884-3253-417d-8825-2332a95f4de4"
+      },
+      {
+        "category_id": "a9868afd-9a0f-4faa-abf0-9bdcdfac1c4e"
+      },
+      {
+        "category_id": "afde86cc-e99e-4223-9c7f-c6871a524ffd"
+      }
+    ]
+  },
+  {
+    "id": "e96498c2-e445-4e91-b524-5ead3ff3d225",
+    "category_id": "afde86cc-e99e-4223-9c7f-c6871a524ffd",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "[定期便 3期]咖啡濾掛包-小旅隨行(10包)",
+    "description": "<p>[定期便 3期]咖啡濾掛包-小旅隨行(10包)</p><p>此商品由來源頁商品資料建立，保留原始商品網址供後台追蹤。</p><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 750,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-coffee-ear-drip-filter-bag-pack-of-10-3-months-subscription-1-cb0d739964ff.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-coffee-ear-drip-filter-bag-pack-of-10-3-months-subscription-1-cb0d739964ff.jpg"
+    ],
+    "stock_quantity": 99,
+    "is_active": true,
+    "sku": "66ebf3fed89d99001f5fa338",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 咖啡定期便",
+      "掛耳包",
+      "定期便"
+    ],
+    "source_url": "https://www.dlalshop.com/products/coffee-ear-drip-filter-bag-pack-of-10-3-months-subscription",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:51.850438+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "65f38299-3bf3-4fca-a3be-84c9578a93b8"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "9b02f884-3253-417d-8825-2332a95f4de4"
+      },
+      {
+        "category_id": "a9868afd-9a0f-4faa-abf0-9bdcdfac1c4e"
+      },
+      {
+        "category_id": "afde86cc-e99e-4223-9c7f-c6871a524ffd"
+      }
+    ]
+  },
+  {
+    "id": "020dd8f0-f653-4624-9b10-bb98e595822c",
+    "category_id": "eea8d0ea-aa9b-42a0-a4b6-f4d962e991fb",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "TRSC X ORIGAMI - 聯名咖啡杯盤組（The rising sun coffee）",
+    "description": "<p>TRSC X ORIGAMI - 聯名咖啡杯盤組（The rising sun coffee）</p><ul><li><strong>內容物：</strong>咖啡杯一入、咖啡盤一入</li><li><strong>產地：</strong>日本</li><li><strong>尺寸：</strong>3 oz 或 8 oz</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 690,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-trsc-origami-the-rising-sun-coffee-cup-1-e792ef96893d.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-trsc-origami-the-rising-sun-coffee-cup-1-e792ef96893d.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-trsc-origami-the-rising-sun-coffee-cup-4-f46c8b6838d9.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-trsc-origami-the-rising-sun-coffee-cup-7-dba494865e12.jpg"
+    ],
+    "stock_quantity": 4,
+    "is_active": true,
+    "sku": "637b4a7703a649002e1019a4",
+    "origin": "日本",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 器具用品",
+      "DLAL 最新消息",
+      "器具用品"
+    ],
+    "source_url": "https://www.dlalshop.com/products/trsc-origami-the-rising-sun-coffee-cup",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:51.297533+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "03003c7b-4501-4959-bdc4-1b989577d91a"
+      },
+      {
+        "category_id": "1e103e98-19ff-4d7a-bc13-c576e7b77492"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "cf6d366f-9055-4606-8c99-f99099efa7da"
+      },
+      {
+        "category_id": "eea8d0ea-aa9b-42a0-a4b6-f4d962e991fb"
+      }
+    ]
+  },
+  {
+    "id": "bbef2f57-b0f8-47df-a851-cefb5dd19e17",
+    "category_id": "bc366360-8fa0-4006-9228-af9d4899932e",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "TOAST - TRIO V2 TRITAN 三重奏濾杯",
+    "description": "<p>TOAST - TRIO V2 TRITAN 三重奏濾杯</p><ul><li><strong>內容物：</strong>tritan濾杯一入、矽膠底座一入、壓紙器一入</li><li><strong>產地：</strong>台灣</li><li><strong>材質：</strong>矽膠,tritan</li><li><strong>尺寸：</strong>12.5*11*10cm</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 1250,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-toast-coffee-dripper-trio-v2-trita-1-30e33ebf6274.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-toast-coffee-dripper-trio-v2-trita-1-30e33ebf6274.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-toast-coffee-dripper-trio-v2-trita-4-2060bd627f89.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-toast-coffee-dripper-trio-v2-trita-7-ae55bc90cc34.jpg"
+    ],
+    "stock_quantity": 8,
+    "is_active": true,
+    "sku": "685260c3aba0bf000e934135",
+    "origin": "台灣",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 器具用品",
+      "器具用品"
+    ],
+    "source_url": "https://www.dlalshop.com/products/toast-coffee-dripper-trio-v2-trita",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:50.940047+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "1e103e98-19ff-4d7a-bc13-c576e7b77492"
+      },
+      {
+        "category_id": "3f9ba6ef-d964-4f32-a33d-ecaad736254e"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "69b6b452-6845-4df6-8282-5a084b578125"
+      },
+      {
+        "category_id": "bc366360-8fa0-4006-9228-af9d4899932e"
+      }
+    ]
+  },
+  {
+    "id": "0e16239e-0d70-4ae9-8476-73ca2791958a",
+    "category_id": "eea8d0ea-aa9b-42a0-a4b6-f4d962e991fb",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "今村能章 - 陶藝人臉金裏小杯 墨 Sumi - 含手工皮套（20250122-17）",
+    "description": "<p>今村能章 - 陶藝人臉金裏小杯 墨 Sumi - 含手工皮套（20250122-17）</p><ul><li><strong>款式：</strong>人臉杯</li><li><strong>樣式：</strong>金裏小杯</li><li><strong>重量：</strong>66.7 g</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 17850,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-imamura-yoshiaki-art-cups-sumi-20250122-17-1-8d59c2528929.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-imamura-yoshiaki-art-cups-sumi-20250122-17-1-8d59c2528929.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-imamura-yoshiaki-art-cups-sumi-20250122-17-4-002168be6c89.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-imamura-yoshiaki-art-cups-sumi-20250122-17-7-aca93c59ace8.jpg"
+    ],
+    "stock_quantity": 1,
+    "is_active": true,
+    "sku": "681b0f8aee4aa8000ce5a1fa",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 7,
+    "tags": [
+      "DLAL 器具用品",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "器具用品"
+    ],
+    "source_url": "https://www.dlalshop.com/products/imamura-yoshiaki-art-cups-sumi-20250122-17",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:50.144043+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "1e103e98-19ff-4d7a-bc13-c576e7b77492"
+      },
+      {
+        "category_id": "22cee516-8917-4039-b0de-69bec65bdc75"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "6a124d79-c4c8-46b0-9a84-cf221b5c4306"
+      },
+      {
+        "category_id": "eea8d0ea-aa9b-42a0-a4b6-f4d962e991fb"
+      }
+    ]
+  },
+  {
+    "id": "bffb73fa-6305-4775-9e7a-6bbfdc40f971",
+    "category_id": "eea8d0ea-aa9b-42a0-a4b6-f4d962e991fb",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "今村能章 - 陶藝厚金裏濃縮杯 宍 Shishi - 含手工皮套（20250122-16）",
+    "description": "<p>今村能章 - 陶藝厚金裏濃縮杯 宍 Shishi - 含手工皮套（20250122-16）</p><ul><li><strong>款式：</strong>金裏厚濃縮杯</li><li><strong>樣式：</strong>噴砂橘色漸層</li><li><strong>重量：</strong>124.6 g</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 18850,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-imamura-yoshiaki-art-cups-shishi-20250122-16-1-a2d143d057d2.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-imamura-yoshiaki-art-cups-shishi-20250122-16-1-a2d143d057d2.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-imamura-yoshiaki-art-cups-shishi-20250122-16-4-d10a0d270035.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-imamura-yoshiaki-art-cups-shishi-20250122-16-7-e44e7a688f61.jpg"
+    ],
+    "stock_quantity": 1,
+    "is_active": true,
+    "sku": "681b106263ccba000fd33c1e",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 6,
+    "tags": [
+      "DLAL 器具用品",
+      "DLAL 最新消息",
+      "DLAL 所有品牌",
+      "器具用品"
+    ],
+    "source_url": "https://www.dlalshop.com/products/imamura-yoshiaki-art-cups-shishi-20250122-16",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:49.995155+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "1e103e98-19ff-4d7a-bc13-c576e7b77492"
+      },
+      {
+        "category_id": "22cee516-8917-4039-b0de-69bec65bdc75"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "6a124d79-c4c8-46b0-9a84-cf221b5c4306"
+      },
+      {
+        "category_id": "eea8d0ea-aa9b-42a0-a4b6-f4d962e991fb"
+      }
+    ]
+  },
+  {
+    "id": "251991b7-833f-41d6-8382-448de3cc06b0",
+    "category_id": "0a0746f5-78f2-40e1-bc8c-62e0e05358b3",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "台灣山系列擴香石（擴香石＋香氛精油）",
+    "description": "<p>台灣山系列擴香石（擴香石＋香氛精油）</p><ul><li><strong>山岳縮影，化為形體收藏：</strong>十座高山以等比縮小製作，細緻雕刻重現山脈起伏的溫潤手感，將台灣地貌之美重現於掌心，一手掌握土地的溫度。</li><li><strong>專屬香氣，呼應山林靈魂：</strong>每座山搭配一款獨有香氣，從薄霧瀰漫的山谷，到苔蘚濕潤的深林，氣味與山形靜靜交會，如同山林的呢喃低語。</li><li><strong>永續材質，延續自然循環：</strong>以牡蠣殼粉製成的擴香石，具備碳捕捉效果，每一次使用都是為地球減碳的一份行動，讓香氣的存在不只是療癒，更是對環境的溫柔守護。</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 880,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-taiwan-mountain-series-diffuser-stone-1-53412bd793e0.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-taiwan-mountain-series-diffuser-stone-1-53412bd793e0.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-taiwan-mountain-series-diffuser-stone-4-190304b55ac9.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-taiwan-mountain-series-diffuser-stone-7-f9049c1dd418.jpg"
+    ],
+    "stock_quantity": 18,
+    "is_active": true,
+    "sku": "687b39d5859b890012267ff5",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 器具用品"
+    ],
+    "source_url": "https://www.dlalshop.com/products/taiwan-mountain-series-diffuser-stone",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:49.357822+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "0a0746f5-78f2-40e1-bc8c-62e0e05358b3"
+      },
+      {
+        "category_id": "1e103e98-19ff-4d7a-bc13-c576e7b77492"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      }
+    ]
+  },
+  {
+    "id": "4ce9b873-6275-4c68-a754-b436246362d0",
+    "category_id": "bc366360-8fa0-4006-9228-af9d4899932e",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "Hario - V60 VWI聯名咖啡渣濾杯（陶作坊)",
+    "description": "<p>Hario - V60 VWI聯名咖啡渣濾杯（陶作坊)</p><ul><li><strong>材質：</strong>老岩泥 (耐熱溫度差120℃)</li><li><strong>沖煮份量：</strong>1~4杯</li><li><strong>詳細尺寸：</strong>14CM × 12CM × 10.2CM / 口徑11.6 CM</li><li><strong>產地：</strong>台灣</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 1600,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-hario-v60-vwi-e8-81-af-e5-90-8d-e5-92-96-e5-95-a1-e6-b8-a3-e6-bf-be-e6-9d-af-ef-bc-88-e9-99-b6-e4-bd-9c-e5-9d-8a-1-8b11a5f04ca7.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-hario-v60-vwi-e8-81-af-e5-90-8d-e5-92-96-e5-95-a1-e6-b8-a3-e6-bf-be-e6-9d-af-ef-bc-88-e9-99-b6-e4-bd-9c-e5-9d-8a-1-8b11a5f04ca7.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-hario-v60-vwi-e8-81-af-e5-90-8d-e5-92-96-e5-95-a1-e6-b8-a3-e6-bf-be-e6-9d-af-ef-bc-88-e9-99-b6-e4-bd-9c-e5-9d-8a-4-81c765b869d0.jpg"
+    ],
+    "stock_quantity": 2,
+    "is_active": true,
+    "sku": "68ef45695b05aa000e6892a7",
+    "origin": "台灣",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 器具用品",
+      "器具用品"
+    ],
+    "source_url": "https://www.dlalshop.com/products/hario-v60-vwi%E8%81%AF%E5%90%8D%E5%92%96%E5%95%A1%E6%B8%A3%E6%BF%BE%E6%9D%AF%EF%BC%88%E9%99%B6%E4%BD%9C%E5%9D%8A",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:49.352629+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "1e103e98-19ff-4d7a-bc13-c576e7b77492"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "bc366360-8fa0-4006-9228-af9d4899932e"
+      }
+    ]
+  },
+  {
+    "id": "ccc6cec2-1ee3-438d-92aa-b92a4fd219d8",
+    "category_id": "bc366360-8fa0-4006-9228-af9d4899932e",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "根本在旅行 - 杯測匙",
+    "description": "<p>根本在旅行 - 杯測匙</p><ul><li><strong>材質：</strong>不鏽鋼食品級真空鍍鈦 SCS-304</li><li><strong>顏色：</strong>耀黑、鈦藍、古銅、亮金、炫彩</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 399,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-drink-like-a-local-cupping-spoon-1-984088909d19.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-drink-like-a-local-cupping-spoon-1-984088909d19.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-drink-like-a-local-cupping-spoon-4-6fdc8eec3a5e.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-drink-like-a-local-cupping-spoon-7-6a573f808d25.jpg"
+    ],
+    "stock_quantity": 4,
+    "is_active": true,
+    "sku": "66220ba03fdb510017002cb3",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 器具用品",
+      "DLAL 最新消息",
+      "器具用品"
+    ],
+    "source_url": "https://www.dlalshop.com/products/drink-like-a-local-cupping-spoon",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:47.3934+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "03003c7b-4501-4959-bdc4-1b989577d91a"
+      },
+      {
+        "category_id": "1e103e98-19ff-4d7a-bc13-c576e7b77492"
+      },
+      {
+        "category_id": "2ec3db40-a202-4dcc-854d-7eae55d882df"
+      },
+      {
+        "category_id": "408efd43-dbf1-4ab8-990a-1859fb402d07"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "bc366360-8fa0-4006-9228-af9d4899932e"
+      }
+    ]
+  },
+  {
+    "id": "3082893b-788c-4a4a-9a5b-164e06fc555a",
+    "category_id": "0a0746f5-78f2-40e1-bc8c-62e0e05358b3",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "CACAOCAT - 黑貓托特包",
+    "description": "<p>CACAOCAT - 黑貓托特包</p><ul><li><strong>尺寸：</strong>39 x 29 x 15 CM</li><li><strong>材質：</strong>帆布</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 650,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cacaocat-cat-totebag-1-5aa1f4b1da68.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cacaocat-cat-totebag-1-5aa1f4b1da68.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cacaocat-cat-totebag-4-e544a0035765.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cacaocat-cat-totebag-7-1efa450f2ad5.jpg"
+    ],
+    "stock_quantity": 2,
+    "is_active": true,
+    "sku": "65a259f872b229001abcecbd",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 器具用品",
+      "DLAL 所有品牌"
+    ],
+    "source_url": "https://www.dlalshop.com/products/cacaocat-cat-totebag",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:46.896159+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "0a0746f5-78f2-40e1-bc8c-62e0e05358b3"
+      },
+      {
+        "category_id": "1e103e98-19ff-4d7a-bc13-c576e7b77492"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "ae20cb11-7ce7-4b04-a796-cfff108c15f6"
+      }
+    ]
+  },
+  {
+    "id": "d6121c9a-5e32-42ff-9c36-497281fb69ff",
+    "category_id": "0a0746f5-78f2-40e1-bc8c-62e0e05358b3",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "CACAOCAT - 貓貓冷水瓶",
+    "description": "<p>CACAOCAT - 貓貓冷水瓶</p><ul><li><strong>容量：</strong>300 ML</li><li><strong>材質：</strong>塑膠</li><li><strong>耐熱：</strong>60度</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 350,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cacaocat-cat-bottle-1-9d33e1325fdf.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cacaocat-cat-bottle-1-9d33e1325fdf.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cacaocat-cat-bottle-4-62af595961b5.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cacaocat-cat-bottle-7-a7efd6288387.jpg"
+    ],
+    "stock_quantity": 2,
+    "is_active": true,
+    "sku": "65a25c2215a7a900175c16d6",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 器具用品",
+      "DLAL 所有品牌"
+    ],
+    "source_url": "https://www.dlalshop.com/products/cacaocat-cat-bottle",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:46.543008+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "0a0746f5-78f2-40e1-bc8c-62e0e05358b3"
+      },
+      {
+        "category_id": "1e103e98-19ff-4d7a-bc13-c576e7b77492"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "ae20cb11-7ce7-4b04-a796-cfff108c15f6"
+      }
+    ]
+  },
+  {
+    "id": "78b14dcf-de38-4f12-988a-ac6fd62796cc",
+    "category_id": "0a0746f5-78f2-40e1-bc8c-62e0e05358b3",
+    "vendor_id": "299e21b3-7527-4504-bc13-426771ff0fc0",
+    "name": "CACAOCAT - 黑貓布偶",
+    "description": "<p>CACAOCAT - 黑貓布偶</p><ul><li><strong>材質：</strong>聚脂纖維</li><li><strong>身高：</strong>約 21 CM</li></ul><p>商品資料整理自 www.dlalshop.com，已轉為 Nestobi 商品欄位。</p>",
+    "price": 1250,
+    "image_url": "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cacaocat-cat-soft-toy-1-c6db5d28f478.jpg",
+    "images": [
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cacaocat-cat-soft-toy-1-c6db5d28f478.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cacaocat-cat-soft-toy-4-e180bbd6b03b.jpg",
+      "https://qthciyizquumeufrujyp.supabase.co/storage/v1/object/public/site-assets/products/dlal-cacaocat-cat-soft-toy-7-6046a389d00e.jpg"
+    ],
+    "stock_quantity": 0,
+    "is_active": true,
+    "sku": "65a25e8fe42b1c001a345d20",
+    "origin": "",
+    "roast_level": "",
+    "processing_method": "",
+    "altitude": "",
+    "variety": [],
+    "flavor_notes": [],
+    "weight_grams": 0,
+    "tags": [
+      "DLAL 器具用品",
+      "DLAL 所有品牌"
+    ],
+    "source_url": "https://www.dlalshop.com/products/cacaocat-cat-soft-toy",
+    "roast_date": null,
+    "created_at": "2026-05-06T04:48:46.519621+00:00",
+    "updated_at": "2026-05-08T07:36:38.652221+00:00",
+    "product_category_links": [
+      {
+        "category_id": "0a0746f5-78f2-40e1-bc8c-62e0e05358b3"
+      },
+      {
+        "category_id": "1e103e98-19ff-4d7a-bc13-c576e7b77492"
+      },
+      {
+        "category_id": "62434d7e-5535-4a84-87ac-7c0f2cbe193d"
+      },
+      {
+        "category_id": "ae20cb11-7ce7-4b04-a796-cfff108c15f6"
+      }
+    ]
+  }
+]
