@@ -11,6 +11,7 @@ import {
   getTranslationRuntimeState,
   translateBlogPostsFromCacheOnly,
   translateBlogPostsOnDemand,
+  translateHotelsFromCacheOnly,
   translateHotelsOnDemand,
   translateProductsFromCacheOnly,
   translateProductsOnDemand,
@@ -47,6 +48,30 @@ const fadeUp = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0 } };
 function stripHtml(value: string | null | undefined) {
   if (!value) return '';
   return value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+const CITY_TRANSLATIONS_EN: Record<string, string> = {
+  宜蘭: 'Yilan',
+  台北: 'Taipei',
+  臺北: 'Taipei',
+  新北: 'New Taipei',
+  桃園: 'Taoyuan',
+  台中: 'Taichung',
+  臺中: 'Taichung',
+  台南: 'Tainan',
+  臺南: 'Tainan',
+  高雄: 'Kaohsiung',
+  花蓮: 'Hualien',
+  台東: 'Taitung',
+  臺東: 'Taitung',
+};
+
+function localizeCityName(text: string | null | undefined, isEn: boolean) {
+  const value = (text || '').trim();
+  if (!value || !isEn) return value;
+  let output = value;
+  for (const [zh, en] of Object.entries(CITY_TRANSLATIONS_EN)) output = output.replaceAll(zh, en);
+  return output;
 }
 
 export default function Home() {
@@ -153,7 +178,7 @@ export default function Home() {
     setTranslationNotice(runtime.tableUnavailable || runtime.isLocalProxyMode ? t.translationFallback : t.translationSyncing);
     Promise.all([
       translateRoomsFromCacheOnly(featuredRooms, lang),
-      translateHotelsOnDemand(
+      translateHotelsFromCacheOnly(
         featuredRooms
           .map(room => room.hotels)
           .filter((hotel): hotel is NonNullable<Room['hotels']> => Boolean(hotel))
@@ -301,7 +326,7 @@ export default function Home() {
                       {room.hotels?.name && <p className="mb-2 flex items-center gap-1 text-xs font-semibold text-[#8B6840]"><Building2 size={13} />{room.hotels.name}</p>}
                       <h3 className="text-base font-bold text-gray-900">{room.name}</h3>
                       <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-500">
-                        <span className="flex items-center gap-1"><MapPin size={13} />{room.location || room.hotels?.city || '-'}</span>
+                        <span className="flex items-center gap-1"><MapPin size={13} />{localizeCityName(room.location || room.hotels?.city || '-', isEn)}</span>
                         <span className="flex items-center gap-1"><Users size={13} />{room.capacity} {t.guests}</span>
                       </div>
                       <div className="mt-5 flex items-end justify-between border-t border-gray-100 pt-4">

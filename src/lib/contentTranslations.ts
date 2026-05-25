@@ -357,6 +357,31 @@ export async function translateHotelsOnDemand<T extends HotelLike>(hotels: T[], 
   });
 }
 
+export async function translateHotelsFromCacheOnly<T extends HotelLike>(hotels: T[], targetLang: string): Promise<T[]> {
+  if (!hotels.length || targetLang === 'zh-TW') return hotels;
+
+  const roomLike = hotels.map(h => ({
+    id: h.id,
+    name: h.name || '',
+    description: '',
+    location: h.city || '',
+    amenities: [],
+  }));
+
+  const translated = await translateRoomsFromCacheOnly(roomLike, targetLang);
+  const map = new Map(translated.map(item => [item.id, item]));
+
+  return hotels.map(h => {
+    const t = map.get(h.id);
+    if (!t) return h;
+    return {
+      ...h,
+      name: t.name || h.name,
+      city: t.location || h.city,
+    };
+  });
+}
+
 async function translateGenericOnDemand<
   T extends { id: string },
   E extends { field_key: string; source_text: string; source_hash: string }
