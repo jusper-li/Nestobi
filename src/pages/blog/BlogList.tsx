@@ -17,7 +17,15 @@ import {
 import Navigation from '../../components/Navigation';
 import Footer from '../../components/Footer';
 import SEOHead from '../../components/SEOHead';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useProgressiveList } from '../../hooks/useProgressiveList';
+import {
+  translateBlogCategoriesFromCacheOnly,
+  getTranslationRuntimeState,
+  translateBlogCategoriesOnDemand,
+  translateBlogPostsFromCacheOnly,
+  translateBlogPostsOnDemand,
+} from '../../lib/contentTranslations';
 import { BLOG_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
 import { fetchPublicList, fetchSnapshotList, readCachedList, withRetry, writeCachedList } from '../../lib/listData';
 import { supabase } from '../../lib/supabase';
@@ -64,13 +72,13 @@ const DEFAULT_BLOG_CATEGORIES: BlogCategory[] = [
   { id: 'coffee-travel', name: '咖啡旅行', slug: 'coffee-travel', parent_id: null, display_order: 10 },
   { id: 'coffee-travel-japan-cafes', name: '日本各地咖啡廳介紹', slug: 'coffee-travel-japan-cafes', parent_id: 'coffee-travel', display_order: 11 },
   { id: 'japan-travel', name: '日本旅行', slug: 'japan-travel', parent_id: null, display_order: 20 },
-  { id: 'japan-travel-food-souvenirs-menu', name: '美食/伴手禮/菜單中文翻譯', slug: 'japan-travel-food-souvenirs-menu', parent_id: 'japan-travel', display_order: 21 },
+  { id: 'japan-travel-food-souvenirs-menu', name: '美食甜點與伴手禮', slug: 'japan-travel-food-souvenirs-menu', parent_id: 'japan-travel', display_order: 21 },
   { id: 'okinawa-travel', name: '沖繩美好旅行', slug: 'okinawa-travel', parent_id: null, display_order: 30 },
-  { id: 'okinawa-local-guide', name: '在地人推薦', slug: 'okinawa-local-guide', parent_id: 'okinawa-travel', display_order: 31 },
+  { id: 'okinawa-local-guide', name: '沖繩在地指南', slug: 'okinawa-local-guide', parent_id: 'okinawa-travel', display_order: 31 },
   { id: 'home-coffee', name: '在宅咖啡', slug: 'home-coffee', parent_id: null, display_order: 40 },
-  { id: 'home-coffee-basics', name: '咖啡新手的豆知識', slug: 'home-coffee-basics', parent_id: 'home-coffee', display_order: 41 },
+  { id: 'home-coffee-basics', name: '咖啡入門與器具', slug: 'home-coffee-basics', parent_id: 'home-coffee', display_order: 41 },
   { id: 'craftsman-stories', name: '職人故事', slug: 'craftsman-stories', parent_id: null, display_order: 50 },
-  { id: 'craftsman-stories-people', name: '那些堅持與努力的職人們', slug: 'craftsman-stories-people', parent_id: 'craftsman-stories', display_order: 51 },
+  { id: 'craftsman-stories-people', name: '人物專訪與品牌故事', slug: 'craftsman-stories-people', parent_id: 'craftsman-stories', display_order: 51 },
 ];
 
 function normalizeCategories(items: BlogCategory[]) {
@@ -126,8 +134,12 @@ async function fetchBlogCategoriesFromSupabase() {
 }
 
 const BlogList: React.FC = () => {
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
   const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [displayPosts, setDisplayPosts] = useState<BlogPost[]>([]);
   const [blogCategories, setBlogCategories] = useState<BlogCategory[]>(DEFAULT_BLOG_CATEGORIES);
+  const [displayBlogCategories, setDisplayBlogCategories] = useState<BlogCategory[]>(DEFAULT_BLOG_CATEGORIES);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState(ALL_CATEGORY_ID);
@@ -135,7 +147,38 @@ const BlogList: React.FC = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
   const [dataNotice, setDataNotice] = useState('');
+  const [translationNotice, setTranslationNotice] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const labels = {
+    pageTitle: isEn ? 'Coffee Traveler - Blog' : '咖啡旅行家 - 旅誌',
+    pageDesc: isEn ? 'Explore coffee journeys across Japan, Okinawa, and beyond.' : '探索日本、沖繩與更多地區的咖啡旅行與在地文化文章。',
+    heroTitle: isEn ? 'Coffee Traveler' : '咖啡旅行家',
+    heroDesc: isEn ? 'Every cup is a journey. Discover local coffee culture and stories from the road.' : '每一杯咖啡都是一段旅程的起點，探索在地咖啡文化，記錄旅途中的美好風景。',
+    searchPlaceholder: isEn ? 'Type any description, AI will find articles' : '輸入任何描述，AI 幫您找文章',
+    search: isEn ? 'Search' : '搜尋',
+    clear: isEn ? 'Clear' : '清除',
+    all: isEn ? 'All Articles' : '全部文章',
+    subCategories: isEn ? 'Subcategories' : '次分類',
+    showingCount: isEn ? 'Showing' : '顯示',
+    found: isEn ? 'articles found' : '篇文章',
+    featured: isEn ? 'Featured Article' : '精選文章',
+    mostRelevant: isEn ? 'Most Relevant' : '最相關結果',
+    readMore: isEn ? 'Read More' : '閱讀更多',
+    loadMore: isEn ? 'Load More Articles' : '載入更多文章',
+    noResult: isEn ? 'No matching articles found' : '找不到符合條件的文章',
+    noResultHint: isEn ? 'Try another keyword or browse all articles.' : '請嘗試其他關鍵字，或返回全部文章。',
+    browseAll: isEn ? 'Browse all articles' : '瀏覽全部文章',
+    noCategoryData: isEn ? 'No articles in this category' : '此分類暫無文章',
+    aiSummary: isEn ? 'AI Summary' : 'AI 摘要',
+    aiCategories: isEn ? 'Categories' : '分類',
+    dataNotice: isEn ? 'Supabase is temporarily unstable. Snapshot articles are displayed first.' : 'Supabase 連線暫時不穩，已改用快照文章加速顯示。',
+    transCacheNotReady: isEn ? 'Showing source articles first. Translation cache is not ready yet.' : '目前先顯示原文文章，翻譯快取尚未就緒。',
+    transSyncing: isEn ? 'Syncing article translations in background...' : '正在背景同步文章翻譯...',
+    transFallback: isEn ? 'Showing source/cached articles.' : '目前顯示原文或快取文章。',
+    aiSearchFailed: isEn ? 'AI search failed' : 'AI 搜尋失敗',
+    aiSearchRetry: isEn ? 'AI search failed, please try again later.' : 'AI 搜尋暫時無法使用，請稍後再試。',
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -145,83 +188,111 @@ const BlogList: React.FC = () => {
     const cachedCategories = readCachedList<BlogCategory>(BLOG_CATEGORIES_CACHE_KEY);
     const useSnapshotsOnly = typeof window !== 'undefined' && ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
 
-    if (cachedCategories?.length) {
-      setBlogCategories(normalizeCategories(cachedCategories));
-    }
-
+    if (cachedCategories?.length) setBlogCategories(normalizeCategories(cachedCategories));
     if (cachedPosts?.length) {
       setPosts(cachedPosts);
+      setDisplayPosts(cachedPosts);
       setLoading(false);
     }
 
-    fetchSnapshotList<BlogCategory>(BLOG_CATEGORIES_SNAPSHOT_PATH)
-      .then(snapshotCategories => {
-        if (cancelled || receivedFreshCategories || snapshotCategories.length === 0 || cachedCategories?.length) return;
-        setBlogCategories(normalizeCategories(snapshotCategories));
-      })
-      .catch(() => {});
+    fetchSnapshotList<BlogCategory>(BLOG_CATEGORIES_SNAPSHOT_PATH).then(snapshotCategories => {
+      if (cancelled || receivedFreshCategories || snapshotCategories.length === 0 || cachedCategories?.length) return;
+      setBlogCategories(normalizeCategories(snapshotCategories));
+    }).catch(() => {});
 
-    fetchSnapshotList<BlogPost>(BLOG_POSTS_SNAPSHOT_PATH)
-      .then(snapshotPosts => {
-        if (cancelled || receivedFreshPosts || snapshotPosts.length === 0 || cachedPosts?.length) return;
-        setPosts(snapshotPosts);
-        setLoading(false);
-        setDataNotice('Supabase 連線暫時不穩，已改用快照文章加速顯示。');
-      })
-      .catch(() => {
-        if (!cancelled && useSnapshotsOnly) setLoading(false);
-      });
+    fetchSnapshotList<BlogPost>(BLOG_POSTS_SNAPSHOT_PATH).then(snapshotPosts => {
+      if (cancelled || receivedFreshPosts || snapshotPosts.length === 0 || cachedPosts?.length) return;
+      setPosts(snapshotPosts);
+      setDisplayPosts(snapshotPosts);
+      setLoading(false);
+      setDataNotice(labels.dataNotice);
+    }).catch(() => {
+      if (!cancelled && useSnapshotsOnly) setLoading(false);
+    });
 
-    if (useSnapshotsOnly) {
-      return () => {
-        cancelled = true;
-      };
+    if (useSnapshotsOnly) return () => { cancelled = true; };
+
+    withRetry(() => fetchPublicList<BlogCategory>('blog-categories', fetchBlogCategoriesFromSupabase)).then(freshCategories => {
+      if (cancelled) return;
+      receivedFreshCategories = true;
+      const normalized = normalizeCategories(freshCategories);
+      setBlogCategories(normalized);
+      writeCachedList(BLOG_CATEGORIES_CACHE_KEY, normalized);
+    }).catch(() => {
+      if (!cancelled) setBlogCategories(current => normalizeCategories(current));
+    });
+
+    withRetry(() => fetchPublicList<BlogPost>('blog-posts', fetchBlogPostsFromSupabase)).then(freshPosts => {
+      if (cancelled) return;
+      receivedFreshPosts = true;
+      setPosts(freshPosts);
+      setDisplayPosts(freshPosts);
+      writeCachedList(BLOG_POSTS_CACHE_KEY, freshPosts);
+      setDataNotice('');
+    }).catch(() => {
+      if (cancelled) return;
+      if (!cachedPosts?.length) setDataNotice(labels.dataNotice);
+    }).finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+
+    return () => { cancelled = true; };
+  }, [labels.dataNotice]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!blogCategories.length) {
+      setDisplayBlogCategories(blogCategories);
+      return () => { cancelled = true; };
     }
+    setDisplayBlogCategories(blogCategories);
+    translateBlogCategoriesFromCacheOnly(blogCategories, lang).then(translated => {
+      if (!cancelled) setDisplayBlogCategories(translated as BlogCategory[]);
+    }).catch(() => {});
+    translateBlogCategoriesOnDemand(blogCategories, lang).then(translated => {
+      if (!cancelled) setDisplayBlogCategories(translated as BlogCategory[]);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [blogCategories, lang]);
 
-    withRetry(() => fetchPublicList<BlogCategory>('blog-categories', fetchBlogCategoriesFromSupabase))
-      .then(freshCategories => {
-        if (cancelled) return;
-        receivedFreshCategories = true;
-        const normalized = normalizeCategories(freshCategories);
-        setBlogCategories(normalized);
-        writeCachedList(BLOG_CATEGORIES_CACHE_KEY, normalized);
-      })
-      .catch(() => {
-        if (!cancelled) setBlogCategories(current => normalizeCategories(current));
-      });
+  useEffect(() => {
+    let cancelled = false;
+    if (!posts.length) {
+      setDisplayPosts(posts);
+      setTranslationNotice('');
+      return () => { cancelled = true; };
+    }
+    setDisplayPosts(posts);
+    const runtime = getTranslationRuntimeState();
+    setTranslationNotice(runtime.tableUnavailable || runtime.isLocalProxyMode ? labels.transCacheNotReady : labels.transSyncing);
 
-    withRetry(() => fetchPublicList<BlogPost>('blog-posts', fetchBlogPostsFromSupabase))
-      .then(freshPosts => {
-        if (cancelled) return;
-        receivedFreshPosts = true;
-        setPosts(freshPosts);
-        writeCachedList(BLOG_POSTS_CACHE_KEY, freshPosts);
-        setDataNotice('');
-      })
-      .catch(() => {
-        if (cancelled) return;
-        if (!cachedPosts?.length) setDataNotice('Supabase 連線暫時不穩，已改用快照文章加速顯示。');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    translateBlogPostsFromCacheOnly(posts, lang).then(translated => {
+      if (!cancelled) setDisplayPosts(translated as BlogPost[]);
+    }).catch(() => {});
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    translateBlogPostsOnDemand(posts, lang).then(translated => {
+      if (!cancelled) {
+        setDisplayPosts(translated as BlogPost[]);
+        setTranslationNotice('');
+      }
+    }).catch(() => {
+      if (!cancelled) setTranslationNotice(labels.transFallback);
+    });
 
-  const orderedCategories = useMemo(() => sortCategoriesForTree(blogCategories), [blogCategories]);
-  const categoryById = useMemo(() => new Map(blogCategories.map(category => [category.id, category])), [blogCategories]);
+    return () => { cancelled = true; };
+  }, [posts, lang, labels.transCacheNotReady, labels.transFallback, labels.transSyncing]);
+
+  const orderedCategories = useMemo(() => sortCategoriesForTree(displayBlogCategories), [displayBlogCategories]);
+  const categoryById = useMemo(() => new Map(displayBlogCategories.map(category => [category.id, category])), [displayBlogCategories]);
   const categoryIdsByName = useMemo(() => {
     const map = new Map<string, string[]>();
-    for (const category of blogCategories) {
+    for (const category of displayBlogCategories) {
       const ids = map.get(category.name) || [];
       ids.push(category.id);
       map.set(category.name, ids);
     }
     return map;
-  }, [blogCategories]);
+  }, [displayBlogCategories]);
 
   const activeCategory = categoryId === ALL_CATEGORY_ID ? null : categoryById.get(categoryId) || null;
   const activePath = useMemo(() => {
@@ -229,28 +300,21 @@ const BlogList: React.FC = () => {
     const path = [activeCategory];
     let current = activeCategory;
     let guard = 0;
-
     while (current.parent_id && categoryById.has(current.parent_id) && guard < 8) {
       current = categoryById.get(current.parent_id)!;
       path.unshift(current);
       guard += 1;
     }
-
     return path;
   }, [activeCategory, categoryById]);
   const activeRoot = activePath[0] || null;
-
-  const childCategories = useMemo(
-    () => activeCategory ? orderedCategories.filter(category => category.parent_id === activeCategory.id) : [],
-    [activeCategory, orderedCategories],
-  );
+  const childCategories = useMemo(() => activeCategory ? orderedCategories.filter(category => category.parent_id === activeCategory.id) : [], [activeCategory, orderedCategories]);
 
   const handleCategoryChange = (nextCategoryId: string) => {
     setCategoryId(nextCategoryId);
     setAiFilters(null);
     setSearch('');
   };
-
   const clearAI = () => {
     setAiFilters(null);
     setAiError('');
@@ -259,11 +323,7 @@ const BlogList: React.FC = () => {
   };
 
   const handleSearch = async () => {
-    if (!search.trim()) {
-      clearAI();
-      return;
-    }
-
+    if (!search.trim()) return clearAI();
     setAiLoading(true);
     setAiError('');
     try {
@@ -276,39 +336,30 @@ const BlogList: React.FC = () => {
         body: JSON.stringify({ action: 'blog-search', query: search }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'AI 搜尋失敗');
+      if (!res.ok) throw new Error(json.error || labels.aiSearchFailed);
       setAiFilters(json.result);
       setCategoryId(ALL_CATEGORY_ID);
     } catch (error: unknown) {
-      setAiError(error instanceof Error ? error.message : 'AI 搜尋失敗，請稍後再試');
+      setAiError(error instanceof Error ? error.message : labels.aiSearchRetry);
     } finally {
       setAiLoading(false);
     }
   };
 
   const filtered = useMemo(() => {
-    if (aiFilters) return applyAIFilters(posts, aiFilters);
-
-    const selectedIds = categoryId === ALL_CATEGORY_ID ? null : getDescendantCategoryIds(blogCategories, categoryId);
-
-    return posts.filter(post => {
+    if (aiFilters) return applyAIFilters(displayPosts, aiFilters);
+    const selectedIds = categoryId === ALL_CATEGORY_ID ? null : getDescendantCategoryIds(displayBlogCategories, categoryId);
+    return displayPosts.filter(post => {
       if (SYSTEM_BLOG_SLUGS.has(post.slug)) return false;
       if (!selectedIds) return true;
-
       const postCategoryIds = getBlogPostCategoryIds(post);
       for (const fallbackId of categoryIdsByName.get(post.category) || []) postCategoryIds.add(fallbackId);
-
-      for (const id of postCategoryIds) {
-        if (selectedIds.has(id)) return true;
-      }
-
+      for (const id of postCategoryIds) if (selectedIds.has(id)) return true;
       return false;
     });
-  }, [posts, categoryId, blogCategories, categoryIdsByName, aiFilters]);
+  }, [aiFilters, displayBlogCategories, categoryId, categoryIdsByName, displayPosts]);
 
-  const formatDate = (iso: string) =>
-    iso ? new Date(iso).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
-
+  const formatDate = (iso: string) => iso ? new Date(iso).toLocaleDateString(isEn ? 'en-US' : 'zh-TW', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
   const featured = filtered[0];
   const rest = useMemo(() => filtered.slice(1), [filtered]);
   const { visibleItems: visiblePosts, visibleCount, hasMore, sentinelRef, loadMore } = useProgressiveList(rest, { initialCount: 12, increment: 12 });
@@ -316,199 +367,86 @@ const BlogList: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F5F5F3]">
       <SEOHead
-        title="咖啡旅行家 - 旅遊部落格"
-        description="探索日本、沖繩與世界的咖啡旅途，分享咖啡廳、美食伴手禮、在宅咖啡與職人故事。"
-        keywords="咖啡旅行家, 日本旅行, 沖繩旅行, 咖啡旅行, 在宅咖啡, 職人故事, Nestobi"
+        title={labels.pageTitle}
+        description={labels.pageDesc}
+        keywords={isEn ? 'coffee traveler, nestobi blog, japan travel, okinawa coffee, coffee journal' : '咖啡旅行家, 根本在旅行, 日本旅行, 沖繩咖啡, 咖啡旅誌'}
         ogType="blog"
-        jsonLd={{
-          '@context': 'https://schema.org',
-          '@type': 'Blog',
-          name: '咖啡旅行家',
-          description: '探索日本、沖繩與世界的咖啡旅途，分享咖啡廳、美食伴手禮、在宅咖啡與職人故事。',
-          publisher: { '@type': 'Organization', name: 'Nestobi 旅遊平台' },
-          inLanguage: 'zh-TW',
-        }}
       />
       <Navigation />
-
       <div className="relative overflow-hidden bg-[#2C1810] px-4 py-24 text-white">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-20"
-          style={{ backgroundImage: 'url(https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg)' }}
-        />
+        <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: 'url(https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg)' }} />
         <div className="absolute inset-0 bg-gradient-to-b from-[#2C1810]/60 to-[#2C1810]/95" />
         <div className="relative mx-auto max-w-4xl text-center">
-          <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="mb-4 flex items-center justify-center gap-2">
-              <Coffee className="h-5 w-5 text-amber-400" />
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-400">Coffee Traveler</span>
-            </div>
-            <h1 className="mb-4 font-serif text-4xl font-bold text-white md:text-5xl" style={{ letterSpacing: 0 }}>
-              咖啡旅行家
-            </h1>
-            <div className="mx-auto mb-5 h-[2px] w-10 bg-amber-500" />
-            <p className="mx-auto max-w-md text-base leading-relaxed text-amber-200/70">
-              每一杯咖啡都是一段旅程的起點。探索在地咖啡文化，記錄旅途中的美好風景。
-            </p>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mx-auto mt-8 max-w-lg">
+          <div className="mb-4 flex items-center justify-center gap-2">
+            <Coffee className="h-5 w-5 text-amber-400" />
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-400">{isEn ? 'Coffee Traveler' : '咖啡旅行家'}</span>
+          </div>
+          <h1 className="mb-4 font-serif text-4xl font-bold md:text-5xl">{labels.heroTitle}</h1>
+          <div className="mx-auto mb-5 h-[2px] w-10 bg-amber-500" />
+          <p className="mx-auto max-w-md text-base leading-relaxed text-amber-200/70">{labels.heroDesc}</p>
+          <div className="mx-auto mt-8 max-w-lg">
             <div className="relative flex items-center gap-2">
               <div className="relative flex-1">
                 <Sparkles className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-400" />
-                <input
-                  ref={inputRef}
-                  value={search}
-                  onChange={event => setSearch(event.target.value)}
-                  onKeyDown={event => event.key === 'Enter' && handleSearch()}
-                  placeholder="輸入任何描述，AI 幫您找文章"
-                  className="w-full rounded-xl bg-white py-3.5 pl-11 pr-10 text-sm text-gray-800 shadow-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50"
-                />
-                {search && (
-                  <button onClick={clearAI} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-600">
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
+                <input ref={inputRef} value={search} onChange={event => setSearch(event.target.value)} onKeyDown={event => event.key === 'Enter' && handleSearch()} placeholder={labels.searchPlaceholder} className="w-full rounded-xl bg-white py-3.5 pl-11 pr-10 text-sm text-gray-800 shadow-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
+                {search && <button onClick={clearAI} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-600"><X className="h-4 w-4" /></button>}
               </div>
-              <button
-                onClick={handleSearch}
-                disabled={aiLoading || !search.trim()}
-                className="flex items-center gap-1.5 whitespace-nowrap rounded-xl bg-amber-500 px-5 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-amber-400 disabled:bg-amber-500/50"
-              >
+              <button onClick={handleSearch} disabled={aiLoading || !search.trim()} className="flex items-center gap-1.5 whitespace-nowrap rounded-xl bg-amber-500 px-5 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-amber-400 disabled:bg-amber-500/50">
                 {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                搜尋
+                {labels.search}
               </button>
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-6xl px-4 py-10">
-        <AnimatePresence>
-          {aiFilters && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="mb-6 flex flex-wrap items-center gap-2"
-            >
-              <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5">
-                <Sparkles className="h-4 w-4 flex-shrink-0 text-amber-600" />
-                <span className="truncate text-sm font-medium text-amber-800">AI 理解：{aiFilters.summary}</span>
-                {aiFilters.categories.length > 0 && (
-                  <span className="flex-shrink-0 text-xs text-amber-600">分類 {aiFilters.categories.join('、')}</span>
-                )}
-              </div>
-              <button
-                onClick={clearAI}
-                className="flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs text-gray-500 transition hover:bg-gray-50"
-              >
-                <X className="h-3.5 w-3.5" />
-                清除結果
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {aiError && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="mb-6 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-            >
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
-              {aiError}
-              <button onClick={() => setAiError('')} className="ml-auto">
-                <X className="h-4 w-4" />
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {dataNotice && (
-          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
-            {dataNotice}
+        {aiFilters && (
+          <div className="mb-6 flex flex-wrap items-center gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5">
+              <Sparkles className="h-4 w-4 flex-shrink-0 text-amber-600" />
+              <span className="truncate text-sm font-medium text-amber-800">{labels.aiSummary}: {aiFilters.summary}</span>
+              {aiFilters.categories.length > 0 && <span className="flex-shrink-0 text-xs text-amber-600">{labels.aiCategories}: {aiFilters.categories.join(', ')}</span>}
+            </div>
+            <button onClick={clearAI} className="flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs text-gray-500 transition hover:bg-gray-50"><X className="h-3.5 w-3.5" />{labels.clear}</button>
           </div>
         )}
+
+        {aiError && <div className="mb-6 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"><AlertCircle className="h-4 w-4" />{aiError}</div>}
+        {dataNotice && <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">{dataNotice}</div>}
+        {translationNotice && <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">{translationNotice}</div>}
 
         {!aiFilters && (
           <div className="mb-8">
             <div className="mb-4 flex flex-wrap gap-2">
-              <button
-                onClick={() => handleCategoryChange(ALL_CATEGORY_ID)}
-                className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
-                  categoryId === ALL_CATEGORY_ID
-                    ? 'bg-amber-800 text-white shadow-sm'
-                    : 'border border-gray-200 bg-white text-gray-600 hover:border-amber-400 hover:text-amber-800'
-                }`}
-              >
-                全部文章
-              </button>
-              {orderedCategories.filter(category => getCategoryDepth(category, blogCategories) === 0).map(category => (
-                <button
-                  key={category.id}
-                  onClick={() => handleCategoryChange(category.id)}
-                  className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
-                    activeRoot?.id === category.id
-                      ? 'bg-amber-800 text-white shadow-sm'
-                      : 'border border-gray-200 bg-white text-gray-600 hover:border-amber-400 hover:text-amber-800'
-                  }`}
-                >
-                  {category.name}
-                </button>
+              <button onClick={() => handleCategoryChange(ALL_CATEGORY_ID)} className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${categoryId === ALL_CATEGORY_ID ? 'bg-amber-800 text-white shadow-sm' : 'border border-gray-200 bg-white text-gray-600 hover:border-amber-400 hover:text-amber-800'}`}>{labels.all}</button>
+              {orderedCategories.filter(category => getCategoryDepth(category, displayBlogCategories) === 0).map(category => (
+                <button key={category.id} onClick={() => handleCategoryChange(category.id)} className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${activeRoot?.id === category.id ? 'bg-amber-800 text-white shadow-sm' : 'border border-gray-200 bg-white text-gray-600 hover:border-amber-400 hover:text-amber-800'}`}>{category.name}</button>
               ))}
             </div>
-
-            <AnimatePresence>
-              {childCategories.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex items-center gap-1 text-xs text-gray-400">
-                      <ChevronRight className="h-3 w-3" />
-                      <span>次分類</span>
-                    </div>
-                    {childCategories.map(category => (
-                      <button
-                        key={category.id}
-                        onClick={() => handleCategoryChange(category.id)}
-                        className={`flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-all ${
-                          categoryId === category.id
-                            ? 'border-amber-700 bg-amber-700 text-white shadow-sm'
-                            : 'border-gray-200 bg-white text-gray-500 hover:border-amber-300 hover:text-amber-800'
-                        }`}
-                      >
-                        <Tag className="h-2.5 w-2.5" />
-                        {category.name}
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {childCategories.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1 text-xs text-gray-400"><ChevronRight className="h-3 w-3" /><span>{labels.subCategories}</span></div>
+                {childCategories.map(category => (
+                  <button key={category.id} onClick={() => handleCategoryChange(category.id)} className={`flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-all ${categoryId === category.id ? 'border-amber-700 bg-amber-700 text-white shadow-sm' : 'border-gray-200 bg-white text-gray-500 hover:border-amber-300 hover:text-amber-800'}`}>
+                    <Tag className="h-2.5 w-2.5" />{category.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {!aiFilters && categoryId !== ALL_CATEGORY_ID && activeCategory && (
           <div className="mb-5 flex items-center gap-1.5 text-xs text-gray-400">
-            <button onClick={() => handleCategoryChange(ALL_CATEGORY_ID)} className="transition hover:text-amber-700">全部文章</button>
+            <button onClick={() => handleCategoryChange(ALL_CATEGORY_ID)} className="transition hover:text-amber-700">{labels.all}</button>
             {activePath.map((category, index) => (
               <React.Fragment key={category.id}>
                 <ChevronRight className="h-3 w-3" />
-                {index === activePath.length - 1 ? (
-                  <span className="font-medium text-amber-700">{category.name}</span>
-                ) : (
-                  <button onClick={() => handleCategoryChange(category.id)} className="transition hover:text-amber-700">{category.name}</button>
-                )}
+                {index === activePath.length - 1 ? <span className="font-medium text-amber-700">{category.name}</span> : <button onClick={() => handleCategoryChange(category.id)} className="transition hover:text-amber-700">{category.name}</button>}
               </React.Fragment>
             ))}
-            <span className="ml-auto text-gray-300">已顯示 {Math.min(visibleCount + (featured ? 1 : 0), filtered.length)} / {filtered.length} 篇</span>
+            <span className="ml-auto text-gray-300">{labels.showingCount} {Math.min(visibleCount + (featured ? 1 : 0), filtered.length)} / {filtered.length}</span>
           </div>
         )}
 
@@ -517,137 +455,58 @@ const BlogList: React.FC = () => {
             {[...Array(6)].map((_, index) => (
               <div key={index} className="animate-pulse overflow-hidden rounded-2xl border border-gray-100 bg-white">
                 <div className="h-48 bg-gray-100" />
-                <div className="space-y-3 p-5">
-                  <div className="h-3 w-1/3 rounded bg-gray-100" />
-                  <div className="h-4 w-full rounded bg-gray-100" />
-                  <div className="h-4 w-3/4 rounded bg-gray-100" />
-                  <div className="h-3 w-1/2 rounded bg-gray-100" />
-                </div>
+                <div className="space-y-3 p-5"><div className="h-3 w-1/3 rounded bg-gray-100" /><div className="h-4 w-full rounded bg-gray-100" /><div className="h-4 w-3/4 rounded bg-gray-100" /></div>
               </div>
             ))}
           </div>
         ) : loading ? (
-          <div className="flex justify-center py-28">
-            <div className="h-9 w-9 animate-spin rounded-full border-2 border-amber-700 border-t-transparent" />
-          </div>
+          <div className="flex justify-center py-28"><div className="h-9 w-9 animate-spin rounded-full border-2 border-amber-700 border-t-transparent" /></div>
         ) : filtered.length === 0 ? (
           <div className="py-28 text-center text-gray-400">
             <BookOpen className="mx-auto mb-4 h-12 w-12 opacity-20" />
-            {aiFilters ? (
-              <>
-                <p className="mb-1 text-sm font-medium">找不到符合的文章</p>
-                <p className="mb-4 text-xs">試著換個關鍵字，或瀏覽所有文章。</p>
-                <button onClick={clearAI} className="text-xs text-amber-700 underline underline-offset-2">瀏覽所有文章</button>
-              </>
-            ) : (
-              <>
-                <p className="mb-1 text-sm font-medium">此分類暫無文章</p>
-                <button onClick={() => handleCategoryChange(ALL_CATEGORY_ID)} className="mx-auto mt-2 block text-xs text-amber-700 underline underline-offset-2">
-                  瀏覽所有文章
-                </button>
-              </>
-            )}
+            <p className="mb-1 text-sm font-medium">{aiFilters ? labels.noResult : labels.noCategoryData}</p>
+            <p className="mb-4 text-xs">{labels.noResultHint}</p>
+            <button onClick={() => handleCategoryChange(ALL_CATEGORY_ID)} className="text-xs text-amber-700 underline underline-offset-2">{labels.browseAll}</button>
           </div>
         ) : (
           <>
-            {aiFilters && (
-              <p className="mb-6 text-xs text-gray-400">找到 <span className="font-semibold text-gray-600">{filtered.length}</span> 篇文章</p>
-            )}
-
+            {aiFilters && <p className="mb-6 text-xs text-gray-400"><span className="font-semibold text-gray-600">{filtered.length}</span> {labels.found}</p>}
             {featured && (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
                 <Link to={`/blog/${featured.slug}`} className="group block overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-elegant transition-all duration-300 hover:shadow-card-hover">
                   <div className="md:grid md:grid-cols-2">
                     <div className="h-64 overflow-hidden md:h-auto">
-                      <img
-                        src={featured.cover_image_url || BLOG_FALLBACK_IMAGE}
-                        alt={featured.title}
-                        loading="eager"
-                        decoding="async"
-                        onError={event => useFallbackImage(event, BLOG_FALLBACK_IMAGE)}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
+                      <img src={featured.cover_image_url || BLOG_FALLBACK_IMAGE} alt={featured.title} loading="eager" decoding="async" onError={event => useFallbackImage(event, BLOG_FALLBACK_IMAGE)} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                     </div>
                     <div className="flex flex-col justify-center p-8 md:p-10">
-                      <div className="mb-5 flex flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">{featured.category}</span>
-                        <span className="text-xs tracking-wide text-gray-400">{aiFilters ? '最相關文章' : '精選文章'}</span>
-                      </div>
-                      <h2 className="mb-3 font-serif text-2xl font-bold text-charcoal transition-colors group-hover:text-amber-800 md:text-3xl" style={{ letterSpacing: 0 }}>
-                        {featured.title}
-                      </h2>
+                      <div className="mb-5 flex flex-wrap items-center gap-2"><span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">{featured.category}</span><span className="text-xs tracking-wide text-gray-400">{aiFilters ? labels.mostRelevant : labels.featured}</span></div>
+                      <h2 className="mb-3 font-serif text-2xl font-bold text-charcoal transition-colors group-hover:text-amber-800 md:text-3xl">{featured.title}</h2>
                       <p className="mb-6 line-clamp-3 text-sm leading-relaxed text-gray-500">{featured.excerpt}</p>
-                      <div className="flex items-center justify-between text-xs text-gray-400">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {formatDate(featured.published_at)}
-                        </div>
-                        <div className="flex items-center gap-1.5 font-semibold text-amber-800 transition-all group-hover:gap-2.5">
-                          閱讀全文 <ArrowRight className="h-3.5 w-3.5" />
-                        </div>
-                      </div>
+                      <div className="flex items-center justify-between text-xs text-gray-400"><div className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{formatDate(featured.published_at)}</div><div className="flex items-center gap-1.5 font-semibold text-amber-800 transition-all group-hover:gap-2.5">{labels.readMore} <ArrowRight className="h-3.5 w-3.5" /></div></div>
                     </div>
                   </div>
                 </Link>
               </motion.div>
             )}
-
             <div className="columns-1 gap-6 sm:columns-2 lg:columns-3">
               {visiblePosts.map((post, index) => (
                 <motion.div key={post.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index, 11) * 0.025 }}>
-                  <Link
-                    to={`/blog/${post.slug}`}
-                    className="group mb-6 inline-block w-full break-inside-avoid overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-elegant card-lift"
-                    style={{ contentVisibility: 'auto', containIntrinsicSize: '340px' }}
-                  >
+                  <Link to={`/blog/${post.slug}`} className="group mb-6 inline-block w-full break-inside-avoid overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-elegant card-lift" style={{ contentVisibility: 'auto', containIntrinsicSize: '340px' }}>
                     <div className="h-48 overflow-hidden">
-                      <img
-                        src={post.cover_image_url || BLOG_FALLBACK_IMAGE}
-                        alt={post.title}
-                        loading={index < 6 ? 'eager' : 'lazy'}
-                        decoding="async"
-                        onError={event => useFallbackImage(event, BLOG_FALLBACK_IMAGE)}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
+                      <img src={post.cover_image_url || BLOG_FALLBACK_IMAGE} alt={post.title} loading={index < 6 ? 'eager' : 'lazy'} decoding="async" onError={event => useFallbackImage(event, BLOG_FALLBACK_IMAGE)} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                     </div>
                     <div className="p-5">
-                      <div className="mb-3 flex flex-wrap items-center gap-1.5">
-                        <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">{post.category}</span>
-                      </div>
-                      <h3 className="mb-2 line-clamp-2 text-sm font-semibold text-charcoal transition-colors group-hover:text-amber-800" style={{ letterSpacing: 0 }}>
-                        {post.title}
-                      </h3>
+                      <div className="mb-3 flex flex-wrap items-center gap-1.5"><span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">{post.category}</span></div>
+                      <h3 className="mb-2 line-clamp-2 text-sm font-semibold text-charcoal transition-colors group-hover:text-amber-800">{post.title}</h3>
                       <p className="mb-4 line-clamp-2 text-xs leading-relaxed text-gray-500">{post.excerpt}</p>
-                      {post.tags?.length > 0 && (
-                        <div className="mb-4 flex flex-wrap gap-1.5">
-                          {post.tags.slice(0, 3).map(tag => (
-                            <span key={tag} className="flex items-center gap-1 text-xs text-gray-400">
-                              <Tag className="h-2.5 w-2.5" />
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-400">
-                        <span>{post.author_name}</span>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {formatDate(post.published_at)}
-                        </div>
-                      </div>
+                      {post.tags?.length > 0 && <div className="mb-4 flex flex-wrap gap-1.5">{post.tags.slice(0, 3).map(tag => <span key={tag} className="flex items-center gap-1 text-xs text-gray-400"><Tag className="h-2.5 w-2.5" />{tag}</span>)}</div>}
+                      <div className="flex items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-400"><span>{post.author_name}</span><div className="flex items-center gap-1"><Calendar className="h-3 w-3" />{formatDate(post.published_at)}</div></div>
                     </div>
                   </Link>
                 </motion.div>
               ))}
             </div>
-            {hasMore && (
-              <div ref={sentinelRef} className="flex justify-center py-8">
-                <button onClick={loadMore} className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-white px-5 py-2 text-sm font-bold text-amber-800 shadow-sm transition hover:bg-amber-50">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  載入更多文章
-                </button>
-              </div>
-            )}
+            {hasMore && <div ref={sentinelRef} className="flex justify-center py-8"><button onClick={loadMore} className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-white px-5 py-2 text-sm font-bold text-amber-800 shadow-sm transition hover:bg-amber-50"><Loader2 className="h-4 w-4 animate-spin" />{labels.loadMore}</button></div>}
           </>
         )}
       </div>

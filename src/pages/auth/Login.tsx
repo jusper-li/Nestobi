@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, Plane, AlertCircle, ShieldAlert, ArrowLeft, Home } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Eye, EyeOff, Home, Lock, Mail, Plane } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import {
   clearLoginFailures,
@@ -12,35 +13,33 @@ import {
   recordLoginFailure,
 } from '../../lib/security';
 
-const Login: React.FC = () => {
+export default function Login() {
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { signIn, user, signOut, role, profile } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
   const redirectParam = new URLSearchParams(location.search).get('redirect');
 
-  const isRestrictedRedirect = redirectParam &&
-    (redirectParam.startsWith('/vendor') || redirectParam.startsWith('/admin') || redirectParam.startsWith('/superadmin'));
-
-  const restrictedLabel =
-    redirectParam?.startsWith('/superadmin') ? '超級管理員' :
-    redirectParam?.startsWith('/admin') ? '管理員' :
-    '廠商';
-
-  const handleSignOutAndRelogin = async () => {
-    await signOut();
+  const text = {
+    back: isEn ? 'Back' : '返回上一頁',
+    home: isEn ? 'Home' : '回首頁',
+    welcome: isEn ? 'Welcome Back' : '歡迎回來',
+    subtitle: isEn ? 'Sign in to your travel account' : '登入您的旅遊帳號',
+    email: isEn ? 'Email' : '電子郵件',
+    password: isEn ? 'Password' : '密碼',
+    emailPlaceholder: 'your@email.com',
+    passwordPlaceholder: isEn ? 'Enter your password' : '請輸入密碼',
+    forgot: isEn ? 'Forgot password?' : '忘記密碼？',
+    login: isEn ? 'Login' : '登入',
+    noAccount: isEn ? 'No account yet?' : '還沒有帳號？',
+    register: isEn ? 'Sign up now' : '立即註冊',
   };
-
-  const currentRolePath =
-    role === 'superadmin' ? '/superadmin' :
-    role === 'admin' ? '/admin' :
-    role === 'vendor' ? '/vendor' :
-    '/member';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +55,9 @@ const Login: React.FC = () => {
     try {
       await signIn(normalizedEmail, password);
       clearLoginFailures(normalizedEmail);
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
         const { data: authData } = await supabase
           .from('tbl_user_auth')
@@ -64,162 +65,125 @@ const Login: React.FC = () => {
           .eq('user_id', user.id)
           .maybeSingle();
         const role = authData?.role ?? 'user';
-        if (redirectParam) {
-          navigate(redirectParam, { replace: true });
-        } else if (role === 'superadmin') {
-          navigate('/superadmin', { replace: true });
-        } else if (role === 'admin') {
-          navigate('/admin', { replace: true });
-        } else if (role === 'vendor') {
-          navigate('/vendor', { replace: true });
-        } else {
-          navigate('/member', { replace: true });
-        }
+        if (redirectParam) navigate(redirectParam, { replace: true });
+        else if (role === 'superadmin') navigate('/superadmin', { replace: true });
+        else if (role === 'admin') navigate('/admin', { replace: true });
+        else if (role === 'vendor') navigate('/vendor', { replace: true });
+        else navigate('/member', { replace: true });
       }
     } catch (err) {
       recordLoginFailure(normalizedEmail);
-      setError(err instanceof Error && err.message === LOGIN_RATE_LIMIT_MESSAGE ? LOGIN_RATE_LIMIT_MESSAGE : GENERIC_AUTH_ERROR_MESSAGE);
+      setError(
+        err instanceof Error && err.message === LOGIN_RATE_LIMIT_MESSAGE
+          ? LOGIN_RATE_LIMIT_MESSAGE
+          : GENERIC_AUTH_ERROR_MESSAGE,
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F0E4C8] via-white to-[#F0E4C8] flex items-center justify-center px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
-        <div className="flex items-center justify-between mb-6">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#F0E4C8] via-white to-[#F0E4C8] px-4">
+      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+        <div className="mb-6 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-gray-500 hover:text-[#2C1F10] transition-colors group"
+            className="group flex items-center gap-2 text-sm font-medium text-gray-500 transition hover:text-[#2C1F10]"
           >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
-            <span className="text-sm font-medium">返回上一頁</span>
+            <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" />
+            {text.back}
           </button>
-          <Link to="/" className="flex items-center gap-1.5 text-gray-500 hover:text-[#2C1F10] transition-colors text-sm font-medium">
-            <Home className="w-4 h-4" />回首頁
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 text-sm font-medium text-gray-500 transition hover:text-[#2C1F10]"
+          >
+            <Home className="h-4 w-4" />
+            {text.home}
           </Link>
         </div>
 
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#C09A6A] rounded-2xl mb-4 shadow-lg">
-            <Plane className="w-8 h-8 text-white" />
+        <div className="mb-8 text-center">
+          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#C09A6A] shadow-lg">
+            <Plane className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">歡迎回來</h1>
-          <p className="text-gray-500 mt-1">登入您的旅遊帳號</p>
+          <h1 className="text-3xl font-bold text-gray-900">{text.welcome}</h1>
+          <p className="mt-1 text-gray-500">{text.subtitle}</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          {user && isRestrictedRedirect && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-start gap-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4 mb-6 text-sm"
-            >
-              <ShieldAlert className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-500" />
-              <div>
-                <p className="font-medium mb-1">需要{restrictedLabel}帳號</p>
-                <p className="text-amber-700">此頁面需要{restrictedLabel}權限。請使用具有對應權限的帳號登入，或
-                  <button onClick={handleSignOutAndRelogin} className="underline font-medium ml-1 hover:text-amber-900">
-                    登出目前帳號
-                  </button>
-                  。
-                </p>
-              </div>
-            </motion.div>
-          )}
-
-          {user && !isRestrictedRedirect && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800"
-            >
-              <p className="font-semibold">目前瀏覽器已有登入中的帳號</p>
-              <p className="mt-1 text-amber-700">
-                {profile?.display_name || user.email}。為避免混用管理權限，請選擇繼續使用目前帳號，或先登出再登入其他帳號。
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button type="button" onClick={() => navigate(currentRolePath, { replace: true })} className="rounded-lg bg-amber-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-amber-800">
-                  繼續使用目前帳號
-                </button>
-                <button type="button" onClick={handleSignOutAndRelogin} className="rounded-lg border border-amber-300 px-3 py-2 text-xs font-semibold text-amber-800 transition hover:bg-amber-100">
-                  登出後重新登入
-                </button>
-              </div>
-            </motion.div>
-          )}
-
+        <div className="rounded-2xl bg-white p-8 shadow-xl">
           {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-6 text-sm"
-            >
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <div className="mb-6 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
               {error}
-            </motion.div>
+            </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">電子郵件</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">{text.email}</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                 <input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
-                  placeholder="your@email.com"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2C1F10] focus:border-transparent transition"
+                  placeholder={text.emailPlaceholder}
+                  className="w-full rounded-xl border border-gray-200 py-3 pl-10 pr-4 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">密碼</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">{text.password}</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
-                  placeholder="請輸入密碼"
-                  className="w-full pl-10 pr-12 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2C1F10] focus:border-transparent transition"
+                  placeholder={text.passwordPlaceholder}
+                  className="w-full rounded-xl border border-gray-200 py-3 pl-10 pr-12 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
 
             <div className="flex justify-end">
-              <Link to="/auth/reset-password" className="text-sm text-[#2C1F10] hover:underline">忘記密碼？</Link>
+              <Link to="/auth/reset-password" className="text-sm text-[#2C1F10] hover:underline">
+                {text.forgot}
+              </Link>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#C09A6A] hover:bg-[#8B6840] text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-60 flex items-center justify-center gap-2"
+              className="flex w-full items-center justify-center rounded-xl bg-[#C09A6A] py-3 font-semibold text-white transition hover:bg-[#8B6840] disabled:opacity-60"
             >
-              {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : '登入'}
+              {loading ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                text.login
+              )}
             </button>
           </form>
 
-          <p className="text-center text-gray-500 text-sm mt-6">
-            還沒有帳號？{' '}
-            <Link to="/auth/register" className="text-[#2C1F10] font-medium hover:underline">立即註冊</Link>
+          <p className="mt-6 text-center text-sm text-gray-500">
+            {text.noAccount}{' '}
+            <Link to="/auth/register" className="font-medium text-[#2C1F10] hover:underline">
+              {text.register}
+            </Link>
           </p>
         </div>
       </motion.div>
     </div>
   );
-};
-
-export default Login;
+}

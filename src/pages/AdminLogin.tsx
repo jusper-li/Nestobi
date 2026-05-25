@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, Mail, AlertCircle } from 'lucide-react';
+import { AlertCircle, Lock, Mail } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminLogin() {
@@ -20,39 +20,31 @@ export default function AdminLogin() {
     try {
       await signIn(email, password);
       navigate('/admin/dashboard');
-    } catch (err) {
-      setError('電子郵件或密碼無效');
+    } catch {
+      setError('電子郵件或密碼錯誤');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center px-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
-      >
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <img
-              src="/20260407_nestobi_logo.svg"
-              alt="Kessaku"
-              className="h-16 w-auto"
-            />
+    <div className="flex min-h-screen items-center justify-center bg-cream px-6">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+        <div className="mb-8 text-center">
+          <div className="mb-4 flex justify-center">
+            <img src="/20260407_nestobi_logo.svg" alt="Nestobi" className="h-16 w-auto" />
           </div>
-          <h1 className="text-2xl font-medium text-charcoal mb-2">管理員後台</h1>
-          <p className="text-charcoal/60">登入以管理物業</p>
+          <h1 className="mb-2 text-2xl font-medium text-charcoal">管理員登入</h1>
+          <p className="text-charcoal/60">登入後台管理系統</p>
         </div>
 
-        <div className="bg-white rounded-sm shadow-lg p-8">
+        <div className="rounded-sm bg-white p-8 shadow-lg">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-red-50 border border-red-200 rounded-sm p-4 flex items-center text-red-800"
+                className="flex items-center rounded-sm border border-red-200 bg-red-50 p-4 text-red-800"
               >
                 <AlertCircle size={20} className="mr-2 flex-shrink-0" />
                 <span className="text-sm">{error}</span>
@@ -60,8 +52,8 @@ export default function AdminLogin() {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-charcoal mb-2">
-                電子郵件地址
+              <label htmlFor="email" className="mb-2 block text-sm font-medium text-charcoal">
+                電子郵件
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal/40" size={20} />
@@ -69,16 +61,16 @@ export default function AdminLogin() {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={e => setEmail(e.target.value)}
                   required
-                  className="w-full pl-11 pr-4 py-3 border border-charcoal/20 rounded-sm focus:outline-none focus:border-[#2C1F10] transition-colors"
+                  className="w-full rounded-sm border border-charcoal/20 py-3 pl-11 pr-4 transition-colors focus:border-[#2C1F10] focus:outline-none"
                   placeholder="admin@example.com"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-charcoal mb-2">
+              <label htmlFor="password" className="mb-2 block text-sm font-medium text-charcoal">
                 密碼
               </label>
               <div className="relative">
@@ -87,10 +79,10 @@ export default function AdminLogin() {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                   required
-                  className="w-full pl-11 pr-4 py-3 border border-charcoal/20 rounded-sm focus:outline-none focus:border-[#2C1F10] transition-colors"
-                  placeholder="••••••••"
+                  className="w-full rounded-sm border border-charcoal/20 py-3 pl-11 pr-4 transition-colors focus:border-[#2C1F10] focus:outline-none"
+                  placeholder="請輸入密碼"
                 />
               </div>
             </div>
@@ -98,15 +90,15 @@ export default function AdminLogin() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-[#C09A6A] text-white font-medium rounded-sm hover:bg-[#8B6840] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-sm bg-[#C09A6A] py-3 font-medium text-white transition-all duration-300 hover:bg-[#8B6840] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? '登入中...' : '登入'}
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            <a href="/" className="text-sm text-charcoal/60 hover:text-[#2C1F10] transition-colors">
-              ← 返回網站
+            <a href="/" className="text-sm text-charcoal/60 transition-colors hover:text-[#2C1F10]">
+              返回首頁
             </a>
           </div>
         </div>

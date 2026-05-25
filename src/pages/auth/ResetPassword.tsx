@@ -1,16 +1,32 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Plane, AlertCircle, CheckCircle, ArrowLeft, Home } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle, Home, Mail, Plane } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
-const ResetPassword: React.FC = () => {
+export default function ResetPassword() {
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
+  const { resetPassword } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const { resetPassword } = useAuth();
-  const navigate = useNavigate();
+
+  const t = {
+    back: isEn ? 'Back' : '返回上一頁',
+    home: isEn ? 'Home' : '回首頁',
+    title: isEn ? 'Reset Password' : '重設密碼',
+    subtitle: isEn ? 'We will send a reset link to your email.' : '我們會把重設連結寄到您的電子郵件。',
+    email: isEn ? 'Email' : '電子郵件',
+    submit: isEn ? 'Send reset email' : '發送重設郵件',
+    sent: isEn ? 'Email sent' : '郵件已送出',
+    sentDesc: isEn ? 'Please check your inbox and follow the link.' : '請檢查您的信箱並依照連結完成重設。',
+    login: isEn ? 'Back to login' : '返回登入',
+    failed: isEn ? 'Failed to send reset email.' : '發送重設郵件失敗，請稍後再試。',
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,82 +35,85 @@ const ResetPassword: React.FC = () => {
     try {
       await resetPassword(email);
       setSuccess(true);
-    } catch (err: any) {
-      setError('發送重置郵件失敗，請確認電子郵件是否正確。');
+    } catch {
+      setError(t.failed);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F0E4C8] via-white to-[#F0E4C8] flex items-center justify-center px-4">
-      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-md">
-        <div className="flex items-center justify-between mb-6">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#F0E4C8] via-white to-[#F0E4C8] px-4">
+      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+        <div className="mb-6 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-gray-500 hover:text-[#2C1F10] transition-colors group"
+            className="group flex items-center gap-2 text-sm font-medium text-gray-500 transition hover:text-[#2C1F10]"
           >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
-            <span className="text-sm font-medium">返回上一頁</span>
+            <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" />
+            {t.back}
           </button>
-          <Link to="/" className="flex items-center gap-1.5 text-gray-500 hover:text-[#2C1F10] transition-colors text-sm font-medium">
-            <Home className="w-4 h-4" />回首頁
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 text-sm font-medium text-gray-500 transition hover:text-[#2C1F10]"
+          >
+            <Home className="h-4 w-4" />
+            {t.home}
           </Link>
         </div>
-
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#C09A6A] rounded-2xl mb-4 shadow-lg">
-            <Plane className="w-8 h-8 text-white" />
+        <div className="mb-8 text-center">
+          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#C09A6A] shadow-lg">
+            <Plane className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">重置密碼</h1>
-          <p className="text-gray-500 mt-1">我們將發送重置連結到您的信箱</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t.title}</h1>
+          <p className="mt-1 text-gray-500">{t.subtitle}</p>
         </div>
-
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="rounded-2xl bg-white p-8 shadow-xl">
           {success ? (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                <CheckCircle className="w-8 h-8 text-green-600" />
+            <div className="text-center">
+              <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">郵件已發送</h2>
-              <p className="text-gray-500 text-sm mb-6">請查看您的信箱 <strong>{email}</strong>，點擊連結重置密碼。</p>
-              <Link to="/auth/login" className="text-[#2C1F10] font-medium hover:underline">返回登入</Link>
-            </motion.div>
+              <h2 className="mb-2 text-xl font-semibold text-gray-900">{t.sent}</h2>
+              <p className="mb-6 text-sm text-gray-500">{t.sentDesc}</p>
+              <Link to="/auth/login" className="font-medium text-[#2C1F10] hover:underline">
+                {t.login}
+              </Link>
+            </div>
           ) : (
             <>
               {error && (
-                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-6 text-sm">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}
-                </motion.div>
+                <div className="mb-6 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  <AlertCircle className="h-4 w-4" />
+                  {error}
+                </div>
               )}
               <form onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">電子郵件</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <label className="block text-sm font-medium text-gray-700">
+                  {t.email}
+                  <div className="relative mt-1">
+                    <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                     <input
                       type="email"
                       value={email}
                       onChange={e => setEmail(e.target.value)}
                       required
-                      placeholder="your@email.com"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2C1F10] focus:border-transparent transition"
+                      className="w-full rounded-xl border border-gray-200 py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
                     />
                   </div>
-                </div>
-                <button type="submit" disabled={loading} className="w-full bg-[#C09A6A] hover:bg-[#8B6840] text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-60 flex items-center justify-center gap-2">
-                  {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : '發送重置郵件'}
+                </label>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-xl bg-[#C09A6A] py-3 font-semibold text-white transition hover:bg-[#8B6840] disabled:opacity-60"
+                >
+                  {loading ? '...' : t.submit}
                 </button>
               </form>
-              <p className="text-center text-gray-500 text-sm mt-6">
-                <Link to="/auth/login" className="text-[#2C1F10] hover:underline">返回登入</Link>
-              </p>
             </>
           )}
         </div>
       </motion.div>
     </div>
   );
-};
-
-export default ResetPassword;
+}

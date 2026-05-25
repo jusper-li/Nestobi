@@ -5,6 +5,7 @@ import { AlertTriangle, CheckCircle, Minus, Plus, ShieldCheck, ShoppingBag, Tras
 import Navigation from '../../components/Navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
 
@@ -30,6 +31,8 @@ function hasProduct(item: CartItemWithProduct): item is CartItemWithProduct & { 
 }
 
 export default function Cart() {
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
   const { user } = useAuth();
   const { items, removeItem, updateQuantity, clearCart } = useCart();
   const [cartItems, setCartItems] = useState<CartItemWithProduct[]>([]);
@@ -39,6 +42,33 @@ export default function Cart() {
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
+  const t = {
+    loginRequiredTitle: isEn ? 'Please log in' : '請先登入',
+    loginRequiredDesc: isEn ? 'Log in to view your cart and complete checkout.' : '登入後即可查看購物車並完成結帳。',
+    loginNow: isEn ? 'Log in now' : '立即登入',
+    successTitle: isEn ? 'Order Completed' : '結帳完成',
+    successDesc: isEn
+      ? 'Your order has been placed. You can view details in My Orders.'
+      : '您的訂單已成立，可前往我的訂單查看詳情。',
+    viewOrders: isEn ? 'View My Orders' : '查看我的訂單',
+    checkout: isEn ? 'Checkout' : '結帳',
+    continueShopping: isEn ? 'Continue Shopping' : '繼續購物',
+    emptyCart: isEn ? 'Your cart is empty' : '購物車目前是空的',
+    unavailableHint: isEn ? 'Some unavailable items remain in your cart.' : '有部分商品已下架或無法購買。',
+    removeUnavailable: isEn ? 'Remove unavailable items' : '移除無效商品',
+    backToShop: isEn ? 'Back to Shop' : '返回商店',
+    orderSummary: isEn ? 'Order Summary' : '訂單摘要',
+    subtotal: isEn ? 'Subtotal' : '小計',
+    pointsEarned: isEn ? `Earn ${pointsEarnedLabel(0, true)}` : `本次可得 ${pointsEarnedLabel(0, false)}`,
+    loginBeforeCheckout: isEn ? 'Please log in before checkout.' : '請先登入再進行結帳。',
+    placeOrder: isEn ? 'Place Order' : '送出訂單',
+    checkoutFailed: isEn ? 'Checkout failed. Please try again later.' : '結帳失敗，請稍後再試。',
+    unavailableCount: (count: number) =>
+      isEn ? `${count} unavailable item(s) found.` : `目前有 ${count} 項商品已無法購買。`,
+    pointsDesc: (points: number) => (isEn ? `Estimated points: ${points}` : `預估回饋點數：${points} 點`),
+    pointsOrderDesc: isEn ? 'Shop purchase points reward' : '購物消費回饋點數',
+  };
+
   useEffect(() => {
     const fetchCartItems = async () => {
       if (!user) {
@@ -46,12 +76,10 @@ export default function Cart() {
         setLoading(false);
         return;
       }
-
       const { data } = await supabase.from('tbl_mn5uxems').select('*, products(*)').eq('user_id', user.id);
       setCartItems((data as CartItemWithProduct[]) || []);
       setLoading(false);
     };
-
     fetchCartItems();
   }, [user, items]);
 
@@ -109,15 +137,21 @@ export default function Cart() {
           amount: pointsEarned,
           transaction_type: 'earn',
           reference_id: order.id,
-          description: '購物回饋點數',
+          description: t.pointsOrderDesc,
         });
       }
 
       await clearCart();
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session?.user?.email) {
-        const { data: profile } = await supabase.from('tbl_mn5wgzh0').select('display_name').eq('user_id', user.id).maybeSingle();
+        const { data: profile } = await supabase
+          .from('tbl_mn5wgzh0')
+          .select('display_name')
+          .eq('user_id', user.id)
+          .maybeSingle();
         fetch(SEND_EMAIL_URL, {
           method: 'POST',
           headers: {
@@ -143,7 +177,7 @@ export default function Cart() {
 
       setSuccess(true);
     } catch {
-      setCheckoutError('結帳失敗，請稍後再試或聯繫客服。');
+      setCheckoutError(t.checkoutFailed);
       setTimeout(() => setCheckoutError(''), 4000);
     } finally {
       setCheckoutLoading(false);
@@ -156,10 +190,14 @@ export default function Cart() {
         <Navigation />
         <div className="mx-auto max-w-md px-4 py-32 text-center">
           <ShoppingBag className="mx-auto mb-4 h-14 w-14 text-gray-300" />
-          <h1 className="mb-2 text-2xl font-bold text-gray-900">請先登入</h1>
-          <p className="mb-6 text-sm leading-6 text-gray-500">登入後即可查看購物車、累積點數並完成訂單。</p>
-          <button type="button" onClick={() => navigate('/auth/login')} className="rounded-xl bg-[#C09A6A] px-6 py-3 font-bold text-white transition hover:bg-[#8B6840]">
-            前往登入
+          <h1 className="mb-2 text-2xl font-bold text-gray-900">{t.loginRequiredTitle}</h1>
+          <p className="mb-6 text-sm leading-6 text-gray-500">{t.loginRequiredDesc}</p>
+          <button
+            type="button"
+            onClick={() => navigate('/auth/login')}
+            className="rounded-xl bg-[#C09A6A] px-6 py-3 font-bold text-white transition hover:bg-[#8B6840]"
+          >
+            {t.loginNow}
           </button>
         </div>
       </div>
@@ -175,10 +213,14 @@ export default function Cart() {
             <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
               <CheckCircle className="h-10 w-10 text-green-600" />
             </div>
-            <h1 className="mb-2 text-2xl font-bold text-gray-900">訂單已成立</h1>
-            <p className="mb-6 text-sm leading-6 text-gray-500">我們已建立你的購買紀錄，訂單通知將寄送到會員信箱。</p>
-            <button type="button" onClick={() => navigate('/member/orders')} className="rounded-xl bg-[#C09A6A] px-8 py-3 font-bold text-white transition hover:bg-[#8B6840]">
-              查看我的訂單
+            <h1 className="mb-2 text-2xl font-bold text-gray-900">{t.successTitle}</h1>
+            <p className="mb-6 text-sm leading-6 text-gray-500">{t.successDesc}</p>
+            <button
+              type="button"
+              onClick={() => navigate('/member/orders')}
+              className="rounded-xl bg-[#C09A6A] px-8 py-3 font-bold text-white transition hover:bg-[#8B6840]"
+            >
+              {t.viewOrders}
             </button>
           </motion.div>
         </div>
@@ -192,15 +234,19 @@ export default function Cart() {
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <p className="section-label">Checkout</p>
+            <p className="section-label">{t.checkout}</p>
             <h1 className="section-title flex items-center gap-2 text-3xl">
               <ShoppingBag className="h-7 w-7 text-[#C09A6A]" />
-              購物車
+              {t.checkout}
             </h1>
             <span className="gold-bar" />
           </div>
-          <button type="button" onClick={() => navigate('/shop')} className="self-start rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 sm:self-auto">
-            繼續購物
+          <button
+            type="button"
+            onClick={() => navigate('/shop')}
+            className="self-start rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 sm:self-auto"
+          >
+            {t.continueShopping}
           </button>
         </div>
 
@@ -211,17 +257,25 @@ export default function Cart() {
         ) : validCartItems.length === 0 ? (
           <div className="rounded-2xl bg-white px-4 py-24 text-center text-gray-400 shadow-sm">
             <ShoppingBag className="mx-auto mb-4 h-16 w-16 opacity-20" />
-            <p className="text-lg font-semibold text-gray-500">購物車目前是空的</p>
+            <p className="text-lg font-semibold text-gray-500">{t.emptyCart}</p>
             {unavailableCartItems.length > 0 && (
               <div className="mx-auto mt-4 max-w-md rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
-                有 {unavailableCartItems.length} 件商品已下架或不存在，已自動略過小計。
-                <button type="button" onClick={handleRemoveUnavailableItems} className="ml-2 font-bold underline">
-                  移除失效商品
+                {t.unavailableCount(unavailableCartItems.length)}
+                <button
+                  type="button"
+                  onClick={handleRemoveUnavailableItems}
+                  className="ml-2 font-bold underline"
+                >
+                  {t.removeUnavailable}
                 </button>
               </div>
             )}
-            <button type="button" onClick={() => navigate('/shop')} className="mt-4 font-bold text-[#C09A6A] hover:underline">
-              前往選物商店
+            <button
+              type="button"
+              onClick={() => navigate('/shop')}
+              className="mt-4 font-bold text-[#C09A6A] hover:underline"
+            >
+              {t.backToShop}
             </button>
           </div>
         ) : (
@@ -231,29 +285,56 @@ export default function Cart() {
                 <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                   <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                   <div className="flex-1">
-                    <p className="font-semibold">有 {unavailableCartItems.length} 件商品已下架或資料不存在，已從小計與結帳中略過。</p>
+                    <p className="font-semibold">{t.unavailableCount(unavailableCartItems.length)}</p>
                     <button type="button" onClick={handleRemoveUnavailableItems} className="mt-1 font-bold underline">
-                      移除失效商品
+                      {t.removeUnavailable}
                     </button>
                   </div>
                 </div>
               )}
               {validCartItems.map(item => (
                 <motion.div key={item.id} layout className="flex gap-4 rounded-2xl bg-white p-4 shadow-sm">
-                  <img src={item.products.image_url || 'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=240'} alt={item.products.name} className="h-24 w-24 flex-shrink-0 rounded-xl object-cover" />
+                  <img
+                    src={
+                      item.products.image_url ||
+                      'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=240'
+                    }
+                    alt={item.products.name}
+                    className="h-24 w-24 flex-shrink-0 rounded-xl object-cover"
+                  />
                   <div className="min-w-0 flex-1">
                     <h2 className="truncate text-sm font-bold text-gray-900">{item.products.name}</h2>
                     <p className="mt-1 font-bold text-[#C09A6A]">{formatCurrency(item.products.price)}</p>
                     <div className="mt-3 flex flex-wrap items-center gap-3">
                       <div className="flex items-center overflow-hidden rounded-lg border border-gray-200">
-                        <button type="button" onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-2 text-gray-500 transition hover:bg-gray-50"><Minus className="h-3.5 w-3.5" /></button>
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          className="p-2 text-gray-500 transition hover:bg-gray-50"
+                        >
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
                         <span className="w-10 text-center text-sm font-bold">{item.quantity}</span>
-                        <button type="button" onClick={() => updateQuantity(item.id, Math.min(item.products.stock_quantity, item.quantity + 1))} className="p-2 text-gray-500 transition hover:bg-gray-50"><Plus className="h-3.5 w-3.5" /></button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateQuantity(item.id, Math.min(item.products.stock_quantity, item.quantity + 1))
+                          }
+                          className="p-2 text-gray-500 transition hover:bg-gray-50"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
                       </div>
-                      <span className="text-sm font-semibold text-gray-600">{formatCurrency(item.products.price * item.quantity)}</span>
+                      <span className="text-sm font-semibold text-gray-600">
+                        {formatCurrency(item.products.price * item.quantity)}
+                      </span>
                     </div>
                   </div>
-                  <button type="button" onClick={() => removeItem(item.id)} className="self-start p-1 text-red-400 transition hover:text-red-600">
+                  <button
+                    type="button"
+                    onClick={() => removeItem(item.id)}
+                    className="self-start p-1 text-red-400 transition hover:text-red-600"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </motion.div>
@@ -263,32 +344,45 @@ export default function Cart() {
             <aside className="h-fit rounded-2xl bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-900">
                 <ShieldCheck className="h-5 w-5 text-[#C09A6A]" />
-                訂單摘要
+                {t.orderSummary}
               </div>
               <div className="mb-4 space-y-2">
                 {validCartItems.map(item => (
                   <div key={item.id} className="flex justify-between gap-3 text-sm text-gray-600">
-                    <span className="truncate">{item.products.name} x {item.quantity}</span>
+                    <span className="truncate">
+                      {item.products.name} x {item.quantity}
+                    </span>
                     <span className="font-semibold">{formatCurrency(item.products.price * item.quantity)}</span>
                   </div>
                 ))}
               </div>
               <div className="mb-4 border-t border-gray-100 pt-4">
                 <div className="flex justify-between text-lg font-bold">
-                  <span>合計</span>
+                  <span>{t.subtotal}</span>
                   <span className="text-[#C09A6A]">{formatCurrency(subtotal)}</span>
                 </div>
-                <p className="mt-1 text-xs font-semibold text-[#8B6840]">本次預計獲得 {pointsEarned} 點</p>
+                <p className="mt-1 text-xs font-semibold text-[#8B6840]">{t.pointsDesc(pointsEarned)}</p>
               </div>
-              {checkoutError && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-600">{checkoutError}</p>}
-              {!user && (
-                <p className="mb-3 rounded-lg bg-[#FEF9EC] px-3 py-2 text-center text-sm font-semibold text-[#8B6840]">
-                  登入後即可結帳，購物車內容會自動保留。
+              {checkoutError && (
+                <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-600">
+                  {checkoutError}
                 </p>
               )}
-              <button type="button" onClick={handleCheckout} disabled={checkoutLoading || validCartItems.length === 0} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C09A6A] py-3 font-bold text-white transition hover:bg-[#8B6840] disabled:opacity-60">
-                {checkoutLoading && <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />}
-                確認結帳
+              {!user && (
+                <p className="mb-3 rounded-lg bg-[#FEF9EC] px-3 py-2 text-center text-sm font-semibold text-[#8B6840]">
+                  {t.loginBeforeCheckout}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={handleCheckout}
+                disabled={checkoutLoading || validCartItems.length === 0}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C09A6A] py-3 font-bold text-white transition hover:bg-[#8B6840] disabled:opacity-60"
+              >
+                {checkoutLoading && (
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                )}
+                {t.placeOrder}
               </button>
             </aside>
           </div>
@@ -296,4 +390,8 @@ export default function Cart() {
       </main>
     </div>
   );
+}
+
+function pointsEarnedLabel(points: number, isEn: boolean) {
+  return isEn ? `${points} points` : `${points} 點`;
 }

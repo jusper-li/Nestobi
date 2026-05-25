@@ -1,7 +1,21 @@
 import { ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function Hero() {
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
+
+  const text = {
+    title1: isEn ? 'Travel, Coffee,' : '旅行、咖啡、選物',
+    title2: isEn ? 'Curated in One Place' : '一次整理到位',
+    subtitle: isEn
+      ? 'From stays and coffee picks to AI planning, Nestobi helps you organize every journey with less effort.'
+      : '從精選住宿、咖啡選物到 AI 行程規劃，Nestobi 幫你把每次出發整理得更輕鬆。',
+    cta: isEn ? 'Start Exploring' : '開始探索',
+    aria: isEn ? 'Scroll to explore' : '向下捲動探索',
+  };
+
   const scrollToExplore = () => {
     const element = document.getElementById('explore');
     if (element) {
@@ -10,7 +24,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative flex h-screen items-center justify-center overflow-hidden">
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
@@ -21,25 +35,24 @@ export default function Hero() {
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal/70 via-charcoal/50 to-charcoal/70" />
       </div>
 
-      <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
+      <div className="relative z-10 mx-auto max-w-5xl px-6 text-center">
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-5xl md:text-6xl lg:text-7xl font-serif text-cream mb-6 leading-tight"
+          className="mb-6 font-serif text-5xl leading-tight text-cream md:text-6xl lg:text-7xl"
         >
-          擁有獨特的
+          {text.title1}
           <br />
-          建築遺產
+          {text.title2}
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="text-lg md:text-xl text-cream/90 mb-12 max-w-2xl mx-auto leading-relaxed"
+          className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-cream/90 md:text-xl"
         >
-          透過分權持有投資卓越物業。
-          體驗房地產投資的未來。
+          {text.subtitle}
         </motion.p>
         <motion.button
           initial={{ opacity: 0, y: 30 }}
@@ -47,16 +60,16 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.6 }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.98 }}
-          className="px-10 py-4 bg-[#2C1F10] text-charcoal font-medium rounded-sm hover:bg-cream transition-colors duration-300 shadow-lg"
+          className="rounded-sm bg-[#2C1F10] px-10 py-4 font-medium text-cream shadow-lg transition-colors duration-300 hover:bg-cream hover:text-charcoal"
         >
-          立即註冊
+          {text.cta}
         </motion.button>
       </div>
 
       <button
         onClick={scrollToExplore}
-        className="absolute bottom-12 left-1/2 transform -translate-x-1/2 text-cream/80 hover:text-cream transition-colors animate-bounce"
-        aria-label="Scroll to explore"
+        className="absolute bottom-12 left-1/2 -translate-x-1/2 animate-bounce text-cream/80 transition-colors hover:text-cream"
+        aria-label={text.aria}
       >
         <ChevronDown size={32} />
       </button>

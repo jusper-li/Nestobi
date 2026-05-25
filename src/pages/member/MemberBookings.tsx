@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { BedDouble, Calendar, Users, AlertCircle } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-import { formatCurrency, formatDate, getStatusLabel, getStatusColor } from '../../lib/utils';
+import { AlertCircle, BedDouble, Calendar, Users } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { supabase } from '../../lib/supabase';
+import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
 
 interface Booking {
   id: string;
@@ -13,78 +14,122 @@ interface Booking {
   total_price: number;
   status: string;
   special_requests: string;
-  created_at: string;
   tbl_rooms: { name: string; location: string; image_url: string } | null;
 }
 
-const MemberBookings: React.FC = () => {
+export default function MemberBookings() {
   const { user } = useAuth();
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelId, setCancelId] = useState<string | null>(null);
 
-  const fetchBookings = async () => {
-    if (!user) return;
-    const { data } = await supabase.from('tbl_bookings').select('*, tbl_rooms(name, location, image_url)').eq('user_id', user.id).order('created_at', { ascending: false });
-    setBookings((data as any) || []);
-    setLoading(false);
+  const t = {
+    title: isEn ? 'My Bookings' : '我的訂房',
+    noData: isEn ? 'No bookings yet' : '目前沒有訂房紀錄',
+    room: isEn ? 'Room' : '房型',
+    people: isEn ? 'guests' : '人',
+    cancel: isEn ? 'Cancel Booking' : '取消訂房',
+    canceling: isEn ? 'Cancelling...' : '取消中...',
+    confirmCancel: isEn ? 'Are you sure you want to cancel this booking?' : '確定要取消這筆訂房嗎？',
   };
 
-  useEffect(() => { fetchBookings(); }, [user]);
+  useEffect(() => {
+    const fetchBookings = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('tbl_bookings')
+        .select('*, tbl_rooms(name, location, image_url)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      setBookings((data as Booking[]) || []);
+      setLoading(false);
+    };
+    fetchBookings();
+  }, [user]);
 
   const handleCancel = async (id: string) => {
-    if (!confirm('確定要取消這筆訂房？')) return;
+    if (!window.confirm(t.confirmCancel)) return;
     setCancelId(id);
     try {
       await supabase.from('tbl_bookings').update({ status: 'cancelled' }).eq('id', id);
-      setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'cancelled' } : b));
+      setBookings(prev => prev.map(item => (item.id === id ? { ...item, status: 'cancelled' } : item)));
     } finally {
       setCancelId(null);
     }
   };
 
-  if (loading) return <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-[#2C1F10] border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center py-16">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2C1F10] border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><BedDouble className="w-5 h-5 text-[#2C1F10]" />我的訂房</h2>
+      <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900">
+        <BedDouble className="h-5 w-5 text-[#2C1F10]" />
+        {t.title}
+      </h2>
       {bookings.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center shadow-sm">
-          <BedDouble className="w-14 h-14 mx-auto mb-4 text-gray-200" />
-          <p className="text-gray-400">尚無訂房紀錄</p>
+        <div className="rounded-2xl bg-white p-12 text-center shadow-sm">
+          <BedDouble className="mx-auto mb-4 h-14 w-14 text-gray-200" />
+          <p className="text-gray-400">{t.noData}</p>
         </div>
       ) : (
-        bookings.map((booking, i) => (
-          <motion.div key={booking.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            <div className="flex flex-col sm:flex-row gap-0">
+        bookings.map((booking, index) => (
+          <motion.div
+            key={booking.id}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="overflow-hidden rounded-2xl bg-white shadow-sm"
+          >
+            <div className="flex flex-col gap-0 sm:flex-row">
               <img
                 src={booking.tbl_rooms?.image_url || 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200'}
-                alt={booking.tbl_rooms?.name}
-                className="w-full sm:w-36 h-32 sm:h-auto object-cover flex-shrink-0"
+                alt={booking.tbl_rooms?.name || t.room}
+                className="h-32 w-full flex-shrink-0 object-cover sm:h-auto sm:w-36"
               />
-              <div className="p-5 flex-1">
-                <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+              <div className="flex-1 p-5">
+                <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                   <div>
-                    <h3 className="font-semibold text-gray-900">{booking.tbl_rooms?.name || '房型'}</h3>
-                    <p className="text-gray-500 text-sm">{booking.tbl_rooms?.location}</p>
+                    <h3 className="font-semibold text-gray-900">{booking.tbl_rooms?.name || t.room}</h3>
+                    <p className="text-sm text-gray-500">{booking.tbl_rooms?.location}</p>
                   </div>
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${getStatusColor(booking.status)}`}>{getStatusLabel(booking.status)}</span>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${getStatusColor(booking.status)}`}>
+                    {getStatusLabel(booking.status, lang)}
+                  </span>
                 </div>
-                <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
-                  <div className="flex items-center gap-1"><Calendar className="w-4 h-4 text-gray-400" />{formatDate(booking.check_in_date)} ~ {formatDate(booking.check_out_date)}</div>
-                  <div className="flex items-center gap-1"><Users className="w-4 h-4 text-gray-400" />{booking.guests} 位賓客</div>
+                <div className="mb-3 flex flex-wrap gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4 text-gray-400" />
+                    {formatDate(booking.check_in_date, isEn ? 'en-US' : 'zh-TW')} ~{' '}
+                    {formatDate(booking.check_out_date, isEn ? 'en-US' : 'zh-TW')}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Users className="h-4 w-4 text-gray-400" />
+                    {booking.guests} {t.people}
+                  </div>
                 </div>
                 {booking.special_requests && (
-                  <div className="flex items-start gap-1 text-sm text-gray-500 mb-3">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <div className="mb-3 flex items-start gap-1 text-sm text-gray-500">
+                    <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                     <span className="text-xs">{booking.special_requests}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between">
                   <p className="font-bold text-[#2C1F10]">{formatCurrency(booking.total_price)}</p>
                   {booking.status === 'confirmed' && (
-                    <button onClick={() => handleCancel(booking.id)} disabled={cancelId === booking.id} className="text-red-500 hover:text-red-700 text-sm font-medium border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50">
-                      {cancelId === booking.id ? '取消中...' : '取消訂房'}
+                    <button
+                      onClick={() => handleCancel(booking.id)}
+                      disabled={cancelId === booking.id}
+                      className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-500 transition hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+                    >
+                      {cancelId === booking.id ? t.canceling : t.cancel}
                     </button>
                   )}
                 </div>
@@ -95,6 +140,4 @@ const MemberBookings: React.FC = () => {
       )}
     </div>
   );
-};
-
-export default MemberBookings;
+}

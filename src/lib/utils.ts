@@ -6,20 +6,20 @@ export function formatCurrency(amount: number, currency = 'TWD'): string {
   return new Intl.NumberFormat('zh-TW', { style: 'currency', currency }).format(amount);
 }
 
-export function formatDate(dateStr: string | null | undefined): string {
+export function formatDate(dateStr: string | null | undefined, locale = 'zh-TW'): string {
   if (!dateStr) return '-';
 
-  return new Date(dateStr).toLocaleDateString('zh-TW', {
+  return new Date(dateStr).toLocaleDateString(locale, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
   });
 }
 
-export function formatDateTime(dateStr: string | null | undefined): string {
+export function formatDateTime(dateStr: string | null | undefined, locale = 'zh-TW'): string {
   if (!dateStr) return '-';
 
-  return new Date(dateStr).toLocaleString('zh-TW', {
+  return new Date(dateStr).toLocaleString(locale, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -44,22 +44,39 @@ export function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(' ');
 }
 
-export function getStatusLabel(status: string): string {
-  const labels: Record<string, string> = {
-    pending: '待處理',
-    confirmed: '已確認',
-    cancelled: '已取消',
-    completed: '已完成',
-    processing: '處理中',
-    shipped: '已出貨',
-    paid: '已付款',
-    unpaid: '未付款',
-    refunded: '已退款',
-    active: '啟用中',
-    inactive: '停用',
-    draft: '草稿',
-    shared: '已分享',
-  };
+export function getStatusLabel(status: string, lang: string = 'zh-TW'): string {
+  const isEn = lang === 'en';
+  const labels: Record<string, string> = isEn
+    ? {
+        pending: 'Pending',
+        confirmed: 'Confirmed',
+        cancelled: 'Cancelled',
+        completed: 'Completed',
+        processing: 'Processing',
+        shipped: 'Shipped',
+        paid: 'Paid',
+        unpaid: 'Unpaid',
+        refunded: 'Refunded',
+        active: 'Active',
+        inactive: 'Inactive',
+        draft: 'Draft',
+        shared: 'Shared',
+      }
+    : {
+        pending: '待處理',
+        confirmed: '已確認',
+        cancelled: '已取消',
+        completed: '已完成',
+        processing: '處理中',
+        shipped: '已出貨',
+        paid: '已付款',
+        unpaid: '未付款',
+        refunded: '已退款',
+        active: '啟用中',
+        inactive: '停用',
+        draft: '草稿',
+        shared: '已分享',
+      };
 
   return labels[status] || status;
 }

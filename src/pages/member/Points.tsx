@@ -1,23 +1,76 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Star, TrendingUp, TrendingDown, Gift, CheckCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CheckCircle, Gift, Star, TrendingDown, TrendingUp } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import { formatDate } from '../../lib/utils';
-import { useAuth } from '../../contexts/AuthContext';
 
-interface PointTx { id: string; amount: number; transaction_type: string; description: string; created_at: string; }
-
-const REWARDS = [
-  { points: 100, title: 'NT$10 折扣', description: '消費折抵 NT$10', icon: '🏷️' },
-  { points: 300, title: 'NT$35 折扣', description: '消費折抵 NT$35', icon: '💰' },
-  { points: 500, title: '免費房型升等', description: '訂房升等一個等級', icon: '⬆️' },
-  { points: 1000, title: '免費早餐', description: '雙人免費早餐', icon: '☕' },
-  { points: 2000, title: 'NT$250 折扣', description: '消費折抵 NT$250', icon: '🎁' },
-  { points: 5000, title: '一晚免費住宿', description: '標準房型一晚住宿', icon: '🏨' },
-];
+interface PointTx {
+  id: string;
+  amount: number;
+  transaction_type: string;
+  description: string;
+  created_at: string;
+}
 
 const Points: React.FC = () => {
   const { user } = useAuth();
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
+
+  const t = {
+    title: isEn ? 'My Points' : '我的點數',
+    available: isEn ? 'Available balance for redemption' : '可兌換點數餘額',
+    rewards: isEn ? 'Reward Center' : '獎勵中心',
+    canRedeem: isEn ? 'Redeem now' : '立即兌換',
+    needMore: isEn ? 'Need' : '還差',
+    pointsUnit: isEn ? 'pts' : '點',
+    redeemed: isEn ? 'Redeemed' : '已兌換',
+    history: isEn ? 'Point History' : '點數紀錄',
+    noHistory: isEn ? 'No point transactions yet' : '目前沒有點數紀錄',
+    txFallback: isEn ? 'Point transaction' : '點數異動',
+  };
+
+  const rewards = [
+    {
+      points: 100,
+      title: isEn ? 'NT$10 Coupon' : 'NT$10 折價券',
+      description: isEn ? 'Redeem NT$10 coupon' : '可兌換 NT$10 折價券',
+      icon: '☕',
+    },
+    {
+      points: 300,
+      title: isEn ? 'NT$35 Coupon' : 'NT$35 折價券',
+      description: isEn ? 'Redeem NT$35 coupon' : '可兌換 NT$35 折價券',
+      icon: '🎁',
+    },
+    {
+      points: 500,
+      title: isEn ? 'Free Breakfast' : '免費早餐',
+      description: isEn ? 'Booking add-on free breakfast' : '訂房可加贈免費早餐',
+      icon: '🥐',
+    },
+    {
+      points: 1000,
+      title: isEn ? 'Room Upgrade' : '房型升等',
+      description: isEn ? 'Room upgrade benefit' : '可兌換房型升等優惠',
+      icon: '🏨',
+    },
+    {
+      points: 2000,
+      title: isEn ? 'NT$250 Coupon' : 'NT$250 折價券',
+      description: isEn ? 'Redeem NT$250 coupon' : '可兌換 NT$250 折價券',
+      icon: '💸',
+    },
+    {
+      points: 5000,
+      title: isEn ? 'Free 1-Night Stay' : '免費住宿一晚',
+      description: isEn ? 'One free night voucher' : '可兌換一晚住宿券',
+      icon: '🌙',
+    },
+  ];
+
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<PointTx[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,22 +80,24 @@ const Points: React.FC = () => {
   const fetchPoints = async () => {
     if (!user) return;
     const { data } = await supabase.from('points').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-    const txs = data || [];
+    const txs = (data as PointTx[]) || [];
     setTransactions(txs);
-    setBalance(txs.reduce((s: number, t: any) => s + (t.amount || 0), 0));
+    setBalance(txs.reduce((sum, tx) => sum + (tx.amount || 0), 0));
     setLoading(false);
   };
 
-  useEffect(() => { fetchPoints(); }, [user]);
+  useEffect(() => {
+    fetchPoints();
+  }, [user]);
 
-  const handleRedeem = async (reward: typeof REWARDS[0], index: number) => {
+  const handleRedeem = async (reward: (typeof rewards)[0], index: number) => {
     if (!user || balance < reward.points) return;
     setRedeeming(index);
     const { error } = await supabase.from('points').insert({
       user_id: user.id,
       amount: -reward.points,
       transaction_type: 'redeem',
-      description: `兌換：${reward.title}`,
+      description: `${t.redeemed}: ${reward.title}`,
     });
     if (!error) {
       setRedeemSuccess(reward.title);
@@ -52,7 +107,13 @@ const Points: React.FC = () => {
     setRedeeming(null);
   };
 
-  if (loading) return <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-[#2C1F10] border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center py-16">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2C1F10] border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -62,45 +123,68 @@ const Points: React.FC = () => {
             initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
-            className="fixed top-6 right-6 z-50 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2"
+            className="fixed right-6 top-6 z-50 flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 text-white shadow-lg"
           >
-            <CheckCircle className="w-5 h-5" />
-            <span>已兌換：{redeemSuccess}</span>
+            <CheckCircle className="h-5 w-5" />
+            <span>
+              {t.redeemed}: {redeemSuccess}
+            </span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-2xl p-6 text-white">
-        <div className="flex items-center gap-3 mb-2">
-          <Star className="w-6 h-6" />
-          <h2 className="text-xl font-bold">我的點數</h2>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl bg-gradient-to-r from-yellow-400 to-orange-400 p-6 text-white"
+      >
+        <div className="mb-2 flex items-center gap-3">
+          <Star className="h-6 w-6" />
+          <h2 className="text-xl font-bold">{t.title}</h2>
         </div>
-        <p className="text-5xl font-bold mb-1">{balance.toLocaleString()}</p>
-        <p className="text-yellow-100 text-sm">點數不設期限，可隨時兌換</p>
+        <p className="mb-1 text-5xl font-bold">{balance.toLocaleString()}</p>
+        <p className="text-sm text-yellow-100">{t.available}</p>
       </motion.div>
 
       <div>
-        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><Gift className="w-5 h-5 text-orange-500" />點數兌換</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {REWARDS.map((r, i) => {
+        <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+          <Gift className="h-5 w-5 text-orange-500" />
+          {t.rewards}
+        </h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {rewards.map((r, i) => {
             const canRedeem = balance >= r.points;
             const isRedeeming = redeeming === i;
             return (
-              <motion.div key={i} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                className={`bg-white rounded-2xl p-4 shadow-sm border-2 transition ${canRedeem ? 'border-yellow-300 hover:border-yellow-400 hover:shadow-md cursor-pointer' : 'border-gray-100 opacity-60 cursor-not-allowed'}`}
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className={`rounded-2xl border-2 bg-white p-4 shadow-sm transition ${
+                  canRedeem
+                    ? 'cursor-pointer border-yellow-300 hover:border-yellow-400 hover:shadow-md'
+                    : 'cursor-not-allowed border-gray-100 opacity-60'
+                }`}
                 onClick={() => canRedeem && !isRedeeming && handleRedeem(r, i)}
               >
-                <div className="text-3xl mb-2">{r.icon}</div>
+                <div className="mb-2 text-3xl">{r.icon}</div>
                 <h4 className="font-semibold text-gray-900">{r.title}</h4>
-                <p className="text-gray-500 text-sm mt-0.5">{r.description}</p>
+                <p className="mt-0.5 text-sm text-gray-500">{r.description}</p>
                 <div className="mt-3 flex items-center justify-between">
-                  <span className="text-orange-500 font-bold text-sm">{r.points.toLocaleString()} 點</span>
+                  <span className="text-sm font-bold text-orange-500">
+                    {r.points.toLocaleString()} {t.pointsUnit}
+                  </span>
                   {isRedeeming ? (
-                    <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-orange-400 border-t-transparent" />
                   ) : canRedeem ? (
-                    <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">點擊兌換</span>
+                    <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700">
+                      {t.canRedeem}
+                    </span>
                   ) : (
-                    <span className="text-xs text-gray-400">需 {(r.points - balance).toLocaleString()} 點</span>
+                    <span className="text-xs text-gray-400">
+                      {t.needMore} {(r.points - balance).toLocaleString()} {t.pointsUnit}
+                    </span>
                   )}
                 </div>
               </motion.div>
@@ -110,24 +194,38 @@ const Points: React.FC = () => {
       </div>
 
       <div>
-        <h3 className="text-lg font-bold text-gray-900 mb-4">交易紀錄</h3>
+        <h3 className="mb-4 text-lg font-bold text-gray-900">{t.history}</h3>
         {transactions.length === 0 ? (
-          <div className="bg-white rounded-2xl p-10 text-center text-gray-400 shadow-sm"><Star className="w-10 h-10 mx-auto mb-2 opacity-20" /><p>暫無交易紀錄</p></div>
+          <div className="rounded-2xl bg-white p-10 text-center text-gray-400 shadow-sm">
+            <Star className="mx-auto mb-2 h-10 w-10 opacity-20" />
+            <p>{t.noHistory}</p>
+          </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-50">
+          <div className="divide-y divide-gray-50 overflow-hidden rounded-2xl bg-white shadow-sm">
             {transactions.map((tx, i) => (
-              <motion.div key={tx.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }} className="flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition">
+              <motion.div
+                key={tx.id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: i * 0.03 }}
+                className="flex items-center justify-between px-5 py-3.5 transition hover:bg-gray-50"
+              >
                 <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center ${tx.amount > 0 ? 'bg-green-100' : 'bg-red-100'}`}>
-                    {tx.amount > 0 ? <TrendingUp className="w-4 h-4 text-green-600" /> : <TrendingDown className="w-4 h-4 text-red-500" />}
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-full ${tx.amount > 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+                    {tx.amount > 0 ? (
+                      <TrendingUp className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4 text-red-500" />
+                    )}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{tx.description || '點數交易'}</p>
-                    <p className="text-xs text-gray-400">{formatDate(tx.created_at)}</p>
+                    <p className="text-sm font-medium text-gray-900">{tx.description || t.txFallback}</p>
+                    <p className="text-xs text-gray-400">{formatDate(tx.created_at, isEn ? 'en-US' : 'zh-TW')}</p>
                   </div>
                 </div>
                 <span className={`font-bold ${tx.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                  {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
+                  {tx.amount > 0 ? '+' : ''}
+                  {tx.amount.toLocaleString()}
                 </span>
               </motion.div>
             ))}

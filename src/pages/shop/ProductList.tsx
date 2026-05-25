@@ -6,7 +6,15 @@ import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import { useCart } from '../../contexts/CartContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useProgressiveList } from '../../hooks/useProgressiveList';
+import {
+  getTranslationRuntimeState,
+  translateCategoriesFromCacheOnly,
+  translateCategoriesOnDemand,
+  translateProductsFromCacheOnly,
+  translateProductsOnDemand,
+} from '../../lib/contentTranslations';
 import { supabase } from '../../lib/supabase';
 import { PRODUCT_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
 import { fetchPublicList, fetchSnapshotList, readCachedList, withRetry, writeCachedList } from '../../lib/listData';
@@ -69,8 +77,45 @@ function sortProducts(products: Product[], sortMode: SortMode) {
 }
 
 export default function ProductList() {
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
+  const labels = {
+    seoTitle: isEn ? 'Travel Shop' : '旅行選物商店',
+    seoDesc: isEn
+      ? 'Curated coffee, gifts, and travel goods with smart filters and quick add-to-cart.'
+      : '精選咖啡、茶點、器物與旅途好物，支援搜尋、分類、排序與快速加入購物車。',
+    heroTitle: isEn ? 'Travel Shop' : '旅行選物商店',
+    heroDesc: isEn
+      ? 'From origin coffee and tea snacks to travel goods, bring the taste of the journey home.'
+      : '從產地咖啡、茶點到旅行器物，把旅程中的味道和日常用品一起帶回家。',
+    heroPlaceholder: isEn ? 'Try: fruity coffee, gift tea bag, Okinawa souvenir' : '試試：果香咖啡、送禮茶包、沖繩旅行紀念品',
+    search: isEn ? 'Search' : '搜尋',
+    clearHint: isEn ? 'Clear hint' : '清除提示',
+    allProducts: isEn ? 'All Products' : '全部商品',
+    subCategories: isEn ? 'Subcategories' : '次分類',
+    shownCount: isEn ? 'Showing' : '已顯示',
+    foundProducts: isEn ? 'products found' : '件商品',
+    purchasable: isEn ? 'purchasable' : '件可購買',
+    quickFilterHint: isEn ? 'Filter by stock, price, and category.' : '商品可依庫存、價格與分類快速篩選。',
+    recommended: isEn ? 'Recommended' : '推薦排序',
+    priceAsc: isEn ? 'Price: Low to High' : '價格由低到高',
+    priceDesc: isEn ? 'Price: High to Low' : '價格由高到低',
+    stockMost: isEn ? 'Most In Stock' : '庫存最多',
+    lowStock: isEn ? 'Only {count} left' : '僅剩 {count}',
+    soldOut: isEn ? 'Sold Out' : '售完',
+    details: isEn ? 'Details' : '詳情',
+    addOn: isEn ? 'Add' : '加購',
+    loadMore: isEn ? 'Load More Products' : '載入更多商品',
+    empty: isEn ? 'No products match the current filters.' : '沒有符合條件的商品。',
+    clearFilters: isEn ? 'Clear filters' : '清除篩選',
+    aiUnavailable: isEn ? 'AI search is temporarily unavailable' : 'AI 搜尋暫時無法使用',
+    aiSummary: isEn ? 'Results organized based on your description.' : '已依照你的描述整理商品結果',
+    seoKeywords: isEn ? 'travel shop, coffee goods, curated products, Nestobi' : '旅行選物, 咖啡商品, 旅遊購物, Nestobi',
+  };
   const [products, setProducts] = useState<Product[]>([]);
+  const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [displayCategories, setDisplayCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortMode, setSortMode] = useState<SortMode>('recommended');
@@ -80,6 +125,7 @@ export default function ProductList() {
   const [aiError, setAiError] = useState('');
   const [addingId, setAddingId] = useState<string | null>(null);
   const [dataNotice, setDataNotice] = useState('');
+  const [translationNotice, setTranslationNotice] = useState('');
   const { addItem } = useCart();
 
   useEffect(() => {
@@ -91,16 +137,21 @@ export default function ProductList() {
 
     if (cachedProducts?.length) {
       setProducts(cachedProducts);
+      setDisplayProducts(cachedProducts);
       setLoading(false);
     }
-    if (cachedCategories?.length) setCategories(cachedCategories);
+    if (cachedCategories?.length) {
+      setCategories(cachedCategories);
+      setDisplayCategories(cachedCategories);
+    }
 
     fetchSnapshotList<Product>(PRODUCTS_SNAPSHOT_PATH)
       .then(snapshotProducts => {
         if (cancelled || receivedFreshProducts || snapshotProducts.length === 0 || cachedProducts?.length) return;
         setProducts(snapshotProducts);
+        setDisplayProducts(snapshotProducts);
         setLoading(false);
-        setDataNotice('目前先顯示快速快照資料，正在背景更新最新商品。');
+        setDataNotice(isEn ? 'Showing snapshot data first while syncing latest products.' : '目前先顯示快速快照資料，正在背景更新最新商品。');
       })
       .catch(() => {});
 
@@ -108,6 +159,7 @@ export default function ProductList() {
       .then(snapshotCategories => {
         if (cancelled || receivedFreshCategories || snapshotCategories.length === 0 || cachedCategories?.length) return;
         setCategories(snapshotCategories);
+        setDisplayCategories(snapshotCategories);
       })
       .catch(() => {});
 
@@ -125,12 +177,13 @@ export default function ProductList() {
         if (cancelled) return;
         receivedFreshProducts = true;
         setProducts(freshProducts);
+        setDisplayProducts(freshProducts);
         writeCachedList(PRODUCTS_CACHE_KEY, freshProducts);
         setDataNotice('');
       })
       .catch(() => {
         if (cancelled) return;
-        if (!cachedProducts?.length) setDataNotice('Supabase 連線暫時不穩，已改用快照商品加速顯示。');
+        if (!cachedProducts?.length) setDataNotice(isEn ? 'Supabase is unstable now. Snapshot products are shown first.' : 'Supabase 連線暫時不穩，已改用快照商品加速顯示。');
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -149,6 +202,7 @@ export default function ProductList() {
         if (cancelled) return;
         receivedFreshCategories = true;
         setCategories(freshCategories);
+        setDisplayCategories(freshCategories);
         writeCachedList(CATEGORIES_CACHE_KEY, freshCategories);
       })
       .catch(() => {});
@@ -156,12 +210,82 @@ export default function ProductList() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (!products.length || lang === 'zh-TW') {
+      setDisplayProducts(products);
+      setTranslationNotice('');
+      return () => { cancelled = true; };
+    }
+    setDisplayProducts(products);
+    const runtime = getTranslationRuntimeState();
+    setTranslationNotice(
+      runtime.tableUnavailable || runtime.isLocalProxyMode
+        ? (isEn ? 'Showing source products first. Translation cache is not ready yet.' : '目前先顯示原文商品，翻譯快取尚未就緒。')
+        : (isEn ? 'Applying cached product translations...' : '正在套用商品快取翻譯...')
+    );
+    translateProductsFromCacheOnly(products, lang)
+      .then(cachedTranslated => {
+        if (!cancelled) setDisplayProducts(cachedTranslated);
+      })
+      .catch(() => {
+        if (!cancelled) setDisplayProducts(products);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setTranslationNotice(isEn ? 'Syncing remaining product translations in background...' : '正在背景補齊其餘商品翻譯...');
+        }
+      });
+    translateProductsOnDemand(products, lang)
+      .then(translated => {
+        if (!cancelled) {
+          setDisplayProducts(translated);
+          setTranslationNotice('');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setTranslationNotice(isEn ? 'Showing source/cached products.' : '目前顯示原文或快取商品。');
+      });
+    return () => { cancelled = true; };
+  }, [products, lang, isEn]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!categories.length || lang === 'zh-TW') {
+      setDisplayCategories(categories);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setDisplayCategories(categories);
+    translateCategoriesFromCacheOnly(categories, lang)
+      .then(cachedTranslated => {
+        if (!cancelled) setDisplayCategories(cachedTranslated);
+      })
+      .catch(() => {
+        if (!cancelled) setDisplayCategories(categories);
+      });
+
+    translateCategoriesOnDemand(categories, lang)
+      .then(translated => {
+        if (!cancelled) setDisplayCategories(translated);
+      })
+      .catch(() => {
+        if (!cancelled) setDisplayCategories(categories);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [categories, lang]);
+
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     const selectedCategoryIds = selectedCategory === 'all'
       ? null
-      : getDescendantCategoryIds(categories, selectedCategory);
-    const matches = products.filter(product => {
+      : getDescendantCategoryIds(displayCategories, selectedCategory);
+    const matches = displayProducts.filter(product => {
       const categoryMatches = !selectedCategoryIds
         || Array.from(getProductCategoryIds(product)).some(categoryId => selectedCategoryIds.has(categoryId));
       const queryMatches = !query || productSearchText(product).includes(query);
@@ -170,9 +294,9 @@ export default function ProductList() {
     });
 
     return sortProducts(matches, sortMode);
-  }, [products, categories, search, selectedCategory, sortMode]);
-  const orderedCategories = useMemo(() => sortCategoriesForTree(categories), [categories]);
-  const categoryById = useMemo(() => new Map(categories.map(category => [category.id, category])), [categories]);
+  }, [displayProducts, displayCategories, search, selectedCategory, sortMode]);
+  const orderedCategories = useMemo(() => sortCategoriesForTree(displayCategories), [displayCategories]);
+  const categoryById = useMemo(() => new Map(displayCategories.map(category => [category.id, category])), [displayCategories]);
   const activeCategory = selectedCategory === 'all' ? null : categoryById.get(selectedCategory) || null;
   const activePath = useMemo(() => {
     if (!activeCategory) return [] as Category[];
@@ -190,8 +314,8 @@ export default function ProductList() {
   }, [activeCategory, categoryById]);
   const activeRoot = activePath[0] || null;
   const rootCategories = useMemo(
-    () => orderedCategories.filter(category => getCategoryDepth(category, categories) === 0),
-    [orderedCategories, categories],
+    () => orderedCategories.filter(category => getCategoryDepth(category, displayCategories) === 0),
+    [orderedCategories, displayCategories],
   );
   const childCategories = useMemo(
     () => activeCategory ? orderedCategories.filter(category => category.parent_id === activeCategory.id) : [],
@@ -232,11 +356,11 @@ export default function ProductList() {
         body: JSON.stringify({ action: 'product-search', query: search }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'AI 搜尋暫時無法使用');
+      if (!res.ok) throw new Error(json.error || labels.aiUnavailable);
 
-      setAiSummary(json.result?.summary || '已依照你的描述整理商品結果');
+      setAiSummary(json.result?.summary || labels.aiSummary);
     } catch (error) {
-      setAiError(error instanceof Error ? error.message : 'AI 搜尋暫時無法使用');
+      setAiError(error instanceof Error ? error.message : labels.aiUnavailable);
     } finally {
       setAiLoading(false);
     }
@@ -245,9 +369,9 @@ export default function ProductList() {
   return (
     <div className="min-h-screen bg-gray-50">
       <SEOHead
-        title="旅行選物商店"
-        description="精選咖啡、茶點、器物與旅途好物，支援搜尋、分類、排序與快速加入購物車。"
-        keywords="旅行選物, 咖啡商品, 旅遊購物, Nestobi"
+        title={labels.seoTitle}
+        description={labels.seoDesc}
+        keywords={labels.seoKeywords}
         ogType="website"
         pageType="list"
       />
@@ -255,11 +379,11 @@ export default function ProductList() {
 
       <section className="bg-[#FEF9EC] px-4 py-14">
         <div className="mx-auto max-w-5xl text-center">
-          <p className="section-label">Travel Shop</p>
-          <h1 className="section-title text-4xl md:text-5xl">旅行選物商店</h1>
+          <p className="section-label">{labels.heroTitle}</p>
+          <h1 className="section-title text-4xl md:text-5xl">{labels.heroTitle}</h1>
           <span className="gold-bar-center" />
           <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-[#2C1F10]/65">
-            從產地咖啡、茶點到旅行器物，把旅程中的味道和日常用品一起帶回家。
+            {labels.heroDesc}
           </p>
 
           <div className={`mx-auto mt-8 flex max-w-2xl items-center rounded-2xl bg-white shadow-card transition ${aiLoading ? 'ring-2 ring-[#C09A6A]/40' : 'focus-within:ring-2 focus-within:ring-[#C09A6A]/30'}`}>
@@ -270,7 +394,7 @@ export default function ProductList() {
               value={search}
               onChange={event => setSearch(event.target.value)}
               onKeyDown={event => event.key === 'Enter' && handleAISearch()}
-              placeholder="試試：果香咖啡、送禮茶包、沖繩旅行紀念品"
+              placeholder={labels.heroPlaceholder}
               className="min-w-0 flex-1 bg-transparent px-3 py-4 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none"
             />
             {search && (
@@ -285,7 +409,7 @@ export default function ProductList() {
               className="m-1.5 inline-flex items-center gap-1.5 rounded-xl bg-[#C09A6A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#8B6840] disabled:opacity-50"
             >
               <Search className="h-4 w-4" />
-              搜尋
+              {labels.search}
             </button>
           </div>
         </div>
@@ -307,7 +431,7 @@ export default function ProductList() {
             <Sparkles className="h-4 w-4 text-[#8B6840]" />
             <span className="text-sm font-semibold text-[#2C1F10]">{aiSummary}</span>
             <button type="button" onClick={() => setAiSummary('')} className="ml-auto text-sm font-semibold text-slate-500 hover:text-slate-700">
-              清除提示
+              {labels.clearHint}
             </button>
           </div>
         )}
@@ -315,6 +439,11 @@ export default function ProductList() {
         {dataNotice && (
           <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
             {dataNotice}
+          </div>
+        )}
+        {translationNotice && (
+          <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
+            {translationNotice}
           </div>
         )}
 
@@ -329,7 +458,7 @@ export default function ProductList() {
                   : 'border border-slate-200 bg-white text-slate-600 hover:border-[#8B6840]/40 hover:text-[#8B6840]'
               }`}
             >
-              全部商品
+              {labels.allProducts}
             </button>
             {rootCategories.map(category => (
               <button
@@ -351,7 +480,7 @@ export default function ProductList() {
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1 text-xs text-slate-400">
                 <ChevronRight className="h-3 w-3" />
-                <span>次分類</span>
+                <span>{labels.subCategories}</span>
               </div>
               {childCategories.map(category => (
                 <button
@@ -374,7 +503,7 @@ export default function ProductList() {
 
         {selectedCategory !== 'all' && activeCategory && (
           <div className="mb-5 flex items-center gap-1.5 text-xs text-slate-400">
-            <button type="button" onClick={() => handleCategoryChange('all')} className="transition hover:text-[#8B6840]">全部商品</button>
+            <button type="button" onClick={() => handleCategoryChange('all')} className="transition hover:text-[#8B6840]">{labels.allProducts}</button>
             {activePath.map((category, index) => (
               <span key={category.id} className="inline-flex items-center gap-1.5">
                 <ChevronRight className="h-3 w-3" />
@@ -385,25 +514,27 @@ export default function ProductList() {
                 )}
               </span>
             ))}
-            <span className="ml-auto text-slate-300">已顯示 {Math.min(visibleCount, filtered.length)} / {filtered.length} 件</span>
+            <span className="ml-auto text-slate-300">{labels.shownCount} {Math.min(visibleCount, filtered.length)} / {filtered.length}</span>
           </div>
         )}
 
         <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-bold text-gray-900">
-              找到 {filtered.length} 件商品
-              <span className="ml-2 text-xs font-semibold text-slate-500">已顯示 {Math.min(visibleCount, filtered.length)} 件，其中 {inStockCount} 件可購買</span>
+              {isEn ? `${filtered.length} ${labels.foundProducts}` : `找到 ${filtered.length} ${labels.foundProducts}`}
+              <span className="ml-2 text-xs font-semibold text-slate-500">
+                {labels.shownCount} {Math.min(visibleCount, filtered.length)}，{inStockCount} {labels.purchasable}
+              </span>
             </p>
-            <p className="mt-0.5 text-xs font-medium text-slate-500">商品可依庫存、價格與分類快速篩選。</p>
+            <p className="mt-0.5 text-xs font-medium text-slate-500">{labels.quickFilterHint}</p>
           </div>
           <label className="flex items-center gap-2 text-sm text-gray-600">
             <SlidersHorizontal className="h-4 w-4 text-[#8B6840]" />
             <select value={sortMode} onChange={event => setSortMode(event.target.value as SortMode)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none transition focus:border-[#8B6840] focus:ring-2 focus:ring-[#8B6840]/20">
-              <option value="recommended">推薦排序</option>
-              <option value="price-asc">價格由低到高</option>
-              <option value="price-desc">價格由高到低</option>
-              <option value="stock">庫存最多</option>
+              <option value="recommended">{labels.recommended}</option>
+              <option value="price-asc">{labels.priceAsc}</option>
+              <option value="price-desc">{labels.priceDesc}</option>
+              <option value="stock">{labels.stockMost}</option>
             </select>
           </label>
         </div>
@@ -419,8 +550,8 @@ export default function ProductList() {
               <motion.article key={product.id} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index, 11) * 0.02 }} className="group mb-5 inline-block w-full break-inside-avoid overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-card" style={{ contentVisibility: 'auto', containIntrinsicSize: '340px' }}>
                 <Link to={`/shop/${product.id}`} className="relative block h-52 overflow-hidden bg-gray-100">
                   <img src={product.image_url || PRODUCT_FALLBACK_IMAGE} alt={product.name} loading={index < 6 ? 'eager' : 'lazy'} decoding="async" onError={event => useFallbackImage(event, PRODUCT_FALLBACK_IMAGE)} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-                  {product.stock_quantity <= 5 && product.stock_quantity > 0 && <span className="absolute right-3 top-3 rounded-full bg-orange-500 px-2.5 py-1 text-xs font-bold text-white">僅剩 {product.stock_quantity}</span>}
-                  {product.stock_quantity === 0 && <div className="absolute inset-0 flex items-center justify-center bg-black/45"><span className="rounded-full bg-white px-4 py-1.5 text-sm font-bold text-gray-800">售完</span></div>}
+                  {product.stock_quantity <= 5 && product.stock_quantity > 0 && <span className="absolute right-3 top-3 rounded-full bg-orange-500 px-2.5 py-1 text-xs font-bold text-white">{labels.lowStock.replace('{count}', String(product.stock_quantity))}</span>}
+                  {product.stock_quantity === 0 && <div className="absolute inset-0 flex items-center justify-center bg-black/45"><span className="rounded-full bg-white px-4 py-1.5 text-sm font-bold text-gray-800">{labels.soldOut}</span></div>}
                 </Link>
                 <div className="flex flex-1 flex-col p-4">
                   <Link to={`/shop/${product.id}`} className="line-clamp-2 text-sm font-bold leading-6 text-gray-900 transition hover:text-[#8B6840]">
@@ -439,11 +570,11 @@ export default function ProductList() {
                     <div className="flex shrink-0 items-center gap-1.5">
                       <Link to={`/shop/${product.id}`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#F0E4C8] hover:text-[#2C1F10]">
                         <Eye className="h-3.5 w-3.5" />
-                        詳情
+                        {labels.details}
                       </Link>
                       <button type="button" onClick={() => handleAddToCart(product.id)} disabled={product.stock_quantity === 0 || addingId === product.id} className="inline-flex items-center gap-1.5 rounded-xl bg-[#8B6840] px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#6F4F2B] disabled:bg-gray-200 disabled:text-gray-500">
                         {addingId === product.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShoppingCart className="h-3.5 w-3.5" />}
-                        加購
+                        {labels.addOn}
                       </button>
                     </div>
                   </div>
@@ -455,7 +586,7 @@ export default function ProductList() {
             <div ref={sentinelRef} className="flex justify-center py-8">
               <button type="button" onClick={loadMore} className="inline-flex items-center gap-2 rounded-full border border-[#8B6840]/25 bg-white px-5 py-2 text-sm font-bold text-[#8B6840] shadow-sm transition hover:bg-[#FEF9EC]">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                載入更多商品
+                {labels.loadMore}
               </button>
             </div>
           )}
@@ -463,9 +594,9 @@ export default function ProductList() {
         ) : (
           <div className="py-24 text-center text-slate-500">
             <Package className="mx-auto mb-3 h-12 w-12 opacity-50" />
-            <p className="text-sm font-medium">沒有符合條件的商品。</p>
+            <p className="text-sm font-medium">{labels.empty}</p>
             <button type="button" onClick={() => { setSearch(''); handleCategoryChange('all'); }} className="mt-3 text-sm font-bold text-[#8B6840] hover:underline">
-              清除篩選
+              {labels.clearFilters}
             </button>
           </div>
         )}

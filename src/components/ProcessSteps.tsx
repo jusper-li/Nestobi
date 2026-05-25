@@ -1,44 +1,52 @@
-import { Search, Sparkles, Key, Globe } from 'lucide-react';
+import { Globe, Key, Search, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer } from '../lib/animations';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function ProcessSteps() {
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
+
   const steps = [
     {
       icon: Search,
-      title: '精選物業',
-      description:
-        '我們的專家團隊環遊世界，發掘具有卓越建築價值、歷史意義和投資潛力的物業。',
+      title: isEn ? 'Tell Us Your Plan' : '告訴我們你的需求',
+      description: isEn
+        ? 'Input destination, dates, budget, and travel style. We gather the right stays and picks for you.'
+        : '輸入目的地、日期、預算與旅行風格，系統會快速整理適合你的住宿與選物。',
     },
     {
       icon: Sparkles,
-      title: '修復與重塑',
-      description:
-        '每個物業都經過知名建築師和設計師的精心修復，在保留遺產的同時增添現代奢華設施。',
+      title: isEn ? 'AI Refines Options' : 'AI 智慧整理',
+      description: isEn
+        ? 'AI compares room types, price ranges, and product tags to produce cleaner recommendations.'
+        : 'AI 會比對房型、價位與商品標籤，讓推薦結果更精準、可直接行動。',
     },
     {
       icon: Key,
-      title: '輕鬆持有',
-      description:
-        '我們處理從物業管理到維護、保險和公用事業的一切事務。只需享受您的投資，無需任何營運負擔。',
+      title: isEn ? 'Book and Checkout' : '快速訂房與下單',
+      description: isEn
+        ? 'Complete booking and shopping in one flow, with clear status and order records.'
+        : '在同一流程完成訂房與購物，訂單狀態與紀錄一目了然。',
     },
     {
       icon: Globe,
-      title: '全球通行',
-      description:
-        '透過直觀的平台預訂我們整個投資組合中的住宿。在體驗多個目的地的同時建立多元化的房地產投資組合。',
+      title: isEn ? 'Travel with Support' : '旅途中持續支援',
+      description: isEn
+        ? 'Use AI itinerary and support tools anytime during your trip for smoother decisions.'
+        : '旅程中隨時可用 AI 行程與客服工具，臨時調整也能快速完成。',
     },
   ];
 
   return (
-    <section className="py-24 px-6 lg:px-12 bg-white">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl lg:text-5xl font-serif text-charcoal mb-4">
-            我們的流程
+    <section className="bg-white px-6 py-24 lg:px-12">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-16 text-center">
+          <h2 className="mb-4 font-serif text-4xl text-charcoal lg:text-5xl">
+            {isEn ? 'How It Works' : '平台運作方式'}
           </h2>
-          <p className="text-lg text-charcoal/70 max-w-2xl mx-auto">
-            從發現到持有，我們確保每一步都卓越出眾
+          <p className="mx-auto max-w-2xl text-lg text-charcoal/70">
+            {isEn ? 'From planning to booking, complete your trip in a clear 4-step flow.' : '從靈感到下單，四個步驟完成你的旅行安排。'}
           </p>
         </div>
 
@@ -47,37 +55,27 @@ export default function ProcessSteps() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: '-100px' }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+          className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4"
         >
           {steps.map((step, index) => {
             const Icon = step.icon;
             return (
-              <motion.div
-                key={index}
-                variants={fadeInUp}
-                className="relative group"
-              >
+              <motion.div key={index} variants={fadeInUp} className="group relative">
                 <div className="text-center">
-                  <div className="mb-6 relative">
-                    <div className="w-20 h-20 bg-[#C09A6A]/10 rounded-full flex items-center justify-center mx-auto group-hover:bg-[#C09A6A]/20 transition-all duration-300">
+                  <div className="relative mb-6">
+                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#C09A6A]/10 transition-all duration-300 group-hover:bg-[#C09A6A]/20">
                       <Icon className="text-[#2C1F10]" size={32} />
                     </div>
-                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-[#C09A6A] rounded-full flex items-center justify-center mx-auto">
-                      <span className="text-cream text-sm font-medium">{index + 1}</span>
+                    <div className="absolute -right-2 -top-2 mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-[#C09A6A]">
+                      <span className="text-sm font-medium text-cream">{index + 1}</span>
                     </div>
                   </div>
 
-                  <h3 className="text-xl font-serif text-charcoal mb-4">
-                    {step.title}
-                  </h3>
-                  <p className="text-charcoal/70 leading-relaxed">
-                    {step.description}
-                  </p>
+                  <h3 className="mb-4 font-serif text-xl text-charcoal">{step.title}</h3>
+                  <p className="leading-relaxed text-charcoal/70">{step.description}</p>
                 </div>
 
-                {index < steps.length - 1 && (
-                  <div className="hidden lg:block absolute top-10 -right-4 w-8 h-0.5 bg-[#C09A6A]/30" />
-                )}
+                {index < steps.length - 1 && <div className="absolute -right-4 top-10 hidden h-0.5 w-8 bg-[#C09A6A]/30 lg:block" />}
               </motion.div>
             );
           })}

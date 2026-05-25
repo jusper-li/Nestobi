@@ -41,6 +41,15 @@ export default function Navigation() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
 
+  const isEn = lang === 'en';
+  const labels = {
+    home: isEn ? 'Home' : '首頁',
+    cart: isEn ? 'Cart' : '購物車',
+    stores: isEn ? 'Store Locations' : '門市據點',
+    closeMenu: isEn ? 'Close menu' : '關閉選單',
+    member: isEn ? 'Member' : '會員',
+  };
+
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   const handleSignOut = async () => {
@@ -53,7 +62,7 @@ export default function Navigation() {
     { to: '/rooms', label: t.nav.rooms, icon: Hotel },
     { to: '/shop', label: t.nav.shop, icon: Package },
     { to: '/blog', label: t.nav.blog, icon: Coffee },
-    { to: '/stores', label: '門市據點', icon: MapPin },
+    { to: '/stores', label: labels.stores, icon: MapPin },
     { to: '/ai/itinerary', label: t.nav.aiItinerary, icon: Map, requiresAuth: true },
     { to: '/ai/translator', label: t.nav.aiTranslator, icon: Languages, requiresAuth: true },
     { to: '/ai/chat', label: t.nav.aiChat, icon: MessageCircle, requiresAuth: true },
@@ -78,21 +87,18 @@ export default function Navigation() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-3">
           <Link to="/" className="flex items-center gap-3">
-            <img src="/20260407_nestobi_logo.svg" alt="Nestobi 根本在旅行" className="h-10 w-auto md:h-12" />
+            <img src="/20260407_nestobi_logo.svg" alt="Nestobi" className="h-10 w-auto md:h-12" />
           </Link>
 
           <div className="hidden items-center gap-1 md:flex">
             {navLinks.map(({ to, label, icon: Icon, requiresAuth }) => {
               if (requiresAuth && !user) return null;
-
               return (
                 <Link
                   key={to}
                   to={to}
                   className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                    isActive(to)
-                      ? 'bg-[#F0E4C8] text-[#2C1F10]'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    isActive(to) ? 'bg-[#F0E4C8] text-[#2C1F10]' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
                   <Icon size={15} />
@@ -135,7 +141,9 @@ export default function Navigation() {
                         }}
                         className="flex w-full items-center justify-between px-4 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-50"
                       >
-                        <span>{option.flag} {option.label}</span>
+                        <span>
+                          {option.flag} {option.label}
+                        </span>
                         {lang === option.code && <Check size={14} className="text-[#C09A6A]" />}
                       </button>
                     ))}
@@ -144,13 +152,9 @@ export default function Navigation() {
               </AnimatePresence>
             </div>
 
-            <Link to="/cart" className="relative rounded-lg p-2 text-gray-600 transition hover:bg-gray-100 hover:text-[#2C1F10]" aria-label="購物車">
+            <Link to="/cart" className="relative rounded-lg p-2 text-gray-600 transition hover:bg-gray-100 hover:text-[#2C1F10]" aria-label={labels.cart}>
               <ShoppingCart size={21} />
-              {totalItems > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[11px] font-bold text-white">
-                  {totalItems > 9 ? '9+' : totalItems}
-                </span>
-              )}
+              {totalItems > 0 && <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[11px] font-bold text-white">{totalItems > 9 ? '9+' : totalItems}</span>}
             </Link>
 
             {user ? (
@@ -179,45 +183,28 @@ export default function Navigation() {
                       className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-gray-100 bg-white py-1 shadow-xl"
                     >
                       <div className="border-b border-gray-100 px-4 py-3">
-                        <p className="truncate text-sm font-bold text-gray-900">{profile?.display_name || '會員'}</p>
+                        <p className="truncate text-sm font-bold text-gray-900">{profile?.display_name || labels.member}</p>
                         <p className="mt-0.5 truncate text-xs text-gray-500">{user.email}</p>
                       </div>
                       {memberLinks.map(({ to, label, icon: Icon }) => (
-                        <Link
-                          key={to}
-                          to={to}
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
-                        >
+                        <Link key={to} to={to} onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50">
                           <Icon size={15} className="text-gray-400" />
                           <span>{label}</span>
                         </Link>
                       ))}
                       {(role === 'admin' || role === 'superadmin') && (
-                        <Link
-                          to="/admin"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 border-t border-gray-100 px-4 py-2 text-sm font-semibold text-[#2C1F10] transition hover:bg-[#F0E4C8]"
-                        >
+                        <Link to="/admin" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2.5 border-t border-gray-100 px-4 py-2 text-sm font-semibold text-[#2C1F10] transition hover:bg-[#F0E4C8]">
                           <LayoutDashboard size={15} />
                           <span>{t.nav.adminPanel}</span>
                         </Link>
                       )}
                       {role === 'superadmin' && (
-                        <Link
-                          to="/superadmin"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2 text-sm font-semibold text-[#2C1F10] transition hover:bg-[#F0E4C8]"
-                        >
+                        <Link to="/superadmin" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2.5 px-4 py-2 text-sm font-semibold text-[#2C1F10] transition hover:bg-[#F0E4C8]">
                           <Globe size={15} />
                           <span>{t.nav.superAdmin}</span>
                         </Link>
                       )}
-                      <button
-                        type="button"
-                        onClick={handleSignOut}
-                        className="flex w-full items-center gap-2.5 border-t border-gray-100 px-4 py-2 text-left text-sm text-danger transition hover:bg-red-50"
-                      >
+                      <button type="button" onClick={handleSignOut} className="flex w-full items-center gap-2.5 border-t border-gray-100 px-4 py-2 text-left text-sm text-danger transition hover:bg-red-50">
                         <LogOut size={15} />
                         <span>{t.nav.logout}</span>
                       </button>
@@ -245,29 +232,19 @@ export default function Navigation() {
 
       <AnimatePresence>
         {menuOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden border-t border-gray-200 bg-white md:hidden"
-          >
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-t border-gray-200 bg-white md:hidden">
             <div className="space-y-1 px-4 py-3">
               <Link to="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100">
                 <Home size={16} />
-                <span>首頁</span>
+                <span>{labels.home}</span>
               </Link>
               <Link to="/cart" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100">
                 <ShoppingCart size={16} />
-                <span>購物車</span>
-                {totalItems > 0 && (
-                  <span className="ml-auto rounded-full bg-danger px-2 py-0.5 text-[11px] font-bold text-white">
-                    {totalItems > 9 ? '9+' : totalItems}
-                  </span>
-                )}
+                <span>{labels.cart}</span>
+                {totalItems > 0 && <span className="ml-auto rounded-full bg-danger px-2 py-0.5 text-[11px] font-bold text-white">{totalItems > 9 ? '9+' : totalItems}</span>}
               </Link>
               {navLinks.map(({ to, label, icon: Icon, requiresAuth }) => {
                 if (requiresAuth && !user) return null;
-
                 return (
                   <Link key={to} to={to} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100">
                     <Icon size={16} />
@@ -293,7 +270,7 @@ export default function Navigation() {
       {(userMenuOpen || langMenuOpen) && (
         <button
           type="button"
-          aria-label="關閉選單"
+          aria-label={labels.closeMenu}
           className="fixed inset-0 z-40 cursor-default"
           onClick={() => {
             setUserMenuOpen(false);

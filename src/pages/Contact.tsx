@@ -4,27 +4,50 @@ import { Mail, Phone, Clock, Send, CheckCircle, AlertCircle, MapPin, MessageSqua
 import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const SEND_EMAIL_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`;
 
-const contactInfo = [
-  { icon: Phone, label: '客服電話', value: '0800-123-456', sub: '週一至週五 09:00–18:00' },
-  { icon: Mail, label: '電子郵件', value: 'service@travel.com.tw', sub: '24小時內回覆' },
-  { icon: Clock, label: 'AI 客服', value: '24 小時全天候', sub: '即時線上協助' },
-  { icon: MapPin, label: '公司地址', value: '台北市信義區', sub: '旅遊平台總部' },
-];
-
-const subjectOptions = [
-  '訂房相關問題',
-  '訂單或退款問題',
-  '帳號與會員問題',
-  '商品相關問題',
-  'AI功能問題',
-  '廠商合作洽詢',
-  '其他問題',
-];
-
 const Contact: React.FC = () => {
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
+
+  const t = {
+    title: isEn ? 'Contact Us' : '聯絡我們',
+    subtitle: isEn ? 'Have questions? We are here to help.' : '有任何問題，歡迎隨時與我們聯繫。',
+    seoDesc: isEn ? 'Contact Nestobi support for travel, booking, shopping, or AI feature help.' : '聯繫 Nestobi 旅遊平台客服團隊，我們隨時為您解答疑問與提供協助。',
+    phoneLabel: isEn ? 'Support Phone' : '客服電話',
+    emailLabel: isEn ? 'Email' : '電子郵件',
+    aiLabel: isEn ? 'AI Support' : 'AI 客服',
+    officeLabel: isEn ? 'Office' : '辦公地址',
+    weekdays: isEn ? 'Mon-Fri 09:00-18:00' : '週一至週五 09:00-18:00',
+    online: isEn ? '24/7 online' : '24 小時線上',
+    aiOnline: isEn ? 'AI support 24/7' : 'AI 客服 24 小時',
+    formTitle: isEn ? 'Send us a message' : '發送訊息給我們',
+    formHint: isEn ? 'We usually reply within 24 hours.' : '我們通常會在 24 小時內回覆你。',
+    sent: isEn ? 'Message sent' : '訊息已送出',
+    sentHint: isEn ? 'We will respond to' : '我們會回覆到',
+    sendAnother: isEn ? 'Send another message' : '再送一則訊息',
+    name: isEn ? 'Name' : '姓名',
+    email: isEn ? 'Email' : '電子郵件',
+    subject: isEn ? 'Subject' : '主旨',
+    message: isEn ? 'Message' : '內容',
+    pickSubject: isEn ? 'Select a subject' : '請選擇主旨',
+    send: isEn ? 'Send Message' : '發送訊息',
+    failed: isEn ? 'Failed to send message. Please try again.' : '訊息送出失敗，請稍後再試。',
+  };
+
+  const contactInfo = [
+    { icon: Phone, label: t.phoneLabel, value: '0800-123-456', sub: t.weekdays },
+    { icon: Mail, label: t.emailLabel, value: 'service@nestobi.com.tw', sub: t.online },
+    { icon: Clock, label: t.aiLabel, value: t.aiOnline, sub: isEn ? 'Instant multilingual replies' : '即時多語回覆' },
+    { icon: MapPin, label: t.officeLabel, value: isEn ? 'Taipei, Taiwan' : '台北市信義區', sub: isEn ? 'Nestobi HQ' : 'Nestobi 總部' },
+  ];
+
+  const subjectOptions = isEn
+    ? ['Booking Question', 'Order & Payment', 'Account Issue', 'Product Question', 'AI Feature', 'Business Cooperation', 'Other']
+    : ['訂房相關問題', '訂單與付款問題', '帳號與登入問題', '商品相關問題', 'AI 功能問題', '商務合作需求', '其他問題'];
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
@@ -42,18 +65,18 @@ const Contact: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({
           type: 'contact',
-          to: 'service@travel.com.tw',
+          to: 'service@nestobi.com.tw',
           data: { name, email, subject, message },
         }),
       });
       if (!res.ok) throw new Error('Send failed');
       setSuccess(true);
     } catch {
-      setError('發送失敗，請稍後再試或直接致電客服。');
+      setError(t.failed);
     } finally {
       setLoading(false);
     }
@@ -61,144 +84,126 @@ const Contact: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SEOHead title="聯絡我們" description="聯繫 Nestobi 旅遊平台客服團隊，我們隨時為您解答疑問與提供協助。" keywords="聯絡我們, 客服, 旅遊諮詢" pageType="default" breadcrumbs={[{name:'首頁',url:'/'},{name:'聯絡我們',url:'/contact'}]} />
+      <SEOHead title={t.title} description={t.seoDesc} keywords={isEn ? 'contact, support, nestobi' : '聯絡我們, 客服, 旅遊諮詢'} pageType="default" />
       <Navigation />
 
       <div className="bg-[#F0E4C8] py-16">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-[#C09A6A]/20 rounded-2xl mb-6">
-              <MessageSquare className="w-8 h-8 text-[#2C1F10]" />
+        <div className="mx-auto max-w-4xl px-4 text-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#C09A6A]/20">
+              <MessageSquare className="h-8 w-8 text-[#2C1F10]" />
             </div>
-            <h1 className="text-4xl font-bold text-[#2C1F10] mb-3">聯絡我們</h1>
-            <p className="text-[#2C1F10]/70 text-lg">有任何問題或建議？我們很樂意為您服務</p>
+            <h1 className="mb-3 text-4xl font-bold text-[#2C1F10]">{t.title}</h1>
+            <p className="text-lg text-[#2C1F10]/70">{t.subtitle}</p>
           </motion.div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+      <div className="mx-auto max-w-6xl px-4 py-16">
+        <div className="mb-16 grid grid-cols-2 gap-4 md:grid-cols-4">
           {contactInfo.map(({ icon: Icon, label, value, sub }, i) => (
             <motion.div
               key={label}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="bg-white rounded-2xl shadow-sm p-6 text-center border border-gray-100 hover:shadow-md transition-shadow"
+              transition={{ delay: i * 0.08 }}
+              className="rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm"
             >
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-3">
-                <Icon className="w-6 h-6 text-[#2C1F10]" />
+              <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50">
+                <Icon className="h-6 w-6 text-[#2C1F10]" />
               </div>
-              <div className="text-xs font-medium text-gray-400 mb-1">{label}</div>
-              <div className="font-semibold text-gray-900 text-sm">{value}</div>
-              <div className="text-xs text-gray-400 mt-1">{sub}</div>
+              <div className="mb-1 text-xs font-medium text-gray-400">{label}</div>
+              <div className="text-sm font-semibold text-gray-900">{value}</div>
+              <div className="mt-1 text-xs text-gray-400">{sub}</div>
             </motion.div>
           ))}
         </div>
 
-        <div className="max-w-2xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8"
-          >
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">發送訊息</h2>
-            <p className="text-gray-500 text-sm mb-8">填寫以下表單，我們將在 24 小時內回覆您。</p>
+        <div className="mx-auto max-w-2xl">
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
+            <h2 className="mb-2 text-2xl font-bold text-gray-900">{t.formTitle}</h2>
+            <p className="mb-8 text-sm text-gray-500">{t.formHint}</p>
 
             {success ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-8"
-              >
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6">
-                  <CheckCircle className="w-10 h-10 text-green-600" />
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="py-8 text-center">
+                <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+                  <CheckCircle className="h-10 w-10 text-green-600" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">訊息已送出！</h3>
-                <p className="text-gray-500">感謝您的來信，我們將於 24 小時內回覆至 <strong>{email}</strong>。</p>
+                <h3 className="mb-2 text-xl font-bold text-gray-900">{t.sent}</h3>
+                <p className="text-gray-500">{t.sentHint} <strong>{email}</strong></p>
                 <button
                   onClick={() => { setSuccess(false); setName(''); setEmail(''); setSubject(''); setMessage(''); }}
-                  className="mt-6 text-[#2C1F10] font-medium hover:underline text-sm"
+                  className="mt-6 text-sm font-medium text-[#2C1F10] hover:underline"
                 >
-                  再次發送
+                  {t.sendAnother}
                 </button>
               </motion.div>
             ) : (
               <>
                 {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-6 text-sm"
-                  >
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
                     {error}
                   </motion.div>
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-5">
-                  <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                      <label className="mb-1 block text-sm font-medium text-gray-700">{t.name}</label>
                       <input
                         type="text"
                         value={name}
                         onChange={e => setName(e.target.value)}
                         required
-                        placeholder="您的姓名"
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2C1F10] focus:border-transparent transition text-sm"
+                        placeholder={t.name}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">電子郵件</label>
+                      <label className="mb-1 block text-sm font-medium text-gray-700">{t.email}</label>
                       <input
                         type="email"
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         required
                         placeholder="your@email.com"
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2C1F10] focus:border-transparent transition text-sm"
+                        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">主旨</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">{t.subject}</label>
                     <select
                       value={subject}
                       onChange={e => setSubject(e.target.value)}
                       required
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2C1F10] focus:border-transparent transition text-sm bg-white"
+                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
                     >
-                      <option value="">請選擇問題類別</option>
-                      {subjectOptions.map(opt => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
+                      <option value="">{t.pickSubject}</option>
+                      {subjectOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">訊息內容</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">{t.message}</label>
                     <textarea
                       value={message}
                       onChange={e => setMessage(e.target.value)}
                       required
                       rows={5}
-                      placeholder="請詳細描述您的問題或建議..."
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2C1F10] focus:border-transparent transition text-sm resize-none"
+                      placeholder={t.message}
+                      className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
                     />
                   </div>
 
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-[#C09A6A] hover:bg-[#8B6840] text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-60 flex items-center justify-center gap-2"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C09A6A] py-3 font-semibold text-white transition hover:bg-[#8B6840] disabled:opacity-60"
                   >
-                    {loading
-                      ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      : <><Send className="w-4 h-4" /> 發送訊息</>
-                    }
+                    {loading ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <><Send className="h-4 w-4" /> {t.send}</>}
                   </button>
                 </form>
               </>

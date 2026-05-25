@@ -2,13 +2,16 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ReactNode } from 'react';
 import { ShieldOff } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 function LoadingScreen() {
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">
         <div className="w-12 h-12 border-4 border-travel-blue border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-gray-500">載入中...</p>
+        <p className="text-gray-500">{isEn ? 'Loading...' : '載入中...'}</p>
       </div>
     </div>
   );
@@ -70,6 +73,8 @@ export function VendorRoute({ children }: { children: ReactNode }) {
 
 export function PermissionRoute({ children, permission }: { children: ReactNode; permission: string }) {
   const { role, hasPermission, loading } = useAuth();
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
   if (loading) return <LoadingScreen />;
   if (role === 'superadmin') return <>{children}</>;
   if (!hasPermission(permission)) {
@@ -78,8 +83,8 @@ export function PermissionRoute({ children, permission }: { children: ReactNode;
         <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
           <ShieldOff className="w-8 h-8 text-red-400" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">無存取權限</h2>
-        <p className="text-gray-500 text-sm max-w-xs">您的帳號尚未被授權存取此功能，請聯絡超級管理員。</p>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">{isEn ? 'Access Denied' : '無存取權限'}</h2>
+        <p className="text-gray-500 text-sm max-w-xs">{isEn ? 'Your account is not authorized for this feature. Please contact the super admin.' : '您的帳號尚未被授權存取此功能，請聯絡超級管理員。'}</p>
       </div>
     );
   }

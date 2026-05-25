@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const updateProfile = async (data: Partial<MemberProfile>) => {
-    if (!user) throw new Error('未登入');
+    if (!user) throw new Error('Not signed in');
     const { error } = await supabase
       .from('tbl_mn5wgzh0')
       .upsert({ ...data, user_id: user.id, updated_at: new Date().toISOString() });

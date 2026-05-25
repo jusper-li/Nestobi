@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Cookie, Settings, ShieldCheck, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const CONSENT_VERSION = 1;
 const STORAGE_KEY = 'nestobi:cookie-consent:v1';
@@ -113,9 +114,55 @@ function Toggle({
 }
 
 export default function CookieConsent() {
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
   const [visible, setVisible] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [preferences, setPreferences] = useState<CookiePreferences>(REQUIRED_ONLY);
+
+  const text = {
+    regionLabel: isEn ? 'Cookie Consent' : 'Cookie 授權同意',
+    title: isEn ? 'Cookie Consent' : 'Cookie 授權同意',
+    desc: isEn
+      ? 'Nestobi uses necessary cookies for login, cart, and security. With your consent, we also use analytics, personalization, and marketing cookies to improve your experience.'
+      : 'Nestobi 會使用必要 Cookie 維持登入、購物車與安全性。經你同意後，我們也會使用分析、個人化與行銷 Cookie 改善服務體驗。',
+    policy: isEn ? 'Cookie Policy' : 'Cookie 政策',
+    selected: isEn ? 'Selected' : '已選擇',
+    selectedSuffix: isEn ? 'optional categories' : '項非必要類別',
+    necessaryTitle: isEn ? 'Necessary Cookies' : '必要 Cookie',
+    necessaryDesc: isEn
+      ? 'Required for site security, login, cart, and basic navigation. Cannot be disabled.'
+      : '維持網站安全、登入狀態、購物車與基本導覽，無法停用。',
+    canChangeAnytime: isEn ? 'You can change this anytime in the footer' : '你可以隨時在頁尾重新調整',
+    rejectNoImpact: isEn
+      ? 'Rejecting optional cookies will not affect booking, shopping, or member features.'
+      : '拒絕非必要 Cookie 不會影響訂房、購物與會員功能。',
+    savePrefs: isEn ? 'Save Preferences' : '儲存偏好',
+    back: isEn ? 'Back' : '返回',
+    acceptAll: isEn ? 'Accept All' : '接受全部',
+    preferences: isEn ? 'Preferences' : '偏好設定',
+    rejectOptional: isEn ? 'Reject Optional' : '拒絕非必要',
+    options: {
+      analytics: {
+        title: isEn ? 'Analytics' : '網站分析',
+        description: isEn
+          ? 'Helps us understand page views and feature usage to improve experience and speed.'
+          : '協助我們理解頁面瀏覽與功能使用狀況，用來改善版面與服務速度。',
+      },
+      personalization: {
+        title: isEn ? 'Personalization' : '個人化體驗',
+        description: isEn
+          ? 'Remembers preferences like language, display mode, and travel content ranking.'
+          : '記住偏好設定，例如語言、顯示方式與旅遊內容排序。',
+      },
+      marketing: {
+        title: isEn ? 'Marketing & Retargeting' : '行銷與再行銷',
+        description: isEn
+          ? 'Measures campaign performance and, with consent, offers more relevant promotions and content.'
+          : '用於衡量活動成效，並在取得同意後提供更相關的優惠與內容。',
+      },
+    },
+  };
 
   useEffect(() => {
     const existing = readConsent();
@@ -162,7 +209,7 @@ export default function CookieConsent() {
           exit={{ opacity: 0, y: 24 }}
           className="fixed inset-x-0 bottom-0 z-[80] px-4 pb-4 sm:px-6 sm:pb-6"
           role="region"
-          aria-label="Cookie 授權同意"
+          aria-label={text.regionLabel}
         >
           <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-[#2C1F10]/10 bg-white shadow-2xl">
             <div className="grid gap-0 lg:grid-cols-[1fr_340px]">
@@ -172,15 +219,15 @@ export default function CookieConsent() {
                     <Cookie size={22} />
                   </div>
                   <div className="min-w-0">
-                    <h2 className="text-lg font-bold text-[#2C1F10]">Cookie 授權同意</h2>
+                    <h2 className="text-lg font-bold text-[#2C1F10]">{text.title}</h2>
                     <p className="mt-2 text-sm leading-6 text-[#2C1F10]/70">
-                      Nestobi 會使用必要 Cookie 維持登入、購物車與安全性。經你同意後，我們也會使用分析、個人化與行銷 Cookie 改善服務體驗。
+                      {text.desc}
                     </p>
                     <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[#2C1F10]/55">
                       <Link to="/cookies" className="font-semibold text-[#8B6840] transition hover:text-[#2C1F10]">
-                        Cookie 政策
+                        {text.policy}
                       </Link>
-                      <span>已選擇 {enabledCount} 項非必要類別</span>
+                      <span>{text.selected} {enabledCount} {text.selectedSuffix}</span>
                     </div>
                   </div>
                 </div>
@@ -189,8 +236,8 @@ export default function CookieConsent() {
                   <div className="mt-5 space-y-3">
                     <div className="flex items-start justify-between gap-4 rounded-xl border border-[#2C1F10]/10 bg-[#FEF9EC] p-4">
                       <div>
-                        <p className="font-semibold text-[#2C1F10]">必要 Cookie</p>
-                        <p className="mt-1 text-sm leading-6 text-[#2C1F10]/62">維持網站安全、登入狀態、購物車與基本導覽，無法停用。</p>
+                        <p className="font-semibold text-[#2C1F10]">{text.necessaryTitle}</p>
+                        <p className="mt-1 text-sm leading-6 text-[#2C1F10]/62">{text.necessaryDesc}</p>
                       </div>
                       <Toggle checked disabled />
                     </div>
@@ -198,8 +245,8 @@ export default function CookieConsent() {
                     {OPTIONS.map(option => (
                       <div key={option.id} className="flex items-start justify-between gap-4 rounded-xl border border-gray-100 p-4">
                         <div>
-                          <p className="font-semibold text-[#2C1F10]">{option.title}</p>
-                          <p className="mt-1 text-sm leading-6 text-[#2C1F10]/62">{option.description}</p>
+                          <p className="font-semibold text-[#2C1F10]">{text.options[option.id].title}</p>
+                          <p className="mt-1 text-sm leading-6 text-[#2C1F10]/62">{text.options[option.id].description}</p>
                         </div>
                         <Toggle checked={preferences[option.id]} onChange={() => updateOption(option.id)} />
                       </div>
@@ -212,10 +259,10 @@ export default function CookieConsent() {
                 <div>
                   <div className="flex items-center gap-2 text-sm font-semibold text-[#2C1F10]">
                     <ShieldCheck size={17} className="text-[#8B6840]" />
-                    你可以隨時在頁尾重新調整
+                    {text.canChangeAnytime}
                   </div>
                   <p className="mt-2 text-sm leading-6 text-[#2C1F10]/62">
-                    拒絕非必要 Cookie 不會影響訂房、購物與會員功能。
+                    {text.rejectNoImpact}
                   </p>
                 </div>
 
@@ -228,7 +275,7 @@ export default function CookieConsent() {
                         className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2C1F10] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#8B6840]"
                       >
                         <Check size={16} />
-                        儲存偏好
+                        {text.savePrefs}
                       </button>
                       <button
                         type="button"
@@ -236,7 +283,7 @@ export default function CookieConsent() {
                         className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#2C1F10]/15 bg-white px-4 py-3 text-sm font-semibold text-[#2C1F10]/70 transition hover:text-[#2C1F10]"
                       >
                         <X size={16} />
-                        返回
+                        {text.back}
                       </button>
                     </>
                   ) : (
@@ -247,7 +294,7 @@ export default function CookieConsent() {
                         className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2C1F10] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#8B6840]"
                       >
                         <Check size={16} />
-                        接受全部
+                        {text.acceptAll}
                       </button>
                       <button
                         type="button"
@@ -255,14 +302,14 @@ export default function CookieConsent() {
                         className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#2C1F10]/15 bg-white px-4 py-3 text-sm font-semibold text-[#2C1F10] transition hover:border-[#C09A6A]"
                       >
                         <Settings size={16} />
-                        偏好設定
+                        {text.preferences}
                       </button>
                       <button
                         type="button"
                         onClick={() => commit(REQUIRED_ONLY)}
                         className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-[#2C1F10]/58 transition hover:bg-white/70 hover:text-[#2C1F10]"
                       >
-                        拒絕非必要
+                        {text.rejectOptional}
                       </button>
                     </>
                   )}

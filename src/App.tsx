@@ -83,6 +83,7 @@ import SuperAdminBlogForm from './pages/superadmin/SuperAdminBlogForm';
 import SuperAdminBlogCategories from './pages/superadmin/SuperAdminBlogCategories';
 import SuperAdminStoreLocations from './pages/superadmin/SuperAdminStoreLocations';
 import SuperAdminCoffeeQuiz from './pages/superadmin/SuperAdminCoffeeQuiz';
+import SuperAdminRoomTranslations from './pages/superadmin/SuperAdminRoomTranslations';
 
 import VendorLayout from './pages/vendor/VendorLayout';
 import VendorDashboard from './pages/vendor/VendorDashboard';
@@ -190,6 +191,7 @@ function App() {
               <Route path="users" element={<SuperAdminUsers />} />
               <Route path="vendors" element={<SuperAdminVendors />} />
               <Route path="rooms" element={<SuperAdminRooms />} />
+              <Route path="room-translations" element={<SuperAdminRoomTranslations />} />
               <Route path="rooms/new" element={<SuperAdminRoomForm />} />
               <Route path="rooms/:id" element={<SuperAdminRoomForm />} />
               <Route path="products" element={<SuperAdminProducts />} />

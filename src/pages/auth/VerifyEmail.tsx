@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShieldCheck, AlertCircle, Plane, RefreshCw, ArrowLeft, Home } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const VerifyEmail: React.FC = () => {
   const [code, setCode] = useState(['', '', '', '', '', '']);
@@ -12,7 +13,27 @@ const VerifyEmail: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { signUp } = useAuth();
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
   const email = searchParams.get('email') || '';
+  const t = {
+    codeRequired: isEn ? 'Please enter the full 6-digit code.' : '請輸入完整的6位驗證碼。',
+    sessionExpired: isEn ? 'Verification data expired. Please register again.' : '驗證資料已過期，請重新填寫註冊資料。',
+    emailMismatch: isEn ? 'Email mismatch. Please register again.' : 'Email 不符合，請重新註冊。',
+    codeExpired: isEn ? 'Verification code expired (10 minutes). Please request again.' : '驗證碼已過期（10分鐘），請重新申請。',
+    codeWrong: isEn ? 'Incorrect verification code. Please try again.' : '驗證碼不正確，請重新輸入。',
+    alreadyRegistered: isEn ? 'This email is already registered. Please sign in.' : '此 Email 已註冊，請直接登入。',
+    failed: isEn ? 'Verification failed. Please try again later.' : '驗證失敗，請稍後再試。',
+    back: isEn ? 'Back' : '返回上一頁',
+    home: isEn ? 'Home' : '回首頁',
+    title: isEn ? 'Email Verification' : '電子郵件驗證',
+    subtitlePrefix: isEn ? 'Please enter the code sent to' : '請輸入發送至',
+    subtitleSuffix: isEn ? '' : '的驗證碼',
+    hint: isEn ? 'Enter the 6-digit code shown in the previous step. Valid for 10 minutes.' : '請輸入上一步畫面顯示的6位數驗證碼，10分鐘內有效',
+    confirm: isEn ? 'Confirm Verification' : '確認驗證',
+    requestAgain: isEn ? 'Request code again' : '重新取得驗證碼',
+    note: isEn ? 'The code appears in the yellow panel on the previous page. In production, a verification email is sent automatically.' : '驗證碼顯示在上一個頁面的黃色區塊中。正式環境會自動發送 Email 通知。',
+  };
 
   const handleChange = (idx: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
@@ -37,22 +58,22 @@ const VerifyEmail: React.FC = () => {
 
   const handleVerify = async () => {
     const enteredCode = code.join('');
-    if (enteredCode.length !== 6) { setError('請輸入完整的6位驗證碼。'); return; }
+    if (enteredCode.length !== 6) { setError(t.codeRequired); return; }
     setLoading(true);
     setError('');
     try {
       const raw = sessionStorage.getItem('pending_verification');
-      if (!raw) { setError('驗證資料已過期，請重新填寫註冊資料。'); setLoading(false); return; }
+      if (!raw) { setError(t.sessionExpired); setLoading(false); return; }
       const { email: storedEmail, otp, expiresAt, password, displayName } = JSON.parse(raw);
 
-      if (storedEmail !== email) { setError('Email 不符合，請重新註冊。'); setLoading(false); return; }
+      if (storedEmail !== email) { setError(t.emailMismatch); setLoading(false); return; }
       if (Date.now() > expiresAt) {
-        setError('驗證碼已過期（10分鐘），請重新申請。');
+        setError(t.codeExpired);
         sessionStorage.removeItem('pending_verification');
         setLoading(false);
         return;
       }
-      if (enteredCode !== otp) { setError('驗證碼不正確，請重新輸入。'); setLoading(false); return; }
+      if (enteredCode !== otp) { setError(t.codeWrong); setLoading(false); return; }
 
       await signUp(email, password, displayName);
       sessionStorage.removeItem('pending_verification');
@@ -60,9 +81,9 @@ const VerifyEmail: React.FC = () => {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('already registered') || msg.includes('User already registered')) {
-        setError('此 Email 已註冊，請直接登入。');
+        setError(t.alreadyRegistered);
       } else {
-        setError('驗證失敗，請稍後再試。');
+        setError(t.failed);
       }
     } finally {
       setLoading(false);
@@ -83,10 +104,10 @@ const VerifyEmail: React.FC = () => {
             className="flex items-center gap-2 text-gray-500 hover:text-[#2C1F10] transition-colors group"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
-            <span className="text-sm font-medium">返回上一頁</span>
+            <span className="text-sm font-medium">{t.back}</span>
           </button>
           <Link to="/" className="flex items-center gap-1.5 text-gray-500 hover:text-[#2C1F10] transition-colors text-sm font-medium">
-            <Home className="w-4 h-4" />回首頁
+            <Home className="w-4 h-4" />{t.home}
           </Link>
         </div>
 
@@ -94,9 +115,9 @@ const VerifyEmail: React.FC = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-travel-teal rounded-2xl mb-4 shadow-lg">
             <ShieldCheck className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">電子郵件驗證</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t.title}</h1>
           <p className="text-gray-500 mt-1">
-            請輸入發送至 <strong className="text-gray-700">{email}</strong> 的驗證碼
+            {t.subtitlePrefix} <strong className="text-gray-700">{email}</strong> {t.subtitleSuffix}
           </p>
         </div>
 
@@ -112,9 +133,7 @@ const VerifyEmail: React.FC = () => {
             </motion.div>
           )}
 
-          <p className="text-center text-gray-500 mb-6 text-sm">
-            請輸入上一步畫面顯示的6位數驗證碼，10分鐘內有效
-          </p>
+          <p className="text-center text-gray-500 mb-6 text-sm">{t.hint}</p>
 
           <div className="flex justify-center gap-2 mb-8" onPaste={handlePaste}>
             {code.map((digit, idx) => (
@@ -139,7 +158,7 @@ const VerifyEmail: React.FC = () => {
           >
             {loading
               ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              : <><ShieldCheck className="w-5 h-5" /> 確認驗證</>
+              : <><ShieldCheck className="w-5 h-5" /> {t.confirm}</>
             }
           </button>
 
@@ -148,14 +167,14 @@ const VerifyEmail: React.FC = () => {
             className="w-full mt-3 flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-[#2C1F10] transition-colors py-2"
           >
             <RefreshCw className="w-4 h-4" />
-            重新取得驗證碼
+            {t.requestAgain}
           </button>
 
           <div className="mt-5 p-3 bg-[#F0E4C8] rounded-lg border border-[#D5CDB8]">
             <div className="flex items-start gap-2">
               <Plane className="w-4 h-4 text-[#2C1F10] mt-0.5 flex-shrink-0" />
               <p className="text-xs text-[#1A1208]">
-                驗證碼顯示在上一個頁面的黃色區塊中。正式環境會自動發送 Email 通知。
+                {t.note}
               </p>
             </div>
           </div>

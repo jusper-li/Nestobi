@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Users, Wifi, Coffee, Car, Waves, Dumbbell, Sparkles, ArrowLeft, Star, ChevronRight, Clock, Shield, CheckCircle, Ban, Info, Building2 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-import { formatCurrency } from '../../lib/utils';
+import { ArrowLeft, Building2, CheckCircle, Clock, MapPin, Star, Users } from 'lucide-react';
 import Navigation from '../../components/Navigation';
 import Footer from '../../components/Footer';
 import SEOHead from '../../components/SEOHead';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { getTranslationRuntimeState, translateHotelsOnDemand, translateRoomsOnDemand } from '../../lib/contentTranslations';
+import { ROOM_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
+import { supabase } from '../../lib/supabase';
+import { formatCurrency } from '../../lib/utils';
 
 interface Hotel {
   id: string;
@@ -15,11 +18,6 @@ interface Hotel {
   star_rating: number;
   checkin_time?: string;
   checkout_time?: string;
-  deposit_amount?: number;
-  pet_friendly?: boolean;
-  phone?: string;
-  line_id?: string;
-  address?: string;
 }
 
 interface Room {
@@ -37,351 +35,288 @@ interface Room {
   location: string;
   is_available: boolean;
   amenities: string[];
-  hotel_id: string | null;
   hotels?: Hotel | null;
 }
 
-const AMENITY_ICONS: Record<string, React.ReactNode> = {
-  'WiFi': <Wifi className="w-4 h-4" />,
-  '早餐': <Coffee className="w-4 h-4" />,
-  '停車': <Car className="w-4 h-4" />,
-  '游泳池': <Waves className="w-4 h-4" />,
-  '健身房': <Dumbbell className="w-4 h-4" />,
-  'SPA': <Sparkles className="w-4 h-4" />,
+const ROOM_TYPE_LABEL_ZH: Record<string, string> = {
+  single: '單人房',
+  double: '雙人房',
+  suite: '套房',
+  deluxe: '豪華房',
+  family: '家庭房',
+  villa: 'Villa',
 };
 
-const TYPE_LABELS: Record<string, string> = {
-  single: '單人房', double: '雙人房', suite: '套房', family: '家庭房', villa: '別墅',
-};
+function roomTypeLabel(type: string, isEn: boolean) {
+  if (!isEn) return ROOM_TYPE_LABEL_ZH[type] || type;
+  if (type === 'single') return 'Single';
+  if (type === 'double') return 'Double';
+  if (type === 'suite') return 'Suite';
+  if (type === 'deluxe') return 'Deluxe';
+  if (type === 'family') return 'Family';
+  if (type === 'villa') return 'Villa';
+  return type ? `${type.charAt(0).toUpperCase()}${type.slice(1)}` : '';
+}
 
-const POLICIES = [
-  { icon: Clock, title: '入住 / 退房', items: ['入住時間：15:00 起', '退房時間：11:00 前', '可申請延遲退房（視況而定）', '提前入住請提前聯繫'] },
-  { icon: Shield, title: '取消政策', items: ['入住前 7 天取消：全額退款', '入住前 3–6 天取消：退款 50%', '入住前 3 天內取消：不退款', '不可抗力因素另行處理'] },
-  { icon: Ban, title: '住宿規定', items: ['室內全面禁菸', '禁止攜帶寵物（另有規定者除外）', '禁止舉辦大型聚會', '22:00 後請保持安靜'] },
-  { icon: Info, title: '其他說明', items: ['提供免費 Wi-Fi 全館覆蓋', '櫃台 24 小時服務', '停車場（視房型及空位而定）', '可提供嬰兒床（需預先申請）'] },
-];
-
-const HIGHLIGHTS = [
-  { icon: CheckCircle, label: '免費取消', sub: '符合條件時全額退款' },
-  { icon: Shield, label: '安全付款', sub: '銀行級 SSL 加密' },
-  { icon: Star, label: '點數回饋', sub: '入住累積旅遊點數' },
-  { icon: Clock, label: '即時確認', sub: '訂房後立即收到確認信' },
-];
-
-const RoomDetail: React.FC = () => {
+export default function RoomDetail() {
   const { id } = useParams<{ id: string }>();
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
+
+  const t = {
+    notFound: isEn ? 'Room not found' : '找不到房型',
+    backToList: isEn ? 'Back to Room List' : '返回住宿列表',
+    amenities: isEn ? 'Amenities' : '房型設施',
+    noAmenities: isEn ? 'No amenities available' : '目前沒有可顯示的設施',
+    perNight: isEn ? '/ night' : '/ 晚',
+    weekend: isEn ? 'Weekend' : '假日',
+    bookNow: isEn ? 'Book Now' : '立即預訂',
+    soldOut: isEn ? 'Unavailable' : '暫不可訂',
+    checkIn: isEn ? 'Check-in' : '入住',
+    checkOut: isEn ? 'Check-out' : '退房',
+    guests: isEn ? 'guests' : '人',
+    noDescription: isEn ? 'No description available yet.' : '目前尚無房型介紹。',
+    unknownLocation: isEn ? 'Location unavailable' : '地點待補',
+    roomList: isEn ? 'Room List' : '住宿列表',
+    priceLabel: isEn ? 'Price per night' : '每晚價格',
+    cacheNotReady: isEn ? 'Showing source content first. Translation cache is not ready yet.' : '目前先顯示原文內容，翻譯快取尚未就緒。',
+    translatingRoom: isEn ? 'Translating room content...' : '正在翻譯房型內容...',
+    translatingHotel: isEn ? 'Translating property info...' : '正在翻譯住宿資訊...',
+    showingSource: isEn ? 'Showing source content.' : '目前顯示原文內容。',
+  };
+
   const [room, setRoom] = useState<Room | null>(null);
+  const [displayRoom, setDisplayRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeImg, setActiveImg] = useState<string | null>(null);
+  const [activeImage, setActiveImage] = useState('');
+  const [translationNotice, setTranslationNotice] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
     const fetchRoom = async () => {
       const { data } = await supabase
         .from('tbl_rooms')
-        .select('*, hotels(id, name, city, star_rating, checkin_time, checkout_time, deposit_amount, pet_friendly, phone, line_id, address)')
+        .select('*, hotels(id, name, city, star_rating, checkin_time, checkout_time)')
         .eq('id', id)
-        .single();
-      setRoom(data as Room);
+        .maybeSingle();
+      if (cancelled) return;
+      setRoom((data || null) as Room | null);
       setLoading(false);
     };
     if (id) fetchRoom();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
-  const amenities = Array.isArray(room?.amenities) ? room.amenities : [];
+  useEffect(() => {
+    let cancelled = false;
+    if (!room) {
+      setDisplayRoom(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+    if (lang === 'zh-TW') {
+      setDisplayRoom(room);
+      setTranslationNotice('');
+      return () => {
+        cancelled = true;
+      };
+    }
 
-  const jsonLd = room ? {
-    '@context': 'https://schema.org',
-    '@type': 'LodgingBusiness',
-    name: room.name,
-    description: room.description || `${TYPE_LABELS[room.room_type] || room.room_type} — ${room.location}`,
-    image: room.image_url,
-    priceRange: formatCurrency(room.price_per_night) + '/晚',
-    address: {
-      '@type': 'PostalAddress',
-      addressLocality: room.location,
-      addressCountry: 'TW',
-    },
-    amenityFeature: amenities.map(a => ({
-      '@type': 'LocationFeatureSpecification',
-      name: a,
-      value: true,
-    })),
-    offers: {
-      '@type': 'Offer',
-      priceCurrency: 'TWD',
-      price: room.price_per_night,
-      availability: room.is_available
-        ? 'https://schema.org/InStock'
-        : 'https://schema.org/Discontinued',
-      seller: { '@type': 'Organization', name: 'Nestobi 旅遊平台' },
-    },
-  } : undefined;
+    const run = async () => {
+      if (!cancelled) setDisplayRoom(room);
+      const runtime = getTranslationRuntimeState();
+      if (!cancelled) setTranslationNotice(runtime.tableUnavailable || runtime.isLocalProxyMode ? t.cacheNotReady : t.translatingRoom);
 
-  if (loading) return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      <div className="flex justify-center py-32">
-        <div className="w-10 h-10 border-4 border-[#2C1F10] border-t-transparent rounded-full animate-spin" />
+      const [translatedRoom] = await translateRoomsOnDemand([room], lang);
+      if (cancelled) return;
+      setDisplayRoom(translatedRoom);
+      setTranslationNotice(t.translatingHotel);
+
+      if (translatedRoom.hotels?.id) {
+        const [translatedHotel] = await translateHotelsOnDemand([translatedRoom.hotels], lang);
+        if (cancelled) return;
+        setDisplayRoom(prev => (prev ? { ...prev, hotels: translatedHotel } : prev));
+      }
+      if (!cancelled) setTranslationNotice('');
+    };
+
+    run().catch(() => {
+      if (!cancelled) {
+        setDisplayRoom(room);
+        setTranslationNotice(t.showingSource);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [room, lang, t.cacheNotReady, t.translatingRoom, t.translatingHotel, t.showingSource]);
+
+  const currentRoom = displayRoom || room;
+  const gallery = useMemo(() => {
+    if (!currentRoom) return [];
+    const images = currentRoom.images && currentRoom.images.length > 0 ? currentRoom.images : [];
+    const merged = [...images];
+    if (currentRoom.image_url && !merged.includes(currentRoom.image_url)) merged.unshift(currentRoom.image_url);
+    return merged.length > 0 ? merged : [ROOM_FALLBACK_IMAGE];
+  }, [currentRoom]);
+
+  const cover = activeImage || gallery[0] || ROOM_FALLBACK_IMAGE;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex justify-center py-24">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#2C1F10] border-t-transparent" />
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
-  if (!room) return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      <div className="max-w-3xl mx-auto px-4 py-24 text-center">
-        <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-700 mb-2">找不到此房型</h2>
-        <Link to="/rooms" className="inline-flex items-center gap-2 bg-[#C09A6A] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#8B6840] transition">
-          <ArrowLeft className="w-4 h-4" />返回房型列表
-        </Link>
+  if (!currentRoom) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="mx-auto max-w-3xl px-4 py-24 text-center">
+          <h2 className="mb-4 text-xl font-bold text-gray-800">{t.notFound}</h2>
+          <Link to="/rooms" className="inline-flex items-center gap-2 rounded-xl bg-[#C09A6A] px-5 py-3 font-semibold text-white hover:bg-[#8B6840]">
+            <ArrowLeft className="h-4 w-4" />
+            {t.backToList}
+          </Link>
+        </div>
+        <Footer />
       </div>
-      <Footer />
-    </div>
-  );
+    );
+  }
+
+  const guestLabel =
+    currentRoom.min_capacity && currentRoom.min_capacity !== currentRoom.capacity
+      ? `${currentRoom.min_capacity}-${currentRoom.capacity} ${t.guests}`
+      : `${currentRoom.capacity} ${t.guests}`;
+
+  const typeLabel = roomTypeLabel(currentRoom.room_type, isEn);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {jsonLd && (
-        <SEOHead
-          title={room.name}
-          description={`${TYPE_LABELS[room.room_type] || room.room_type}，位於 ${room.location}。每晚 ${formatCurrency(room.price_per_night)} 起，最多容納 ${room.capacity} 位賓客。${amenities.length > 0 ? `設施包含：${amenities.join('、')}。` : ''}`}
-          keywords={`${room.name}, ${room.location} 訂房, ${TYPE_LABELS[room.room_type]}, 台灣住宿, Nestobi 旅遊平台`}
-          ogImage={room.image_url}
-          ogType="place"
-          jsonLd={jsonLd as Record<string, unknown>}
-        />
-      )}
+      <SEOHead
+        title={currentRoom.name}
+        description={`${currentRoom.name} · ${currentRoom.location || ''} · ${formatCurrency(currentRoom.price_per_night)} ${t.perNight}`}
+        keywords={`${currentRoom.name}, ${currentRoom.location}, Nestobi`}
+        ogImage={cover}
+      />
       <Navigation />
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <nav className="flex items-center gap-1.5 text-sm text-gray-400 mb-6 flex-wrap">
-          <Link to="/rooms" className="hover:text-[#2C1F10] transition-colors">住宿訂房</Link>
-          {room.hotels && (
-            <>
-              <ChevronRight className="w-3.5 h-3.5" />
-              <Link to={`/hotels/${room.hotels.id}`} className="text-gray-500 hover:text-[#2C1F10] truncate max-w-[180px] transition-colors">{room.hotels.name}</Link>
-            </>
-          )}
-          <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-gray-700 font-medium truncate max-w-[240px]">{room.name}</span>
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        {translationNotice && <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">{translationNotice}</div>}
+        <nav className="mb-6 flex items-center gap-1.5 text-sm text-gray-500">
+          <Link to="/rooms" className="hover:text-[#2C1F10]">
+            {t.roomList}
+          </Link>
+          <span>/</span>
+          <span className="truncate text-gray-800">{currentRoom.name}</span>
         </nav>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          {/* Gallery thumbnails */}
-          {(() => {
-            const imgs = (room.images && room.images.length > 0) ? room.images : (room.image_url ? [room.image_url] : []);
-            const display = activeImg || imgs[0] || room.image_url || 'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg';
-            return (
-              <div className="mb-8">
-                <div className="relative h-72 md:h-[420px] rounded-2xl overflow-hidden shadow-lg">
-                  <img src={display} alt={room.name} className="w-full h-full object-cover transition-all duration-300" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-            <div className="absolute bottom-6 left-6 text-white">
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <span className="bg-[#2C1F10] text-xs font-semibold px-3 py-1.5 rounded-full tracking-wide">
-                  {TYPE_LABELS[room.room_type] || room.room_type}
-                </span>
-                {room.hotels && (
-                  <span className="bg-white/20 backdrop-blur-sm text-xs font-medium px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5" />{room.hotels.name}
-                  </span>
-                )}
-              </div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">{room.name}</h1>
-              <div className="flex items-center gap-1.5 text-gray-200 text-sm">
-                <MapPin className="w-4 h-4" />{room.location || room.hotels?.city || ''}
-              </div>
-            </div>
-                {!room.is_available && (
-                  <div className="absolute top-4 right-4 bg-red-500 text-white text-sm font-semibold px-3 py-1.5 rounded-full">
-                    目前不開放
-                  </div>
-                )}
-                </div>
-                {/* Thumbnail strip */}
-                {imgs.length > 1 && (
-                  <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
-                    {imgs.map((img, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => setActiveImg(img)}
-                        className={`flex-shrink-0 w-20 h-14 rounded-xl overflow-hidden border-2 transition ${(activeImg || imgs[0]) === img ? 'border-[#C09A6A] opacity-100' : 'border-transparent opacity-60 hover:opacity-90'}`}
-                      >
-                        <img src={img} alt="" className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="relative h-72 overflow-hidden rounded-2xl bg-gray-100 md:h-[420px]">
+            <img src={cover} alt={currentRoom.name} onError={event => useFallbackImage(event, ROOM_FALLBACK_IMAGE)} className="h-full w-full object-cover" />
+          </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h2 className="text-xl font-bold text-gray-900 mb-3">房型介紹</h2>
-                <p className="text-gray-600 leading-relaxed">
-                  {room.description || '享受我們精心設計的住宿空間，寬敞舒適的環境結合現代化設施，讓您的旅途更加愉快難忘。無論是商務出行還是休閒度假，我們都能滿足您的需求。'}
-                </p>
-
-                <div className="mt-5 pt-5 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <div className="flex items-center gap-2 text-gray-600 text-sm">
-                    <Users className="w-4 h-4 text-[#2C1F10]" />
-                    {room.min_capacity && room.min_capacity !== room.capacity ? `${room.min_capacity}–${room.capacity}` : room.capacity} 位賓客
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600 text-sm">
-                    <Clock className="w-4 h-4 text-[#2C1F10]" />
-                    入住 {room.hotels?.checkin_time || '15:00'}
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600 text-sm">
-                    <Clock className="w-4 h-4 text-[#2C1F10]" />
-                    退房 {room.hotels?.checkout_time || '11:00'}
-                  </div>
-                  {room.floor && (
-                    <div className="flex items-center gap-2 text-gray-600 text-sm">
-                      <Building2 className="w-4 h-4 text-[#2C1F10]" />
-                      {room.floor}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {room.hotels && (
-                <Link
-                  to={`/hotels/${room.hotels.id}`}
-                  className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4 hover:border-[#C09A6A] hover:shadow-md transition-all group"
+          {gallery.length > 1 && (
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+              {gallery.map((img, index) => (
+                <button
+                  key={`${currentRoom.id}-img-${index}`}
+                  type="button"
+                  onClick={() => setActiveImage(img)}
+                  className={`h-14 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2 ${cover === img ? 'border-[#C09A6A]' : 'border-transparent opacity-70 hover:opacity-100'}`}
                 >
-                  <div className="p-3 bg-[#F0E4C8] rounded-xl flex-shrink-0">
-                    <Building2 className="w-5 h-5 text-[#2C1F10]" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs text-gray-400 mb-0.5">所屬飯店 / 民宿</p>
-                    <p className="font-semibold text-gray-900 group-hover:text-[#C09A6A] transition-colors">{room.hotels.name}</p>
-                    {room.hotels.city && (
-                      <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                        <MapPin className="w-3 h-3" />{room.hotels.city}
-                      </p>
-                    )}
-                  </div>
-                  {room.hotels.star_rating > 0 && (
-                    <div className="ml-auto flex gap-0.5 flex-shrink-0">
-                      {Array.from({ length: room.hotels.star_rating }).map((_, i) => (
-                        <Star key={i} className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
-                  )}
-                </Link>
-              )}
+                  <img src={img} alt="" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
 
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">房型設施</h2>
-                {amenities.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {amenities.map(a => (
-                      <div key={a} className="flex items-center gap-2.5 bg-[#F0E4C8] text-[#2C1F10] text-sm font-medium px-3 py-2.5 rounded-xl">
-                        {AMENITY_ICONS[a] || <CheckCircle className="w-4 h-4" />}
-                        {a}
+          <div className="mt-8 grid gap-8 lg:grid-cols-3">
+            <div className="space-y-6 lg:col-span-2">
+              <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-[#F0E4C8] px-3 py-1 text-xs font-semibold text-[#2C1F10]">{typeLabel}</span>
+                  {currentRoom.hotels?.name && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                      <Building2 className="h-3.5 w-3.5" />
+                      {currentRoom.hotels.name}
+                    </span>
+                  )}
+                </div>
+                <h1 className="text-3xl font-bold text-gray-900">{currentRoom.name}</h1>
+                <p className="mt-2 inline-flex items-center gap-1 text-sm text-gray-500">
+                  <MapPin className="h-4 w-4" />
+                  {currentRoom.location || currentRoom.hotels?.city || t.unknownLocation}
+                </p>
+                <p className="mt-5 leading-7 text-gray-600">{currentRoom.description || t.noDescription}</p>
+
+                <div className="mt-5 grid grid-cols-2 gap-3 border-t border-gray-100 pt-5 text-sm text-gray-600 sm:grid-cols-4">
+                  <div className="inline-flex items-center gap-1.5">
+                    <Users className="h-4 w-4 text-[#2C1F10]" />
+                    {guestLabel}
+                  </div>
+                  <div className="inline-flex items-center gap-1.5">
+                    <Clock className="h-4 w-4 text-[#2C1F10]" />
+                    {t.checkIn} {currentRoom.hotels?.checkin_time || '15:00'}
+                  </div>
+                  <div className="inline-flex items-center gap-1.5">
+                    <Clock className="h-4 w-4 text-[#2C1F10]" />
+                    {t.checkOut} {currentRoom.hotels?.checkout_time || '11:00'}
+                  </div>
+                  {currentRoom.floor && <div>{currentRoom.floor}</div>}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                <h2 className="mb-4 text-xl font-bold text-gray-900">{t.amenities}</h2>
+                {Array.isArray(currentRoom.amenities) && currentRoom.amenities.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {currentRoom.amenities.map((amenity, index) => (
+                      <div key={`${currentRoom.id}-amenity-${index}`} className="inline-flex items-center gap-2 rounded-xl bg-[#F0E4C8]/75 px-3 py-2.5 text-sm font-medium text-[#2C1F10]">
+                        <CheckCircle className="h-4 w-4" />
+                        {amenity}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-400 text-sm">暫無設施資訊，請聯繫客服詳詢。</p>
+                  <p className="text-sm text-gray-400">{t.noAmenities}</p>
                 )}
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                {POLICIES.map(({ icon: Icon, title, items }) => (
-                  <div key={title} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Icon className="w-4 h-4 text-[#2C1F10]" />
-                      <h3 className="font-semibold text-gray-900 text-sm">{title}</h3>
-                    </div>
-                    <ul className="space-y-1.5">
-                      {items.map(item => (
-                        <li key={item} className="text-xs text-gray-500 flex items-start gap-1.5">
-                          <span className="w-1 h-1 rounded-full bg-gray-300 mt-1.5 flex-shrink-0" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-
-              <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-white">
-                <h2 className="text-lg font-bold mb-4">位置資訊</h2>
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-[#2C1F10] flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium">{room.location}</p>
-                    <p className="text-gray-400 text-sm mt-1">詳細地址及交通資訊於訂房確認後提供</p>
-                  </div>
-                </div>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="bg-white rounded-2xl p-6 shadow-md border border-gray-100 sticky top-6">
-                <div className="text-center mb-5">
-                  <p className="text-gray-500 text-sm mb-1">平日每晚</p>
-                  <p className="text-4xl font-bold text-[#2C1F10]">{formatCurrency(room.price_per_night)}</p>
-                  {room.weekend_price && room.weekend_price > 0 && (
-                    <p className="text-sm text-gray-500 mt-1">假日 / 連假 {formatCurrency(room.weekend_price)}</p>
-                  )}
-                  {room.hotels?.deposit_amount && room.hotels.deposit_amount > 0 && (
-                    <p className="text-xs text-gray-400 mt-1">押金 {formatCurrency(room.hotels.deposit_amount)}（退房後退還）</p>
-                  )}
-                  <div className="flex items-center justify-center gap-1 mt-2">
-                    {Array.from({ length: room.hotels?.star_rating || 4 }).map((_, s) => <Star key={s} className="w-4 h-4 fill-yellow-400 text-yellow-400" />)}
-                  </div>
-                </div>
-
-                {room.is_available ? (
-                  <Link
-                    to={`/booking/${room.id}`}
-                    className="block w-full bg-[#C09A6A] hover:bg-[#8B6840] text-white text-center font-bold py-4 rounded-xl transition shadow-md hover:shadow-lg text-lg"
-                  >
-                    立即預訂
-                  </Link>
-                ) : (
-                  <div className="w-full bg-gray-200 text-gray-500 text-center font-semibold py-4 rounded-xl cursor-not-allowed">
-                    目前不開放預訂
-                  </div>
-                )}
-
-                <div className="mt-4 space-y-2">
-                  {HIGHLIGHTS.map(({ icon: Icon, label, sub }) => (
-                    <div key={label} className="flex items-center gap-2.5 text-sm text-gray-600">
-                      <Icon className="w-4 h-4 text-[#2C1F10] flex-shrink-0" />
-                      <div>
-                        <span className="font-medium">{label}</span>
-                        <span className="text-gray-400 text-xs block">{sub}</span>
-                      </div>
-                    </div>
+            <div>
+              <div className="sticky top-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                <p className="text-sm text-gray-500">{t.priceLabel}</p>
+                <p className="mt-1 text-4xl font-bold text-[#2C1F10]">{formatCurrency(currentRoom.price_per_night)}</p>
+                {currentRoom.weekend_price && currentRoom.weekend_price > 0 && <p className="mt-1 text-sm text-gray-500">{t.weekend} {formatCurrency(currentRoom.weekend_price)}</p>}
+                <div className="mt-3 flex items-center gap-0.5">
+                  {Array.from({ length: currentRoom.hotels?.star_rating || 4 }).map((_, index) => (
+                    <Star key={`${currentRoom.id}-star-${index}`} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
-              </div>
 
-              <div className="bg-[#F0E4C8] rounded-2xl p-4 border border-[#D5CDB8]">
-                <p className="text-[#2C1F10] text-sm font-semibold mb-1">需要協助？</p>
-                {room.hotels?.phone ? (
-                  <p className="text-[#1A1208] text-xs leading-relaxed">
-                    電話：{room.hotels.phone}
-                    {room.hotels.line_id && <span className="block">LINE：{room.hotels.line_id}</span>}
-                  </p>
+                {currentRoom.is_available ? (
+                  <Link to={`/booking/${currentRoom.id}`} className="mt-5 block rounded-xl bg-[#C09A6A] py-3 text-center text-lg font-bold text-white hover:bg-[#8B6840]">
+                    {t.bookNow}
+                  </Link>
                 ) : (
-                  <p className="text-[#1A1208] text-xs leading-relaxed">如有任何訂房問題，請聯繫我們的 24 小時 AI 客服或客服專線。</p>
+                  <div className="mt-5 rounded-xl bg-gray-200 py-3 text-center font-semibold text-gray-500">{t.soldOut}</div>
                 )}
               </div>
             </div>
           </div>
         </motion.div>
       </div>
+
       <Footer />
     </div>
   );
-};
-
-export default RoomDetail;
+}
