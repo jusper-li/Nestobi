@@ -128,6 +128,11 @@ export default function ProductList() {
   const [translationNotice, setTranslationNotice] = useState('');
   const { addItem } = useCart();
 
+  const mergeTranslatedProducts = (base: Product[], translated: Product[]) => {
+    const byId = new Map(translated.map(item => [item.id, item]));
+    return base.map(item => byId.get(item.id) || item);
+  };
+
   useEffect(() => {
     let cancelled = false;
     let receivedFreshProducts = false;
@@ -236,16 +241,31 @@ export default function ProductList() {
           setTranslationNotice(isEn ? 'Syncing remaining product translations in background...' : '正在背景補齊其餘商品翻譯...');
         }
       });
-    translateProductsOnDemand(products, lang)
-      .then(translated => {
-        if (!cancelled) {
-          setDisplayProducts(translated);
-          setTranslationNotice('');
+    const BATCH_SIZE = 36;
+    const batches: Product[][] = [];
+    for (let i = 0; i < products.length; i += BATCH_SIZE) {
+      batches.push(products.slice(i, i + BATCH_SIZE));
+    }
+
+    (async () => {
+      let current = products;
+      for (let i = 0; i < batches.length; i += 1) {
+        if (cancelled) return;
+        try {
+          const translatedChunk = await translateProductsOnDemand(batches[i], lang);
+          if (cancelled) return;
+          current = mergeTranslatedProducts(current, translatedChunk);
+          setDisplayProducts(current);
+          if (i === batches.length - 1) setTranslationNotice('');
+        } catch {
+          if (!cancelled) {
+            setTranslationNotice(isEn ? 'Showing source/cached products.' : '目前顯示原文或快取商品。');
+          }
+          return;
         }
-      })
-      .catch(() => {
-        if (!cancelled) setTranslationNotice(isEn ? 'Showing source/cached products.' : '目前顯示原文或快取商品。');
-      });
+      }
+    })();
+
     return () => { cancelled = true; };
   }, [products, lang, isEn]);
 

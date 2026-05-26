@@ -65,6 +65,10 @@ type TranslationRow = {
   source_hash: string;
   translated_text: string;
 };
+type TranslationCacheRow = {
+  source_hash: string;
+  translated_text: string;
+};
 
 const ENTITY_TYPE = 'room';
 const ENTITY_PRODUCT = 'product';
@@ -75,6 +79,7 @@ const ENTITY_STORE = 'store_location';
 const EMPTY_TRANSLATION_HINT = 'there is no text provided for translation';
 const EMPTY_TRANSLATION_HINT_2 = 'please provide the text you would like to have translated';
 let contentTranslationsTableUnavailable = false;
+let translationCacheTableUnavailable = false;
 const STORAGE_KEY = 'nestobi:content-translations-unavailable';
 const AI_COOLDOWN_KEY = 'nestobi:translation-ai-cooldown-until';
 const AI_COOLDOWN_MS = 2 * 60 * 1000;
@@ -119,6 +124,47 @@ function setAICooldownNow() {
     window.sessionStorage.setItem(AI_COOLDOWN_KEY, String(Date.now() + AI_COOLDOWN_MS));
   } catch {
     // ignore
+  }
+}
+
+async function readTranslationCacheByHashes(
+  sourceHashes: string[],
+  sourceLang: string,
+  targetLang: string,
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  if (!sourceHashes.length || translationCacheTableUnavailable) return result;
+  const { data, error } = await supabase
+    .from('translation_cache')
+    .select('source_hash, translated_text')
+    .eq('source_lang', sourceLang)
+    .eq('target_lang', targetLang)
+    .in('source_hash', sourceHashes);
+
+  const errText = String(error?.message || '').toLowerCase();
+  if (errText.includes('could not find the table') || errText.includes('404') || errText.includes('not found')) {
+    translationCacheTableUnavailable = true;
+    return result;
+  }
+
+  (data as TranslationCacheRow[] | null)?.forEach(row => {
+    const hash = String(row.source_hash || '');
+    const txt = String(row.translated_text || '');
+    if (hash && isUsableTranslation('x', txt)) result.set(hash, txt);
+  });
+  return result;
+}
+
+async function upsertTranslationCacheRows(
+  rows: Array<{ source_hash: string; source_text: string; source_lang: string; target_lang: string; translated_text: string }>,
+) {
+  if (!rows.length || translationCacheTableUnavailable) return;
+  const { error } = await supabase
+    .from('translation_cache')
+    .upsert(rows, { onConflict: 'source_hash,source_lang,target_lang' });
+  const errText = String(error?.message || '').toLowerCase();
+  if (errText.includes('could not find the table') || errText.includes('404') || errText.includes('not found')) {
+    translationCacheTableUnavailable = true;
   }
 }
 
@@ -201,6 +247,7 @@ async function translateRoomsWithOptions<T extends RoomLike>(
   options: { allowAI: boolean; allowWrite: boolean },
 ): Promise<T[]> {
   if (!rooms.length || targetLang === 'zh-TW') return rooms;
+  const sourceLang = targetLang === 'zh-TW' ? 'en' : 'zh-TW';
 
   const entries = rooms.flatMap(room =>
     roomEntries(room).map(entry => ({
@@ -242,6 +289,12 @@ async function translateRoomsWithOptions<T extends RoomLike>(
   const missing = entries.filter(entry => !translationMap.has(`${entry.entity_id}|${entry.field_key}|${entry.source_hash}`));
   const missingByHash = [...new Set(missing.map(entry => entry.source_hash))];
 
+  const cacheByHash = await readTranslationCacheByHashes(missingByHash, sourceLang, targetLang);
+  for (const entry of missing) {
+    const reused = cacheByHash.get(entry.source_hash);
+    if (reused) translationMap.set(`${entry.entity_id}|${entry.field_key}|${entry.source_hash}`, reused);
+  }
+
   // Reuse existing translations across different entity IDs when source text hash matches.
   if (!contentTranslationsTableUnavailable && missingByHash.length > 0) {
     const { data: sharedRows } = await supabase
@@ -277,7 +330,7 @@ async function translateRoomsWithOptions<T extends RoomLike>(
         try {
           const translated = await callAI<string>('translate', {
             text: entry.source_text,
-            sourceLang: 'zh-TW',
+            sourceLang,
             targetLang,
           });
           const clean = (translated || '').trim();
@@ -311,6 +364,15 @@ async function translateRoomsWithOptions<T extends RoomLike>(
         console.warn('content translation insert failed', error.message);
       }
     }
+    await upsertTranslationCacheRows(
+      inserts.map(row => ({
+        source_hash: String(row?.source_hash || ''),
+        source_text: String(row?.source_text || ''),
+        source_lang: sourceLang,
+        target_lang: targetLang,
+        translated_text: String(row?.translated_text || ''),
+      })),
+    );
   }
 
   return rooms.map(room => {
@@ -393,6 +455,7 @@ async function translateGenericOnDemand<
   applyTranslation: (item: T, map: Map<string, string>) => T,
 ): Promise<T[]> {
   if (!rows.length) return rows;
+  const sourceLang = targetLang === 'zh-TW' ? 'en' : 'zh-TW';
 
   const entries = rows.flatMap(item =>
     buildEntries(item).map(entry => ({ entity_id: item.id, ...entry })),
@@ -424,6 +487,12 @@ async function translateGenericOnDemand<
 
   const missing = entries.filter(entry => !translationMap.has(`${entry.entity_id}|${entry.field_key}|${entry.source_hash}`));
   const missingByHash = [...new Set(missing.map(entry => entry.source_hash))];
+
+  const cacheByHash = await readTranslationCacheByHashes(missingByHash, sourceLang, targetLang);
+  for (const entry of missing) {
+    const reused = cacheByHash.get(entry.source_hash);
+    if (reused) translationMap.set(`${entry.entity_id}|${entry.field_key}|${entry.source_hash}`, reused);
+  }
 
   // Reuse existing translations across different entity IDs when source text hash matches.
   if (!contentTranslationsTableUnavailable && missingByHash.length > 0) {
@@ -460,7 +529,7 @@ async function translateGenericOnDemand<
         try {
           const translated = await callAI<string>('translate', {
             text: entry.source_text,
-            sourceLang: targetLang === 'zh-TW' ? 'en' : 'zh-TW',
+            sourceLang,
             targetLang,
           });
           const clean = (translated || '').trim();
@@ -494,6 +563,15 @@ async function translateGenericOnDemand<
         console.warn('content translation insert failed', error.message);
       }
     }
+    await upsertTranslationCacheRows(
+      inserts.map(row => ({
+        source_hash: String(row?.source_hash || ''),
+        source_text: String(row?.source_text || ''),
+        source_lang: sourceLang,
+        target_lang: targetLang,
+        translated_text: String(row?.translated_text || ''),
+      })),
+    );
   }
 
   return rows.map(item => applyTranslation(item, translationMap));
