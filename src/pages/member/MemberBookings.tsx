@@ -17,23 +17,55 @@ interface Booking {
   tbl_rooms: { name: string; location: string; image_url: string } | null;
 }
 
+type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
+
+const copy: Record<UiLang, Record<string, string>> = {
+  'zh-TW': {
+    title: '我的訂房',
+    noData: '目前沒有訂房紀錄',
+    room: '房型',
+    people: '人',
+    cancel: '取消訂房',
+    canceling: '取消中...',
+    confirmCancel: '確定要取消這筆訂房嗎？',
+  },
+  en: {
+    title: 'My Bookings',
+    noData: 'No bookings yet',
+    room: 'Room',
+    people: 'guests',
+    cancel: 'Cancel Booking',
+    canceling: 'Cancelling...',
+    confirmCancel: 'Are you sure you want to cancel this booking?',
+  },
+  ja: {
+    title: '宿泊予約',
+    noData: '宿泊予約はまだありません',
+    room: '部屋タイプ',
+    people: '名',
+    cancel: '予約をキャンセル',
+    canceling: 'キャンセル中...',
+    confirmCancel: 'この予約をキャンセルしますか？',
+  },
+  ko: {
+    title: '내 숙소 예약',
+    noData: '숙소 예약 내역이 없습니다',
+    room: '객실',
+    people: '명',
+    cancel: '예약 취소',
+    canceling: '취소 중...',
+    confirmCancel: '이 예약을 취소하시겠습니까?',
+  },
+};
+
 export default function MemberBookings() {
   const { user } = useAuth();
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
+  const locale = (lang === 'ja' || lang === 'ko' || lang === 'en' ? lang : 'zh-TW') as UiLang;
+  const t = copy[locale];
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelId, setCancelId] = useState<string | null>(null);
-
-  const t = {
-    title: isEn ? 'My Bookings' : '我的訂房',
-    noData: isEn ? 'No bookings yet' : '目前沒有訂房紀錄',
-    room: isEn ? 'Room' : '房型',
-    people: isEn ? 'guests' : '人',
-    cancel: isEn ? 'Cancel Booking' : '取消訂房',
-    canceling: isEn ? 'Cancelling...' : '取消中...',
-    confirmCancel: isEn ? 'Are you sure you want to cancel this booking?' : '確定要取消這筆訂房嗎？',
-  };
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -107,8 +139,7 @@ export default function MemberBookings() {
                 <div className="mb-3 flex flex-wrap gap-4 text-sm text-gray-600">
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4 text-gray-400" />
-                    {formatDate(booking.check_in_date, isEn ? 'en-US' : 'zh-TW')} ~{' '}
-                    {formatDate(booking.check_out_date, isEn ? 'en-US' : 'zh-TW')}
+                    {formatDate(booking.check_in_date, locale === 'en' ? 'en-US' : 'zh-TW')} ~ {formatDate(booking.check_out_date, locale === 'en' ? 'en-US' : 'zh-TW')}
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="h-4 w-4 text-gray-400" />
@@ -141,3 +172,4 @@ export default function MemberBookings() {
     </div>
   );
 }
+

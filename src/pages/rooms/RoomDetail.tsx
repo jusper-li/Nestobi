@@ -38,51 +38,42 @@ interface Room {
   hotels?: Hotel | null;
 }
 
-const ROOM_TYPE_LABEL_ZH: Record<string, string> = {
-  single: '單人房',
-  double: '雙人房',
-  suite: '套房',
-  deluxe: '豪華房',
-  family: '家庭房',
-  villa: 'Villa',
+const ROOM_TYPE_LABELS: Record<string, { 'zh-TW': string; en: string; ja: string; ko: string }> = {
+  single: { 'zh-TW': '單人房', en: 'Single', ja: 'シングル', ko: '싱글' },
+  double: { 'zh-TW': '雙人房', en: 'Double', ja: 'ダブル', ko: '더블' },
+  suite: { 'zh-TW': '套房', en: 'Suite', ja: 'スイート', ko: '스위트' },
+  deluxe: { 'zh-TW': '豪華房', en: 'Deluxe', ja: 'デラックス', ko: '디럭스' },
+  family: { 'zh-TW': '家庭房', en: 'Family', ja: 'ファミリー', ko: '패밀리' },
+  villa: { 'zh-TW': 'Villa', en: 'Villa', ja: 'ヴィラ', ko: '빌라' },
 };
-
-function roomTypeLabel(type: string, isEn: boolean) {
-  if (!isEn) return ROOM_TYPE_LABEL_ZH[type] || type;
-  if (type === 'single') return 'Single';
-  if (type === 'double') return 'Double';
-  if (type === 'suite') return 'Suite';
-  if (type === 'deluxe') return 'Deluxe';
-  if (type === 'family') return 'Family';
-  if (type === 'villa') return 'Villa';
-  return type ? `${type.charAt(0).toUpperCase()}${type.slice(1)}` : '';
-}
 
 export default function RoomDetail() {
   const { id } = useParams<{ id: string }>();
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
+  const locale = lang === 'ja' ? 'ja' : lang === 'ko' ? 'ko' : lang === 'en' ? 'en' : 'zh-TW';
+  const t4 = (zh: string, en: string, ja: string, ko: string) =>
+    locale === 'ja' ? ja : locale === 'ko' ? ko : locale === 'en' ? en : zh;
 
   const t = {
-    notFound: isEn ? 'Room not found' : '找不到房型',
-    backToList: isEn ? 'Back to Room List' : '返回住宿列表',
-    amenities: isEn ? 'Amenities' : '房型設施',
-    noAmenities: isEn ? 'No amenities available' : '目前沒有可顯示的設施',
-    perNight: isEn ? '/ night' : '/ 晚',
-    weekend: isEn ? 'Weekend' : '假日',
-    bookNow: isEn ? 'Book Now' : '立即預訂',
-    soldOut: isEn ? 'Unavailable' : '暫不可訂',
-    checkIn: isEn ? 'Check-in' : '入住',
-    checkOut: isEn ? 'Check-out' : '退房',
-    guests: isEn ? 'guests' : '人',
-    noDescription: isEn ? 'No description available yet.' : '目前尚無房型介紹。',
-    unknownLocation: isEn ? 'Location unavailable' : '地點待補',
-    roomList: isEn ? 'Room List' : '住宿列表',
-    priceLabel: isEn ? 'Price per night' : '每晚價格',
-    cacheNotReady: isEn ? 'Showing source content first. Translation cache is not ready yet.' : '目前先顯示原文內容，翻譯快取尚未就緒。',
-    translatingRoom: isEn ? 'Translating room content...' : '正在翻譯房型內容...',
-    translatingHotel: isEn ? 'Translating property info...' : '正在翻譯住宿資訊...',
-    showingSource: isEn ? 'Showing source content.' : '目前顯示原文內容。',
+    notFound: t4('找不到房型資料', 'Room not found', '部屋が見つかりません', '객실을 찾을 수 없습니다'),
+    backToList: t4('返回房型列表', 'Back to Room List', '部屋一覧に戻る', '객실 목록으로 돌아가기'),
+    amenities: t4('房型設施', 'Amenities', '設備', '객실 편의시설'),
+    noAmenities: t4('目前沒有設施資料', 'No amenities available', '設備情報がありません', '편의시설 정보가 없습니다'),
+    perNight: t4('/ 晚', '/ night', '/ 泊', '/ 박'),
+    weekend: t4('假日', 'Weekend', '週末', '주말'),
+    bookNow: t4('立即預訂', 'Book Now', '今すぐ予約', '지금 예약'),
+    soldOut: t4('目前無法預訂', 'Unavailable', '予約不可', '예약 불가'),
+    checkIn: t4('入住', 'Check-in', 'チェックイン', '체크인'),
+    checkOut: t4('退房', 'Check-out', 'チェックアウト', '체크아웃'),
+    guests: t4('人', 'guests', '名', '명'),
+    noDescription: t4('目前尚無房型描述。', 'No description available yet.', '説明はまだありません。', '아직 객실 설명이 없습니다.'),
+    unknownLocation: t4('地點未提供', 'Location unavailable', '場所情報なし', '위치 정보 없음'),
+    roomList: t4('房型列表', 'Room List', '部屋一覧', '객실 목록'),
+    priceLabel: t4('每晚價格', 'Price per night', '1泊あたり料金', '1박 요금'),
+    cacheNotReady: t4('目前先顯示原文內容，翻譯快取尚未就緒。', 'Showing source content first. Translation cache is not ready yet.', '翻訳キャッシュ未準備のため原文を先に表示します。', '번역 캐시 준비 전이라 원문을 먼저 표시합니다.'),
+    translatingRoom: t4('正在翻譯房型內容...', 'Translating room content...', '部屋情報を翻訳中...', '객실 내용을 번역 중...'),
+    translatingHotel: t4('正在翻譯住宿資訊...', 'Translating property info...', '宿泊施設情報を翻訳中...', '숙소 정보를 번역 중...'),
+    showingSource: t4('目前顯示原文內容。', 'Showing source content.', '原文を表示しています。', '원문 콘텐츠를 표시합니다.'),
   };
 
   const [room, setRoom] = useState<Room | null>(null);
@@ -197,7 +188,8 @@ export default function RoomDetail() {
       ? `${currentRoom.min_capacity}-${currentRoom.capacity} ${t.guests}`
       : `${currentRoom.capacity} ${t.guests}`;
 
-  const typeLabel = roomTypeLabel(currentRoom.room_type, isEn);
+  const roomType = ROOM_TYPE_LABELS[currentRoom.room_type];
+  const typeLabel = roomType ? roomType[locale] : currentRoom.room_type;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -210,7 +202,9 @@ export default function RoomDetail() {
       <Navigation />
 
       <div className="mx-auto max-w-6xl px-4 py-8">
-        {translationNotice && <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">{translationNotice}</div>}
+        {translationNotice && (
+          <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">{translationNotice}</div>
+        )}
         <nav className="mb-6 flex items-center gap-1.5 text-sm text-gray-500">
           <Link to="/rooms" className="hover:text-[#2C1F10]">
             {t.roomList}
@@ -231,7 +225,9 @@ export default function RoomDetail() {
                   key={`${currentRoom.id}-img-${index}`}
                   type="button"
                   onClick={() => setActiveImage(img)}
-                  className={`h-14 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2 ${cover === img ? 'border-[#C09A6A]' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                  className={`h-14 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2 ${
+                    cover === img ? 'border-[#C09A6A]' : 'border-transparent opacity-70 hover:opacity-100'
+                  }`}
                 >
                   <img src={img} alt="" className="h-full w-full object-cover" />
                 </button>
@@ -296,7 +292,11 @@ export default function RoomDetail() {
               <div className="sticky top-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                 <p className="text-sm text-gray-500">{t.priceLabel}</p>
                 <p className="mt-1 text-4xl font-bold text-[#2C1F10]">{formatCurrency(currentRoom.price_per_night)}</p>
-                {currentRoom.weekend_price && currentRoom.weekend_price > 0 && <p className="mt-1 text-sm text-gray-500">{t.weekend} {formatCurrency(currentRoom.weekend_price)}</p>}
+                {currentRoom.weekend_price && currentRoom.weekend_price > 0 && (
+                  <p className="mt-1 text-sm text-gray-500">
+                    {t.weekend} {formatCurrency(currentRoom.weekend_price)}
+                  </p>
+                )}
                 <div className="mt-3 flex items-center gap-0.5">
                   {Array.from({ length: currentRoom.hotels?.star_rating || 4 }).map((_, index) => (
                     <Star key={`${currentRoom.id}-star-${index}`} className="h-4 w-4 fill-yellow-400 text-yellow-400" />

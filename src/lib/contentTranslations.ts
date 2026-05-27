@@ -30,6 +30,7 @@ type BlogLike = {
   id: string;
   title: string;
   excerpt?: string | null;
+  content?: string | null;
   category?: string | null;
   tags?: string[] | null;
   author_name?: string | null;
@@ -80,6 +81,14 @@ const EMPTY_TRANSLATION_HINT = 'there is no text provided for translation';
 const EMPTY_TRANSLATION_HINT_2 = 'please provide the text you would like to have translated';
 let contentTranslationsTableUnavailable = false;
 let translationCacheTableUnavailable = false;
+let translationWriteDisabled = false;
+let translationWriteAttempts = 0;
+let translationWriteSuccess = 0;
+let translationWriteFailed = 0;
+let translationCacheWriteAttempts = 0;
+let translationCacheWriteSuccess = 0;
+let translationCacheWriteFailed = 0;
+let translationLastError = '';
 const STORAGE_KEY = 'nestobi:content-translations-unavailable';
 const AI_COOLDOWN_KEY = 'nestobi:translation-ai-cooldown-until';
 const AI_COOLDOWN_MS = 2 * 60 * 1000;
@@ -158,21 +167,58 @@ async function readTranslationCacheByHashes(
 async function upsertTranslationCacheRows(
   rows: Array<{ source_hash: string; source_text: string; source_lang: string; target_lang: string; translated_text: string }>,
 ) {
-  if (!rows.length || translationCacheTableUnavailable) return;
+  if (!rows.length || translationCacheTableUnavailable || translationWriteDisabled) return;
+  // Deduplicate rows in the same payload to avoid Postgres upsert conflict-on-conflict (500).
+  const dedupedRows = Array.from(
+    rows.reduce((map, row) => {
+      const key = `${row.source_hash}|${row.source_lang}|${row.target_lang}`;
+      if (!map.has(key)) map.set(key, row);
+      return map;
+    }, new Map<string, { source_hash: string; source_text: string; source_lang: string; target_lang: string; translated_text: string }>()),
+  ).map(([, row]) => row);
+
+  if (!dedupedRows.length) return;
+
+  translationCacheWriteAttempts += dedupedRows.length;
   const { error } = await supabase
     .from('translation_cache')
-    .upsert(rows, { onConflict: 'source_hash,source_lang,target_lang' });
+    .upsert(dedupedRows, { onConflict: 'source_hash,source_lang,target_lang' });
   const errText = String(error?.message || '').toLowerCase();
   if (errText.includes('could not find the table') || errText.includes('404') || errText.includes('not found')) {
     translationCacheTableUnavailable = true;
+    translationCacheWriteFailed += dedupedRows.length;
+    translationLastError = String(error?.message || 'translation_cache table not found');
+  } else if (errText.includes('unauthorized') || errText.includes('permission denied') || errText.includes('401')) {
+    translationWriteDisabled = true;
+    translationCacheWriteFailed += dedupedRows.length;
+    translationLastError = String(error?.message || 'translation_cache unauthorized');
+  } else if (error) {
+    translationCacheWriteFailed += dedupedRows.length;
+    translationLastError = String(error?.message || 'translation_cache write failed');
+  } else {
+    translationCacheWriteSuccess += dedupedRows.length;
   }
 }
 
 export function getTranslationRuntimeState() {
   return {
     tableUnavailable: contentTranslationsTableUnavailable,
+    writeDisabled: translationWriteDisabled,
     aiCoolingDown: Date.now() < getAICooldownUntil(),
     isLocalProxyMode: isLocalSupabaseProxyMode(),
+    writeStats: {
+      content: {
+        attempts: translationWriteAttempts,
+        success: translationWriteSuccess,
+        failed: translationWriteFailed,
+      },
+      cache: {
+        attempts: translationCacheWriteAttempts,
+        success: translationCacheWriteSuccess,
+        failed: translationCacheWriteFailed,
+      },
+      lastError: translationLastError,
+    },
   };
 }
 
@@ -353,15 +399,26 @@ async function translateRoomsWithOptions<T extends RoomLike>(
     );
 
     const inserts = translatedRows.filter(Boolean);
-    if (options.allowWrite && !contentTranslationsTableUnavailable && inserts.length > 0) {
+    if (options.allowWrite && !contentTranslationsTableUnavailable && !translationWriteDisabled && inserts.length > 0) {
+      translationWriteAttempts += inserts.length;
       const { error } = await supabase
         .from('content_translations')
         .upsert(inserts, { onConflict: 'entity_type,entity_id,field_key,target_lang,source_hash' });
       const msg = String(error?.message || '').toLowerCase();
       if (msg.includes('could not find the table')) {
         markTranslationsUnavailable();
+        translationWriteFailed += inserts.length;
+        translationLastError = String(error?.message || 'content_translations table not found');
+      } else if (msg.includes('unauthorized') || msg.includes('permission denied') || msg.includes('401')) {
+        translationWriteDisabled = true;
+        translationWriteFailed += inserts.length;
+        translationLastError = String(error?.message || 'content_translations unauthorized');
       } else if (error && !msg.includes('duplicate')) {
+        translationWriteFailed += inserts.length;
+        translationLastError = String(error?.message || 'content_translations write failed');
         console.warn('content translation insert failed', error.message);
+      } else if (!error) {
+        translationWriteSuccess += inserts.length;
       }
     }
     await upsertTranslationCacheRows(
@@ -552,15 +609,26 @@ async function translateGenericOnDemand<
     );
 
     const inserts = translatedRows.filter(Boolean);
-    if (!contentTranslationsTableUnavailable && inserts.length > 0) {
+    if (!contentTranslationsTableUnavailable && !translationWriteDisabled && inserts.length > 0) {
+      translationWriteAttempts += inserts.length;
       const { error } = await supabase
         .from('content_translations')
         .upsert(inserts, { onConflict: 'entity_type,entity_id,field_key,target_lang,source_hash' });
       const msg = String(error?.message || '').toLowerCase();
       if (msg.includes('could not find the table')) {
         markTranslationsUnavailable();
+        translationWriteFailed += inserts.length;
+        translationLastError = String(error?.message || 'content_translations table not found');
+      } else if (msg.includes('unauthorized') || msg.includes('permission denied') || msg.includes('401')) {
+        translationWriteDisabled = true;
+        translationWriteFailed += inserts.length;
+        translationLastError = String(error?.message || 'content_translations unauthorized');
       } else if (error && !msg.includes('duplicate')) {
+        translationWriteFailed += inserts.length;
+        translationLastError = String(error?.message || 'content_translations write failed');
         console.warn('content translation insert failed', error.message);
+      } else if (!error) {
+        translationWriteSuccess += inserts.length;
       }
     }
     await upsertTranslationCacheRows(
@@ -743,6 +811,7 @@ export async function translateBlogPostsOnDemand<T extends BlogLike>(posts: T[],
       const base = [
         { field_key: 'title', source_text: item.title || '', source_hash: hashText((item.title || '').trim()) },
         { field_key: 'excerpt', source_text: item.excerpt || '', source_hash: hashText((item.excerpt || '').trim()) },
+        { field_key: 'content', source_text: item.content || '', source_hash: hashText((item.content || '').trim()) },
         { field_key: 'category', source_text: item.category || '', source_hash: hashText((item.category || '').trim()) },
         { field_key: 'author_name', source_text: item.author_name || '', source_hash: hashText((item.author_name || '').trim()) },
       ];
@@ -757,6 +826,7 @@ export async function translateBlogPostsOnDemand<T extends BlogLike>(posts: T[],
     (item, map) => {
       const titleHash = hashText((item.title || '').trim());
       const excerptHash = hashText((item.excerpt || '').trim());
+      const contentHash = hashText((item.content || '').trim());
       const categoryHash = hashText((item.category || '').trim());
       const authorNameHash = hashText((item.author_name || '').trim());
       const translatedTags = (item.tags || []).map((tag, index) => {
@@ -767,6 +837,7 @@ export async function translateBlogPostsOnDemand<T extends BlogLike>(posts: T[],
         ...item,
         title: map.get(`${item.id}|title|${titleHash}`) || item.title,
         excerpt: map.get(`${item.id}|excerpt|${excerptHash}`) || item.excerpt,
+        content: map.get(`${item.id}|content|${contentHash}`) || item.content,
         category: map.get(`${item.id}|category|${categoryHash}`) || item.category,
         author_name: map.get(`${item.id}|author_name|${authorNameHash}`) || item.author_name,
         tags: translatedTags,
@@ -784,6 +855,7 @@ export async function translateBlogPostsFromCacheOnly<T extends BlogLike>(posts:
       const base = [
         { field_key: 'title', source_text: item.title || '', source_hash: hashText((item.title || '').trim()) },
         { field_key: 'excerpt', source_text: item.excerpt || '', source_hash: hashText((item.excerpt || '').trim()) },
+        { field_key: 'content', source_text: item.content || '', source_hash: hashText((item.content || '').trim()) },
         { field_key: 'category', source_text: item.category || '', source_hash: hashText((item.category || '').trim()) },
         { field_key: 'author_name', source_text: item.author_name || '', source_hash: hashText((item.author_name || '').trim()) },
       ];
@@ -798,6 +870,7 @@ export async function translateBlogPostsFromCacheOnly<T extends BlogLike>(posts:
     (item, map) => {
       const titleHash = hashText((item.title || '').trim());
       const excerptHash = hashText((item.excerpt || '').trim());
+      const contentHash = hashText((item.content || '').trim());
       const categoryHash = hashText((item.category || '').trim());
       const authorNameHash = hashText((item.author_name || '').trim());
       const translatedTags = (item.tags || []).map((tag, index) => {
@@ -808,6 +881,7 @@ export async function translateBlogPostsFromCacheOnly<T extends BlogLike>(posts:
         ...item,
         title: map.get(`${item.id}|title|${titleHash}`) || item.title,
         excerpt: map.get(`${item.id}|excerpt|${excerptHash}`) || item.excerpt,
+        content: map.get(`${item.id}|content|${contentHash}`) || item.content,
         category: map.get(`${item.id}|category|${categoryHash}`) || item.category,
         author_name: map.get(`${item.id}|author_name|${authorNameHash}`) || item.author_name,
         tags: translatedTags,

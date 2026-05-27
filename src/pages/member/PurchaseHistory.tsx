@@ -16,30 +16,80 @@ interface PurchaseRecord {
   products: { name: string; image_url: string } | null;
 }
 
+type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
+
+const copy: Record<UiLang, Record<string, string>> = {
+  'zh-TW': {
+    title: '購買紀錄',
+    startDate: '開始日期',
+    endDate: '結束日期',
+    filter: '篩選',
+    reset: '重設',
+    noData: '目前沒有購買紀錄',
+    product: '商品',
+    qty: '數量',
+    unitPrice: '單價',
+    total: '總價',
+    date: '日期',
+    status: '狀態',
+    unknown: '未知商品',
+  },
+  en: {
+    title: 'Purchase History',
+    startDate: 'Start Date',
+    endDate: 'End Date',
+    filter: 'Filter',
+    reset: 'Reset',
+    noData: 'No purchase records yet',
+    product: 'Product',
+    qty: 'Qty',
+    unitPrice: 'Unit Price',
+    total: 'Total',
+    date: 'Date',
+    status: 'Status',
+    unknown: 'Unknown Product',
+  },
+  ja: {
+    title: '購入履歴',
+    startDate: '開始日',
+    endDate: '終了日',
+    filter: '絞り込み',
+    reset: 'リセット',
+    noData: '購入履歴はまだありません',
+    product: '商品',
+    qty: '数量',
+    unitPrice: '単価',
+    total: '合計',
+    date: '日付',
+    status: '状態',
+    unknown: '不明な商品',
+  },
+  ko: {
+    title: '구매 내역',
+    startDate: '시작일',
+    endDate: '종료일',
+    filter: '필터',
+    reset: '초기화',
+    noData: '구매 내역이 없습니다',
+    product: '상품',
+    qty: '수량',
+    unitPrice: '단가',
+    total: '총액',
+    date: '날짜',
+    status: '상태',
+    unknown: '알 수 없는 상품',
+  },
+};
+
 const PurchaseHistory: React.FC = () => {
   const { user } = useAuth();
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
+  const locale = (lang === 'ja' || lang === 'ko' || lang === 'en' ? lang : 'zh-TW') as UiLang;
+  const t = copy[locale];
   const [records, setRecords] = useState<PurchaseRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-
-  const t = {
-    title: isEn ? 'Purchase History' : '購買紀錄',
-    startDate: isEn ? 'Start Date' : '開始日期',
-    endDate: isEn ? 'End Date' : '結束日期',
-    filter: isEn ? 'Filter' : '篩選',
-    reset: isEn ? 'Reset' : '重設',
-    noData: isEn ? 'No purchase records yet' : '目前沒有購買紀錄',
-    product: isEn ? 'Product' : '商品',
-    qty: isEn ? 'Qty' : '數量',
-    unitPrice: isEn ? 'Unit Price' : '單價',
-    total: isEn ? 'Total' : '總價',
-    date: isEn ? 'Date' : '日期',
-    status: isEn ? 'Status' : '狀態',
-    unknown: isEn ? 'Unknown Product' : '未知商品',
-  };
 
   const fetchRecords = async () => {
     if (!user) return;
@@ -118,7 +168,7 @@ const PurchaseHistory: React.FC = () => {
                     <td className="px-4 py-3 text-sm text-gray-600">{record.quantity}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{formatCurrency(record.unit_price)}</td>
                     <td className="px-4 py-3 text-sm font-semibold text-gray-900">{formatCurrency(record.total_price)}</td>
-                    <td className="flex items-center gap-1 px-4 py-3 text-sm text-gray-500"><Calendar className="h-3.5 w-3.5" />{formatDate(record.created_at, isEn ? 'en-US' : 'zh-TW')}</td>
+                    <td className="flex items-center gap-1 px-4 py-3 text-sm text-gray-500"><Calendar className="h-3.5 w-3.5" />{formatDate(record.created_at, locale === 'en' ? 'en-US' : 'zh-TW')}</td>
                     <td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${getStatusColor(record.status)}`}>{getStatusLabel(record.status, lang)}</span></td>
                   </motion.tr>
                 ))}
@@ -132,3 +182,4 @@ const PurchaseHistory: React.FC = () => {
 };
 
 export default PurchaseHistory;
+

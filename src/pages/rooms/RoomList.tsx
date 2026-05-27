@@ -1,7 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertCircle, ArrowRight, Building2, Loader2, MapPin, Search, SlidersHorizontal, Sparkles, Users, X } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowRight,
+  Building2,
+  Loader2,
+  MapPin,
+  Search,
+  SlidersHorizontal,
+  Sparkles,
+  Users,
+  X,
+} from 'lucide-react';
 import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
@@ -108,10 +119,9 @@ const CITY_TRANSLATIONS_EN: Record<string, string> = {
   連江: 'Lienchiang',
 };
 
-function localizeCityName(text: string | null | undefined, isEn: boolean) {
+function localizeCityName(text: string | null | undefined, isNonZh: boolean) {
   const value = (text || '').trim();
-  if (!value || !isEn) return value;
-
+  if (!value || !isNonZh) return value;
   let output = value;
   for (const [zh, en] of Object.entries(CITY_TRANSLATIONS_EN)) {
     output = output.replaceAll(zh, en);
@@ -121,48 +131,63 @@ function localizeCityName(text: string | null | undefined, isEn: boolean) {
 
 export default function RoomList() {
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
+  const locale = lang === 'ja' ? 'ja' : lang === 'ko' ? 'ko' : lang === 'en' ? 'en' : 'zh-TW';
+  const isNonZh = locale !== 'zh-TW';
+  const t4 = (zh: string, en: string, ja: string, ko: string) =>
+    locale === 'ja' ? ja : locale === 'ko' ? ko : locale === 'en' ? en : zh;
 
   const t = {
-    title: isEn ? 'Curated Stays' : '探索住宿',
-    subtitle: isEn
-      ? 'Find the right room by city, budget, and group size.'
-      : '從城市短住到慢旅行，快速找到適合人數、預算與目的地的房間。',
-    searchPlaceholder: isEn
-      ? 'Try: double room, near station, under NT$10,000'
-      : '試試：雙人房、近車站、有浴缸、預算一萬元內',
-    search: isEn ? 'Search' : '搜尋',
-    noResult: isEn ? 'No matching rooms found.' : '找不到符合條件的房型。',
-    resetFilter: isEn ? 'Reset filters' : '重設篩選',
-    loadingMore: isEn ? 'Load more rooms' : '載入更多房型',
-    filter: isEn ? 'Filters' : '篩選',
-    maxPrice: isEn ? 'Max' : '最高',
-    sortRecommended: isEn ? 'Recommended' : '推薦排序',
-    sortPriceAsc: isEn ? 'Price: Low to High' : '價格：低到高',
-    sortPriceDesc: isEn ? 'Price: High to Low' : '價格：高到低',
-    sortCapacity: isEn ? 'Capacity' : '可住人數',
-    night: isEn ? '/ night' : '/ 晚',
-    weekend: isEn ? 'Weekend' : '假日',
-    details: isEn ? 'Details' : '詳情',
-    noLocation: isEn ? 'Location unavailable' : '地點資訊不足',
-    roomsFound: isEn ? 'rooms found' : '間住宿',
-    showing: isEn ? 'Showing' : '顯示',
-    aiError: isEn ? 'AI search is temporarily unavailable.' : 'AI 搜尋暫時無法使用。',
-    snapshotNotice: isEn
-      ? 'Supabase is unstable. Showing snapshot data for faster display.'
-      : 'Supabase 連線暫時不穩，已改用快照資料加速顯示。',
-    fallbackNotice: isEn
-      ? 'Supabase is unstable. Showing local cache/snapshot data.'
-      : 'Supabase 連線暫時不穩，已改用本機快取或快照資料。',
+    title: t4('探索住宿', 'Curated Stays', '宿泊を探す', '숙소 탐색'),
+    subtitle: t4(
+      '從城市、預算與人數快速找到適合的房型。',
+      'Find the right room by city, budget, and group size.',
+      '都市・予算・人数から最適な部屋をすばやく見つけましょう。',
+      '도시, 예산, 인원에 맞는 객실을 빠르게 찾아보세요.',
+    ),
+    searchPlaceholder: t4(
+      '試試：雙人房、近車站、有浴缸、預算一萬內',
+      'Try: double room, near station, with bathtub, under NT$10,000',
+      '例：2人部屋・駅近・バスタブ付き・予算1万NTD以内',
+      '예: 더블룸, 역 근처, 욕조 포함, 예산 NT$10,000 이하',
+    ),
+    search: t4('搜尋', 'Search', '検索', '검색'),
+    noResult: t4('找不到符合條件的房間。', 'No matching rooms found.', '条件に合う部屋が見つかりません。', '조건에 맞는 객실을 찾을 수 없습니다.'),
+    resetFilter: t4('重設篩選', 'Reset filters', 'フィルターをリセット', '필터 초기화'),
+    loadingMore: t4('載入更多房間', 'Load more rooms', 'さらに読み込む', '객실 더 불러오기'),
+    filter: t4('篩選', 'Filters', '絞り込み', '필터'),
+    maxPrice: t4('最高', 'Max', '最大', '최대'),
+    sortRecommended: t4('推薦排序', 'Recommended', 'おすすめ順', '추천순'),
+    sortPriceAsc: t4('價格：低到高', 'Price: Low to High', '価格：安い順', '가격: 낮은 순'),
+    sortPriceDesc: t4('價格：高到低', 'Price: High to Low', '価格：高い順', '가격: 높은 순'),
+    sortCapacity: t4('容納人數', 'Capacity', '定員', '수용 인원'),
+    night: t4('/ 晚', '/ night', '/ 泊', '/ 박'),
+    weekend: t4('假日', 'Weekend', '週末', '주말'),
+    details: t4('詳情', 'Details', '詳細', '상세'),
+    noLocation: t4('地點未提供', 'Location unavailable', '場所情報なし', '위치 정보 없음'),
+    roomsFound: t4('間住宿', 'rooms found', '件の宿泊', '개 숙소'),
+    showing: t4('顯示', 'Showing', '表示', '표시'),
+    aiError: t4('AI 搜尋暫時無法使用。', 'AI search is temporarily unavailable.', 'AI検索は一時的に利用できません。', 'AI 검색을 일시적으로 사용할 수 없습니다.'),
+    snapshotNotice: t4(
+      'Supabase 連線暫時不穩，已改用快照資料加速顯示。',
+      'Supabase is unstable. Showing snapshot data for faster display.',
+      'Supabase 接続が不安定のため、スナップショット表示に切り替えました。',
+      'Supabase 연결이 불안정하여 스냅샷 데이터로 먼저 표시합니다.',
+    ),
+    fallbackNotice: t4(
+      'Supabase 連線暫時不穩，已改用快取/快照資料。',
+      'Supabase is unstable. Showing local cache/snapshot data.',
+      'Supabase 接続が不安定のため、キャッシュ/スナップショットを表示します。',
+      'Supabase 연결이 불안정하여 캐시/스냅샷 데이터를 표시합니다.',
+    ),
   };
 
   const typeLabels: Record<string, string> = {
-    all: isEn ? 'All Rooms' : '全部房型',
-    single: isEn ? 'Single' : '單人房',
-    double: isEn ? 'Double' : '雙人房',
-    suite: isEn ? 'Suite' : '套房',
-    deluxe: isEn ? 'Deluxe' : '豪華房',
-    family: isEn ? 'Family' : '家庭房',
+    all: t4('全部房型', 'All Rooms', 'すべて', '전체 객실'),
+    single: t4('單人房', 'Single', 'シングル', '싱글'),
+    double: t4('雙人房', 'Double', 'ダブル', '더블'),
+    suite: t4('套房', 'Suite', 'スイート', '스위트'),
+    deluxe: t4('豪華房', 'Deluxe', 'デラックス', '디럭스'),
+    family: t4('家庭房', 'Family', 'ファミリー', '패밀리'),
     villa: 'Villa',
   };
 
@@ -246,13 +271,21 @@ export default function RoomList() {
     const runtime = getTranslationRuntimeState();
     if (runtime.tableUnavailable || runtime.isLocalProxyMode) {
       setTranslationNotice(
-        isEn
-          ? 'Showing source content first. Translation cache is not ready yet.'
-          : '目前先顯示原文內容，翻譯快取尚未就緒。',
+        t4(
+          '目前先顯示原文內容，翻譯快取尚未就緒。',
+          'Showing source content first. Translation cache is not ready yet.',
+          '翻訳キャッシュ未準備のため、先に原文を表示します。',
+          '번역 캐시 준비 전이라 원문 콘텐츠를 먼저 표시합니다.',
+        ),
       );
     } else {
       setTranslationNotice(
-        isEn ? 'Applying cached translations progressively...' : '正在逐步套用快取翻譯...',
+        t4(
+          '套用快取翻譯中...',
+          'Applying cached translations progressively...',
+          'キャッシュ翻訳を順次適用中...',
+          '캐시 번역을 순차 적용 중...',
+        ),
       );
     }
 
@@ -266,7 +299,12 @@ export default function RoomList() {
       .finally(() => {
         if (!cancelled) {
           setTranslationNotice(
-            isEn ? 'Syncing remaining translations in background...' : '背景同步其餘翻譯中...',
+            t4(
+              '背景同步其餘翻譯中...',
+              'Syncing remaining translations in background...',
+              '残りの翻訳をバックグラウンド同期中...',
+              '나머지 번역을 백그라운드 동기화 중...',
+            ),
           );
         }
       });
@@ -280,14 +318,16 @@ export default function RoomList() {
       })
       .catch(() => {
         if (!cancelled) {
-          setTranslationNotice(isEn ? 'Showing source/cached content.' : '目前顯示原文或快取內容。');
+          setTranslationNotice(
+            t4('目前先顯示原文/快取內容。', 'Showing source/cached content.', '原文/キャッシュを表示しています。', '원문/캐시 콘텐츠를 표시합니다.'),
+          );
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [rooms, lang, isEn]);
+  }, [rooms, lang, locale]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -300,8 +340,10 @@ export default function RoomList() {
     return sortRooms(matches, sortMode);
   }, [displayRooms, roomType, maxPrice, search, sortMode]);
 
-  const { visibleItems: visibleRooms, visibleCount, hasMore, sentinelRef, loadMore } =
-    useProgressiveList(filtered, { initialCount: 9, increment: 9 });
+  const { visibleItems: visibleRooms, visibleCount, hasMore, sentinelRef, loadMore } = useProgressiveList(filtered, {
+    initialCount: 9,
+    increment: 9,
+  });
 
   const handleAISearch = async () => {
     if (!search.trim()) return;
@@ -332,9 +374,7 @@ export default function RoomList() {
       <SEOHead
         title={t.title}
         description={t.subtitle}
-        keywords={
-          lang === 'en' ? 'stays, room booking, curated stays, travel lodging' : '住宿, 訂房, 精選住宿, 旅遊住宿'
-        }
+        keywords={locale === 'zh-TW' ? '住宿, 訂房, 精選住宿, 旅遊住宿' : 'stays, room booking, curated stays, travel lodging'}
         ogType="website"
         pageType="list"
       />
@@ -410,25 +450,15 @@ export default function RoomList() {
           <div className="mb-5 flex flex-wrap items-center gap-2 rounded-2xl border border-[#C09A6A]/25 bg-white px-5 py-4 shadow-sm">
             <Sparkles className="h-4 w-4 text-[#C09A6A]" />
             <span className="text-sm font-semibold text-[#2C1F10]">{aiSummary}</span>
-            <button
-              type="button"
-              onClick={() => setAiSummary('')}
-              className="ml-auto text-sm font-semibold text-gray-400 hover:text-gray-600"
-            >
+            <button type="button" onClick={() => setAiSummary('')} className="ml-auto text-sm font-semibold text-gray-400 hover:text-gray-600">
               Close
             </button>
           </div>
         )}
 
-        {dataNotice && (
-          <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
-            {dataNotice}
-          </div>
-        )}
+        {dataNotice && <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">{dataNotice}</div>}
         {translationNotice && (
-          <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
-            {translationNotice}
-          </div>
+          <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">{translationNotice}</div>
         )}
 
         <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -501,8 +531,8 @@ export default function RoomList() {
                 const cover = room.images?.[0] || room.image_url || ROOM_FALLBACK_IMAGE;
                 const guestLabel =
                   room.min_capacity && room.min_capacity !== room.capacity
-                    ? `${room.min_capacity}-${room.capacity} ${isEn ? 'guests' : '人'}`
-                    : `${isEn ? 'Up to ' : '最多 '}${room.capacity} ${isEn ? 'guests' : '人'}`;
+                    ? `${room.min_capacity}-${room.capacity} ${t4('人', 'guests', '名', '명')}`
+                    : `${t4('最多 ', 'Up to ', '最大 ', '최대 ')}${room.capacity} ${t4('人', 'guests', '名', '명')}`;
 
                 return (
                   <motion.article
@@ -526,7 +556,7 @@ export default function RoomList() {
                       </span>
                       {room.images && room.images.length > 1 && (
                         <span className="absolute right-3 top-3 rounded-full bg-black/45 px-2 py-0.5 text-xs font-semibold text-white backdrop-blur">
-                          {room.images.length} {isEn ? 'photos' : '張照片'}
+                          {room.images.length} {t4('張照片', 'photos', '枚', '장')}
                         </span>
                       )}
                     </Link>
@@ -544,7 +574,7 @@ export default function RoomList() {
                       <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
                           <MapPin className="h-3.5 w-3.5" />
-                          {localizeCityName(room.location || hotel?.city || t.noLocation, isEn)}
+                          {localizeCityName(room.location || hotel?.city || t.noLocation, isNonZh)}
                         </span>
                         <span className="flex items-center gap-1">
                           <Users className="h-3.5 w-3.5" />

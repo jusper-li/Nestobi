@@ -5,24 +5,75 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import Navigation from '../../components/Navigation';
 
+type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
+
+const copy: Record<
+  UiLang,
+  {
+    center: string;
+    profile: string;
+    bookings: string;
+    orders: string;
+    purchases: string;
+    points: string;
+    preferences: string;
+    signOut: string;
+    member: string;
+  }
+> = {
+  'zh-TW': {
+    center: '會員中心',
+    profile: '個人資料',
+    bookings: '我的訂房',
+    orders: '我的訂單',
+    purchases: '購買紀錄',
+    points: '我的點數',
+    preferences: '偏好設定',
+    signOut: '登出',
+    member: '會員',
+  },
+  en: {
+    center: 'Member Center',
+    profile: 'Profile',
+    bookings: 'My Bookings',
+    orders: 'My Orders',
+    purchases: 'Purchase History',
+    points: 'My Points',
+    preferences: 'Preferences',
+    signOut: 'Logout',
+    member: 'Member',
+  },
+  ja: {
+    center: '会員センター',
+    profile: 'プロフィール',
+    bookings: '宿泊予約',
+    orders: '注文一覧',
+    purchases: '購入履歴',
+    points: 'マイポイント',
+    preferences: '設定',
+    signOut: 'ログアウト',
+    member: '会員',
+  },
+  ko: {
+    center: '회원 센터',
+    profile: '개인정보',
+    bookings: '내 숙소 예약',
+    orders: '내 주문',
+    purchases: '구매 내역',
+    points: '내 포인트',
+    preferences: '환경설정',
+    signOut: '로그아웃',
+    member: '회원',
+  },
+};
+
 export default function MemberLayout() {
   const { user, profile, signOut } = useAuth();
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
+  const locale = (lang === 'ja' || lang === 'ko' || lang === 'en' ? lang : 'zh-TW') as UiLang;
+  const t = copy[locale];
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
-
-  const t = {
-    center: isEn ? 'Member Center' : '會員中心',
-    profile: isEn ? 'Profile' : '個人資料',
-    bookings: isEn ? 'My Bookings' : '我的訂房',
-    orders: isEn ? 'My Orders' : '我的訂單',
-    purchases: isEn ? 'Purchase History' : '購買紀錄',
-    points: isEn ? 'My Points' : '我的點數',
-    preferences: isEn ? 'Preferences' : '偏好設定',
-    signOut: isEn ? 'Logout' : '登出',
-    member: isEn ? 'Member' : '會員',
-  };
 
   const navLinks = [
     { to: '/member', icon: <Home className="h-5 w-5" />, label: t.center, end: true },
@@ -85,12 +136,17 @@ export default function MemberLayout() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      <div className="mx-auto flex max-w-7xl gap-6 px-4 py-6">
-        <div className="mb-4 flex items-center gap-3 md:hidden">
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="rounded-xl border border-gray-100 bg-white p-2 shadow-sm">
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-3 py-4 sm:px-4 sm:py-6 md:flex-row md:gap-6">
+        <div className="mb-1 flex items-center justify-between rounded-xl border border-gray-100 bg-white px-3 py-2 shadow-sm md:hidden">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="rounded-lg p-1.5 text-gray-700 hover:bg-gray-100"
+            aria-label="Toggle member menu"
+          >
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-          <h1 className="font-semibold text-gray-900">{t.center}</h1>
+          <h1 className="text-base font-semibold text-gray-900">{t.center}</h1>
+          <div className="w-8" />
         </div>
         {sidebarOpen && (
           <div className="fixed inset-0 z-40 md:hidden">

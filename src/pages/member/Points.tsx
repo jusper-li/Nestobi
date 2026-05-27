@@ -9,66 +9,41 @@ import { formatDate } from '../../lib/utils';
 interface PointTx {
   id: string;
   amount: number;
-  transaction_type: string;
   description: string;
   created_at: string;
 }
 
+type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
+
+const copy: Record<UiLang, Record<string, string>> = {
+  'zh-TW': {
+    title: '我的點數', available: '可兌換點數餘額', rewards: '獎勵中心', canRedeem: '立即兌換', needMore: '還差', pointsUnit: '點',
+    redeemed: '已兌換', history: '點數紀錄', noHistory: '目前沒有點數紀錄', txFallback: '點數異動',
+  },
+  en: {
+    title: 'My Points', available: 'Available balance for redemption', rewards: 'Reward Center', canRedeem: 'Redeem now', needMore: 'Need', pointsUnit: 'pts',
+    redeemed: 'Redeemed', history: 'Point History', noHistory: 'No point transactions yet', txFallback: 'Point transaction',
+  },
+  ja: {
+    title: 'マイポイント', available: '交換可能ポイント残高', rewards: '特典センター', canRedeem: '今すぐ交換', needMore: 'あと', pointsUnit: 'pt',
+    redeemed: '交換済み', history: 'ポイント履歴', noHistory: 'ポイント履歴はまだありません', txFallback: 'ポイント変動',
+  },
+  ko: {
+    title: '내 포인트', available: '사용 가능한 포인트 잔액', rewards: '리워드 센터', canRedeem: '즉시 교환', needMore: '부족', pointsUnit: '점',
+    redeemed: '교환 완료', history: '포인트 내역', noHistory: '포인트 내역이 없습니다', txFallback: '포인트 변동',
+  },
+};
+
 const Points: React.FC = () => {
   const { user } = useAuth();
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
-
-  const t = {
-    title: isEn ? 'My Points' : '我的點數',
-    available: isEn ? 'Available balance for redemption' : '可兌換點數餘額',
-    rewards: isEn ? 'Reward Center' : '獎勵中心',
-    canRedeem: isEn ? 'Redeem now' : '立即兌換',
-    needMore: isEn ? 'Need' : '還差',
-    pointsUnit: isEn ? 'pts' : '點',
-    redeemed: isEn ? 'Redeemed' : '已兌換',
-    history: isEn ? 'Point History' : '點數紀錄',
-    noHistory: isEn ? 'No point transactions yet' : '目前沒有點數紀錄',
-    txFallback: isEn ? 'Point transaction' : '點數異動',
-  };
+  const locale = (lang === 'ja' || lang === 'ko' || lang === 'en' ? lang : 'zh-TW') as UiLang;
+  const t = copy[locale];
 
   const rewards = [
-    {
-      points: 100,
-      title: isEn ? 'NT$10 Coupon' : 'NT$10 折價券',
-      description: isEn ? 'Redeem NT$10 coupon' : '可兌換 NT$10 折價券',
-      icon: '☕',
-    },
-    {
-      points: 300,
-      title: isEn ? 'NT$35 Coupon' : 'NT$35 折價券',
-      description: isEn ? 'Redeem NT$35 coupon' : '可兌換 NT$35 折價券',
-      icon: '🎁',
-    },
-    {
-      points: 500,
-      title: isEn ? 'Free Breakfast' : '免費早餐',
-      description: isEn ? 'Booking add-on free breakfast' : '訂房可加贈免費早餐',
-      icon: '🥐',
-    },
-    {
-      points: 1000,
-      title: isEn ? 'Room Upgrade' : '房型升等',
-      description: isEn ? 'Room upgrade benefit' : '可兌換房型升等優惠',
-      icon: '🏨',
-    },
-    {
-      points: 2000,
-      title: isEn ? 'NT$250 Coupon' : 'NT$250 折價券',
-      description: isEn ? 'Redeem NT$250 coupon' : '可兌換 NT$250 折價券',
-      icon: '💸',
-    },
-    {
-      points: 5000,
-      title: isEn ? 'Free 1-Night Stay' : '免費住宿一晚',
-      description: isEn ? 'One free night voucher' : '可兌換一晚住宿券',
-      icon: '🌙',
-    },
+    { points: 100, title: locale === 'ja' ? 'NT$10クーポン' : locale === 'ko' ? 'NT$10 쿠폰' : locale === 'en' ? 'NT$10 Coupon' : 'NT$10 折價券', description: locale === 'ja' ? 'NT$10 割引クーポン' : locale === 'ko' ? 'NT$10 할인 쿠폰' : locale === 'en' ? 'Redeem NT$10 coupon' : '可兌換 NT$10 折價券', icon: '☕' },
+    { points: 300, title: locale === 'ja' ? 'NT$35クーポン' : locale === 'ko' ? 'NT$35 쿠폰' : locale === 'en' ? 'NT$35 Coupon' : 'NT$35 折價券', description: locale === 'ja' ? 'NT$35 割引クーポン' : locale === 'ko' ? 'NT$35 할인 쿠폰' : locale === 'en' ? 'Redeem NT$35 coupon' : '可兌換 NT$35 折價券', icon: '🎁' },
+    { points: 500, title: locale === 'ja' ? '無料朝食' : locale === 'ko' ? '무료 조식' : locale === 'en' ? 'Free Breakfast' : '免費早餐', description: locale === 'ja' ? '宿泊時の朝食無料' : locale === 'ko' ? '예약 시 무료 조식' : locale === 'en' ? 'Booking add-on free breakfast' : '訂房可加贈免費早餐', icon: '🥐' },
   ];
 
   const [balance, setBalance] = useState(0);
@@ -107,126 +82,56 @@ const Points: React.FC = () => {
     setRedeeming(null);
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-16">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2C1F10] border-t-transparent" />
-      </div>
-    );
-  }
+  if (loading) return <div className="flex justify-center py-16"><div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2C1F10] border-t-transparent" /></div>;
 
   return (
     <div className="space-y-6">
       <AnimatePresence>
         {redeemSuccess && (
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            className="fixed right-6 top-6 z-50 flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 text-white shadow-lg"
-          >
+          <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="fixed right-6 top-6 z-50 flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 text-white shadow-lg">
             <CheckCircle className="h-5 w-5" />
-            <span>
-              {t.redeemed}: {redeemSuccess}
-            </span>
+            <span>{t.redeemed}: {redeemSuccess}</span>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl bg-gradient-to-r from-yellow-400 to-orange-400 p-6 text-white"
-      >
-        <div className="mb-2 flex items-center gap-3">
-          <Star className="h-6 w-6" />
-          <h2 className="text-xl font-bold">{t.title}</h2>
-        </div>
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl bg-gradient-to-r from-yellow-400 to-orange-400 p-6 text-white">
+        <div className="mb-2 flex items-center gap-3"><Star className="h-6 w-6" /><h2 className="text-xl font-bold">{t.title}</h2></div>
         <p className="mb-1 text-5xl font-bold">{balance.toLocaleString()}</p>
         <p className="text-sm text-yellow-100">{t.available}</p>
       </motion.div>
-
       <div>
-        <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
-          <Gift className="h-5 w-5 text-orange-500" />
-          {t.rewards}
-        </h3>
+        <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900"><Gift className="h-5 w-5 text-orange-500" />{t.rewards}</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {rewards.map((r, i) => {
             const canRedeem = balance >= r.points;
             const isRedeeming = redeeming === i;
             return (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className={`rounded-2xl border-2 bg-white p-4 shadow-sm transition ${
-                  canRedeem
-                    ? 'cursor-pointer border-yellow-300 hover:border-yellow-400 hover:shadow-md'
-                    : 'cursor-not-allowed border-gray-100 opacity-60'
-                }`}
-                onClick={() => canRedeem && !isRedeeming && handleRedeem(r, i)}
-              >
+              <motion.div key={i} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className={`rounded-2xl border-2 bg-white p-4 shadow-sm transition ${canRedeem ? 'cursor-pointer border-yellow-300 hover:border-yellow-400 hover:shadow-md' : 'cursor-not-allowed border-gray-100 opacity-60'}`} onClick={() => canRedeem && !isRedeeming && handleRedeem(r, i)}>
                 <div className="mb-2 text-3xl">{r.icon}</div>
                 <h4 className="font-semibold text-gray-900">{r.title}</h4>
                 <p className="mt-0.5 text-sm text-gray-500">{r.description}</p>
                 <div className="mt-3 flex items-center justify-between">
-                  <span className="text-sm font-bold text-orange-500">
-                    {r.points.toLocaleString()} {t.pointsUnit}
-                  </span>
-                  {isRedeeming ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-orange-400 border-t-transparent" />
-                  ) : canRedeem ? (
-                    <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700">
-                      {t.canRedeem}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-gray-400">
-                      {t.needMore} {(r.points - balance).toLocaleString()} {t.pointsUnit}
-                    </span>
-                  )}
+                  <span className="text-sm font-bold text-orange-500">{r.points.toLocaleString()} {t.pointsUnit}</span>
+                  {isRedeeming ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-orange-400 border-t-transparent" /> : canRedeem ? <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700">{t.canRedeem}</span> : <span className="text-xs text-gray-400">{t.needMore} {(r.points - balance).toLocaleString()} {t.pointsUnit}</span>}
                 </div>
               </motion.div>
             );
           })}
         </div>
       </div>
-
       <div>
         <h3 className="mb-4 text-lg font-bold text-gray-900">{t.history}</h3>
         {transactions.length === 0 ? (
-          <div className="rounded-2xl bg-white p-10 text-center text-gray-400 shadow-sm">
-            <Star className="mx-auto mb-2 h-10 w-10 opacity-20" />
-            <p>{t.noHistory}</p>
-          </div>
+          <div className="rounded-2xl bg-white p-10 text-center text-gray-400 shadow-sm"><Star className="mx-auto mb-2 h-10 w-10 opacity-20" /><p>{t.noHistory}</p></div>
         ) : (
           <div className="divide-y divide-gray-50 overflow-hidden rounded-2xl bg-white shadow-sm">
             {transactions.map((tx, i) => (
-              <motion.div
-                key={tx.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.03 }}
-                className="flex items-center justify-between px-5 py-3.5 transition hover:bg-gray-50"
-              >
+              <motion.div key={tx.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }} className="flex items-center justify-between px-5 py-3.5 transition hover:bg-gray-50">
                 <div className="flex items-center gap-3">
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-full ${tx.amount > 0 ? 'bg-green-100' : 'bg-red-100'}`}>
-                    {tx.amount > 0 ? (
-                      <TrendingUp className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4 text-red-500" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{tx.description || t.txFallback}</p>
-                    <p className="text-xs text-gray-400">{formatDate(tx.created_at, isEn ? 'en-US' : 'zh-TW')}</p>
-                  </div>
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-full ${tx.amount > 0 ? 'bg-green-100' : 'bg-red-100'}`}>{tx.amount > 0 ? <TrendingUp className="h-4 w-4 text-green-600" /> : <TrendingDown className="h-4 w-4 text-red-500" />}</div>
+                  <div><p className="text-sm font-medium text-gray-900">{tx.description || t.txFallback}</p><p className="text-xs text-gray-400">{formatDate(tx.created_at, locale === 'en' ? 'en-US' : 'zh-TW')}</p></div>
                 </div>
-                <span className={`font-bold ${tx.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                  {tx.amount > 0 ? '+' : ''}
-                  {tx.amount.toLocaleString()}
-                </span>
+                <span className={`font-bold ${tx.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>{tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}</span>
               </motion.div>
             ))}
           </div>
@@ -237,3 +142,4 @@ const Points: React.FC = () => {
 };
 
 export default Points;
+

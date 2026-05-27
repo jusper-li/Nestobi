@@ -41,6 +41,30 @@ export default function Cart() {
   const [checkoutError, setCheckoutError] = useState('');
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
+  const loginCopy =
+    lang === 'ja'
+      ? {
+          title: 'ログインしてください',
+          desc: 'ログインするとカート確認と決済ができます。',
+          cta: '今すぐログイン',
+        }
+      : lang === 'ko'
+        ? {
+            title: '로그인이 필요합니다',
+            desc: '로그인 후 장바구니 확인 및 결제가 가능합니다.',
+            cta: '지금 로그인',
+          }
+        : lang === 'en'
+          ? {
+              title: 'Please log in',
+              desc: 'Log in to view your cart and complete checkout.',
+              cta: 'Log in now',
+            }
+          : {
+              title: '請先登入',
+              desc: '登入後即可查看購物車並完成結帳。',
+              cta: '立即登入',
+            };
 
   const t = {
     loginRequiredTitle: isEn ? 'Please log in' : '請先登入',
@@ -190,14 +214,14 @@ export default function Cart() {
         <Navigation />
         <div className="mx-auto max-w-md px-4 py-32 text-center">
           <ShoppingBag className="mx-auto mb-4 h-14 w-14 text-gray-300" />
-          <h1 className="mb-2 text-2xl font-bold text-gray-900">{t.loginRequiredTitle}</h1>
-          <p className="mb-6 text-sm leading-6 text-gray-500">{t.loginRequiredDesc}</p>
+          <h1 className="mb-2 text-2xl font-bold text-gray-900">{loginCopy.title}</h1>
+          <p className="mb-6 text-sm leading-6 text-gray-500">{loginCopy.desc}</p>
           <button
             type="button"
             onClick={() => navigate('/auth/login')}
             className="rounded-xl bg-[#C09A6A] px-6 py-3 font-bold text-white transition hover:bg-[#8B6840]"
           >
-            {t.loginNow}
+            {loginCopy.cta}
           </button>
         </div>
       </div>

@@ -18,7 +18,13 @@ import {
   translateRoomsFromCacheOnly,
   translateRoomsOnDemand,
 } from '../lib/contentTranslations';
-import { BLOG_FALLBACK_IMAGE, PRODUCT_FALLBACK_IMAGE, ROOM_FALLBACK_IMAGE, SCENIC_GALLERY_IMAGES, useFallbackImage } from '../lib/images';
+import {
+  BLOG_FALLBACK_IMAGE,
+  PRODUCT_FALLBACK_IMAGE,
+  ROOM_FALLBACK_IMAGE,
+  SCENIC_GALLERY_IMAGES,
+  useFallbackImage,
+} from '../lib/images';
 import { fetchPublicList, fetchSnapshotList } from '../lib/listData';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/utils';
@@ -66,9 +72,9 @@ const CITY_TRANSLATIONS_EN: Record<string, string> = {
   臺東: 'Taitung',
 };
 
-function localizeCityName(text: string | null | undefined, isEn: boolean) {
+function localizeCityName(text: string | null | undefined, nonZh: boolean) {
   const value = (text || '').trim();
-  if (!value || !isEn) return value;
+  if (!value || !nonZh) return value;
   let output = value;
   for (const [zh, en] of Object.entries(CITY_TRANSLATIONS_EN)) output = output.replaceAll(zh, en);
   return output;
@@ -76,39 +82,51 @@ function localizeCityName(text: string | null | undefined, isEn: boolean) {
 
 export default function Home() {
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
+  const locale = lang === 'ja' ? 'ja' : lang === 'ko' ? 'ko' : lang === 'en' ? 'en' : 'zh-TW';
+  const nonZh = locale !== 'zh-TW';
+  const t4 = (zh: string, en: string, ja: string, ko: string) =>
+    locale === 'ja' ? ja : locale === 'ko' ? ko : locale === 'en' ? en : zh;
 
   const t = {
-    pageTitle: isEn ? 'Nestobi Travel & Shop Platform' : 'Nestobi 旅遊購物平台',
-    pageDesc: isEn ? 'One-stop stays, shopping, and AI travel tools.' : '一站整合住宿、購物與 AI 旅遊工具。',
-    heroTitle1: isEn ? 'Start Your Next' : '從下一趟旅程開始',
-    heroTitle2: isEn ? 'Journey Here' : '讓平台替你少想一點',
-    heroDesc: isEn
-      ? 'From curated stays and coffee picks to AI itinerary planning, Nestobi helps you travel, shop, and organize in one place.'
-      : '從精選住宿、咖啡選物到 AI 行程規劃，Nestobi 幫你把旅程、購物與日常整理在同一個地方。',
-    shopNow: isEn ? 'Shop' : '逛選物商店',
-    exploreStays: isEn ? 'Find Stays' : '尋找住宿',
-    stays: isEn ? 'Stays' : '住宿',
-    shop: isEn ? 'Shop' : '選物商店',
-    journal: isEn ? 'Coffee Journal' : '咖啡旅誌',
-    featuredStays: isEn ? 'Featured Stays' : '精選住宿',
-    featuredShop: isEn ? 'Featured Products' : '精選商品',
-    featuredJournal: isEn ? 'Latest Stories' : '最新文章',
-    viewAllStays: isEn ? 'View All Stays' : '查看全部住宿',
-    viewAllShop: isEn ? 'View All Products' : '查看全部商品',
-    viewAllJournal: isEn ? 'View All Articles' : '查看全部文章',
-    perNight: isEn ? '/ night' : '/ 晚',
-    guests: isEn ? 'guests' : '人',
-    translationSyncing: isEn ? 'Homepage translation is syncing in background...' : '首頁翻譯正在背景同步...',
-    translationFallback: isEn ? 'Showing source content first. Translation cache is not ready yet.' : '目前先顯示原文內容，翻譯快取尚未就緒。',
-    closeTitle: isEn ? 'Make every trip easier and calmer.' : '讓每趟旅程更輕鬆、更安心。',
+    pageTitle: t4('Nestobi 旅遊購物平台', 'Nestobi Travel & Shop Platform', 'Nestobi 旅行ショッピングプラットフォーム', 'Nestobi 여행 쇼핑 플랫폼'),
+    pageDesc: t4('一站整合住宿、購物與 AI 旅遊工具。', 'One-stop stays, shopping, and AI travel tools.', '宿泊・買い物・AI旅ツールを一つに。', '숙소, 쇼핑, AI 여행 도구를 한 곳에서.'),
+    heroTitle1: t4('從下一趟旅程開始', 'Start Your Next', '次の旅をここから', '다음 여행을 여기서'),
+    heroTitle2: t4('讓平台替你少想一點', 'Journey Here', '旅の準備をもっと軽く', '여행 준비를 더 가볍게'),
+    heroDesc: t4(
+      '從精選住宿、咖啡選物到 AI 行程規劃，Nestobi 幫你把旅程、購物與日常整理在同一個地方。',
+      'From curated stays and coffee picks to AI itinerary planning, Nestobi helps you travel, shop, and organize in one place.',
+      '厳選宿泊、コーヒーセレクト、AI行程作成まで。Nestobiで旅と買い物を一つに。',
+      '엄선 숙소, 커피 셀렉트, AI 일정 계획까지. Nestobi에서 여행과 쇼핑을 한 번에.',
+    ),
+    shopNow: t4('逛選物商店', 'Shop', 'ショップを見る', '샵 둘러보기'),
+    exploreStays: t4('尋找住宿', 'Find Stays', '宿を探す', '숙소 찾기'),
+    stays: t4('住宿', 'Stays', '宿泊', '숙소'),
+    shop: t4('選物商店', 'Shop', 'ショップ', '샵'),
+    journal: t4('咖啡旅誌', 'Coffee Journal', 'コーヒージャーナル', '커피 저널'),
+    featuredStays: t4('精選住宿', 'Featured Stays', '注目の宿泊', '추천 숙소'),
+    featuredShop: t4('精選商品', 'Featured Products', '注目の商品', '추천 상품'),
+    featuredJournal: t4('最新文章', 'Latest Stories', '最新記事', '최신 글'),
+    viewAllStays: t4('查看全部住宿', 'View All Stays', 'すべての宿泊を見る', '모든 숙소 보기'),
+    viewAllShop: t4('查看全部商品', 'View All Products', 'すべての商品を見る', '모든 상품 보기'),
+    viewAllJournal: t4('查看全部文章', 'View All Articles', 'すべての記事を見る', '모든 글 보기'),
+    perNight: t4('/ 晚', '/ night', '/ 泊', '/ 박'),
+    guests: t4('人', 'guests', '名', '명'),
+    translationSyncing: t4('首頁翻譯背景同步中...', 'Homepage translation is syncing in background...', 'ホーム翻訳をバックグラウンド同期中...', '홈 번역을 백그라운드 동기화 중...'),
+    translationFallback: t4('目前先顯示原文內容，翻譯快取尚未就緒。', 'Showing source content first. Translation cache is not ready yet.', '翻訳キャッシュ未準備のため原文を先に表示します。', '번역 캐시 준비 전이라 원문을 먼저 표시합니다.'),
+    closeTitle: t4('讓每趟旅程更輕鬆、更安心', 'Make every trip easier and calmer.', '旅をもっとラクに、もっと安心に。', '모든 여행을 더 쉽고 편안하게.'),
+    trustStaysTitle: t4('精選住宿', 'Trusted Stays', '厳選ステイ', '엄선 숙소'),
+    trustStaysDesc: t4('嚴選合作房源，重視品質與入住體驗。', 'Verified and quality-picked rooms.', '品質重視で選ばれた宿泊先。', '품질 검증된 숙소만 선별.'),
+    trustShopTitle: t4('旅行選物', 'Curated Shop', '旅のセレクト', '여행 셀렉트'),
+    trustShopDesc: t4('咖啡與旅行好物一次挑選，不用分散比對。', 'Coffee and travel picks in one place.', 'コーヒーと旅のおすすめを一か所で。', '커피와 여행 아이템을 한곳에서.'),
+    trustAiTitle: t4('AI 支援', 'AI Support', 'AIサポート', 'AI 지원'),
+    trustAiDesc: t4('行程、翻譯與旅遊客服，隨時都能使用。', 'Plan, translate, and chat anytime.', '行程作成・翻訳・サポートをいつでも。', '일정, 번역, 여행 상담을 언제든.'),
   };
 
   const stats = [
-    { value: '120+', label: isEn ? 'Curated Products' : '精選商品' },
-    { value: '24/7', label: isEn ? 'AI Support' : 'AI 旅遊支援' },
-    { value: '5%', label: isEn ? 'Points Back' : '購物點數回饋' },
-    { value: '1 stop', label: isEn ? 'All-in-one' : '一站整合' },
+    { value: '120+', label: t4('精選商品', 'Curated Products', '厳選アイテム', '엄선 상품') },
+    { value: '24/7', label: t4('AI 旅遊支援', 'AI Support', 'AIサポート', 'AI 지원') },
+    { value: '5%', label: t4('購物點數回饋', 'Points Back', 'ポイント還元', '포인트 적립') },
+    { value: '1 stop', label: t4('一站整合', 'All-in-one', 'ワンストップ', '원스톱') },
   ];
 
   const [featuredRooms, setFeaturedRooms] = useState<Room[]>([]);
@@ -142,21 +160,30 @@ export default function Home() {
           return (data as unknown as Room[]) || [];
         }).catch(() => fetchSnapshotList<Room>('/snapshots/rooms.json')),
         fetchPublicList<Product>('products', async () => {
-          const { data } = await supabase.from('products').select('id,name,price,image_url,description,origin').eq('is_active', true).order('created_at', { ascending: false }).limit(3);
+          const { data } = await supabase
+            .from('products')
+            .select('id,name,price,image_url,description,origin')
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(3);
           return (data as Product[]) || [];
         }).catch(() => fetchSnapshotList<Product>('/snapshots/products.json')),
         fetchPublicList<BlogPost>('blog-posts', async () => {
-          const { data } = await supabase.from('blog_posts').select('id,title,slug,excerpt,cover_image_url,category,published_at').eq('status', 'published').order('published_at', { ascending: false }).limit(3);
+          const { data } = await supabase
+            .from('blog_posts')
+            .select('id,title,slug,excerpt,cover_image_url,category,published_at')
+            .eq('status', 'published')
+            .order('published_at', { ascending: false })
+            .limit(3);
           return (data as BlogPost[]) || [];
         }).catch(() => fetchSnapshotList<BlogPost>('/snapshots/blog-posts.json')),
       ]);
-
       if (cancelled) return;
       setFeaturedRooms(rooms.slice(0, 3));
       setDisplayRooms(rooms.slice(0, 3));
       setFeaturedProducts(products.slice(0, 3));
-      setFeaturedPosts(posts.slice(0, 3));
       setDisplayProducts(products.slice(0, 3));
+      setFeaturedPosts(posts.slice(0, 3));
       setDisplayPosts(posts.slice(0, 3));
     };
     loadAll();
@@ -176,6 +203,7 @@ export default function Home() {
     }
     const runtime = getTranslationRuntimeState();
     setTranslationNotice(runtime.tableUnavailable || runtime.isLocalProxyMode ? t.translationFallback : t.translationSyncing);
+
     Promise.all([
       translateRoomsFromCacheOnly(featuredRooms, lang),
       translateHotelsFromCacheOnly(
@@ -185,26 +213,18 @@ export default function Home() {
           .map(hotel => ({ id: hotel.id, name: hotel.name, city: hotel.city })),
         lang,
       ),
-    ]).then(([translatedRooms, translatedHotels]) => {
-        if (!cancelled) {
-          const hotelMap = new Map(translatedHotels.map(hotel => [hotel.id, hotel]));
-          const mergedRooms = translatedRooms.map(room => {
-            const hotel = room.hotels;
-            if (!hotel || !hotel.id) return room;
-            const translatedHotel = hotelMap.get(hotel.id);
-            if (!translatedHotel) return room;
-            return {
-              ...room,
-              hotels: {
-                ...hotel,
-                name: translatedHotel.name || hotel.name,
-                city: translatedHotel.city || hotel.city,
-              },
-            };
-          });
-          setDisplayRooms(mergedRooms);
-          setTranslationNotice(isEn ? 'Syncing remaining translations in background...' : '正在背景補齊其餘翻譯...');
-        }
+    ])
+      .then(([translatedRooms, translatedHotels]) => {
+        if (cancelled) return;
+        const hotelMap = new Map(translatedHotels.map(hotel => [hotel.id, hotel]));
+        const mergedRooms = translatedRooms.map(room => {
+          const hotel = room.hotels;
+          if (!hotel || !hotel.id) return room;
+          const translatedHotel = hotelMap.get(hotel.id);
+          if (!translatedHotel) return room;
+          return { ...room, hotels: { ...hotel, name: translatedHotel.name || hotel.name, city: translatedHotel.city || hotel.city } };
+        });
+        setDisplayRooms(mergedRooms);
       })
       .catch(() => {
         if (!cancelled) {
@@ -214,34 +234,31 @@ export default function Home() {
       });
 
     Promise.all([
-      translateRoomsOnDemand(featuredRooms, lang),
+      translateRoomsOnDemand(featuredRooms.slice(0, 3), lang),
       translateHotelsOnDemand(
         featuredRooms
+          .slice(0, 3)
           .map(room => room.hotels)
           .filter((hotel): hotel is NonNullable<Room['hotels']> => Boolean(hotel))
           .map(hotel => ({ id: hotel.id, name: hotel.name, city: hotel.city })),
         lang,
       ),
-    ]).then(([translatedRooms, translatedHotels]) => {
-      if (cancelled) return;
-      const hotelMap = new Map(translatedHotels.map(hotel => [hotel.id, hotel]));
-      const mergedRooms = translatedRooms.map(room => {
-        const hotel = room.hotels;
-        if (!hotel || !hotel.id) return room;
-        const translatedHotel = hotelMap.get(hotel.id);
-        if (!translatedHotel) return room;
-        return {
-          ...room,
-          hotels: {
-            ...hotel,
-            name: translatedHotel.name || hotel.name,
-            city: translatedHotel.city || hotel.city,
-          },
-        };
-      });
-      setDisplayRooms(mergedRooms);
-      setTranslationNotice('');
-    }).catch(() => {});
+    ])
+      .then(([translatedRooms, translatedHotels]) => {
+        if (cancelled) return;
+        const hotelMap = new Map(translatedHotels.map(hotel => [hotel.id, hotel]));
+        const merged = translatedRooms.map(room => {
+          const hotel = room.hotels;
+          if (!hotel || !hotel.id) return room;
+          const translatedHotel = hotelMap.get(hotel.id);
+          if (!translatedHotel) return room;
+          return { ...room, hotels: { ...hotel, name: translatedHotel.name || hotel.name, city: translatedHotel.city || hotel.city } };
+        });
+        const byId = new Map(merged.map(item => [item.id, item]));
+        setDisplayRooms(current => current.map(item => byId.get(item.id) || item));
+        setTranslationNotice('');
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -251,12 +268,12 @@ export default function Home() {
     let cancelled = false;
     if (!featuredProducts.length) return () => { cancelled = true; };
     setDisplayProducts(featuredProducts);
-    translateProductsFromCacheOnly(featuredProducts, lang)
-      .then(translated => { if (!cancelled) setDisplayProducts(translated); })
-      .catch(() => {});
-    translateProductsOnDemand(featuredProducts, lang)
-      .then(translated => { if (!cancelled) setDisplayProducts(translated); })
-      .catch(() => { if (!cancelled) setDisplayProducts(featuredProducts); });
+    translateProductsFromCacheOnly(featuredProducts, lang).then(translated => { if (!cancelled) setDisplayProducts(translated); }).catch(() => {});
+    translateProductsOnDemand(featuredProducts.slice(0, 3), lang).then(translated => {
+      if (cancelled) return;
+      const byId = new Map(translated.map(item => [item.id, item]));
+      setDisplayProducts(current => current.map(item => byId.get(item.id) || item));
+    }).catch(() => {});
     return () => { cancelled = true; };
   }, [featuredProducts, lang]);
 
@@ -264,12 +281,12 @@ export default function Home() {
     let cancelled = false;
     if (!featuredPosts.length) return () => { cancelled = true; };
     setDisplayPosts(featuredPosts);
-    translateBlogPostsFromCacheOnly(featuredPosts, lang)
-      .then(translated => { if (!cancelled) setDisplayPosts(translated); })
-      .catch(() => {});
-    translateBlogPostsOnDemand(featuredPosts, lang)
-      .then(translated => { if (!cancelled) setDisplayPosts(translated); })
-      .catch(() => { if (!cancelled) setDisplayPosts(featuredPosts); });
+    translateBlogPostsFromCacheOnly(featuredPosts, lang).then(translated => { if (!cancelled) setDisplayPosts(translated); }).catch(() => {});
+    translateBlogPostsOnDemand(featuredPosts.slice(0, 3), lang).then(translated => {
+      if (cancelled) return;
+      const byId = new Map(translated.map(item => [item.id, item]));
+      setDisplayPosts(current => current.map(item => byId.get(item.id) || item));
+    }).catch(() => {});
     return () => { cancelled = true; };
   }, [featuredPosts, lang]);
 
@@ -326,7 +343,7 @@ export default function Home() {
                       {room.hotels?.name && <p className="mb-2 flex items-center gap-1 text-xs font-semibold text-[#8B6840]"><Building2 size={13} />{room.hotels.name}</p>}
                       <h3 className="text-base font-bold text-gray-900">{room.name}</h3>
                       <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-500">
-                        <span className="flex items-center gap-1"><MapPin size={13} />{localizeCityName(room.location || room.hotels?.city || '-', isEn)}</span>
+                        <span className="flex items-center gap-1"><MapPin size={13} />{localizeCityName(room.location || room.hotels?.city || '-', nonZh)}</span>
                         <span className="flex items-center gap-1"><Users size={13} />{room.capacity} {t.guests}</span>
                       </div>
                       <div className="mt-5 flex items-end justify-between border-t border-gray-100 pt-4">
@@ -375,12 +392,19 @@ export default function Home() {
               {displayPosts.map(post => (
                 <Link key={post.id} to={`/blog/${post.slug}`} className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-elegant transition hover:-translate-y-1 hover:shadow-card-hover">
                   <div className="relative h-48 overflow-hidden bg-[#F0E4C8]">
-                    {post.cover_image_url ? <img src={post.cover_image_url} alt={post.title} onError={event => useFallbackImage(event, BLOG_FALLBACK_IMAGE)} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-[#C09A6A]"><Coffee size={42} /></div>}
+                    {post.cover_image_url ? (
+                      <img src={post.cover_image_url} alt={post.title} onError={event => useFallbackImage(event, BLOG_FALLBACK_IMAGE)} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-[#C09A6A]"><Coffee size={42} /></div>
+                    )}
                   </div>
                   <div className="p-5">
                     <h3 className="line-clamp-2 text-base font-bold text-gray-900 group-hover:text-[#8B6840]">{post.title}</h3>
                     {post.excerpt && <p className="mt-2 line-clamp-2 text-sm leading-6 text-gray-500">{post.excerpt}</p>}
-                    <p className="mt-5 flex items-center gap-1 border-t border-gray-100 pt-4 text-xs font-medium text-gray-400"><Calendar size={13} />{new Date(post.published_at).toLocaleDateString(isEn ? 'en-US' : 'zh-TW')}</p>
+                    <p className="mt-5 flex items-center gap-1 border-t border-gray-100 pt-4 text-xs font-medium text-gray-400">
+                      <Calendar size={13} />
+                      {new Date(post.published_at).toLocaleDateString(locale === 'zh-TW' ? 'zh-TW' : locale === 'ja' ? 'ja-JP' : locale === 'ko' ? 'ko-KR' : 'en-US')}
+                    </p>
                   </div>
                 </Link>
               ))}
@@ -397,9 +421,9 @@ export default function Home() {
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
             {[
-              { icon: Building2, title: isEn ? 'Trusted Stays' : '精選住宿', desc: isEn ? 'Verified and quality-picked rooms.' : '嚴選合作房源，重視品質與入住體驗。' },
-              { icon: ShoppingBag, title: isEn ? 'Curated Shop' : '旅行選物', desc: isEn ? 'Coffee and travel picks in one place.' : '咖啡與旅行好物一次挑選，不用分散比對。' },
-              { icon: MessageCircle, title: isEn ? 'AI Support' : 'AI 支援', desc: isEn ? 'Plan, translate, and chat anytime.' : '隨時可用 AI 行程規劃、翻譯與客服。' },
+              { icon: Building2, title: t.trustStaysTitle, desc: t.trustStaysDesc },
+              { icon: ShoppingBag, title: t.trustShopTitle, desc: t.trustShopDesc },
+              { icon: MessageCircle, title: t.trustAiTitle, desc: t.trustAiDesc },
             ].map(({ icon: Icon, title, desc }) => (
               <div key={title} className="rounded-2xl border border-white/15 bg-white/[0.08] p-5">
                 <Icon size={22} className="text-[#C09A6A]" />

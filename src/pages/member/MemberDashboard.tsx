@@ -23,32 +23,88 @@ interface Order {
   created_at: string;
 }
 
+type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
+
+const copy: Record<UiLang, Record<string, string>> = {
+  'zh-TW': {
+    welcome: '歡迎回來',
+    points: '目前點數',
+    profile: '個人資料',
+    bookings: '我的訂房',
+    orders: '我的訂單',
+    purchases: '購買紀錄',
+    myPoints: '我的點數',
+    preferences: '偏好設定',
+    passport: '旅遊護照',
+    recentBookings: '近期訂房',
+    recentOrders: '近期訂單',
+    viewAll: '查看全部',
+    noBooking: '目前沒有訂房紀錄',
+    noOrders: '目前沒有訂單紀錄',
+    room: '房型',
+  },
+  en: {
+    welcome: 'Welcome back',
+    points: 'Current points',
+    profile: 'Profile',
+    bookings: 'My Bookings',
+    orders: 'My Orders',
+    purchases: 'Purchases',
+    myPoints: 'My Points',
+    preferences: 'Preferences',
+    passport: 'Travel Passport',
+    recentBookings: 'Recent Bookings',
+    recentOrders: 'Recent Orders',
+    viewAll: 'View all',
+    noBooking: 'No bookings yet',
+    noOrders: 'No orders yet',
+    room: 'Room',
+  },
+  ja: {
+    welcome: 'おかえりなさい',
+    points: '現在のポイント',
+    profile: 'プロフィール',
+    bookings: '宿泊予約',
+    orders: '注文一覧',
+    purchases: '購入履歴',
+    myPoints: 'マイポイント',
+    preferences: '設定',
+    passport: 'トラベルパスポート',
+    recentBookings: '最近の宿泊予約',
+    recentOrders: '最近の注文',
+    viewAll: 'すべて表示',
+    noBooking: '宿泊予約はまだありません',
+    noOrders: '注文はまだありません',
+    room: '部屋タイプ',
+  },
+  ko: {
+    welcome: '다시 오신 것을 환영합니다',
+    points: '현재 포인트',
+    profile: '개인정보',
+    bookings: '내 숙소 예약',
+    orders: '내 주문',
+    purchases: '구매 내역',
+    myPoints: '내 포인트',
+    preferences: '환경설정',
+    passport: '여행 패스포트',
+    recentBookings: '최근 숙소 예약',
+    recentOrders: '최근 주문',
+    viewAll: '전체 보기',
+    noBooking: '숙소 예약 내역이 없습니다',
+    noOrders: '주문 내역이 없습니다',
+    room: '객실',
+  },
+};
+
 export default function MemberDashboard() {
   const { user, profile } = useAuth();
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
+  const locale = (lang === 'ja' || lang === 'ko' || lang === 'en' ? lang : 'zh-TW') as UiLang;
+  const t = copy[locale];
   const [points, setPoints] = useState(0);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const t = {
-    welcome: isEn ? 'Welcome back' : '歡迎回來',
-    points: isEn ? 'Current points' : '目前點數',
-    profile: isEn ? 'Profile' : '個人資料',
-    bookings: isEn ? 'My Bookings' : '我的訂房',
-    orders: isEn ? 'My Orders' : '我的訂單',
-    purchases: isEn ? 'Purchases' : '購買紀錄',
-    myPoints: isEn ? 'My Points' : '我的點數',
-    preferences: isEn ? 'Preferences' : '偏好設定',
-    passport: isEn ? 'Travel Passport' : '旅遊護照',
-    recentBookings: isEn ? 'Recent Bookings' : '近期訂房',
-    recentOrders: isEn ? 'Recent Orders' : '近期訂單',
-    viewAll: isEn ? 'View all' : '查看全部',
-    noBooking: isEn ? 'No bookings yet' : '目前沒有訂房紀錄',
-    noOrders: isEn ? 'No orders yet' : '目前沒有訂單紀錄',
-    room: isEn ? 'Room' : '房型',
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -132,13 +188,11 @@ export default function MemberDashboard() {
                   <div>
                     <p className="text-sm font-medium text-gray-900">{item.tbl_rooms?.name || t.room}</p>
                     <p className="text-xs text-gray-400">
-                      {formatDate(item.check_in_date, isEn ? 'en-US' : 'zh-TW')} ~ {formatDate(item.check_out_date, isEn ? 'en-US' : 'zh-TW')}
+                      {formatDate(item.check_in_date, locale === 'en' ? 'en-US' : 'zh-TW')} ~ {formatDate(item.check_out_date, locale === 'en' ? 'en-US' : 'zh-TW')}
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${getStatusColor(item.status)}`}>
-                      {getStatusLabel(item.status, lang)}
-                    </span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${getStatusColor(item.status)}`}>{getStatusLabel(item.status, lang)}</span>
                     <p className="mt-0.5 text-sm font-semibold text-gray-900">{formatCurrency(item.total_price)}</p>
                   </div>
                 </div>
@@ -166,12 +220,10 @@ export default function MemberDashboard() {
                 <div key={item.id} className="flex items-center justify-between border-b border-gray-50 py-2 last:border-0">
                   <div>
                     <p className="text-sm font-medium text-gray-900">#{item.id.slice(-8).toUpperCase()}</p>
-                    <p className="text-xs text-gray-400">{formatDate(item.created_at, isEn ? 'en-US' : 'zh-TW')}</p>
+                    <p className="text-xs text-gray-400">{formatDate(item.created_at, locale === 'en' ? 'en-US' : 'zh-TW')}</p>
                   </div>
                   <div className="text-right">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${getStatusColor(item.status)}`}>
-                      {getStatusLabel(item.status, lang)}
-                    </span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${getStatusColor(item.status)}`}>{getStatusLabel(item.status, lang)}</span>
                     <p className="mt-0.5 text-sm font-semibold text-gray-900">{formatCurrency(item.total_amount)}</p>
                   </div>
                 </div>
@@ -183,3 +235,4 @@ export default function MemberDashboard() {
     </div>
   );
 }
+

@@ -22,33 +22,61 @@ interface Order {
   created_at: string;
 }
 
+type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
+
+const copy: Record<UiLang, Record<string, string>> = {
+  'zh-TW': {
+    title: '我的訂單',
+    noData: '目前沒有訂單',
+    paid: '已付款',
+    unpaid: '未付款',
+    view: '查看明細',
+    hide: '收合明細',
+    items: '訂單商品',
+  },
+  en: {
+    title: 'My Orders',
+    noData: 'No orders yet',
+    paid: 'Paid',
+    unpaid: 'Unpaid',
+    view: 'View details',
+    hide: 'Hide details',
+    items: 'Order Items',
+  },
+  ja: {
+    title: '注文一覧',
+    noData: '注文はまだありません',
+    paid: '支払い済み',
+    unpaid: '未払い',
+    view: '詳細を見る',
+    hide: '詳細を隠す',
+    items: '注文商品',
+  },
+  ko: {
+    title: '내 주문',
+    noData: '주문 내역이 없습니다',
+    paid: '결제완료',
+    unpaid: '미결제',
+    view: '상세보기',
+    hide: '상세숨기기',
+    items: '주문 상품',
+  },
+};
+
 export default function MemberOrders() {
   const { user } = useAuth();
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
+  const locale = (lang === 'ja' || lang === 'ko' || lang === 'en' ? lang : 'zh-TW') as UiLang;
+  const t = copy[locale];
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, PurchaseRecord[]>>({});
 
-  const t = {
-    title: isEn ? 'My Orders' : '我的訂單',
-    noData: isEn ? 'No orders yet' : '目前沒有訂單',
-    paid: isEn ? 'Paid' : '已付款',
-    unpaid: isEn ? 'Unpaid' : '未付款',
-    view: isEn ? 'View details' : '查看明細',
-    hide: isEn ? 'Hide details' : '收合明細',
-    items: isEn ? 'Order Items' : '訂單商品',
-  };
-
   useEffect(() => {
     const fetchOrders = async () => {
       if (!user) return;
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      const { data } = await supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
       setOrders(data || []);
       setLoading(false);
     };
@@ -62,10 +90,7 @@ export default function MemberOrders() {
     }
     setExpandedId(orderId);
     if (!details[orderId]) {
-      const { data } = await supabase
-        .from('purchase_records')
-        .select('*, products(name, image_url)')
-        .eq('order_id', orderId);
+      const { data } = await supabase.from('purchase_records').select('*, products(name, image_url)').eq('order_id', orderId);
       setDetails(prev => ({ ...prev, [orderId]: (data as PurchaseRecord[]) || [] }));
     }
   };
@@ -102,31 +127,18 @@ export default function MemberOrders() {
               <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="font-semibold text-gray-900">#{order.id.slice(-10).toUpperCase()}</p>
-                  <p className="mt-0.5 text-sm text-gray-400">
-                    {formatDate(order.created_at, isEn ? 'en-US' : 'zh-TW')}
-                  </p>
+                  <p className="mt-0.5 text-sm text-gray-400">{formatDate(order.created_at, locale === 'en' ? 'en-US' : 'zh-TW')}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${getStatusColor(order.status)}`}>
-                    {getStatusLabel(order.status, lang)}
-                  </span>
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                      order.payment_status === 'paid'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-yellow-100 text-yellow-700'
-                    }`}
-                  >
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${getStatusColor(order.status)}`}>{getStatusLabel(order.status, lang)}</span>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${order.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
                     {order.payment_status === 'paid' ? t.paid : t.unpaid}
                   </span>
                 </div>
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-lg font-bold text-[#2C1F10]">{formatCurrency(order.total_amount)}</p>
-                <button
-                  onClick={() => toggleExpand(order.id)}
-                  className="flex items-center gap-1 text-sm text-gray-500 transition hover:text-gray-700"
-                >
+                <button onClick={() => toggleExpand(order.id)} className="flex items-center gap-1 text-sm text-gray-500 transition hover:text-gray-700">
                   {expandedId === order.id ? (
                     <>
                       <ChevronUp className="h-4 w-4" />
@@ -143,27 +155,17 @@ export default function MemberOrders() {
             </div>
 
             {expandedId === order.id && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="border-t border-gray-100 p-5"
-              >
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="border-t border-gray-100 p-5">
                 <h4 className="mb-3 flex items-center gap-1.5 font-medium text-gray-700">
                   <Package className="h-4 w-4" />
                   {t.items}
                 </h4>
                 {(details[order.id] || []).map(item => (
                   <div key={item.id} className="flex items-center gap-3 border-b border-gray-50 py-2 last:border-0">
-                    <img
-                      src={item.products?.image_url || 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=60'}
-                      alt={item.products?.name || ''}
-                      className="h-12 w-12 flex-shrink-0 rounded-lg object-cover"
-                    />
+                    <img src={item.products?.image_url || 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=60'} alt={item.products?.name || ''} className="h-12 w-12 flex-shrink-0 rounded-lg object-cover" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-gray-900">{item.products?.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {formatCurrency(item.unit_price)} x {item.quantity}
-                      </p>
+                      <p className="text-xs text-gray-500">{formatCurrency(item.unit_price)} x {item.quantity}</p>
                     </div>
                     <p className="text-sm font-semibold text-gray-900">{formatCurrency(item.total_price)}</p>
                   </div>
@@ -176,3 +178,4 @@ export default function MemberOrders() {
     </div>
   );
 }
+

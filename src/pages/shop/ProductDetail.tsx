@@ -6,8 +6,16 @@ import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import { useCart } from '../../contexts/CartContext';
-import { supabase } from '../../lib/supabase';
+import { useLanguage } from '../../contexts/LanguageContext';
+import {
+  getTranslationRuntimeState,
+  translateCategoriesFromCacheOnly,
+  translateCategoriesOnDemand,
+  translateProductsFromCacheOnly,
+  translateProductsOnDemand,
+} from '../../lib/contentTranslations';
 import { sanitizeHtml } from '../../lib/security';
+import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
 
 interface Product {
@@ -27,7 +35,6 @@ interface Product {
   flavor_notes?: string[] | null;
   weight_grams?: number | null;
   tags?: string[] | null;
-  source_url?: string | null;
   roast_date?: string | null;
 }
 
@@ -43,14 +50,13 @@ interface RelatedProduct {
   price: number;
   image_url: string | null;
   stock_quantity: number;
+  description?: string | null;
+  origin?: string | null;
+  roast_level?: string | null;
+  processing_method?: string | null;
+  flavor_notes?: string[] | null;
+  tags?: string[] | null;
 }
-
-const guarantees = [
-  { icon: Shield, title: '安全結帳', desc: '會員訂單與付款狀態清楚記錄。' },
-  { icon: Truck, title: '出貨通知', desc: '訂單成立後由平台協助追蹤。' },
-  { icon: RotateCcw, title: '售後協助', desc: '商品問題可由客服協助確認。' },
-  { icon: Star, title: '點數回饋', desc: '購買成功可累積會員點數。' },
-];
 
 function stripHtml(value: string | null | undefined) {
   if (!value) return '';
@@ -61,34 +67,85 @@ export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addItem } = useCart();
+  const { lang } = useLanguage();
+  const locale = lang === 'ja' ? 'ja' : lang === 'ko' ? 'ko' : lang === 'en' ? 'en' : 'zh-TW';
+  const t4 = (zh: string, en: string, ja: string, ko: string) =>
+    locale === 'ja' ? ja : locale === 'ko' ? ko : locale === 'en' ? en : zh;
+
+  const labels = {
+    notFoundTitle: t4('找不到商品', 'Product Not Found', '商品が見つかりません', '상품을 찾을 수 없습니다'),
+    notFoundDesc: t4('此商品可能已下架或不存在。', 'This product may be offline or removed.', 'この商品は公開終了または削除された可能性があります。', '이 상품은 비공개 또는 삭제되었을 수 있습니다.'),
+    backShop: t4('返回選物商店', 'Back to Shop', 'ショップへ戻る', '상점으로 돌아가기'),
+    reviewHint: t4('精選商品', 'Curated product', 'セレクト商品', '큐레이션 상품'),
+    listPriceHint: t4('原價與折扣依供應商活動為準。', 'List price may vary by supplier promotions.', '価格と割引は仕入先キャンペーンにより変動します。', '정가와 할인은 공급사 프로모션에 따라 달라질 수 있습니다.'),
+    detailsTitle: t4('商品介紹', 'Product Details', '商品情報', '상품 정보'),
+    flavorTitle: t4('風味標籤', 'Flavor Notes', 'フレーバーノート', '풍미 노트'),
+    quantity: t4('購買數量', 'Quantity', '購入数量', '구매 수량'),
+    stockLeft: (count: number) => t4(`庫存 ${count} 件`, `${count} left`, `在庫 ${count}`, `재고 ${count}개`),
+    outOfStock: t4('售完', 'Sold Out', '売り切れ', '품절'),
+    adding: t4('加入中...', 'Adding...', '追加中...', '추가 중...'),
+    added: t4('已加入', 'Added', '追加済み', '추가됨'),
+    addToCart: t4('加入購物車', 'Add to Cart', 'カートに追加', '장바구니에 담기'),
+    buyNow: t4('立即購買', 'Buy Now', '今すぐ購入', '바로 구매'),
+    relatedTitle: t4('你可能也喜歡', 'You May Also Like', 'こちらもおすすめ', '함께 보면 좋은 상품'),
+    viewMore: t4('查看更多', 'View More', 'もっと見る', '더 보기'),
+    specsCategory: t4('分類', 'Category', 'カテゴリ', '카테고리'),
+    specsOrigin: t4('產地', 'Origin', '産地', '원산지'),
+    specsRoast: t4('烘焙度', 'Roast Level', '焙煎度', '로스팅 정도'),
+    specsProcess: t4('處理法', 'Process', '精製方法', '가공 방식'),
+    specsWeight: t4('重量', 'Weight', '重量', '중량'),
+    specsAltitude: t4('海拔', 'Altitude', '標高', '고도'),
+    specsVariety: t4('品種', 'Variety', '品種', '품種'),
+    specsRoastDate: t4('烘焙日期', 'Roast Date', '焙煎日', '로스팅 날짜'),
+    guaranteeSecure: t4('安全結帳', 'Secure Checkout', '安全決済', '안전 결제'),
+    guaranteeSecureDesc: t4('加密付款與安全訂單流程。', 'Encrypted payment and verified order flow.', '暗号化決済と安全な注文フロー。', '암호화 결제와 안전한 주문 절차를 제공합니다.'),
+    guaranteeFast: t4('快速出貨', 'Fast Delivery', '迅速発送', '빠른 배송'),
+    guaranteeFastDesc: t4('快速出貨，提供物流追蹤。', 'Orders are processed quickly with tracking updates.', '迅速発送、配送追跡対応。', '빠르게 출고되며 배송 추적을 지원합니다.'),
+    guaranteeReturn: t4('安心退換', 'Easy Return', '安心返品', '안심 반품'),
+    guaranteeReturnDesc: t4('客服協助退換與售後處理。', 'Support team assists with return policies.', 'カスタマーサポートが返品交換をサポート。', '고객지원팀이 반품/교환을 도와드립니다.'),
+    guaranteeQuality: t4('品質把關', 'Quality Curated', '品質管理', '품질 관리'),
+    guaranteeQualityDesc: t4('精選旅行與日常都適合的好物。', 'Products are curated for travel and daily use.', '旅先でも日常でも使いやすい商品を厳選。', '여행과 일상에 모두 잘 맞는 상품을 엄선합니다.'),
+    breadcrumbShop: t4('選物商店', 'Shop', 'ショップ', '상점'),
+  };
+
   const [product, setProduct] = useState<Product | null>(null);
   const [category, setCategory] = useState<Category | null>(null);
   const [related, setRelated] = useState<RelatedProduct[]>([]);
+  const [displayProduct, setDisplayProduct] = useState<Product | null>(null);
+  const [displayCategory, setDisplayCategory] = useState<Category | null>(null);
+  const [displayRelated, setDisplayRelated] = useState<RelatedProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
   const [activeImg, setActiveImg] = useState<string | null>(null);
+  const [runtimeTick, setRuntimeTick] = useState(0);
 
   useEffect(() => {
     const fetchProduct = async () => {
       setLoading(true);
       const { data: productData } = await supabase.from('products').select('*').eq('id', id).eq('is_active', true).maybeSingle();
-
       if (!productData) {
         setLoading(false);
         return;
       }
-
       const loadedProduct = productData as Product;
       setProduct(loadedProduct);
       setQty(1);
       setActiveImg(null);
 
       const [{ data: categoryData }, { data: relatedData }] = await Promise.all([
-        loadedProduct.category_id ? supabase.from('categories').select('*').eq('id', loadedProduct.category_id).maybeSingle() : Promise.resolve({ data: null }),
         loadedProduct.category_id
-          ? supabase.from('products').select('id,name,price,image_url,stock_quantity').eq('is_active', true).eq('category_id', loadedProduct.category_id).neq('id', loadedProduct.id).limit(4)
+          ? supabase.from('categories').select('id,name,slug').eq('id', loadedProduct.category_id).maybeSingle()
+          : Promise.resolve({ data: null }),
+        loadedProduct.category_id
+          ? supabase
+              .from('products')
+              .select('id,name,price,image_url,stock_quantity,description,origin,roast_level,processing_method,flavor_notes,tags')
+              .eq('is_active', true)
+              .eq('category_id', loadedProduct.category_id)
+              .neq('id', loadedProduct.id)
+              .limit(4)
           : Promise.resolve({ data: [] }),
       ]);
 
@@ -96,23 +153,91 @@ export default function ProductDetail() {
       setRelated((relatedData as RelatedProduct[]) || []);
       setLoading(false);
     };
-
-    if (id) fetchProduct();
+    if (id) void fetchProduct();
   }, [id]);
 
-  const images = useMemo(() => {
-    if (!product) return [];
-    const gallery = product.images?.filter(Boolean) || [];
-    const fallback = product.image_url || 'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=900';
+  useEffect(() => {
+    let cancelled = false;
+    if (!product || lang === 'zh-TW') {
+      setDisplayProduct(product);
+      return () => {
+        cancelled = true;
+      };
+    }
+    setDisplayProduct(product);
+    translateProductsFromCacheOnly([product], lang).then(rows => {
+      if (!cancelled && rows[0]) setDisplayProduct(rows[0] as Product);
+    }).catch(() => {});
+    translateProductsOnDemand([product], lang).then(rows => {
+      if (!cancelled && rows[0]) setDisplayProduct(rows[0] as Product);
+    }).catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [product, lang]);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (!category || lang === 'zh-TW') {
+      setDisplayCategory(category);
+      return () => {
+        cancelled = true;
+      };
+    }
+    setDisplayCategory(category);
+    translateCategoriesFromCacheOnly([category], lang).then(rows => {
+      if (!cancelled && rows[0]) setDisplayCategory(rows[0] as Category);
+    }).catch(() => {});
+    translateCategoriesOnDemand([category], lang).then(rows => {
+      if (!cancelled && rows[0]) setDisplayCategory(rows[0] as Category);
+    }).catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [category, lang]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!related.length || lang === 'zh-TW') {
+      setDisplayRelated(related);
+      return () => {
+        cancelled = true;
+      };
+    }
+    setDisplayRelated(related);
+    translateProductsFromCacheOnly(related as Product[], lang).then(rows => {
+      if (!cancelled) setDisplayRelated(rows as unknown as RelatedProduct[]);
+    }).catch(() => {});
+    translateProductsOnDemand(related as Product[], lang).then(rows => {
+      if (!cancelled) setDisplayRelated(rows as unknown as RelatedProduct[]);
+    }).catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [related, lang]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.location.hostname !== 'localhost') return;
+    const timer = window.setInterval(() => setRuntimeTick(t => t + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const viewProduct = displayProduct || product;
+  const viewCategory = displayCategory || category;
+  const viewRelated = displayRelated.length ? displayRelated : related;
+
+  const images = useMemo(() => {
+    if (!viewProduct) return [];
+    const gallery = viewProduct.images?.filter(Boolean) || [];
+    const fallback = viewProduct.image_url || 'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=900';
     return gallery.length > 0 ? gallery : [fallback];
-  }, [product]);
+  }, [viewProduct]);
 
   const handleAddToCart = async () => {
-    if (!product) return;
+    if (!viewProduct) return;
     setAdding(true);
     try {
-      await addItem(product.id, qty);
+      await addItem(viewProduct.id, qty);
       setAdded(true);
       setTimeout(() => setAdded(false), 1800);
     } finally {
@@ -131,17 +256,17 @@ export default function ProductDetail() {
     );
   }
 
-  if (!product) {
+  if (!viewProduct) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navigation />
         <div className="mx-auto max-w-3xl px-4 py-24 text-center">
           <Package className="mx-auto mb-4 h-16 w-16 text-gray-300" />
-          <h1 className="mb-2 text-2xl font-bold text-gray-800">找不到這項商品</h1>
-          <p className="mb-6 text-gray-500">商品可能已下架或暫時停止販售。</p>
+          <h1 className="mb-2 text-2xl font-bold text-gray-800">{labels.notFoundTitle}</h1>
+          <p className="mb-6 text-gray-500">{labels.notFoundDesc}</p>
           <Link to="/shop" className="inline-flex items-center gap-2 rounded-xl bg-[#C09A6A] px-6 py-3 font-semibold text-white transition hover:bg-[#8B6840]">
             <ArrowLeft className="h-4 w-4" />
-            回到選物商店
+            {labels.backShop}
           </Link>
         </div>
         <Footer />
@@ -149,41 +274,52 @@ export default function ProductDetail() {
     );
   }
 
-  const inStock = product.stock_quantity > 0;
-  const lowStock = product.stock_quantity > 0 && product.stock_quantity <= 5;
+  const inStock = viewProduct.stock_quantity > 0;
+  const lowStock = viewProduct.stock_quantity > 0 && viewProduct.stock_quantity <= 5;
   const displayImage = activeImg || images[0];
-  const plainDescription = stripHtml(product.description);
+  const plainDescription = stripHtml(viewProduct.description);
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: product.name,
-    description: plainDescription || product.name,
+    name: viewProduct.name,
+    description: plainDescription || viewProduct.name,
     image: displayImage,
     offers: {
       '@type': 'Offer',
       priceCurrency: 'TWD',
-      price: product.price,
+      price: viewProduct.price,
       availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
     },
   };
 
+  const guarantees = [
+    { icon: Shield, title: labels.guaranteeSecure, desc: labels.guaranteeSecureDesc },
+    { icon: Truck, title: labels.guaranteeFast, desc: labels.guaranteeFastDesc },
+    { icon: RotateCcw, title: labels.guaranteeReturn, desc: labels.guaranteeReturnDesc },
+    { icon: Star, title: labels.guaranteeQuality, desc: labels.guaranteeQualityDesc },
+  ];
+
   const specs = [
-    { label: '分類', value: category?.name },
-    { label: '產地', value: product.origin },
-    { label: '烘焙度', value: product.roast_level },
-    { label: '處理法', value: product.processing_method },
-    { label: '重量', value: product.weight_grams ? `${product.weight_grams}g` : undefined },
-    { label: '海拔', value: product.altitude },
-    { label: '品種', value: product.variety?.join('、') },
-    { label: '烘焙日期', value: product.roast_date },
+    { label: labels.specsCategory, value: viewCategory?.name },
+    { label: labels.specsOrigin, value: viewProduct.origin },
+    { label: labels.specsRoast, value: viewProduct.roast_level },
+    { label: labels.specsProcess, value: viewProduct.processing_method },
+    { label: labels.specsWeight, value: viewProduct.weight_grams ? `${viewProduct.weight_grams}g` : undefined },
+    { label: labels.specsAltitude, value: viewProduct.altitude },
+    { label: labels.specsVariety, value: viewProduct.variety?.join(', ') },
+    { label: labels.specsRoastDate, value: viewProduct.roast_date },
   ].filter(item => item.value);
+
+  const runtime = getTranslationRuntimeState();
+  void runtimeTick;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <SEOHead
-        title={product.name}
-        description={plainDescription || `${product.name} - Nestobi 旅行選物商店`}
-        keywords={`${product.name}, 旅行選物, ${category?.name || ''}, Nestobi`}
+        title={viewProduct.name}
+        description={plainDescription || `${viewProduct.name} - Nestobi`}
+        keywords={`${viewProduct.name}, ${viewCategory?.name || ''}, Nestobi`}
         ogImage={displayImage}
         ogType="product"
         pageType="product"
@@ -192,24 +328,33 @@ export default function ProductDetail() {
       <Navigation />
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
+          <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+            <div className="font-semibold">Translation Debug</div>
+            <div>content: {runtime.writeStats.content.success}/{runtime.writeStats.content.attempts} success, {runtime.writeStats.content.failed} failed</div>
+            <div>cache: {runtime.writeStats.cache.success}/{runtime.writeStats.cache.attempts} success, {runtime.writeStats.cache.failed} failed</div>
+            {runtime.writeStats.lastError && <div className="text-red-600">lastError: {runtime.writeStats.lastError}</div>}
+          </div>
+        )}
+
         <nav className="mb-6 flex items-center gap-1.5 text-sm font-medium text-slate-500">
-          <Link to="/shop" className="font-semibold transition hover:text-[#8B6840]">選物商店</Link>
-          {category && (
+          <Link to="/shop" className="font-semibold transition hover:text-[#8B6840]">{labels.breadcrumbShop}</Link>
+          {viewCategory && (
             <>
               <ChevronRight className="h-3.5 w-3.5" />
-              <span>{category.name}</span>
+              <span>{viewCategory.name}</span>
             </>
           )}
           <ChevronRight className="h-3.5 w-3.5" />
-          <span className="max-w-[220px] truncate font-semibold text-gray-700">{product.name}</span>
+          <span className="max-w-[220px] truncate font-semibold text-gray-700">{viewProduct.name}</span>
         </nav>
 
         <div className="mb-12 grid gap-10 lg:grid-cols-[1.02fr_0.98fr]">
           <motion.div initial={{ opacity: 0, x: -18 }} animate={{ opacity: 1, x: 0 }}>
             <div className="relative aspect-square overflow-hidden rounded-2xl bg-white shadow-card">
-              <img src={displayImage} alt={product.name} className="h-full w-full object-cover" />
-              {!inStock && <div className="absolute inset-0 flex items-center justify-center bg-black/45"><span className="rounded-full bg-white px-6 py-2.5 text-lg font-bold text-gray-800">售完</span></div>}
-              {lowStock && <span className="absolute right-4 top-4 rounded-full bg-orange-500 px-3 py-1.5 text-sm font-bold text-white shadow-md">僅剩 {product.stock_quantity}</span>}
+              <img src={displayImage} alt={viewProduct.name} className="h-full w-full object-cover" />
+              {!inStock && <div className="absolute inset-0 flex items-center justify-center bg-black/45"><span className="rounded-full bg-white px-6 py-2.5 text-lg font-bold text-gray-800">{labels.outOfStock}</span></div>}
+              {lowStock && <span className="absolute right-4 top-4 rounded-full bg-orange-500 px-3 py-1.5 text-sm font-bold text-white shadow-md">{labels.stockLeft(viewProduct.stock_quantity)}</span>}
             </div>
             {images.length > 1 && (
               <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
@@ -223,37 +368,37 @@ export default function ProductDetail() {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} className="space-y-6 lg:sticky lg:top-24 lg:self-start">
-            {category && (
+            {viewCategory && (
               <div className="flex items-center gap-1.5 text-sm font-bold text-[#8B6840]">
                 <Tag className="h-4 w-4" />
-                {category.name}
+                {viewCategory.name}
               </div>
             )}
             <div>
-              <h1 className="text-3xl font-bold leading-tight text-gray-900 md:text-4xl">{product.name}</h1>
+              <h1 className="text-3xl font-bold leading-tight text-gray-900 md:text-4xl">{viewProduct.name}</h1>
               <div className="mt-3 flex items-center gap-2">
                 {[1, 2, 3, 4, 5].map(star => <Star key={star} className="h-4 w-4 fill-yellow-400 text-yellow-400" />)}
-                <span className="text-sm font-medium text-slate-500">精選旅人選物</span>
+                <span className="text-sm font-medium text-slate-500">{labels.reviewHint}</span>
               </div>
             </div>
             <div className="border-y border-gray-200 py-5">
-              <p className="text-4xl font-bold text-[#8B6840]">{formatCurrency(product.price)}</p>
-              <p className="mt-2 text-sm font-medium text-slate-600">每 NT$100 可累積 5 點會員點數。</p>
+              <p className="text-4xl font-bold text-[#8B6840]">{formatCurrency(viewProduct.price)}</p>
+              <p className="mt-2 text-sm font-medium text-slate-600">{labels.listPriceHint}</p>
             </div>
-            {product.description && (
+            {viewProduct.description && (
               <div>
-                <h2 className="mb-2 font-bold text-gray-900">商品介紹</h2>
+                <h2 className="mb-2 font-bold text-gray-900">{labels.detailsTitle}</h2>
                 <div
                   className="space-y-3 text-sm font-medium leading-7 text-slate-700 [&_br]:hidden [&_li]:mb-1 [&_p]:m-0 [&_strong]:font-bold [&_strong]:text-gray-900 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5"
-                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(viewProduct.description) }}
                 />
               </div>
             )}
-            {product.flavor_notes && product.flavor_notes.length > 0 && (
+            {viewProduct.flavor_notes && viewProduct.flavor_notes.length > 0 && (
               <div>
-                <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-500">風味筆記</p>
+                <p className="mb-2 text-xs font-bold uppercase tracking-widest text-slate-500">{labels.flavorTitle}</p>
                 <div className="flex flex-wrap gap-2">
-                  {product.flavor_notes.map(note => <span key={note} className="rounded-full bg-[#F0E4C8] px-3 py-1.5 text-sm font-semibold text-[#2C1F10]">{note}</span>)}
+                  {viewProduct.flavor_notes.map(note => <span key={note} className="rounded-full bg-[#F0E4C8] px-3 py-1.5 text-sm font-semibold text-[#2C1F10]">{note}</span>)}
                 </div>
               </div>
             )}
@@ -268,23 +413,23 @@ export default function ProductDetail() {
               </div>
             )}
             <div>
-              <p className="mb-3 font-bold text-gray-900">購買數量</p>
+              <p className="mb-3 font-bold text-gray-900">{labels.quantity}</p>
               <div className="flex items-center gap-4">
                 <div className="flex overflow-hidden rounded-xl border border-gray-200 bg-white">
                   <button type="button" onClick={() => setQty(value => Math.max(1, value - 1))} disabled={qty <= 1} className="px-4 py-3 text-gray-700 transition hover:bg-gray-50 disabled:opacity-40"><Minus className="h-4 w-4" /></button>
                   <span className="min-w-[58px] border-x border-gray-200 px-5 py-3 text-center font-bold">{qty}</span>
-                  <button type="button" onClick={() => setQty(value => Math.min(product.stock_quantity, value + 1))} disabled={qty >= product.stock_quantity} className="px-4 py-3 text-gray-700 transition hover:bg-gray-50 disabled:opacity-40"><Plus className="h-4 w-4" /></button>
+                  <button type="button" onClick={() => setQty(value => Math.min(viewProduct.stock_quantity, value + 1))} disabled={qty >= viewProduct.stock_quantity} className="px-4 py-3 text-gray-700 transition hover:bg-gray-50 disabled:opacity-40"><Plus className="h-4 w-4" /></button>
                 </div>
-                <span className={`text-sm ${lowStock ? 'font-bold text-orange-600' : 'font-medium text-slate-600'}`}>{inStock ? `庫存 ${product.stock_quantity} 件` : '目前售完'}</span>
+                <span className={`text-sm ${lowStock ? 'font-bold text-orange-600' : 'font-medium text-slate-600'}`}>{inStock ? labels.stockLeft(viewProduct.stock_quantity) : labels.outOfStock}</span>
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <button type="button" onClick={handleAddToCart} disabled={!inStock || adding} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#8B6840] px-5 py-4 font-bold text-white shadow-md transition hover:bg-[#6F4F2B] disabled:bg-gray-200 disabled:text-gray-500">
                 {added ? <CheckCircle className="h-5 w-5" /> : <ShoppingCart className="h-5 w-5" />}
-                {adding ? '加入中...' : added ? '已加入購物車' : '加入購物車'}
+                {adding ? labels.adding : added ? labels.added : labels.addToCart}
               </button>
               <button type="button" onClick={() => handleAddToCart().then(() => navigate('/cart'))} disabled={!inStock || adding} className="rounded-xl bg-gray-900 px-5 py-4 font-bold text-white transition hover:bg-gray-700 disabled:bg-gray-200 disabled:text-gray-400">
-                立即購買
+                {labels.buyNow}
               </button>
             </div>
           </motion.div>
@@ -302,14 +447,14 @@ export default function ProductDetail() {
           ))}
         </div>
 
-        {related.length > 0 && (
+        {viewRelated.length > 0 && (
           <section>
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">相關商品</h2>
-               <Link to="/shop" className="text-sm font-bold text-[#8B6840] hover:underline">查看全部</Link>
+              <h2 className="text-xl font-bold text-gray-900">{labels.relatedTitle}</h2>
+              <Link to="/shop" className="text-sm font-bold text-[#8B6840] hover:underline">{labels.viewMore}</Link>
             </div>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              {related.map(item => (
+              {viewRelated.map(item => (
                 <Link key={item.id} to={`/shop/${item.id}`} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-card">
                   <div className="h-36 overflow-hidden bg-gray-100">
                     <img src={item.image_url || 'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=500'} alt={item.name} className="h-full w-full object-cover" />

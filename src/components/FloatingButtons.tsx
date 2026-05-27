@@ -4,23 +4,67 @@ import { motion, useDragControls } from 'framer-motion';
 import { Coffee, GripVertical, Map, MessageCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
+type SupportedLang = 'zh-TW' | 'en' | 'ja' | 'ko';
+
+const floatingLabels: Record<
+  SupportedLang,
+  {
+    drag: string;
+    itinerary: string;
+    itinerarySub: string;
+    chat: string;
+    chatSub: string;
+    quiz: string;
+    quizSub: string;
+  }
+> = {
+  'zh-TW': {
+    drag: '拖曳',
+    itinerary: 'AI 導遊',
+    itinerarySub: '行程規劃',
+    chat: 'AI 客服',
+    chatSub: '對話客服',
+    quiz: 'AI 咖啡測驗',
+    quizSub: '風味偏好分析',
+  },
+  en: {
+    drag: 'Drag',
+    itinerary: 'AI Guide',
+    itinerarySub: 'Trip Planner',
+    chat: 'AI Support',
+    chatSub: 'Live Assistant',
+    quiz: 'AI Coffee Quiz',
+    quizSub: 'Flavor Profile',
+  },
+  ja: {
+    drag: 'ドラッグ',
+    itinerary: 'AI ガイド',
+    itinerarySub: '旅程プラン',
+    chat: 'AI サポート',
+    chatSub: 'チャット相談',
+    quiz: 'AI コーヒー診断',
+    quizSub: '味の傾向分析',
+  },
+  ko: {
+    drag: '드래그',
+    itinerary: 'AI 가이드',
+    itinerarySub: '여행 일정',
+    chat: 'AI 상담',
+    chatSub: '라이브 채팅',
+    quiz: 'AI 커피 퀴즈',
+    quizSub: '풍미 성향 분석',
+  },
+};
+
 export default function FloatingButtons() {
   const navigate = useNavigate();
   const { lang } = useLanguage();
   const constraintsRef = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
   const [isDragging, setIsDragging] = useState(false);
-  const isEn = lang === 'en';
 
-  const labels = {
-    drag: isEn ? 'Drag' : '拖曳',
-    itinerary: isEn ? 'AI Guide' : 'AI 導遊',
-    itinerarySub: isEn ? 'Trip Planner' : '行程規劃',
-    chat: isEn ? 'AI Support' : 'AI 客服',
-    chatSub: isEn ? 'Live Assistant' : '對話客服',
-    quiz: isEn ? 'AI Coffee Quiz' : 'AI 咖啡測驗',
-    quizSub: isEn ? 'Flavor Profile' : '風味偏好分析',
-  };
+  const safeLang: SupportedLang = (lang as SupportedLang) in floatingLabels ? (lang as SupportedLang) : 'zh-TW';
+  const labels = floatingLabels[safeLang];
 
   const buttons = [
     { id: 'itinerary', icon: Map, label: labels.itinerary, sublabel: labels.itinerarySub, path: '/ai/itinerary' },
@@ -82,3 +126,4 @@ export default function FloatingButtons() {
     </>
   );
 }
+

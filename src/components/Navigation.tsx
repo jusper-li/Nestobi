@@ -31,6 +31,113 @@ import { useCart } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { LANG_OPTIONS, type Lang } from '../i18n/translations';
 
+const NAV_I18N = {
+  'zh-TW': {
+    home: '首頁',
+    cart: '購物車',
+    stores: '門市據點',
+    rooms: '住宿',
+    shop: '選物商店',
+    blog: '咖啡旅誌',
+    aiItinerary: 'AI 行程規劃',
+    aiTranslator: 'AI 即時翻譯',
+    aiChat: 'AI 客服',
+    travelPassport: '旅人護照',
+    login: '登入',
+    register: '註冊',
+    member: '會員',
+    memberCenter: '會員中心',
+    myBookings: '我的訂房',
+    myOrders: '我的訂單',
+    myPurchases: '購買紀錄',
+    myPoints: '我的點數',
+    profile: '個人資料',
+    settings: '偏好設定',
+    adminPanel: '管理後台',
+    superAdmin: '超級管理',
+    logout: '登出',
+    closeMenu: '關閉選單',
+  },
+  en: {
+    home: 'Home',
+    cart: 'Cart',
+    stores: 'Store Locations',
+    rooms: 'Stays',
+    shop: 'Shop',
+    blog: 'Coffee Journal',
+    aiItinerary: 'AI Planner',
+    aiTranslator: 'AI Translate',
+    aiChat: 'AI Support',
+    travelPassport: 'Travel Passport',
+    login: 'Login',
+    register: 'Sign up',
+    member: 'Member',
+    memberCenter: 'Member Center',
+    myBookings: 'My Bookings',
+    myOrders: 'My Orders',
+    myPurchases: 'Purchase History',
+    myPoints: 'My Points',
+    profile: 'Profile',
+    settings: 'Preferences',
+    adminPanel: 'Admin',
+    superAdmin: 'Super Admin',
+    logout: 'Logout',
+    closeMenu: 'Close menu',
+  },
+  ja: {
+    home: 'ホーム',
+    cart: 'カート',
+    stores: '店舗案内',
+    rooms: '宿泊',
+    shop: 'ショップ',
+    blog: 'コーヒージャーナル',
+    aiItinerary: 'AI 旅程プランナー',
+    aiTranslator: 'AI 翻訳',
+    aiChat: 'AI サポート',
+    travelPassport: 'トラベルパスポート',
+    login: 'ログイン',
+    register: '新規登録',
+    member: '会員',
+    memberCenter: '会員センター',
+    myBookings: '予約一覧',
+    myOrders: '注文一覧',
+    myPurchases: '購入履歴',
+    myPoints: 'ポイント',
+    profile: 'プロフィール',
+    settings: '設定',
+    adminPanel: '管理画面',
+    superAdmin: 'スーパー管理',
+    logout: 'ログアウト',
+    closeMenu: 'メニューを閉じる',
+  },
+  ko: {
+    home: '홈',
+    cart: '장바구니',
+    stores: '매장 안내',
+    rooms: '숙소',
+    shop: '샵',
+    blog: '커피 저널',
+    aiItinerary: 'AI 일정 플래너',
+    aiTranslator: 'AI 번역',
+    aiChat: 'AI 지원',
+    travelPassport: '트래블 패스포트',
+    login: '로그인',
+    register: '회원가입',
+    member: '회원',
+    memberCenter: '회원센터',
+    myBookings: '예약 내역',
+    myOrders: '주문 내역',
+    myPurchases: '구매 내역',
+    myPoints: '포인트',
+    profile: '프로필',
+    settings: '설정',
+    adminPanel: '관리자',
+    superAdmin: '슈퍼 관리자',
+    logout: '로그아웃',
+    closeMenu: '메뉴 닫기',
+  },
+} as const;
+
 export default function Navigation() {
   const { user, profile, role, signOut } = useAuth();
   const { totalItems } = useCart();
@@ -41,15 +148,7 @@ export default function Navigation() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
 
-  const isEn = lang === 'en';
-  const labels = {
-    home: isEn ? 'Home' : '首頁',
-    cart: isEn ? 'Cart' : '購物車',
-    stores: isEn ? 'Store Locations' : '門市據點',
-    closeMenu: isEn ? 'Close menu' : '關閉選單',
-    member: isEn ? 'Member' : '會員',
-  };
-
+  const labels = NAV_I18N[lang];
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   const handleSignOut = async () => {
@@ -59,25 +158,25 @@ export default function Navigation() {
   };
 
   const navLinks = [
-    { to: '/rooms', label: t.nav.rooms, icon: Hotel },
-    { to: '/shop', label: t.nav.shop, icon: Package },
-    { to: '/blog', label: t.nav.blog, icon: Coffee },
+    { to: '/rooms', label: labels.rooms, icon: Hotel },
+    { to: '/shop', label: labels.shop, icon: Package },
+    { to: '/blog', label: labels.blog, icon: Coffee },
     { to: '/stores', label: labels.stores, icon: MapPin },
-    { to: '/ai/itinerary', label: t.nav.aiItinerary, icon: Map, requiresAuth: true },
-    { to: '/ai/translator', label: t.nav.aiTranslator, icon: Languages, requiresAuth: true },
-    { to: '/ai/chat', label: t.nav.aiChat, icon: MessageCircle, requiresAuth: true },
-    { to: '/ai/passport', label: t.nav.travelPassport, icon: BookMarked, requiresAuth: true },
+    { to: '/ai/itinerary', label: labels.aiItinerary, icon: Map, requiresAuth: true },
+    { to: '/ai/translator', label: labels.aiTranslator, icon: Languages, requiresAuth: true },
+    { to: '/ai/chat', label: labels.aiChat, icon: MessageCircle, requiresAuth: true },
+    { to: '/ai/passport', label: labels.travelPassport, icon: BookMarked, requiresAuth: true },
   ];
 
   const memberLinks = [
-    { to: '/member', label: t.nav.memberCenter, icon: LayoutDashboard },
-    { to: '/member/bookings', label: t.nav.myBookings, icon: Calendar },
-    { to: '/member/orders', label: t.nav.myOrders, icon: History },
-    { to: '/member/purchases', label: t.nav.myPurchases, icon: Receipt },
-    { to: '/member/points', label: t.nav.myPoints, icon: Star },
-    { to: '/ai/passport', label: t.nav.travelPassport, icon: BookMarked },
-    { to: '/member/profile', label: t.nav.profile, icon: User },
-    { to: '/member/preferences', label: t.nav.settings, icon: Settings },
+    { to: '/member', label: labels.memberCenter, icon: LayoutDashboard },
+    { to: '/member/bookings', label: labels.myBookings, icon: Calendar },
+    { to: '/member/orders', label: labels.myOrders, icon: History },
+    { to: '/member/purchases', label: labels.myPurchases, icon: Receipt },
+    { to: '/member/points', label: labels.myPoints, icon: Star },
+    { to: '/ai/passport', label: labels.travelPassport, icon: BookMarked },
+    { to: '/member/profile', label: labels.profile, icon: User },
+    { to: '/member/preferences', label: labels.settings, icon: Settings },
   ];
 
   const currentLangOption = LANG_OPTIONS.find(option => option.code === lang);
@@ -141,9 +240,7 @@ export default function Navigation() {
                         }}
                         className="flex w-full items-center justify-between px-4 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-50"
                       >
-                        <span>
-                          {option.flag} {option.label}
-                        </span>
+                        <span>{option.flag} {option.label}</span>
                         {lang === option.code && <Check size={14} className="text-[#C09A6A]" />}
                       </button>
                     ))}
@@ -195,18 +292,18 @@ export default function Navigation() {
                       {(role === 'admin' || role === 'superadmin') && (
                         <Link to="/admin" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2.5 border-t border-gray-100 px-4 py-2 text-sm font-semibold text-[#2C1F10] transition hover:bg-[#F0E4C8]">
                           <LayoutDashboard size={15} />
-                          <span>{t.nav.adminPanel}</span>
+                          <span>{labels.adminPanel}</span>
                         </Link>
                       )}
                       {role === 'superadmin' && (
                         <Link to="/superadmin" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2.5 px-4 py-2 text-sm font-semibold text-[#2C1F10] transition hover:bg-[#F0E4C8]">
                           <Globe size={15} />
-                          <span>{t.nav.superAdmin}</span>
+                          <span>{labels.superAdmin}</span>
                         </Link>
                       )}
                       <button type="button" onClick={handleSignOut} className="flex w-full items-center gap-2.5 border-t border-gray-100 px-4 py-2 text-left text-sm text-danger transition hover:bg-red-50">
                         <LogOut size={15} />
-                        <span>{t.nav.logout}</span>
+                        <span>{labels.logout}</span>
                       </button>
                     </motion.div>
                   )}
@@ -215,10 +312,10 @@ export default function Navigation() {
             ) : (
               <div className="hidden items-center gap-2 sm:flex">
                 <Link to="/auth/login" className="px-3 py-2 text-sm font-semibold text-gray-700 transition hover:text-[#2C1F10]">
-                  {t.nav.login}
+                  {labels.login}
                 </Link>
                 <Link to="/auth/register" className="rounded-lg bg-[#C09A6A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#8B6840]">
-                  {t.nav.register}
+                  {labels.register}
                 </Link>
               </div>
             )}
@@ -255,10 +352,10 @@ export default function Navigation() {
               {!user && (
                 <div className="grid grid-cols-2 gap-2 border-t border-gray-100 pt-3">
                   <Link to="/auth/login" onClick={() => setMenuOpen(false)} className="rounded-lg border border-gray-200 px-3 py-2 text-center text-sm font-semibold text-gray-700">
-                    {t.nav.login}
+                    {labels.login}
                   </Link>
                   <Link to="/auth/register" onClick={() => setMenuOpen(false)} className="rounded-lg bg-[#C09A6A] px-3 py-2 text-center text-sm font-semibold text-white">
-                    {t.nav.register}
+                    {labels.register}
                   </Link>
                 </div>
               )}
@@ -281,3 +378,4 @@ export default function Navigation() {
     </nav>
   );
 }
+

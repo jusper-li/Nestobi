@@ -38,10 +38,7 @@ export const LEGACY_EN_STORE_LOCATIONS: StoreLocation[] = [
     district: 'Xinyi District',
     address: 'No. 4-1, Lane 22, Alley 553, Section 4, Zhongxiao East Road, Xinyi District, Taipei City',
     phone: '+886-2-2756-5663',
-    hours: {
-      primary: 'Sun-Thu 09:00-20:00',
-      secondary: 'Fri-Sat 10:00-21:00',
-    },
+    hours: { primary: 'Sun-Thu 09:00-20:00', secondary: 'Fri-Sat 10:00-21:00' },
     image_url: '/stores/dlal-xinyi-flagship.webp',
     source_image_url:
       'https://shoplineimg.com/6007e2477c614a00198d7b0f/662e01f842d018002394672a/750x.webp?source_format=jpg',
@@ -59,10 +56,7 @@ export const LEGACY_EN_STORE_LOCATIONS: StoreLocation[] = [
     district: 'Zhongshan District',
     address: 'No. 7, Lane 137, Changchun Road, Zhongshan District, Taipei City',
     phone: '+886-2-2562-7670',
-    hours: {
-      primary: 'Mon-Fri 08:00-18:00',
-      secondary: 'Sat-Sun 09:00-18:00',
-    },
+    hours: { primary: 'Mon-Fri 08:00-18:00', secondary: 'Sat-Sun 09:00-18:00' },
     image_url: '/stores/dlal-changchun.webp',
     source_image_url:
       'https://shoplineimg.com/6007e2477c614a00198d7b0f/662e035725224ebb70cc5051/750x.webp?source_format=jpg',
@@ -73,16 +67,14 @@ export const LEGACY_EN_STORE_LOCATIONS: StoreLocation[] = [
     source_url: STORE_LOCATIONS_SOURCE_URL,
   },
   {
-    name: '南港中信門市',
+    name: '南港中信園區門市',
     name_en: 'Nangang CTBC Financial Park Store',
     slug: 'nangang-ctbc-financial-park-store',
     city: 'Taipei City',
     district: 'Nangang District',
     address: 'Counter B101, 1F, No. 188, Jingmao 2nd Road, Nangang District, Taipei City',
     phone: '+886-2-2789-0188',
-    hours: {
-      primary: 'Mon-Sun 08:00-20:00',
-    },
+    hours: { primary: 'Mon-Sun 08:00-20:00' },
     image_url: '/stores/dlal-nangang-ctbc.webp',
     source_image_url:
       'https://shoplineimg.com/6007e2477c614a00198d7b0f/662e04e451874900179f71ad/750x.webp?source_format=jpg',
@@ -100,9 +92,7 @@ export const LEGACY_EN_STORE_LOCATIONS: StoreLocation[] = [
     district: 'Neihu District',
     address: 'No. 129, Jinzhuang Road, Neihu District, Taipei City',
     phone: '+886-2-2794-9796',
-    hours: {
-      primary: 'Mon-Sun 10:00-21:00',
-    },
+    hours: { primary: 'Mon-Sun 10:00-21:00' },
     image_url: '/stores/dlal-neihu-ever-rich.webp',
     source_image_url:
       'https://shoplineimg.com/6007e2477c614a00198d7b0f/662e061b456b1c001d9392ad/750x.webp?source_format=jpg',
@@ -121,12 +111,9 @@ export const DEFAULT_STORE_LOCATIONS: StoreLocation[] = [
     slug: 'xinyi-brand-concept-store',
     city: '台北市',
     district: '信義區',
-    address: '台北市信義區忠孝東路四段553巷22弄4-1號',
+    address: '台北市忠孝東路四段553巷22弄4-1號',
     phone: '02-2756-5663',
-    hours: {
-      primary: '週日至週四 09:00-20:00',
-      secondary: '週五、週六 10:00-21:00',
-    },
+    hours: { primary: '週日至週四 09:00-20:00', secondary: '週五與週六 10:00-21:00' },
     image_url: '/stores/dlal-xinyi-flagship.webp',
     source_image_url:
       'https://shoplineimg.com/6007e2477c614a00198d7b0f/662e01f842d018002394672a/750x.webp?source_format=jpg',
@@ -144,10 +131,7 @@ export const DEFAULT_STORE_LOCATIONS: StoreLocation[] = [
     district: '中山區',
     address: '台北市中山區長春路137巷7號',
     phone: '02-2562-7670',
-    hours: {
-      primary: '週一至週五 08:00-18:00',
-      secondary: '週六、週日 09:00-18:00',
-    },
+    hours: { primary: '週一至週五 08:00-18:00', secondary: '週六與週日 09:00-18:00' },
     image_url: '/stores/dlal-changchun.webp',
     source_image_url:
       'https://shoplineimg.com/6007e2477c614a00198d7b0f/662e035725224ebb70cc5051/750x.webp?source_format=jpg',
@@ -158,16 +142,14 @@ export const DEFAULT_STORE_LOCATIONS: StoreLocation[] = [
     source_url: STORE_LOCATIONS_SOURCE_URL,
   },
   {
-    name: '南港中信門市',
+    name: '南港中信園區門市',
     name_en: 'Nangang CTBC Financial Park Store',
     slug: 'nangang-ctbc-financial-park-store',
     city: '台北市',
     district: '南港區',
-    address: '台北市南港區經貿二路188號1樓B101櫃位',
+    address: '台北市南港區經貿二路188號 B101櫃位',
     phone: '02-2789-0188',
-    hours: {
-      primary: '週一至週日 08:00-20:00',
-    },
+    hours: { primary: '週一至週日 08:00-20:00' },
     image_url: '/stores/dlal-nangang-ctbc.webp',
     source_image_url:
       'https://shoplineimg.com/6007e2477c614a00198d7b0f/662e04e451874900179f71ad/750x.webp?source_format=jpg',
@@ -185,9 +167,7 @@ export const DEFAULT_STORE_LOCATIONS: StoreLocation[] = [
     district: '內湖區',
     address: '台北市內湖區金莊路129號',
     phone: '02-2794-9796',
-    hours: {
-      primary: '週一至週日 10:00-21:00',
-    },
+    hours: { primary: '週一至週日 10:00-21:00' },
     image_url: '/stores/dlal-neihu-ever-rich.webp',
     source_image_url:
       'https://shoplineimg.com/6007e2477c614a00198d7b0f/662e061b456b1c001d9392ad/750x.webp?source_format=jpg',

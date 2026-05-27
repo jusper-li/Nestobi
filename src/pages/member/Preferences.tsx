@@ -17,12 +17,157 @@ interface PreferenceRow extends Prefs {
   id: string;
 }
 
+type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
+
 const DEFAULT_PREFS: Prefs = {
   notifications_email: true,
   notifications_sms: false,
   theme: 'light',
   currency: 'TWD',
   language: 'zh-TW',
+};
+
+const copy: Record<UiLang, Record<string, string>> = {
+  'zh-TW': {
+    genericError: '發生錯誤，請稍後再試。',
+    title: '偏好設定',
+    saved: '偏好設定儲存成功',
+    notifications: '通知設定',
+    emailNoti: 'Email 通知',
+    emailHint: '接收訂房與訂單更新通知',
+    smsNoti: '簡訊通知',
+    smsHint: '接收重要簡訊提醒',
+    appearance: '外觀',
+    theme: '主題',
+    light: '淺色',
+    dark: '深色',
+    languageCurrency: '語言與幣別',
+    language: '語言',
+    currency: '貨幣',
+    save: '儲存設定',
+    passwordSection: '修改密碼',
+    passwordSaved: '密碼更新成功',
+    currentPassword: '目前密碼',
+    newPassword: '新密碼',
+    confirmPassword: '確認新密碼',
+    currentPlaceholder: '請輸入目前密碼',
+    newPlaceholder: '至少 6 個字元',
+    confirmPlaceholder: '請再次輸入新密碼',
+    updatePassword: '更新密碼',
+    shortPassword: '密碼至少需要 6 個字元',
+    mismatchPassword: '新密碼與確認密碼不一致',
+    wrongCurrentPassword: '目前密碼錯誤',
+    zhTw: '繁體中文',
+    en: 'English',
+    ja: '日本語',
+    ko: '한국어',
+    twd: '新台幣 (TWD)',
+  },
+  en: {
+    genericError: 'Something went wrong. Please try again.',
+    title: 'Preferences',
+    saved: 'Preferences saved successfully',
+    notifications: 'Notifications',
+    emailNoti: 'Email notifications',
+    emailHint: 'Receive booking and order updates via email',
+    smsNoti: 'SMS notifications',
+    smsHint: 'Receive important notices by SMS',
+    appearance: 'Appearance',
+    theme: 'Theme',
+    light: 'Light',
+    dark: 'Dark',
+    languageCurrency: 'Language & Currency',
+    language: 'Language',
+    currency: 'Currency',
+    save: 'Save preferences',
+    passwordSection: 'Change Password',
+    passwordSaved: 'Password updated successfully',
+    currentPassword: 'Current password',
+    newPassword: 'New password',
+    confirmPassword: 'Confirm new password',
+    currentPlaceholder: 'Enter current password',
+    newPlaceholder: 'At least 6 characters',
+    confirmPlaceholder: 'Re-enter new password',
+    updatePassword: 'Update password',
+    shortPassword: 'Password must be at least 6 characters',
+    mismatchPassword: 'Passwords do not match',
+    wrongCurrentPassword: 'Current password is incorrect',
+    zhTw: 'Traditional Chinese',
+    en: 'English',
+    ja: 'Japanese',
+    ko: 'Korean',
+    twd: 'New Taiwan Dollar (TWD)',
+  },
+  ja: {
+    genericError: 'エラーが発生しました。しばらくしてから再度お試しください。',
+    title: '設定',
+    saved: '設定を保存しました',
+    notifications: '通知設定',
+    emailNoti: 'メール通知',
+    emailHint: '予約と注文の更新通知を受け取る',
+    smsNoti: 'SMS 通知',
+    smsHint: '重要なお知らせをSMSで受け取る',
+    appearance: '外観',
+    theme: 'テーマ',
+    light: 'ライト',
+    dark: 'ダーク',
+    languageCurrency: '言語と通貨',
+    language: '言語',
+    currency: '通貨',
+    save: '設定を保存',
+    passwordSection: 'パスワード変更',
+    passwordSaved: 'パスワードを更新しました',
+    currentPassword: '現在のパスワード',
+    newPassword: '新しいパスワード',
+    confirmPassword: '新しいパスワードを確認',
+    currentPlaceholder: '現在のパスワードを入力',
+    newPlaceholder: '6文字以上',
+    confirmPlaceholder: '新しいパスワードを再入力',
+    updatePassword: 'パスワードを更新',
+    shortPassword: 'パスワードは6文字以上で入力してください',
+    mismatchPassword: '新しいパスワードが一致しません',
+    wrongCurrentPassword: '現在のパスワードが正しくありません',
+    zhTw: '繁體中文',
+    en: 'English',
+    ja: '日本語',
+    ko: '한국어',
+    twd: '台湾ドル (TWD)',
+  },
+  ko: {
+    genericError: '오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
+    title: '환경설정',
+    saved: '설정이 저장되었습니다',
+    notifications: '알림 설정',
+    emailNoti: '이메일 알림',
+    emailHint: '예약 및 주문 업데이트를 이메일로 받기',
+    smsNoti: '문자 알림',
+    smsHint: '중요 안내를 문자로 받기',
+    appearance: '외관',
+    theme: '테마',
+    light: '라이트',
+    dark: '다크',
+    languageCurrency: '언어 및 통화',
+    language: '언어',
+    currency: '통화',
+    save: '설정 저장',
+    passwordSection: '비밀번호 변경',
+    passwordSaved: '비밀번호가 업데이트되었습니다',
+    currentPassword: '현재 비밀번호',
+    newPassword: '새 비밀번호',
+    confirmPassword: '새 비밀번호 확인',
+    currentPlaceholder: '현재 비밀번호를 입력하세요',
+    newPlaceholder: '최소 6자 이상',
+    confirmPlaceholder: '새 비밀번호를 다시 입력하세요',
+    updatePassword: '비밀번호 업데이트',
+    shortPassword: '비밀번호는 최소 6자 이상이어야 합니다',
+    mismatchPassword: '비밀번호가 일치하지 않습니다',
+    wrongCurrentPassword: '현재 비밀번호가 올바르지 않습니다',
+    zhTw: '繁體中文',
+    en: 'English',
+    ja: '日本語',
+    ko: '한국어',
+    twd: '대만 달러 (TWD)',
+  },
 };
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -47,38 +192,8 @@ const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void }> = (
 const Preferences: React.FC = () => {
   const { user } = useAuth();
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
-
-  const text = {
-    genericError: isEn ? 'Something went wrong. Please try again.' : '發生錯誤，請稍後再試。',
-    title: isEn ? 'Preferences' : '偏好設定',
-    saved: isEn ? 'Preferences saved successfully' : '偏好設定已儲存',
-    notifications: isEn ? 'Notifications' : '通知設定',
-    emailNoti: isEn ? 'Email notifications' : '電子郵件通知',
-    emailHint: isEn ? 'Receive booking and order updates via email' : '接收訂房與訂單更新通知',
-    smsNoti: isEn ? 'SMS notifications' : '簡訊通知',
-    smsHint: isEn ? 'Receive important notices by SMS' : '接收重要簡訊提醒',
-    appearance: isEn ? 'Appearance' : '外觀',
-    theme: isEn ? 'Theme' : '主題',
-    light: isEn ? 'Light' : '淺色',
-    dark: isEn ? 'Dark' : '深色',
-    languageCurrency: isEn ? 'Language & Currency' : '語言與幣別',
-    language: isEn ? 'Language' : '語言',
-    currency: isEn ? 'Currency' : '貨幣',
-    save: isEn ? 'Save Preferences' : '儲存設定',
-    passwordSection: isEn ? 'Change Password' : '修改密碼',
-    passwordSaved: isEn ? 'Password updated successfully' : '密碼已成功更新',
-    currentPassword: isEn ? 'Current password' : '目前密碼',
-    newPassword: isEn ? 'New password' : '新密碼',
-    confirmPassword: isEn ? 'Confirm new password' : '確認新密碼',
-    currentPlaceholder: isEn ? 'Enter current password' : '請輸入目前密碼',
-    newPlaceholder: isEn ? 'At least 6 characters' : '至少 6 個字元',
-    confirmPlaceholder: isEn ? 'Re-enter new password' : '請再次輸入新密碼',
-    updatePassword: isEn ? 'Update Password' : '更新密碼',
-    shortPassword: isEn ? 'Password must be at least 6 characters' : '密碼長度至少 6 個字元',
-    mismatchPassword: isEn ? 'Passwords do not match' : '新密碼與確認密碼不一致',
-    wrongCurrentPassword: isEn ? 'Current password is incorrect' : '目前密碼不正確',
-  };
+  const locale = (lang === 'ja' || lang === 'ko' || lang === 'en' ? lang : 'zh-TW') as UiLang;
+  const text = copy[locale];
 
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [loading, setLoading] = useState(true);
@@ -176,7 +291,13 @@ const Preferences: React.FC = () => {
 
   const setPreference = <K extends keyof Prefs>(key: K, value: Prefs[K]) => setPrefs(prev => ({ ...prev, [key]: value }));
 
-  if (loading) return <div className="flex justify-center py-16"><div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2C1F10] border-t-transparent" /></div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center py-16">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2C1F10] border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -186,7 +307,11 @@ const Preferences: React.FC = () => {
       </h2>
 
       {success && (
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700"
+        >
           <CheckCircle className="h-4 w-4" />
           {text.saved}
         </motion.div>
@@ -248,10 +373,10 @@ const Preferences: React.FC = () => {
                 onChange={e => setPreference('language', e.target.value)}
                 className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
               >
-                <option value="zh-TW">繁體中文</option>
-                <option value="en">English</option>
-                <option value="ja">日本語</option>
-                <option value="ko">한국어</option>
+                <option value="zh-TW">{text.zhTw}</option>
+                <option value="en">{text.en}</option>
+                <option value="ja">{text.ja}</option>
+                <option value="ko">{text.ko}</option>
               </select>
             </div>
             <div>
@@ -261,7 +386,7 @@ const Preferences: React.FC = () => {
                 onChange={e => setPreference('currency', e.target.value)}
                 className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
               >
-                <option value="TWD">新台幣 (TWD)</option>
+                <option value="TWD">{text.twd}</option>
                 <option value="USD">US Dollar (USD)</option>
                 <option value="JPY">Japanese Yen (JPY)</option>
               </select>
@@ -269,7 +394,11 @@ const Preferences: React.FC = () => {
           </div>
         </div>
 
-        <button type="submit" disabled={saving} className="flex items-center gap-2 rounded-xl bg-[#C09A6A] px-8 py-3 font-semibold text-white shadow-md transition hover:bg-[#8B6840] disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={saving}
+          className="flex items-center gap-2 rounded-xl bg-[#C09A6A] px-8 py-3 font-semibold text-white shadow-md transition hover:bg-[#8B6840] disabled:opacity-60"
+        >
           {saving ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" /> : text.save}
         </button>
       </form>
@@ -280,7 +409,11 @@ const Preferences: React.FC = () => {
           {text.passwordSection}
         </h3>
         {pwSuccess && (
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-4 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700"
+          >
             <CheckCircle className="h-4 w-4" />
             {text.passwordSaved}
           </motion.div>
@@ -332,7 +465,11 @@ const Preferences: React.FC = () => {
               />
             </div>
           </div>
-          <button type="submit" disabled={pwLoading} className="flex items-center gap-2 rounded-xl bg-[#2C1F10] px-8 py-3 font-semibold text-white shadow-md transition hover:bg-[#1A1208] disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={pwLoading}
+            className="flex items-center gap-2 rounded-xl bg-[#2C1F10] px-8 py-3 font-semibold text-white shadow-md transition hover:bg-[#1A1208] disabled:opacity-60"
+          >
             {pwLoading ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" /> : text.updatePassword}
           </button>
         </form>

@@ -13,9 +13,88 @@ import {
   recordLoginFailure,
 } from '../../lib/security';
 
+type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
+
+const copy: Record<
+  UiLang,
+  {
+    back: string;
+    home: string;
+    welcome: string;
+    subtitle: string;
+    email: string;
+    password: string;
+    emailPlaceholder: string;
+    passwordPlaceholder: string;
+    forgot: string;
+    login: string;
+    noAccount: string;
+    register: string;
+  }
+> = {
+  'zh-TW': {
+    back: '返回上一頁',
+    home: '回首頁',
+    welcome: '歡迎回來',
+    subtitle: '登入您的旅遊帳號',
+    email: '電子郵件',
+    password: '密碼',
+    emailPlaceholder: 'your@email.com',
+    passwordPlaceholder: '請輸入密碼',
+    forgot: '忘記密碼？',
+    login: '登入',
+    noAccount: '還沒有帳號？',
+    register: '立即註冊',
+  },
+  en: {
+    back: 'Back',
+    home: 'Home',
+    welcome: 'Welcome Back',
+    subtitle: 'Sign in to your travel account',
+    email: 'Email',
+    password: 'Password',
+    emailPlaceholder: 'your@email.com',
+    passwordPlaceholder: 'Enter your password',
+    forgot: 'Forgot password?',
+    login: 'Login',
+    noAccount: 'No account yet?',
+    register: 'Sign up now',
+  },
+  ja: {
+    back: '前のページへ',
+    home: 'ホーム',
+    welcome: 'おかえりなさい',
+    subtitle: '旅行アカウントにログイン',
+    email: 'メールアドレス',
+    password: 'パスワード',
+    emailPlaceholder: 'your@email.com',
+    passwordPlaceholder: 'パスワードを入力',
+    forgot: 'パスワードをお忘れですか？',
+    login: 'ログイン',
+    noAccount: 'アカウントをお持ちでないですか？',
+    register: '今すぐ登録',
+  },
+  ko: {
+    back: '이전 페이지',
+    home: '홈',
+    welcome: '다시 오신 것을 환영합니다',
+    subtitle: '여행 계정으로 로그인하세요',
+    email: '이메일',
+    password: '비밀번호',
+    emailPlaceholder: 'your@email.com',
+    passwordPlaceholder: '비밀번호를 입력하세요',
+    forgot: '비밀번호를 잊으셨나요?',
+    login: '로그인',
+    noAccount: '아직 계정이 없으신가요?',
+    register: '지금 가입하기',
+  },
+};
+
 export default function Login() {
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
+  const locale = (lang as UiLang) in copy ? (lang as UiLang) : 'zh-TW';
+  const text = copy[locale];
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -25,21 +104,6 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const redirectParam = new URLSearchParams(location.search).get('redirect');
-
-  const text = {
-    back: isEn ? 'Back' : '返回上一頁',
-    home: isEn ? 'Home' : '回首頁',
-    welcome: isEn ? 'Welcome Back' : '歡迎回來',
-    subtitle: isEn ? 'Sign in to your travel account' : '登入您的旅遊帳號',
-    email: isEn ? 'Email' : '電子郵件',
-    password: isEn ? 'Password' : '密碼',
-    emailPlaceholder: 'your@email.com',
-    passwordPlaceholder: isEn ? 'Enter your password' : '請輸入密碼',
-    forgot: isEn ? 'Forgot password?' : '忘記密碼？',
-    login: isEn ? 'Login' : '登入',
-    noAccount: isEn ? 'No account yet?' : '還沒有帳號？',
-    register: isEn ? 'Sign up now' : '立即註冊',
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,3 +251,4 @@ export default function Login() {
     </div>
   );
 }
+
