@@ -61,7 +61,7 @@ export default function ItineraryPlanner() {
   const [useLocalFallback, setUseLocalFallback] = useState(false);
 
   const budgetLabels = [
-    pick('經濟實惠', 'Budget', '節約', '가성비'),
+    pick('經濟實惠', 'Budget', '節約', '절약형'),
     pick('中等預算', 'Standard', '標準', '표준'),
     pick('奢華享受', 'Luxury', '贅沢', '럭셔리'),
   ];
@@ -72,8 +72,8 @@ export default function ItineraryPlanner() {
     pick('自然景觀', 'Nature', '自然', '자연'),
     pick('冒險運動', 'Adventure', '冒険', '모험'),
     pick('家庭親子', 'Family', '家族', '가족'),
-    pick('藝術博物館', 'Art & Museum', '美術館', '예술/박물관'),
-    pick('夜生活', 'Nightlife', 'ナイトライフ', '야간활동'),
+    pick('藝術博物館', 'Art & Museum', '美術館', '미술관/박물관'),
+    pick('夜生活', 'Nightlife', 'ナイトライフ', '야간 문화'),
   ];
 
   const days = useMemo(() => {
@@ -89,13 +89,13 @@ export default function ItineraryPlanner() {
       return {
         day: i + 1,
         date: d.toLocaleDateString(locale, { month: 'numeric', day: 'numeric', weekday: 'short' }),
-        theme: pick(`第 ${i + 1} 天行程`, `Day ${i + 1} Highlights`, `${i + 1}日目ハイライト`, `${i + 1}일차 하이라이트`),
+        theme: pick(`第 ${i + 1} 天亮點`, `Day ${i + 1} Highlights`, `${i + 1}日目の見どころ`, `${i + 1}일차 하이라이트`),
         activities: [
-          { time: '09:00', title: pick('文化探索', 'Cultural Spot', '文化探索', '문화 탐방'), description: pick('探索在地文化與故事。', 'Explore local culture and stories.', '地域文化を体験します。', '지역 문화와 이야기를 경험합니다.') },
-          { time: '14:00', title: pick('特色體驗', 'Signature Experience', '特別体験', '시그니처 체험'), description: pick('安排一段在地互動活動。', 'Enjoy a hands-on local experience.', '現地体験を楽しみます。', '현지 체험 활동을 즐깁니다.') },
+          { time: '09:00', title: pick('文化景點', 'Cultural Spot', '文化スポット', '문화 명소'), description: pick('探索在地文化與故事。', 'Explore local culture and stories.', '地域の文化やストーリーを探索。', '지역 문화와 이야기를 탐방합니다.') },
+          { time: '14:00', title: pick('特色體驗', 'Signature Experience', '体験アクティビティ', '체험 액티비티'), description: pick('安排一段有記憶點的在地活動。', 'Enjoy a hands-on local experience.', '記憶に残るローカル体験。', '기억에 남는 로컬 체험을 즐겨보세요.') },
         ],
-        dining: pick('推薦一間在地人氣餐廳。', 'Try a local specialty dish.', '人気のローカル料理を試しましょう。', '현지 인기 음식을 추천합니다.'),
-        tip: pick('熱門景點建議提早預約。', 'Reserve popular places early.', '人気スポットは事前予約がおすすめです。', '인기 장소는 사전 예약을 권장합니다.'),
+        dining: pick('午餐推薦在地特色料理。', 'Try a local specialty dish.', 'ランチは地元名物がおすすめ。', '점심은 지역 특선 메뉴를 추천합니다.'),
+        tip: pick('熱門景點建議提前預約。', 'Reserve popular places early.', '人気スポットは事前予約がおすすめ。', '인기 장소는 미리 예약해 두세요.'),
       };
     });
   };
@@ -103,12 +103,7 @@ export default function ItineraryPlanner() {
   useEffect(() => {
     const loadPlans = async () => {
       if (!user) return;
-      const { data, error } = await supabase
-        .from('ai_travel_plans')
-        .select('id,title,destination,start_date,end_date,plan_data')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      const { data, error } = await supabase.from('ai_travel_plans').select('id,title,destination,start_date,end_date,plan_data').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10);
       if (error) {
         setUseLocalFallback(true);
         setPlans(readLocalPlans(user.id));
@@ -130,7 +125,7 @@ export default function ItineraryPlanner() {
     if (!user || !itinerary) return;
     const payload = {
       user_id: user.id,
-      title: `${destination || pick('旅程', 'Trip', '旅行', '여행')} ${pick('計畫', 'Plan', 'プラン', '플랜')}`,
+      title: `${destination || pick('旅程', 'Trip', '旅', '여행')} ${pick('規劃', 'Plan', 'プラン', '플랜')}`,
       destination,
       start_date: startDate,
       end_date: endDate,
@@ -215,7 +210,7 @@ export default function ItineraryPlanner() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{pick('旅遊興趣（可多選）', 'Interests (multi-select)', '興味（複数選択）', '관심사 (복수 선택)')}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{pick('旅遊興趣（可多選）', 'Interests (multi-select)', '興味（複数選択）', '관심사(복수 선택)')}</label>
                   <div className="flex flex-wrap gap-2">
                     {INTERESTS.map((interest, idx) => (
                       <button key={interest} type="button" onClick={() => setInterests((prev) => (prev.includes(interest) ? prev.filter((x) => x !== interest) : [...prev, interest]))} className={`px-2.5 py-1 rounded-full text-xs border ${interests.includes(interest) ? 'bg-sky-600 text-white border-sky-600' : 'border-gray-200 text-gray-600'}`}>{interestLabels[idx]}</button>
@@ -231,7 +226,7 @@ export default function ItineraryPlanner() {
             {itinerary && (
               <div className="bg-white rounded-2xl border p-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900">{destination || pick('新行程', 'New itinerary', '新しい旅程', '새 일정')}</h3>
+                  <h3 className="font-semibold text-gray-900">{destination || pick('新行程', 'New itinerary', '新しい行程', '새 일정')}</h3>
                   <button onClick={handleSave} className="text-xs px-3 py-2 rounded-xl border">{pick('儲存行程', 'Save Plan', '保存', '저장')}</button>
                 </div>
               </div>
@@ -239,7 +234,7 @@ export default function ItineraryPlanner() {
             {plans.length > 0 && (
               <div className="bg-white rounded-2xl border p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-gray-900 flex items-center gap-2"><Clock className="w-4 h-4 text-sky-600" />{pick('已儲存的行程', 'Saved Itineraries', '保存済み旅程', '저장된 일정')}</h3>
+                  <h3 className="font-semibold text-gray-900 flex items-center gap-2"><Clock className="w-4 h-4 text-sky-600" />{pick('已儲存行程', 'Saved Itineraries', '保存済み行程', '저장된 일정')}</h3>
                   <Link to="/ai/passport" className="flex items-center gap-1 text-xs text-amber-600 font-medium"><BookMarked className="w-3.5 h-3.5" />{pick('旅遊護照', 'Travel Passport', 'トラベルパスポート', '여행 패스포트')}</Link>
                 </div>
                 <div className="space-y-2">

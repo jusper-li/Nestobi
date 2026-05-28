@@ -47,7 +47,10 @@ const Translator: React.FC = () => {
     const { data } = await supabase.from('translations').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10);
     setHistory(data || []);
   };
-  useEffect(() => { fetchHistory(); }, [user]);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [user]);
 
   const handleTranslate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +82,9 @@ const Translator: React.FC = () => {
       <Navigation />
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-[#0D9488] rounded-2xl mb-3 shadow-lg"><Languages className="w-7 h-7 text-white" /></div>
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-[#0D9488] rounded-2xl mb-3 shadow-lg">
+            <Languages className="w-7 h-7 text-white" />
+          </div>
           <h1 className="text-3xl font-bold text-gray-900">{t.ai.translator.title}</h1>
           <p className="text-gray-500 mt-1">{t.ai.translator.subtitle}</p>
         </div>
@@ -89,26 +94,38 @@ const Translator: React.FC = () => {
             <select value={sourceLang} onChange={(e) => setSourceLang(e.target.value)} className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white">
               {LANGS.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
             </select>
-            <button onClick={() => { setSourceLang(targetLang); setTargetLang(sourceLang); setSourceText(translated); setTranslated(sourceText); }} className="p-2 text-[#0D9488] hover:bg-teal-50 rounded-xl transition" title={t.ai.translator.swap}><ArrowRightLeft className="w-5 h-5" /></button>
+            <button onClick={() => { setSourceLang(targetLang); setTargetLang(sourceLang); setSourceText(translated); setTranslated(sourceText); }} className="p-2 text-[#0D9488] hover:bg-teal-50 rounded-xl transition" title={t.ai.translator.swap}>
+              <ArrowRightLeft className="w-5 h-5" />
+            </button>
             <select value={targetLang} onChange={(e) => setTargetLang(e.target.value)} className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white">
               {LANGS.filter((l) => l.code !== sourceLang).map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
             </select>
           </div>
+
           <form onSubmit={handleTranslate}>
             <div className="grid md:grid-cols-2 gap-4">
               <textarea value={sourceText} onChange={(e) => setSourceText(e.target.value)} rows={6} placeholder={t.ai.translator.inputPlaceholder} className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none text-sm" />
               <div className="relative">
                 <textarea value={translated} readOnly rows={6} placeholder={t.ai.translator.resultPlaceholder} className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 resize-none text-sm text-gray-700" />
-                {translated && <button type="button" onClick={() => { navigator.clipboard.writeText(translated); setCopied(true); setTimeout(() => setCopied(false), 1200); }} className="absolute top-2 right-2 p-1.5 hover:bg-gray-200 rounded-lg transition text-gray-500">{copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}</button>}
+                {translated && (
+                  <button type="button" onClick={() => { navigator.clipboard.writeText(translated); setCopied(true); setTimeout(() => setCopied(false), 1200); }} className="absolute top-2 right-2 p-1.5 hover:bg-gray-200 rounded-lg transition text-gray-500">
+                    {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                )}
               </div>
             </div>
-            <button type="submit" disabled={loading || !sourceText.trim()} className="mt-4 w-full bg-[#0D9488] hover:bg-[#0a7a6e] text-white font-semibold py-3 rounded-xl transition shadow-md disabled:opacity-60">{loading ? t.ai.translator.translating : t.ai.translator.translate}</button>
+            <button type="submit" disabled={loading || !sourceText.trim()} className="mt-4 w-full bg-[#0D9488] hover:bg-[#0a7a6e] text-white font-semibold py-3 rounded-xl transition shadow-md disabled:opacity-60">
+              {loading ? t.ai.translator.translating : t.ai.translator.translate}
+            </button>
           </form>
         </div>
 
         {history.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2"><History className="w-5 h-5 text-[#0D9488]" />{t.ai.translator.history}</h3>
+            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <History className="w-5 h-5 text-[#0D9488]" />
+              {t.ai.translator.history}
+            </h3>
             <div className="space-y-3">
               {history.map((h) => (
                 <div key={h.id} className="border border-gray-100 rounded-xl p-3">

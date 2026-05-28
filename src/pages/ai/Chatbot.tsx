@@ -20,10 +20,10 @@ const Chatbot: React.FC = () => {
       id: 'welcome',
       role: 'assistant',
       content: pick(
-        '您好！我是 Nestobi AI 客服小幫手，歡迎詢問訂房、購物與點數問題。',
-        'Hi! I am Nestobi AI support. Ask me about bookings, shopping, and points.',
-        'こんにちは！NestobiのAIサポートです。予約・買い物・ポイントについてご質問ください。',
-        '안녕하세요! Nestobi AI 고객지원입니다. 예약/쇼핑/포인트를 문의해 주세요.'
+        '您好！我是 Nestobi AI 客服。請問您想了解訂房、購物、點數，還是帳戶問題？',
+        'Hi! I am Nestobi AI support. Ask me about bookings, shopping, points, or account issues.',
+        'こんにちは！Nestobi AIサポートです。予約・買い物・ポイント・アカウントについてご案内します。',
+        '안녕하세요! Nestobi AI 지원입니다. 예약, 쇼핑, 포인트, 계정 관련 문의를 도와드릴게요.'
       ),
       time: new Date().toLocaleTimeString(),
     },
@@ -47,7 +47,15 @@ const Chatbot: React.FC = () => {
       const reply = await callAI<string>('chat', { messages: [...messages, userMessage].map((m) => ({ role: m.role, content: m.content })), language: lang });
       setMessages((prev) => [...prev, { id: `${Date.now()}-a`, role: 'assistant', content: reply, time: new Date().toLocaleTimeString() }]);
     } catch {
-      setMessages((prev) => [...prev, { id: `${Date.now()}-f`, role: 'assistant', content: pick('目前系統忙碌中，請稍後再試。', 'System is busy now. Please try again soon.', '現在システムが混み合っています。少し後でお試しください。', '현재 시스템이 혼잡합니다. 잠시 후 다시 시도해 주세요.'), time: new Date().toLocaleTimeString() }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-f`,
+          role: 'assistant',
+          content: pick('系統目前忙碌中，請稍後再試。', 'System is busy now. Please try again soon.', '現在システムが混み合っています。少し後でお試しください。', '현재 시스템이 혼잡합니다. 잠시 후 다시 시도해 주세요.'),
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -69,8 +77,10 @@ const Chatbot: React.FC = () => {
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col" style={{ height: '68vh' }}>
           <div className="border-b border-slate-100 px-5 py-3 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><Bot className="w-4 h-4 text-slate-500" /></div>
-            <p className="font-semibold text-gray-800">AI Support</p>
+            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+              <Bot className="w-4 h-4 text-slate-500" />
+            </div>
+            <p className="font-semibold text-gray-800">{t.ai.chat.title}</p>
           </div>
 
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
@@ -85,9 +95,7 @@ const Chatbot: React.FC = () => {
                 </div>
               </div>
             ))}
-            {loading && (
-              <div className="text-sm text-gray-400">{pick('AI 回覆中...', 'AI is typing...', 'AI が入力中...', 'AI가 답변 중...')}</div>
-            )}
+            {loading && <div className="text-sm text-gray-400">{pick('AI 輸入中...', 'AI is typing...', 'AI 入力中...', 'AI 입력 중...')}</div>}
             <div ref={bottomRef} />
           </div>
 

@@ -41,56 +41,29 @@ export default function Cart() {
   const [checkoutError, setCheckoutError] = useState('');
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
-  const loginCopy =
-    lang === 'ja'
-      ? {
-          title: 'ログインしてください',
-          desc: 'ログインするとカート確認と決済ができます。',
-          cta: '今すぐログイン',
-        }
-      : lang === 'ko'
-        ? {
-            title: '로그인이 필요합니다',
-            desc: '로그인 후 장바구니 확인 및 결제가 가능합니다.',
-            cta: '지금 로그인',
-          }
-        : lang === 'en'
-          ? {
-              title: 'Please log in',
-              desc: 'Log in to view your cart and complete checkout.',
-              cta: 'Log in now',
-            }
-          : {
-              title: '請先登入',
-              desc: '登入後即可查看購物車並完成結帳。',
-              cta: '立即登入',
-            };
+
+  const pick = (zh: string, en: string, ja: string, ko: string) => (lang === 'en' ? en : lang === 'ja' ? ja : lang === 'ko' ? ko : zh);
 
   const t = {
-    loginRequiredTitle: isEn ? 'Please log in' : '請先登入',
-    loginRequiredDesc: isEn ? 'Log in to view your cart and complete checkout.' : '登入後即可查看購物車並完成結帳。',
-    loginNow: isEn ? 'Log in now' : '立即登入',
-    successTitle: isEn ? 'Order Completed' : '結帳完成',
-    successDesc: isEn
-      ? 'Your order has been placed. You can view details in My Orders.'
-      : '您的訂單已成立，可前往我的訂單查看詳情。',
-    viewOrders: isEn ? 'View My Orders' : '查看我的訂單',
-    checkout: isEn ? 'Checkout' : '結帳',
-    continueShopping: isEn ? 'Continue Shopping' : '繼續購物',
-    emptyCart: isEn ? 'Your cart is empty' : '購物車目前是空的',
-    unavailableHint: isEn ? 'Some unavailable items remain in your cart.' : '有部分商品已下架或無法購買。',
-    removeUnavailable: isEn ? 'Remove unavailable items' : '移除無效商品',
-    backToShop: isEn ? 'Back to Shop' : '返回商店',
-    orderSummary: isEn ? 'Order Summary' : '訂單摘要',
-    subtotal: isEn ? 'Subtotal' : '小計',
-    pointsEarned: isEn ? `Earn ${pointsEarnedLabel(0, true)}` : `本次可得 ${pointsEarnedLabel(0, false)}`,
-    loginBeforeCheckout: isEn ? 'Please log in before checkout.' : '請先登入再進行結帳。',
-    placeOrder: isEn ? 'Place Order' : '送出訂單',
-    checkoutFailed: isEn ? 'Checkout failed. Please try again later.' : '結帳失敗，請稍後再試。',
-    unavailableCount: (count: number) =>
-      isEn ? `${count} unavailable item(s) found.` : `目前有 ${count} 項商品已無法購買。`,
-    pointsDesc: (points: number) => (isEn ? `Estimated points: ${points}` : `預估回饋點數：${points} 點`),
-    pointsOrderDesc: isEn ? 'Shop purchase points reward' : '購物消費回饋點數',
+    loginTitle: pick('請先登入', 'Please log in', 'ログインしてください', '로그인이 필요합니다'),
+    loginDesc: pick('登入後即可查看購物車並完成結帳。', 'Log in to view your cart and complete checkout.', 'ログインするとカートを確認して、購入手続きへ進めます。', '로그인하면 장바구니를 확인하고 결제를 진행할 수 있습니다.'),
+    loginNow: pick('立即登入', 'Log in now', 'ログインする', '지금 로그인'),
+    successTitle: pick('訂單完成', 'Order Completed', '注文が完了しました', '주문이 완료되었습니다'),
+    successDesc: pick('您的訂單已建立，可到我的訂單查看詳細資訊。', 'Your order has been placed. You can view details in My Orders.', '注文を受け付けました。マイオーダーで詳細を確認できます。', '주문이 접수되었습니다. 내 주문에서 상세 정보를 확인할 수 있습니다.'),
+    viewOrders: pick('查看我的訂單', 'View My Orders', '注文履歴を見る', '내 주문 보기'),
+    checkout: pick('結帳', 'Checkout', 'チェックアウト', '결제'),
+    continueShopping: pick('繼續購物', 'Continue Shopping', '買い物を続ける', '쇼핑 계속하기'),
+    emptyCart: pick('購物車目前是空的', 'Your cart is empty', 'カートは空です', '장바구니가 비어 있습니다'),
+    removeUnavailable: pick('移除已下架商品', 'Remove unavailable items', '販売終了商品を削除', '판매 불가 상품 제거'),
+    backToShop: pick('返回商店', 'Back to Shop', 'ショップへ戻る', '상점으로 돌아가기'),
+    orderSummary: pick('訂單摘要', 'Order Summary', '注文サマリー', '주문 요약'),
+    subtotal: pick('小計', 'Subtotal', '小計', '소계'),
+    loginBeforeCheckout: pick('請先登入再進行結帳。', 'Please log in before checkout.', 'チェックアウト前にログインしてください。', '결제 전에 로그인해 주세요.'),
+    placeOrder: pick('送出訂單', 'Place Order', '注文を確定', '주문하기'),
+    checkoutFailed: pick('結帳失敗，請稍後再試。', 'Checkout failed. Please try again later.', '決済に失敗しました。後でもう一度お試しください。', '결제에 실패했습니다. 잠시 후 다시 시도해 주세요.'),
+    unavailableCount: (count: number) => pick(`發現 ${count} 件不可購買商品。`, `${count} unavailable item(s) found.`, `購入不可商品が ${count} 件あります。`, `구매 불가 상품 ${count}개가 있습니다.`),
+    pointsDesc: (points: number) => pick(`預計可得點數：${points}`, `Estimated points: ${points}`, `獲得予定ポイント：${points}`, `예상 적립 포인트: ${points}`),
+    pointsOrderDesc: pick('商城購物點數回饋', 'Shop purchase points reward', 'ショップ購入ポイント付与', '쇼핑몰 구매 포인트 적립'),
   };
 
   useEffect(() => {
@@ -108,13 +81,13 @@ export default function Cart() {
   }, [user, items]);
 
   const validCartItems = cartItems.filter(hasProduct);
-  const unavailableCartItems = cartItems.filter(item => !item.products);
+  const unavailableCartItems = cartItems.filter((item) => !item.products);
   const subtotal = validCartItems.reduce((sum, item) => sum + item.products.price * item.quantity, 0);
   const pointsEarned = Math.floor(subtotal / 100) * 5;
 
   const handleRemoveUnavailableItems = async () => {
-    await Promise.all(unavailableCartItems.map(item => removeItem(item.id)));
-    setCartItems(prev => prev.filter(hasProduct));
+    await Promise.all(unavailableCartItems.map((item) => removeItem(item.id)));
+    setCartItems((prev) => prev.filter(hasProduct));
   };
 
   const handleCheckout = async () => {
@@ -143,7 +116,7 @@ export default function Cart() {
       if (orderErr) throw orderErr;
 
       await supabase.from('purchase_records').insert(
-        validCartItems.map(item => ({
+        validCartItems.map((item) => ({
           order_id: order.id,
           user_id: user.id,
           product_id: item.product_id,
@@ -152,7 +125,7 @@ export default function Cart() {
           total_price: item.products.price * item.quantity,
           payment_method: 'credit_card',
           status: 'completed',
-        })),
+        }))
       );
 
       if (pointsEarned > 0) {
@@ -171,11 +144,7 @@ export default function Cart() {
         data: { session },
       } = await supabase.auth.getSession();
       if (session?.user?.email) {
-        const { data: profile } = await supabase
-          .from('tbl_mn5wgzh0')
-          .select('display_name')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        const { data: profile } = await supabase.from('tbl_mn5wgzh0').select('display_name').eq('user_id', user.id).maybeSingle();
         fetch(SEND_EMAIL_URL, {
           method: 'POST',
           headers: {
@@ -187,7 +156,7 @@ export default function Cart() {
             to: session.user.email,
             data: {
               displayName: profile?.display_name || '',
-              items: validCartItems.map(item => ({
+              items: validCartItems.map((item) => ({
                 name: item.products.name,
                 quantity: item.quantity,
                 price: item.products.price,
@@ -214,14 +183,10 @@ export default function Cart() {
         <Navigation />
         <div className="mx-auto max-w-md px-4 py-32 text-center">
           <ShoppingBag className="mx-auto mb-4 h-14 w-14 text-gray-300" />
-          <h1 className="mb-2 text-2xl font-bold text-gray-900">{loginCopy.title}</h1>
-          <p className="mb-6 text-sm leading-6 text-gray-500">{loginCopy.desc}</p>
-          <button
-            type="button"
-            onClick={() => navigate('/auth/login')}
-            className="rounded-xl bg-[#C09A6A] px-6 py-3 font-bold text-white transition hover:bg-[#8B6840]"
-          >
-            {loginCopy.cta}
+          <h1 className="mb-2 text-2xl font-bold text-gray-900">{t.loginTitle}</h1>
+          <p className="mb-6 text-sm leading-6 text-gray-500">{t.loginDesc}</p>
+          <button type="button" onClick={() => navigate('/auth/login')} className="rounded-xl bg-[#C09A6A] px-6 py-3 font-bold text-white transition hover:bg-[#8B6840]">
+            {t.loginNow}
           </button>
         </div>
       </div>
@@ -239,11 +204,7 @@ export default function Cart() {
             </div>
             <h1 className="mb-2 text-2xl font-bold text-gray-900">{t.successTitle}</h1>
             <p className="mb-6 text-sm leading-6 text-gray-500">{t.successDesc}</p>
-            <button
-              type="button"
-              onClick={() => navigate('/member/orders')}
-              className="rounded-xl bg-[#C09A6A] px-8 py-3 font-bold text-white transition hover:bg-[#8B6840]"
-            >
+            <button type="button" onClick={() => navigate('/member/orders')} className="rounded-xl bg-[#C09A6A] px-8 py-3 font-bold text-white transition hover:bg-[#8B6840]">
               {t.viewOrders}
             </button>
           </motion.div>
@@ -265,11 +226,7 @@ export default function Cart() {
             </h1>
             <span className="gold-bar" />
           </div>
-          <button
-            type="button"
-            onClick={() => navigate('/shop')}
-            className="self-start rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 sm:self-auto"
-          >
+          <button type="button" onClick={() => navigate('/shop')} className="self-start rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 sm:self-auto">
             {t.continueShopping}
           </button>
         </div>
@@ -285,20 +242,12 @@ export default function Cart() {
             {unavailableCartItems.length > 0 && (
               <div className="mx-auto mt-4 max-w-md rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
                 {t.unavailableCount(unavailableCartItems.length)}
-                <button
-                  type="button"
-                  onClick={handleRemoveUnavailableItems}
-                  className="ml-2 font-bold underline"
-                >
+                <button type="button" onClick={handleRemoveUnavailableItems} className="ml-2 font-bold underline">
                   {t.removeUnavailable}
                 </button>
               </div>
             )}
-            <button
-              type="button"
-              onClick={() => navigate('/shop')}
-              className="mt-4 font-bold text-[#C09A6A] hover:underline"
-            >
+            <button type="button" onClick={() => navigate('/shop')} className="mt-4 font-bold text-[#C09A6A] hover:underline">
               {t.backToShop}
             </button>
           </div>
@@ -316,49 +265,26 @@ export default function Cart() {
                   </div>
                 </div>
               )}
-              {validCartItems.map(item => (
+              {validCartItems.map((item) => (
                 <motion.div key={item.id} layout className="flex gap-4 rounded-2xl bg-white p-4 shadow-sm">
-                  <img
-                    src={
-                      item.products.image_url ||
-                      'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=240'
-                    }
-                    alt={item.products.name}
-                    className="h-24 w-24 flex-shrink-0 rounded-xl object-cover"
-                  />
+                  <img src={item.products.image_url || 'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=240'} alt={item.products.name} className="h-24 w-24 flex-shrink-0 rounded-xl object-cover" />
                   <div className="min-w-0 flex-1">
                     <h2 className="truncate text-sm font-bold text-gray-900">{item.products.name}</h2>
                     <p className="mt-1 font-bold text-[#C09A6A]">{formatCurrency(item.products.price)}</p>
                     <div className="mt-3 flex flex-wrap items-center gap-3">
                       <div className="flex items-center overflow-hidden rounded-lg border border-gray-200">
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="p-2 text-gray-500 transition hover:bg-gray-50"
-                        >
+                        <button type="button" onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-2 text-gray-500 transition hover:bg-gray-50">
                           <Minus className="h-3.5 w-3.5" />
                         </button>
                         <span className="w-10 text-center text-sm font-bold">{item.quantity}</span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateQuantity(item.id, Math.min(item.products.stock_quantity, item.quantity + 1))
-                          }
-                          className="p-2 text-gray-500 transition hover:bg-gray-50"
-                        >
+                        <button type="button" onClick={() => updateQuantity(item.id, Math.min(item.products.stock_quantity, item.quantity + 1))} className="p-2 text-gray-500 transition hover:bg-gray-50">
                           <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                      <span className="text-sm font-semibold text-gray-600">
-                        {formatCurrency(item.products.price * item.quantity)}
-                      </span>
+                      <span className="text-sm font-semibold text-gray-600">{formatCurrency(item.products.price * item.quantity)}</span>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeItem(item.id)}
-                    className="self-start p-1 text-red-400 transition hover:text-red-600"
-                  >
+                  <button type="button" onClick={() => removeItem(item.id)} className="self-start p-1 text-red-400 transition hover:text-red-600">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </motion.div>
@@ -371,11 +297,9 @@ export default function Cart() {
                 {t.orderSummary}
               </div>
               <div className="mb-4 space-y-2">
-                {validCartItems.map(item => (
+                {validCartItems.map((item) => (
                   <div key={item.id} className="flex justify-between gap-3 text-sm text-gray-600">
-                    <span className="truncate">
-                      {item.products.name} x {item.quantity}
-                    </span>
+                    <span className="truncate">{item.products.name} x {item.quantity}</span>
                     <span className="font-semibold">{formatCurrency(item.products.price * item.quantity)}</span>
                   </div>
                 ))}
@@ -387,25 +311,10 @@ export default function Cart() {
                 </div>
                 <p className="mt-1 text-xs font-semibold text-[#8B6840]">{t.pointsDesc(pointsEarned)}</p>
               </div>
-              {checkoutError && (
-                <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-600">
-                  {checkoutError}
-                </p>
-              )}
-              {!user && (
-                <p className="mb-3 rounded-lg bg-[#FEF9EC] px-3 py-2 text-center text-sm font-semibold text-[#8B6840]">
-                  {t.loginBeforeCheckout}
-                </p>
-              )}
-              <button
-                type="button"
-                onClick={handleCheckout}
-                disabled={checkoutLoading || validCartItems.length === 0}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C09A6A] py-3 font-bold text-white transition hover:bg-[#8B6840] disabled:opacity-60"
-              >
-                {checkoutLoading && (
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                )}
+              {checkoutError && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-600">{checkoutError}</p>}
+              {!user && <p className="mb-3 rounded-lg bg-[#FEF9EC] px-3 py-2 text-center text-sm font-semibold text-[#8B6840]">{t.loginBeforeCheckout}</p>}
+              <button type="button" onClick={handleCheckout} disabled={checkoutLoading || validCartItems.length === 0} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C09A6A] py-3 font-bold text-white transition hover:bg-[#8B6840] disabled:opacity-60">
+                {checkoutLoading && <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />}
                 {t.placeOrder}
               </button>
             </aside>
@@ -414,8 +323,4 @@ export default function Cart() {
       </main>
     </div>
   );
-}
-
-function pointsEarnedLabel(points: number, isEn: boolean) {
-  return isEn ? `${points} points` : `${points} 點`;
 }

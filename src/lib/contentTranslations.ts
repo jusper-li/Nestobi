@@ -60,6 +60,12 @@ type StoreLike = {
   } | null;
 };
 
+type QuizQuestionLike = {
+  id: string;
+  question_text: string;
+  options: Array<{ option_text: string }>;
+};
+
 type TranslationRow = {
   entity_id: string;
   field_key: string;
@@ -77,6 +83,7 @@ const ENTITY_BLOG = 'blog_post';
 const ENTITY_BLOG_CATEGORY = 'blog_category';
 const ENTITY_PRODUCT_CATEGORY = 'product_category';
 const ENTITY_STORE = 'store_location';
+const ENTITY_COFFEE_QUIZ_QUESTION = 'coffee_quiz_question';
 const EMPTY_TRANSLATION_HINT = 'there is no text provided for translation';
 const EMPTY_TRANSLATION_HINT_2 = 'please provide the text you would like to have translated';
 let contentTranslationsTableUnavailable = false;
@@ -1065,6 +1072,70 @@ export async function translateStoreLocationsFromCacheOnly<T extends StoreLike>(
           secondary: map.get(`${item.id}|hours.secondary|${hoursSecondaryHash}`) || item.hours?.secondary || '',
           note: map.get(`${item.id}|hours.note|${hoursNoteHash}`) || item.hours?.note || '',
         },
+      };
+    },
+  );
+}
+
+export async function translateCoffeeQuizQuestionsOnDemand<T extends QuizQuestionLike>(rows: T[], targetLang: string): Promise<T[]> {
+  return translateGenericOnDemand(
+    rows,
+    targetLang,
+    ENTITY_COFFEE_QUIZ_QUESTION,
+    item => {
+      const base = [{ field_key: 'question_text', source_text: item.question_text || '', source_hash: hashText((item.question_text || '').trim()) }];
+      const options = (item.options || []).map((option, index) => ({
+        field_key: `option:${index}`,
+        source_text: option.option_text || '',
+        source_hash: hashText((option.option_text || '').trim()),
+      }));
+      return [...base, ...options].filter(entry => entry.source_text.trim().length > 0);
+    },
+    (item, map) => {
+      const qHash = hashText((item.question_text || '').trim());
+      const translatedOptions = (item.options || []).map((option, index) => {
+        const optionHash = hashText((option.option_text || '').trim());
+        return {
+          ...option,
+          option_text: map.get(`${item.id}|option:${index}|${optionHash}`) || option.option_text,
+        };
+      });
+      return {
+        ...item,
+        question_text: map.get(`${item.id}|question_text|${qHash}`) || item.question_text,
+        options: translatedOptions,
+      };
+    },
+  );
+}
+
+export async function translateCoffeeQuizQuestionsFromCacheOnly<T extends QuizQuestionLike>(rows: T[], targetLang: string): Promise<T[]> {
+  return translateGenericFromCacheOnly(
+    rows,
+    targetLang,
+    ENTITY_COFFEE_QUIZ_QUESTION,
+    item => {
+      const base = [{ field_key: 'question_text', source_text: item.question_text || '', source_hash: hashText((item.question_text || '').trim()) }];
+      const options = (item.options || []).map((option, index) => ({
+        field_key: `option:${index}`,
+        source_text: option.option_text || '',
+        source_hash: hashText((option.option_text || '').trim()),
+      }));
+      return [...base, ...options].filter(entry => entry.source_text.trim().length > 0);
+    },
+    (item, map) => {
+      const qHash = hashText((item.question_text || '').trim());
+      const translatedOptions = (item.options || []).map((option, index) => {
+        const optionHash = hashText((option.option_text || '').trim());
+        return {
+          ...option,
+          option_text: map.get(`${item.id}|option:${index}|${optionHash}`) || option.option_text,
+        };
+      });
+      return {
+        ...item,
+        question_text: map.get(`${item.id}|question_text|${qHash}`) || item.question_text,
+        options: translatedOptions,
       };
     },
   );
