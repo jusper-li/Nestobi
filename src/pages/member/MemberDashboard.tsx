@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BedDouble, BookMarked, ChevronRight, Receipt, Settings, ShoppingBag, Star, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { localeByLang, normalizeLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
 
@@ -39,8 +40,8 @@ const copy: Record<UiLang, Record<string, string>> = {
     recentBookings: '近期訂房',
     recentOrders: '近期訂單',
     viewAll: '查看全部',
-    noBooking: '目前沒有訂房紀錄',
-    noOrders: '目前沒有訂單紀錄',
+    noBooking: '目前沒有訂房資料',
+    noOrders: '目前沒有訂單資料',
     room: '房型',
   },
   en: {
@@ -64,34 +65,34 @@ const copy: Record<UiLang, Record<string, string>> = {
     welcome: 'おかえりなさい',
     points: '現在のポイント',
     profile: 'プロフィール',
-    bookings: '宿泊予約',
-    orders: '注文一覧',
+    bookings: '予約',
+    orders: '注文',
     purchases: '購入履歴',
     myPoints: 'マイポイント',
     preferences: '設定',
     passport: 'トラベルパスポート',
-    recentBookings: '最近の宿泊予約',
+    recentBookings: '最近の予約',
     recentOrders: '最近の注文',
     viewAll: 'すべて表示',
-    noBooking: '宿泊予約はまだありません',
+    noBooking: '予約はまだありません',
     noOrders: '注文はまだありません',
-    room: '部屋タイプ',
+    room: '部屋',
   },
   ko: {
     welcome: '다시 오신 것을 환영합니다',
     points: '현재 포인트',
-    profile: '개인정보',
-    bookings: '내 숙소 예약',
+    profile: '프로필',
+    bookings: '내 예약',
     orders: '내 주문',
     purchases: '구매 내역',
     myPoints: '내 포인트',
-    preferences: '환경설정',
-    passport: '여행 패스포트',
-    recentBookings: '최근 숙소 예약',
+    preferences: '설정',
+    passport: '트래블 패스포트',
+    recentBookings: '최근 예약',
     recentOrders: '최근 주문',
     viewAll: '전체 보기',
-    noBooking: '숙소 예약 내역이 없습니다',
-    noOrders: '주문 내역이 없습니다',
+    noBooking: '예약이 없습니다',
+    noOrders: '주문이 없습니다',
     room: '객실',
   },
 };
@@ -99,7 +100,8 @@ const copy: Record<UiLang, Record<string, string>> = {
 export default function MemberDashboard() {
   const { user, profile } = useAuth();
   const { lang } = useLanguage();
-  const locale = (lang === 'ja' || lang === 'ko' || lang === 'en' ? lang : 'zh-TW') as UiLang;
+  const locale = normalizeLang(lang) as UiLang;
+  const dateLocale = localeByLang(locale);
   const t = copy[locale];
   const [points, setPoints] = useState(0);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -188,7 +190,7 @@ export default function MemberDashboard() {
                   <div>
                     <p className="text-sm font-medium text-gray-900">{item.tbl_rooms?.name || t.room}</p>
                     <p className="text-xs text-gray-400">
-                      {formatDate(item.check_in_date, locale === 'en' ? 'en-US' : 'zh-TW')} ~ {formatDate(item.check_out_date, locale === 'en' ? 'en-US' : 'zh-TW')}
+                      {formatDate(item.check_in_date, dateLocale)} ~ {formatDate(item.check_out_date, dateLocale)}
                     </p>
                   </div>
                   <div className="text-right">
@@ -220,7 +222,7 @@ export default function MemberDashboard() {
                 <div key={item.id} className="flex items-center justify-between border-b border-gray-50 py-2 last:border-0">
                   <div>
                     <p className="text-sm font-medium text-gray-900">#{item.id.slice(-8).toUpperCase()}</p>
-                    <p className="text-xs text-gray-400">{formatDate(item.created_at, locale === 'en' ? 'en-US' : 'zh-TW')}</p>
+                    <p className="text-xs text-gray-400">{formatDate(item.created_at, dateLocale)}</p>
                   </div>
                   <div className="text-right">
                     <span className={`rounded-full px-2 py-0.5 text-xs ${getStatusColor(item.status)}`}>{getStatusLabel(item.status, lang)}</span>
@@ -235,4 +237,5 @@ export default function MemberDashboard() {
     </div>
   );
 }
+
 

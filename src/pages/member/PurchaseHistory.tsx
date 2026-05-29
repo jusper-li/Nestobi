@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Filter, Receipt } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { localeByLang, normalizeLang } from '../../lib/i18n';
 
 interface PurchaseRecord {
   id: string;
@@ -74,7 +75,7 @@ const copy: Record<UiLang, Record<string, string>> = {
     product: '상품',
     qty: '수량',
     unitPrice: '단가',
-    total: '총액',
+    total: '합계',
     date: '날짜',
     status: '상태',
     unknown: '알 수 없는 상품',
@@ -84,7 +85,8 @@ const copy: Record<UiLang, Record<string, string>> = {
 const PurchaseHistory: React.FC = () => {
   const { user } = useAuth();
   const { lang } = useLanguage();
-  const locale = (lang === 'ja' || lang === 'ko' || lang === 'en' ? lang : 'zh-TW') as UiLang;
+  const locale = normalizeLang(lang) as UiLang;
+  const dateLocale = localeByLang(locale);
   const t = copy[locale];
   const [records, setRecords] = useState<PurchaseRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -168,7 +170,7 @@ const PurchaseHistory: React.FC = () => {
                     <td className="px-4 py-3 text-sm text-gray-600">{record.quantity}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{formatCurrency(record.unit_price)}</td>
                     <td className="px-4 py-3 text-sm font-semibold text-gray-900">{formatCurrency(record.total_price)}</td>
-                    <td className="flex items-center gap-1 px-4 py-3 text-sm text-gray-500"><Calendar className="h-3.5 w-3.5" />{formatDate(record.created_at, locale === 'en' ? 'en-US' : 'zh-TW')}</td>
+                    <td className="flex items-center gap-1 px-4 py-3 text-sm text-gray-500"><Calendar className="h-3.5 w-3.5" />{formatDate(record.created_at, dateLocale)}</td>
                     <td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${getStatusColor(record.status)}`}>{getStatusLabel(record.status, lang)}</span></td>
                   </motion.tr>
                 ))}
@@ -182,4 +184,5 @@ const PurchaseHistory: React.FC = () => {
 };
 
 export default PurchaseHistory;
+
 

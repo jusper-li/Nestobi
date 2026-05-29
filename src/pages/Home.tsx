@@ -7,6 +7,7 @@ import Footer from '../components/Footer';
 import Navigation from '../components/Navigation';
 import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../contexts/LanguageContext';
+import { localeByLang, normalizeLang } from '../lib/i18n';
 import {
   getTranslationRuntimeState,
   translateBlogPostsFromCacheOnly,
@@ -82,10 +83,11 @@ function localizeCityName(text: string | null | undefined, nonZh: boolean) {
 
 export default function Home() {
   const { lang } = useLanguage();
-  const locale = lang === 'ja' ? 'ja' : lang === 'ko' ? 'ko' : lang === 'en' ? 'en' : 'zh-TW';
-  const nonZh = locale !== 'zh-TW';
+  const normalizedLang = normalizeLang(lang);
+  const locale = localeByLang(normalizedLang);
+  const nonZh = normalizedLang !== 'zh-TW';
   const t4 = (zh: string, en: string, ja: string, ko: string) =>
-    locale === 'ja' ? ja : locale === 'ko' ? ko : locale === 'en' ? en : zh;
+    normalizedLang === 'ja' ? ja : normalizedLang === 'ko' ? ko : normalizedLang === 'en' ? en : zh;
 
   const t = {
     pageTitle: t4('Nestobi 旅遊購物平台', 'Nestobi Travel & Shop Platform', 'Nestobi 旅行ショッピングプラットフォーム', 'Nestobi 여행 쇼핑 플랫폼'),
@@ -194,7 +196,7 @@ export default function Home() {
 
   useEffect(() => {
     let cancelled = false;
-    if (!featuredRooms.length || lang === 'zh-TW') {
+    if (!featuredRooms.length || normalizedLang === 'zh-TW') {
       setDisplayRooms(featuredRooms);
       setTranslationNotice('');
       return () => {
@@ -205,13 +207,13 @@ export default function Home() {
     setTranslationNotice(runtime.tableUnavailable || runtime.isLocalProxyMode ? t.translationFallback : t.translationSyncing);
 
     Promise.all([
-      translateRoomsFromCacheOnly(featuredRooms, lang),
+      translateRoomsFromCacheOnly(featuredRooms, normalizedLang),
       translateHotelsFromCacheOnly(
         featuredRooms
           .map(room => room.hotels)
           .filter((hotel): hotel is NonNullable<Room['hotels']> => Boolean(hotel))
           .map(hotel => ({ id: hotel.id, name: hotel.name, city: hotel.city })),
-        lang,
+        normalizedLang,
       ),
     ])
       .then(([translatedRooms, translatedHotels]) => {
@@ -234,14 +236,14 @@ export default function Home() {
       });
 
     Promise.all([
-      translateRoomsOnDemand(featuredRooms.slice(0, 3), lang),
+      translateRoomsOnDemand(featuredRooms.slice(0, 3), normalizedLang),
       translateHotelsOnDemand(
         featuredRooms
           .slice(0, 3)
           .map(room => room.hotels)
           .filter((hotel): hotel is NonNullable<Room['hotels']> => Boolean(hotel))
           .map(hotel => ({ id: hotel.id, name: hotel.name, city: hotel.city })),
-        lang,
+        normalizedLang,
       ),
     ])
       .then(([translatedRooms, translatedHotels]) => {
@@ -262,33 +264,33 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [featuredRooms, lang, t.translationFallback, t.translationSyncing]);
+  }, [featuredRooms, normalizedLang, t.translationFallback, t.translationSyncing]);
 
   useEffect(() => {
     let cancelled = false;
     if (!featuredProducts.length) return () => { cancelled = true; };
     setDisplayProducts(featuredProducts);
-    translateProductsFromCacheOnly(featuredProducts, lang).then(translated => { if (!cancelled) setDisplayProducts(translated); }).catch(() => {});
-    translateProductsOnDemand(featuredProducts.slice(0, 3), lang).then(translated => {
+    translateProductsFromCacheOnly(featuredProducts, normalizedLang).then(translated => { if (!cancelled) setDisplayProducts(translated); }).catch(() => {});
+    translateProductsOnDemand(featuredProducts.slice(0, 3), normalizedLang).then(translated => {
       if (cancelled) return;
       const byId = new Map(translated.map(item => [item.id, item]));
       setDisplayProducts(current => current.map(item => byId.get(item.id) || item));
     }).catch(() => {});
     return () => { cancelled = true; };
-  }, [featuredProducts, lang]);
+  }, [featuredProducts, normalizedLang]);
 
   useEffect(() => {
     let cancelled = false;
     if (!featuredPosts.length) return () => { cancelled = true; };
     setDisplayPosts(featuredPosts);
-    translateBlogPostsFromCacheOnly(featuredPosts, lang).then(translated => { if (!cancelled) setDisplayPosts(translated); }).catch(() => {});
-    translateBlogPostsOnDemand(featuredPosts.slice(0, 3), lang).then(translated => {
+    translateBlogPostsFromCacheOnly(featuredPosts, normalizedLang).then(translated => { if (!cancelled) setDisplayPosts(translated); }).catch(() => {});
+    translateBlogPostsOnDemand(featuredPosts.slice(0, 3), normalizedLang).then(translated => {
       if (cancelled) return;
       const byId = new Map(translated.map(item => [item.id, item]));
       setDisplayPosts(current => current.map(item => byId.get(item.id) || item));
     }).catch(() => {});
     return () => { cancelled = true; };
-  }, [featuredPosts, lang]);
+  }, [featuredPosts, normalizedLang]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -403,7 +405,7 @@ export default function Home() {
                     {post.excerpt && <p className="mt-2 line-clamp-2 text-sm leading-6 text-gray-500">{post.excerpt}</p>}
                     <p className="mt-5 flex items-center gap-1 border-t border-gray-100 pt-4 text-xs font-medium text-gray-400">
                       <Calendar size={13} />
-                      {new Date(post.published_at).toLocaleDateString(locale === 'zh-TW' ? 'zh-TW' : locale === 'ja' ? 'ja-JP' : locale === 'ko' ? 'ko-KR' : 'en-US')}
+                      {new Date(post.published_at).toLocaleDateString(locale)}
                     </p>
                   </div>
                 </Link>

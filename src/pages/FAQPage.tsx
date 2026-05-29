@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Search, HelpCircle, MessageCircle, ArrowRight } from 'lucide-react';
@@ -6,6 +6,7 @@ import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../contexts/LanguageContext';
+import { normalizeLang } from '../lib/i18n';
 import { supabase } from '../lib/supabase';
 
 interface FAQ {
@@ -18,7 +19,7 @@ interface FAQ {
 
 export default function FAQPage() {
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
+  const isEn = normalizeLang(lang) === 'en';
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -27,13 +28,13 @@ export default function FAQPage() {
 
   const t = {
     title: isEn ? 'Frequently Asked Questions' : '常見問題',
-    subtitle: isEn ? 'Find quick answers for booking, shopping, AI tools, and member services.' : '快速找到關於訂房、購物、AI 功能與會員服務的解答。',
+    subtitle: isEn ? 'Find quick answers for booking, shopping, AI tools, and member services.' : '快速查看訂房、購物、AI 工具與會員功能的常見解答。',
     search: isEn ? 'Search questions...' : '搜尋問題...',
     all: isEn ? 'All' : '全部',
-    empty: isEn ? 'No matching FAQ found' : '找不到符合條件的問題',
+    empty: isEn ? 'No matching FAQ found' : '找不到符合的問題',
     clear: isEn ? 'Clear search' : '清除搜尋',
-    ctaTitle: isEn ? 'Need more help?' : '還有其他問題？',
-    ctaDesc: isEn ? 'Use AI support or contact us directly.' : '可以直接使用 AI 客服，或透過聯絡表單與我們聯繫。',
+    ctaTitle: isEn ? 'Need more help?' : '需要更多協助？',
+    ctaDesc: isEn ? 'Use AI support or contact us directly.' : '你可以使用 AI 客服，或直接與我們聯繫。',
     ctaAI: isEn ? 'AI Support' : 'AI 客服',
     ctaContact: isEn ? 'Contact Us' : '聯絡我們',
   };
@@ -188,3 +189,4 @@ export default function FAQPage() {
     </div>
   );
 }
+

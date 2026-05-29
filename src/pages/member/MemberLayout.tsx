@@ -1,8 +1,9 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { BedDouble, Home, LogOut, Menu, Receipt, Settings, ShoppingBag, Star, User, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { normalizeLang } from '../../lib/i18n';
 import Navigation from '../../components/Navigation';
 
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
@@ -46,22 +47,22 @@ const copy: Record<
   ja: {
     center: '会員センター',
     profile: 'プロフィール',
-    bookings: '宿泊予約',
-    orders: '注文一覧',
+    bookings: '予約',
+    orders: '注文',
     purchases: '購入履歴',
-    points: 'マイポイント',
+    points: 'ポイント',
     preferences: '設定',
     signOut: 'ログアウト',
     member: '会員',
   },
   ko: {
     center: '회원 센터',
-    profile: '개인정보',
-    bookings: '내 숙소 예약',
+    profile: '프로필',
+    bookings: '내 예약',
     orders: '내 주문',
     purchases: '구매 내역',
-    points: '내 포인트',
-    preferences: '환경설정',
+    points: '포인트',
+    preferences: '환경 설정',
     signOut: '로그아웃',
     member: '회원',
   },
@@ -70,7 +71,7 @@ const copy: Record<
 export default function MemberLayout() {
   const { user, profile, signOut } = useAuth();
   const { lang } = useLanguage();
-  const locale = (lang === 'ja' || lang === 'ko' || lang === 'en' ? lang : 'zh-TW') as UiLang;
+  const locale = normalizeLang(lang) as UiLang;
   const t = copy[locale];
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
@@ -166,3 +167,4 @@ export default function MemberLayout() {
     </div>
   );
 }
+

@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown, ChevronUp, Package, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { localeByLang, normalizeLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
 
@@ -32,7 +33,7 @@ const copy: Record<UiLang, Record<string, string>> = {
     unpaid: '未付款',
     view: '查看明細',
     hide: '收合明細',
-    items: '訂單商品',
+    items: '訂單品項',
   },
   en: {
     title: 'My Orders',
@@ -44,21 +45,21 @@ const copy: Record<UiLang, Record<string, string>> = {
     items: 'Order Items',
   },
   ja: {
-    title: '注文一覧',
-    noData: '注文はまだありません',
+    title: '注文履歴',
+    noData: '注文履歴はまだありません',
     paid: '支払い済み',
     unpaid: '未払い',
     view: '詳細を見る',
-    hide: '詳細を隠す',
+    hide: '詳細を閉じる',
     items: '注文商品',
   },
   ko: {
     title: '내 주문',
     noData: '주문 내역이 없습니다',
-    paid: '결제완료',
+    paid: '결제 완료',
     unpaid: '미결제',
-    view: '상세보기',
-    hide: '상세숨기기',
+    view: '상세 보기',
+    hide: '상세 닫기',
     items: '주문 상품',
   },
 };
@@ -66,7 +67,8 @@ const copy: Record<UiLang, Record<string, string>> = {
 export default function MemberOrders() {
   const { user } = useAuth();
   const { lang } = useLanguage();
-  const locale = (lang === 'ja' || lang === 'ko' || lang === 'en' ? lang : 'zh-TW') as UiLang;
+  const locale = normalizeLang(lang) as UiLang;
+  const dateLocale = localeByLang(locale);
   const t = copy[locale];
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,7 +129,7 @@ export default function MemberOrders() {
               <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="font-semibold text-gray-900">#{order.id.slice(-10).toUpperCase()}</p>
-                  <p className="mt-0.5 text-sm text-gray-400">{formatDate(order.created_at, locale === 'en' ? 'en-US' : 'zh-TW')}</p>
+                  <p className="mt-0.5 text-sm text-gray-400">{formatDate(order.created_at, dateLocale)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${getStatusColor(order.status)}`}>{getStatusLabel(order.status, lang)}</span>
@@ -178,4 +180,5 @@ export default function MemberOrders() {
     </div>
   );
 }
+
 

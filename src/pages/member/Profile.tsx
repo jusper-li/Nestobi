@@ -1,16 +1,17 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, FileText, Globe, Phone, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { normalizeLang } from '../../lib/i18n';
 
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 
 const copy: Record<UiLang, Record<string, string>> = {
   'zh-TW': {
     title: '個人資料',
-    saved: '個人資料更新成功',
-    saveFailed: '儲存個人資料失敗，請稍後再試。',
+    saved: '個人資料已儲存',
+    saveFailed: '儲存個人資料失敗，請稍後再試',
     displayName: '顯示名稱',
     phone: '手機號碼',
     bio: '自我介紹',
@@ -47,15 +48,15 @@ const copy: Record<UiLang, Record<string, string>> = {
   },
   ja: {
     title: 'プロフィール',
-    saved: 'プロフィールを更新しました',
-    saveFailed: 'プロフィールの保存に失敗しました。しばらくしてから再度お試しください。',
+    saved: 'プロフィールを保存しました',
+    saveFailed: 'プロフィールの保存に失敗しました。後でもう一度お試しください。',
     displayName: '表示名',
     phone: '電話番号',
     bio: '自己紹介',
     nationality: '国籍',
-    preferredLanguage: '希望言語',
+    preferredLanguage: '言語設定',
     save: '変更を保存',
-    displayNamePlaceholder: '表示名を入力してください',
+    displayNamePlaceholder: '表示名を入力',
     phonePlaceholder: '09XX-XXX-XXX',
     bioPlaceholder: '自己紹介を入力してください...',
     nationalityPlaceholder: '例：台湾',
@@ -66,7 +67,7 @@ const copy: Record<UiLang, Record<string, string>> = {
   },
   ko: {
     title: '프로필',
-    saved: '프로필이 성공적으로 저장되었습니다',
+    saved: '프로필이 저장되었습니다',
     saveFailed: '프로필 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.',
     displayName: '표시 이름',
     phone: '휴대폰 번호',
@@ -76,7 +77,7 @@ const copy: Record<UiLang, Record<string, string>> = {
     save: '변경 저장',
     displayNamePlaceholder: '표시 이름을 입력하세요',
     phonePlaceholder: '09XX-XXX-XXX',
-    bioPlaceholder: '자기소개를 입력해 주세요...',
+    bioPlaceholder: '자기소개를 입력하세요...',
     nationalityPlaceholder: '예: 대만',
     zhTw: '繁體中文',
     en: 'English',
@@ -88,7 +89,7 @@ const copy: Record<UiLang, Record<string, string>> = {
 const Profile: React.FC = () => {
   const { profile, updateProfile } = useAuth();
   const { lang } = useLanguage();
-  const locale = (lang === 'ja' || lang === 'ko' || lang === 'en' ? lang : 'zh-TW') as UiLang;
+  const locale = normalizeLang(lang) as UiLang;
   const text = copy[locale];
 
   const [displayName, setDisplayName] = useState('');
@@ -240,3 +241,5 @@ const Profile: React.FC = () => {
 };
 
 export default Profile;
+
+

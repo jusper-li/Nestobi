@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bell, CheckCircle, DollarSign, Eye, EyeOff, Globe, Lock, Settings, Sun } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { normalizeLang } from '../../lib/i18n';
 
 interface Prefs {
   notifications_email: boolean;
@@ -31,12 +32,12 @@ const copy: Record<UiLang, Record<string, string>> = {
   'zh-TW': {
     genericError: '發生錯誤，請稍後再試。',
     title: '偏好設定',
-    saved: '偏好設定儲存成功',
+    saved: '偏好設定已儲存',
     notifications: '通知設定',
     emailNoti: 'Email 通知',
     emailHint: '接收訂房與訂單更新通知',
     smsNoti: '簡訊通知',
-    smsHint: '接收重要簡訊提醒',
+    smsHint: '接收重要提醒簡訊',
     appearance: '外觀',
     theme: '主題',
     light: '淺色',
@@ -46,7 +47,7 @@ const copy: Record<UiLang, Record<string, string>> = {
     currency: '貨幣',
     save: '儲存設定',
     passwordSection: '修改密碼',
-    passwordSaved: '密碼更新成功',
+    passwordSaved: '密碼已更新',
     currentPassword: '目前密碼',
     newPassword: '新密碼',
     confirmPassword: '確認新密碼',
@@ -99,13 +100,13 @@ const copy: Record<UiLang, Record<string, string>> = {
     twd: 'New Taiwan Dollar (TWD)',
   },
   ja: {
-    genericError: 'エラーが発生しました。しばらくしてから再度お試しください。',
+    genericError: '問題が発生しました。しばらくしてから再試行してください。',
     title: '設定',
     saved: '設定を保存しました',
     notifications: '通知設定',
     emailNoti: 'メール通知',
-    emailHint: '予約と注文の更新通知を受け取る',
-    smsNoti: 'SMS 通知',
+    emailHint: '予約と注文の更新を受け取る',
+    smsNoti: 'SMS通知',
     smsHint: '重要なお知らせをSMSで受け取る',
     appearance: '外観',
     theme: 'テーマ',
@@ -119,7 +120,7 @@ const copy: Record<UiLang, Record<string, string>> = {
     passwordSaved: 'パスワードを更新しました',
     currentPassword: '現在のパスワード',
     newPassword: '新しいパスワード',
-    confirmPassword: '新しいパスワードを確認',
+    confirmPassword: '新しいパスワード（確認）',
     currentPlaceholder: '現在のパスワードを入力',
     newPlaceholder: '6文字以上',
     confirmPlaceholder: '新しいパスワードを再入力',
@@ -131,17 +132,17 @@ const copy: Record<UiLang, Record<string, string>> = {
     en: 'English',
     ja: '日本語',
     ko: '한국어',
-    twd: '台湾ドル (TWD)',
+    twd: 'ニュー台湾ドル (TWD)',
   },
   ko: {
-    genericError: '오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
+    genericError: '문제가 발생했습니다. 잠시 후 다시 시도해 주세요.',
     title: '환경설정',
-    saved: '설정이 저장되었습니다',
+    saved: '설정을 저장했습니다',
     notifications: '알림 설정',
     emailNoti: '이메일 알림',
-    emailHint: '예약 및 주문 업데이트를 이메일로 받기',
-    smsNoti: '문자 알림',
-    smsHint: '중요 안내를 문자로 받기',
+    emailHint: '예약 및 주문 업데이트 알림 수신',
+    smsNoti: 'SMS 알림',
+    smsHint: '중요 알림을 SMS로 수신',
     appearance: '외관',
     theme: '테마',
     light: '라이트',
@@ -151,7 +152,7 @@ const copy: Record<UiLang, Record<string, string>> = {
     currency: '통화',
     save: '설정 저장',
     passwordSection: '비밀번호 변경',
-    passwordSaved: '비밀번호가 업데이트되었습니다',
+    passwordSaved: '비밀번호를 업데이트했습니다',
     currentPassword: '현재 비밀번호',
     newPassword: '새 비밀번호',
     confirmPassword: '새 비밀번호 확인',
@@ -160,13 +161,13 @@ const copy: Record<UiLang, Record<string, string>> = {
     confirmPlaceholder: '새 비밀번호를 다시 입력하세요',
     updatePassword: '비밀번호 업데이트',
     shortPassword: '비밀번호는 최소 6자 이상이어야 합니다',
-    mismatchPassword: '비밀번호가 일치하지 않습니다',
+    mismatchPassword: '새 비밀번호가 일치하지 않습니다',
     wrongCurrentPassword: '현재 비밀번호가 올바르지 않습니다',
     zhTw: '繁體中文',
     en: 'English',
     ja: '日本語',
     ko: '한국어',
-    twd: '대만 달러 (TWD)',
+    twd: '신 타이완 달러 (TWD)',
   },
 };
 
@@ -192,7 +193,7 @@ const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void }> = (
 const Preferences: React.FC = () => {
   const { user } = useAuth();
   const { lang } = useLanguage();
-  const locale = (lang === 'ja' || lang === 'ko' || lang === 'en' ? lang : 'zh-TW') as UiLang;
+  const locale = normalizeLang(lang) as UiLang;
   const text = copy[locale];
 
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
@@ -479,3 +480,4 @@ const Preferences: React.FC = () => {
 };
 
 export default Preferences;
+

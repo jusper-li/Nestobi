@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookMarked, Calendar, Clock, MapPin, Sparkles, Trash2, Users } from 'lucide-react';
+import { BookMarked, Clock, MapPin, Sparkles, Trash2, Users } from 'lucide-react';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { localeByLang, normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 
 type Activity = { time: string; title: string; description: string };
@@ -23,6 +24,7 @@ const BUDGETS = ['budget', 'standard', 'luxury'] as const;
 const INTERESTS = ['food', 'culture', 'shopping', 'nature', 'adventure', 'family', 'art', 'nightlife'] as const;
 
 const makeId = () => `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
 const readLocalPlans = (userId: string): SavedPlan[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -33,6 +35,7 @@ const readLocalPlans = (userId: string): SavedPlan[] => {
     return [];
   }
 };
+
 const writeLocalPlans = (userId: string, plans: SavedPlan[]) => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -40,15 +43,17 @@ const writeLocalPlans = (userId: string, plans: SavedPlan[]) => {
     all[userId] = plans;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
   } catch {
-    // ignore
+    // noop
   }
 };
 
 export default function ItineraryPlanner() {
   const { user } = useAuth();
-  const { t, lang } = useLanguage();
-  const locale = lang === 'ja' ? 'ja-JP' : lang === 'ko' ? 'ko-KR' : lang === 'en' ? 'en-US' : 'zh-TW';
-  const pick = (zh: string, en: string, ja: string, ko: string) => (lang === 'en' ? en : lang === 'ja' ? ja : lang === 'ko' ? ko : zh);
+  const { lang } = useLanguage();
+  const normalizedLang = normalizeLang(lang);
+  const locale = localeByLang(normalizedLang);
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
+
   const [destination, setDestination] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -62,9 +67,10 @@ export default function ItineraryPlanner() {
 
   const budgetLabels = [
     pick('經濟實惠', 'Budget', '節約', '절약형'),
-    pick('中等預算', 'Standard', '標準', '표준'),
+    pick('中等預算', 'Standard', '標準', '표준형'),
     pick('奢華享受', 'Luxury', '贅沢', '럭셔리'),
   ];
+
   const interestLabels = [
     pick('美食', 'Food', 'グルメ', '미식'),
     pick('文化古蹟', 'Culture', '文化', '문화'),
@@ -72,8 +78,8 @@ export default function ItineraryPlanner() {
     pick('自然景觀', 'Nature', '自然', '자연'),
     pick('冒險運動', 'Adventure', '冒険', '모험'),
     pick('家庭親子', 'Family', '家族', '가족'),
-    pick('藝術博物館', 'Art & Museum', '美術館', '미술관/박물관'),
-    pick('夜生活', 'Nightlife', 'ナイトライフ', '야간 문화'),
+    pick('藝術博物館', 'Art & Museum', '美術館', '예술/박물관'),
+    pick('夜生活', 'Nightlife', 'ナイトライフ', '나이트라이프'),
   ];
 
   const days = useMemo(() => {
@@ -89,13 +95,21 @@ export default function ItineraryPlanner() {
       return {
         day: i + 1,
         date: d.toLocaleDateString(locale, { month: 'numeric', day: 'numeric', weekday: 'short' }),
-        theme: pick(`第 ${i + 1} 天亮點`, `Day ${i + 1} Highlights`, `${i + 1}日目の見どころ`, `${i + 1}일차 하이라이트`),
+        theme: pick(`第 ${i + 1} 天重點`, `Day ${i + 1} Highlights`, `${i + 1}日目の見どころ`, `${i + 1}일차 하이라이트`),
         activities: [
-          { time: '09:00', title: pick('文化景點', 'Cultural Spot', '文化スポット', '문화 명소'), description: pick('探索在地文化與故事。', 'Explore local culture and stories.', '地域の文化やストーリーを探索。', '지역 문화와 이야기를 탐방합니다.') },
-          { time: '14:00', title: pick('特色體驗', 'Signature Experience', '体験アクティビティ', '체험 액티비티'), description: pick('安排一段有記憶點的在地活動。', 'Enjoy a hands-on local experience.', '記憶に残るローカル体験。', '기억에 남는 로컬 체험을 즐겨보세요.') },
+          {
+            time: '09:00',
+            title: pick('文化探索', 'Cultural Spot', '文化スポット', '문화 탐방'),
+            description: pick('探索當地歷史文化，感受城市故事。', 'Explore local culture and stories.', '地域の歴史と文化を体験します。', '지역의 역사와 문화를 체험합니다.'),
+          },
+          {
+            time: '14:00',
+            title: pick('特色體驗', 'Signature Experience', '特別な体験', '시그니처 체험'),
+            description: pick('安排互動式行程，享受在地生活節奏。', 'Enjoy a hands-on local experience.', '現地らしい体験を楽しみます。', '현지 체험을 즐깁니다.'),
+          },
         ],
-        dining: pick('午餐推薦在地特色料理。', 'Try a local specialty dish.', 'ランチは地元名物がおすすめ。', '점심은 지역 특선 메뉴를 추천합니다.'),
-        tip: pick('熱門景點建議提前預約。', 'Reserve popular places early.', '人気スポットは事前予約がおすすめ。', '인기 장소는 미리 예약해 두세요.'),
+        dining: pick('推薦一間在地餐廳，品嚐代表料理。', 'Try a local specialty dish.', '地元の名物料理を楽しみましょう。', '현지 대표 음식을 맛보세요.'),
+        tip: pick('熱門景點建議提前預約，行程更順。', 'Reserve popular places early.', '人気スポットは事前予約がおすすめです。', '인기 장소는 사전 예약을 추천합니다.'),
       };
     });
   };
@@ -103,7 +117,12 @@ export default function ItineraryPlanner() {
   useEffect(() => {
     const loadPlans = async () => {
       if (!user) return;
-      const { data, error } = await supabase.from('ai_travel_plans').select('id,title,destination,start_date,end_date,plan_data').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10);
+      const { data, error } = await supabase
+        .from('ai_travel_plans')
+        .select('id,title,destination,start_date,end_date,plan_data')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
       if (error) {
         setUseLocalFallback(true);
         setPlans(readLocalPlans(user.id));
@@ -125,7 +144,7 @@ export default function ItineraryPlanner() {
     if (!user || !itinerary) return;
     const payload = {
       user_id: user.id,
-      title: `${destination || pick('旅程', 'Trip', '旅', '여행')} ${pick('規劃', 'Plan', 'プラン', '플랜')}`,
+      title: `${destination || pick('旅程', 'Trip', '旅', '여행')} ${pick('計畫', 'Plan', 'プラン', '플랜')}`,
       destination,
       start_date: startDate,
       end_date: endDate,
@@ -138,7 +157,11 @@ export default function ItineraryPlanner() {
       writeLocalPlans(user.id, next);
       return;
     }
-    const { data, error } = await supabase.from('ai_travel_plans').insert(payload).select('id,title,destination,start_date,end_date,plan_data').single();
+    const { data, error } = await supabase
+      .from('ai_travel_plans')
+      .insert(payload)
+      .select('id,title,destination,start_date,end_date,plan_data')
+      .single();
     if (error) {
       setUseLocalFallback(true);
       const item: SavedPlan = { id: makeId(), title: payload.title, destination, start_date: startDate, end_date: endDate, plan_data: payload.plan_data };
@@ -164,99 +187,147 @@ export default function ItineraryPlanner() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <SEOHead title={t.ai.itinerary.title} description={t.ai.itinerary.subtitle} />
+      <SEOHead
+        title={pick('AI 行程規劃', 'AI Itinerary Planner', 'AI 旅程プランナー', 'AI 여행 플래너')}
+        description={pick('從目的地與偏好快速產生可編輯行程。', 'Create editable plans from your destination and preferences.', '目的地と好みから編集可能な旅程を作成します。', '목적지와 취향으로 수정 가능한 일정을 생성합니다.')}
+      />
       <Navigation />
-      <div className="max-w-6xl mx-auto p-4 md:p-6">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">{t.ai.itinerary.title}</h1>
-          <p className="text-gray-500 mt-1.5">{t.ai.itinerary.subtitle}</p>
+      <div className="mx-auto max-w-6xl p-4 md:p-6">
+        <div className="mb-6 text-center">
+          <h1 className="text-3xl font-bold text-gray-900">{pick('AI 行程規劃', 'AI Itinerary Planner', 'AI 旅程プランナー', 'AI 여행 플래너')}</h1>
+          <p className="mt-1.5 text-gray-500">{pick('從目的地與偏好快速產生可編輯行程。', 'Create editable plans from your destination and preferences.', '目的地と好みから編集可能な旅程を作成します。', '목적지와 취향으로 수정 가능한 일정을 생성합니다.')}</p>
         </div>
 
-        <div className="grid lg:grid-cols-5 gap-6">
+        <div className="grid gap-6 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl border p-6">
-              <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2"><MapPin className="w-5 h-5 text-sky-600" />{t.ai.itinerary.itinerarySetting}</h2>
+            <div className="rounded-2xl border bg-white p-6">
+              <h2 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
+                <MapPin className="h-5 w-5 text-sky-600" />
+                {pick('行程設定', 'Settings', '設定', '설정')}
+              </h2>
               <form onSubmit={handleGenerate} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.ai.itinerary.destination}</label>
-                  <input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder={t.ai.itinerary.destinationPlaceholder} className="w-full px-4 py-2.5 border rounded-xl text-sm" />
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">{pick('目的地', 'Destination', '目的地', '목적지')}</label>
+                  <input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder={pick('例如：沖繩、東京、台南', 'e.g. Okinawa, Tokyo, Tainan', '例：沖縄、東京、台南', '예: 오키나와, 도쿄, 타이난')} className="w-full rounded-xl border px-4 py-2.5 text-sm" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{t.ai.itinerary.startDate}</label>
-                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-3 py-2.5 border rounded-xl text-sm" />
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700">{pick('出發日期', 'Start date', '開始日', '시작일')}</label>
+                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full rounded-xl border px-3 py-2.5 text-sm" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.ai.itinerary.endDate}</label>
-                    <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2.5 border rounded-xl text-sm" />
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700">{pick('回程日期', 'End date', '終了日', '종료일')}</label>
+                    <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full rounded-xl border px-3 py-2.5 text-sm" />
                   </div>
                 </div>
-                {days > 0 && <div className="text-center text-sm text-sky-700 bg-sky-50 py-1.5 rounded-lg font-medium">{pick(`${days} 天`, `${days} days`, `${days}日`, `${days}일`)}</div>}
+                {days > 0 && <div className="rounded-lg bg-sky-50 py-1.5 text-center text-sm font-medium text-sky-700">{pick(`${days} 天`, `${days} days`, `${days}日間`, `${days}일`)}</div>}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1"><Users className="w-3.5 h-3.5" />{t.ai.itinerary.groupSize}</label>
+                  <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-gray-700">
+                    <Users className="h-3.5 w-3.5" />
+                    {pick('出行人數', 'Group size', '人数', '인원')}
+                  </label>
                   <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => setGroupSize((s) => Math.max(1, s - 1))} className="w-8 h-8 rounded-full bg-gray-100">-</button>
-                    <span className="text-lg font-semibold w-6 text-center">{groupSize}</span>
-                    <button type="button" onClick={() => setGroupSize((s) => Math.min(20, s + 1))} className="w-8 h-8 rounded-full bg-gray-100">+</button>
-                    <span className="text-sm text-gray-500">{t.ai.itinerary.persons}</span>
+                    <button type="button" onClick={() => setGroupSize((s) => Math.max(1, s - 1))} className="h-8 w-8 rounded-full bg-gray-100">
+                      -
+                    </button>
+                    <span className="w-6 text-center text-lg font-semibold">{groupSize}</span>
+                    <button type="button" onClick={() => setGroupSize((s) => Math.min(20, s + 1))} className="h-8 w-8 rounded-full bg-gray-100">
+                      +
+                    </button>
+                    <span className="text-sm text-gray-500">{pick('人', 'people', '人', '명')}</span>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.ai.itinerary.budget}</label>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">{pick('預算等級', 'Budget', '予算', '예산')}</label>
                   <div className="flex gap-2">
                     {BUDGETS.map((b, idx) => (
-                      <button key={b} type="button" onClick={() => setBudget(b)} className={`flex-1 text-xs py-2 rounded-xl border ${budget === b ? 'bg-sky-600 text-white border-sky-600' : 'border-gray-200 text-gray-600'}`}>{budgetLabels[idx]}</button>
+                      <button key={b} type="button" onClick={() => setBudget(b)} className={`flex-1 rounded-xl border py-2 text-xs ${budget === b ? 'border-sky-600 bg-sky-600 text-white' : 'border-gray-200 text-gray-600'}`}>
+                        {budgetLabels[idx]}
+                      </button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{pick('旅遊興趣（可多選）', 'Interests (multi-select)', '興味（複数選択）', '관심사(복수 선택)')}</label>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">{pick('旅遊興趣（可多選）', 'Interests (multi-select)', '興味（複数選択）', '관심사(다중 선택)')}</label>
                   <div className="flex flex-wrap gap-2">
                     {INTERESTS.map((interest, idx) => (
-                      <button key={interest} type="button" onClick={() => setInterests((prev) => (prev.includes(interest) ? prev.filter((x) => x !== interest) : [...prev, interest]))} className={`px-2.5 py-1 rounded-full text-xs border ${interests.includes(interest) ? 'bg-sky-600 text-white border-sky-600' : 'border-gray-200 text-gray-600'}`}>{interestLabels[idx]}</button>
+                      <button key={interest} type="button" onClick={() => setInterests((prev) => (prev.includes(interest) ? prev.filter((x) => x !== interest) : [...prev, interest]))} className={`rounded-full border px-2.5 py-1 text-xs ${interests.includes(interest) ? 'border-sky-600 bg-sky-600 text-white' : 'border-gray-200 text-gray-600'}`}>
+                        {interestLabels[idx]}
+                      </button>
                     ))}
                   </div>
                 </div>
-                <button type="submit" className="w-full bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2"><Sparkles className="w-5 h-5" />{t.ai.itinerary.generate}</button>
+                <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 py-3 font-semibold text-white">
+                  <Sparkles className="h-5 w-5" />
+                  {pick('產生行程', 'Generate plan', 'プラン作成', '일정 생성')}
+                </button>
               </form>
             </div>
           </div>
 
-          <div className="lg:col-span-3 space-y-4">
+          <div className="space-y-4 lg:col-span-3">
             {itinerary && (
-              <div className="bg-white rounded-2xl border p-5">
+              <div className="rounded-2xl border bg-white p-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900">{destination || pick('新行程', 'New itinerary', '新しい行程', '새 일정')}</h3>
-                  <button onClick={handleSave} className="text-xs px-3 py-2 rounded-xl border">{pick('儲存行程', 'Save Plan', '保存', '저장')}</button>
+                  <h3 className="font-semibold text-gray-900">{destination || pick('新行程', 'New itinerary', '新しい旅程', '새 일정')}</h3>
+                  <button onClick={handleSave} className="rounded-xl border px-3 py-2 text-xs">
+                    {pick('儲存行程', 'Save plan', '保存', '저장')}
+                  </button>
                 </div>
               </div>
             )}
+
             {plans.length > 0 && (
-              <div className="bg-white rounded-2xl border p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-gray-900 flex items-center gap-2"><Clock className="w-4 h-4 text-sky-600" />{pick('已儲存行程', 'Saved Itineraries', '保存済み行程', '저장된 일정')}</h3>
-                  <Link to="/ai/passport" className="flex items-center gap-1 text-xs text-amber-600 font-medium"><BookMarked className="w-3.5 h-3.5" />{pick('旅遊護照', 'Travel Passport', 'トラベルパスポート', '여행 패스포트')}</Link>
+              <div className="rounded-2xl border bg-white p-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="flex items-center gap-2 font-semibold text-gray-900">
+                    <Clock className="h-4 w-4 text-sky-600" />
+                    {pick('已儲存行程', 'Saved itineraries', '保存済み旅程', '저장된 일정')}
+                  </h3>
+                  <Link to="/ai/passport" className="flex items-center gap-1 text-xs font-medium text-amber-600">
+                    <BookMarked className="h-3.5 w-3.5" />
+                    {pick('旅遊護照', 'Travel passport', '旅のパスポート', '여행 패스포트')}
+                  </Link>
                 </div>
                 <div className="space-y-2">
                   {plans.map((plan) => {
                     const open = expandedId === plan.id;
                     const itineraryData = plan.plan_data?.itinerary || [];
                     return (
-                      <div key={plan.id} className="bg-slate-50 rounded-xl border overflow-hidden">
-                        <div className="p-3 flex items-center justify-between cursor-pointer" onClick={() => setExpandedId(open ? null : plan.id)}>
+                      <div key={plan.id} className="overflow-hidden rounded-xl border bg-slate-50">
+                        <div className="flex cursor-pointer items-center justify-between p-3" onClick={() => setExpandedId(open ? null : plan.id)}>
                           <div>
-                            <p className="font-medium text-sm">{plan.title}</p>
-                            <p className="text-xs text-gray-500">{new Date(plan.start_date).toLocaleDateString(locale)} ~ {new Date(plan.end_date).toLocaleDateString(locale)}</p>
+                            <p className="text-sm font-medium">{plan.title}</p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(plan.start_date).toLocaleDateString(locale)} ~ {new Date(plan.end_date).toLocaleDateString(locale)}
+                            </p>
                           </div>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(plan.id); }} className="p-1.5 text-red-500"><Trash2 className="w-4 h-4" /></button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(plan.id);
+                            }}
+                            className="p-1.5 text-red-500"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
                         {open && itineraryData.length > 0 && (
-                          <div className="border-t bg-white p-3 space-y-3">
+                          <div className="space-y-3 border-t bg-white p-3">
                             {itineraryData.map((d, i) => (
                               <div key={`${plan.id}-${i}`} className="rounded-xl border p-3">
-                                <p className="font-semibold text-sm mb-1">D{d.day} - {d.theme}</p>
-                                <p className="text-xs text-gray-500 mb-2">{d.date}</p>
-                                <div className="space-y-1.5 mb-2">{d.activities.map((a, j) => <p key={`${plan.id}-${i}-${j}`} className="text-xs text-gray-700">{a.time} - {a.title}</p>)}</div>
+                                <p className="mb-1 text-sm font-semibold">
+                                  D{d.day} - {d.theme}
+                                </p>
+                                <p className="mb-2 text-xs text-gray-500">{d.date}</p>
+                                <div className="mb-2 space-y-1.5">
+                                  {d.activities.map((a, j) => (
+                                    <p key={`${plan.id}-${i}-${j}`} className="text-xs text-gray-700">
+                                      {a.time} - {a.title}
+                                    </p>
+                                  ))}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -273,3 +344,4 @@ export default function ItineraryPlanner() {
     </div>
   );
 }
+

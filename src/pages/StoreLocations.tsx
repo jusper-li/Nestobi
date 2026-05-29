@@ -5,6 +5,7 @@ import Footer from '../components/Footer';
 import Navigation from '../components/Navigation';
 import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../contexts/LanguageContext';
+import { localeByLang, normalizeLang } from '../lib/i18n';
 import {
   getTranslationRuntimeState,
   translateStoreLocationsFromCacheOnly,
@@ -47,9 +48,10 @@ function localizeStoreRow(row: StoreLocation, lang: string): StoreLocation {
 
 export default function StoreLocations() {
   const { lang } = useLanguage();
-  const locale = lang === 'ja' ? 'ja' : lang === 'ko' ? 'ko' : lang === 'en' ? 'en' : 'zh-TW';
+  const normalizedLang = normalizeLang(lang);
+  const locale = localeByLang(normalizedLang);
   const t4 = (zh: string, en: string, ja: string, ko: string) =>
-    locale === 'ja' ? ja : locale === 'ko' ? ko : locale === 'en' ? en : zh;
+    normalizedLang === 'ja' ? ja : normalizedLang === 'ko' ? ko : normalizedLang === 'en' ? en : zh;
 
   const labels = {
     seoTitle: t4('門市據點', 'Store Locator', '店舗案内', '매장 안내'),
@@ -109,7 +111,7 @@ export default function StoreLocations() {
 
   useEffect(() => {
     let cancelled = false;
-    if (!locations.length || lang === 'zh-TW') {
+    if (!locations.length || normalizedLang === 'zh-TW') {
       setDisplayLocations(locations);
       setTranslationNotice('');
       return () => {
@@ -121,11 +123,11 @@ export default function StoreLocations() {
     const runtime = getTranslationRuntimeState();
     setTranslationNotice(runtime.tableUnavailable || runtime.isLocalProxyMode ? labels.transCacheNotReady : labels.transSyncing);
 
-    translateStoreLocationsFromCacheOnly(locations, lang).then(translated => {
+    translateStoreLocationsFromCacheOnly(locations, normalizedLang).then(translated => {
       if (!cancelled) setDisplayLocations(translated);
     }).catch(() => {});
 
-    translateStoreLocationsOnDemand(locations.slice(0, 3), lang).then(translated => {
+    translateStoreLocationsOnDemand(locations.slice(0, 3), normalizedLang).then(translated => {
       if (cancelled) return;
       const translatedById = new Map(translated.map(item => [item.id, item]));
       setDisplayLocations(current => current.map(item => translatedById.get(item.id) || item));
@@ -137,11 +139,11 @@ export default function StoreLocations() {
     return () => {
       cancelled = true;
     };
-  }, [locations, lang, labels.transCacheNotReady, labels.transSyncing, labels.transFallback]);
+  }, [locations, normalizedLang, labels.transCacheNotReady, labels.transSyncing, labels.transFallback]);
 
   const localizedLocations = useMemo(
-    () => displayLocations.map(row => localizeStoreRow(row, lang)),
-    [displayLocations, lang],
+    () => displayLocations.map(row => localizeStoreRow(row, normalizedLang)),
+    [displayLocations, normalizedLang],
   );
 
   const filteredLocations = useMemo(() => {

@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AlertCircle, ArrowLeft, CheckCircle, Eye, EyeOff, Home, Lock, Plane } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 
 const CONFIRM_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-password-confirm`;
 
@@ -10,7 +11,8 @@ const NewPassword: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
+  const normalizedLang = normalizeLang(lang);
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
   const token = searchParams.get('token') || '';
 
   const [password, setPassword] = useState('');
@@ -21,30 +23,26 @@ const NewPassword: React.FC = () => {
   const [success, setSuccess] = useState(false);
 
   const t = {
-    invalidLink: isEn ? 'Invalid reset link. Please request a new one.' : '重設連結無效，請重新申請。',
-    mismatch: isEn ? 'Passwords do not match.' : '兩次輸入的密碼不一致。',
-    tooShort: isEn ? 'Password must be at least 6 characters.' : '密碼至少需要 6 個字元。',
-    expired: isEn
-      ? 'Reset link is invalid or expired. Please request a new one.'
-      : '重設連結已失效或過期，請重新申請。',
-    userNotFound: isEn ? 'Account not found. Please check your email.' : '找不到帳號，請確認您的電子郵件。',
-    resetFailed: isEn ? 'Password reset failed. Please try again later.' : '密碼重設失敗，請稍後再試。',
-    genericError: isEn ? 'Something went wrong. Please try again later.' : '系統發生錯誤，請稍後再試。',
-    resetDone: isEn ? 'Password Updated' : '密碼已更新',
-    resetDoneDesc: isEn
-      ? 'Your password has been updated. Please sign in with your new password.'
-      : '您的密碼已更新，請使用新密碼登入。',
-    toLogin: isEn ? 'Go to Login' : '前往登入',
-    backLogin: isEn ? 'Back to Login' : '返回登入',
-    home: isEn ? 'Home' : '回首頁',
-    title: isEn ? 'Set New Password' : '設定新密碼',
-    subtitle: isEn ? 'Please enter your new password' : '請輸入您的新密碼',
-    retry: isEn ? 'Request Again' : '重新申請',
-    newPassword: isEn ? 'New Password' : '新密碼',
-    confirmPassword: isEn ? 'Confirm New Password' : '確認新密碼',
-    newPlaceholder: isEn ? 'At least 6 characters' : '至少 6 個字元',
-    confirmPlaceholder: isEn ? 'Enter new password again' : '再次輸入新密碼',
-    submit: isEn ? 'Confirm Reset Password' : '確認重設密碼',
+    invalidLink: pick('重設連結無效，請重新申請', 'Invalid reset link. Please request a new one.', '再設定リンクが無効です。再申請してください。', '재설정 링크가 유효하지 않습니다. 다시 요청해주세요.'),
+    mismatch: pick('兩次密碼不一致', 'Passwords do not match.', 'パスワードが一致しません。', '비밀번호가 일치하지 않습니다.'),
+    tooShort: pick('密碼至少需要 6 個字元', 'Password must be at least 6 characters.', 'パスワードは6文字以上必要です。', '비밀번호는 최소 6자 이상이어야 합니다.'),
+    expired: pick('重設連結無效或已過期，請重新申請', 'Reset link is invalid or expired. Please request a new one.', '再設定リンクが無効または期限切れです。再申請してください。', '재설정 링크가 유효하지 않거나 만료되었습니다. 다시 요청해주세요.'),
+    userNotFound: pick('找不到帳號，請確認電子郵件', 'Account not found. Please check your email.', 'アカウントが見つかりません。メールアドレスを確認してください。', '계정을 찾을 수 없습니다. 이메일을 확인해주세요.'),
+    resetFailed: pick('重設密碼失敗，請稍後再試', 'Password reset failed. Please try again later.', '비밀번호 재설정에 실패했습니다. 잠시 후 다시 시도해주세요.', '비밀번호 재설정에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+    genericError: pick('發生錯誤，請稍後再試', 'Something went wrong. Please try again later.', 'エラーが発生しました。しばらくしてから再試行してください。', '오류가 발생했습니다. 잠시 후 다시 시도해주세요.'),
+    resetDone: pick('密碼已更新', 'Password Updated', 'パスワードを更新しました', '비밀번호가 업데이트되었습니다'),
+    resetDoneDesc: pick('你的密碼已更新，請使用新密碼登入', 'Your password has been updated. Please sign in with your new password.', 'パスワードを更新しました。新しいパスワードでログインしてください。', '비밀번호가 업데이트되었습니다. 새 비밀번호로 로그인해주세요.'),
+    toLogin: pick('前往登入', 'Go to Login', 'ログインへ', '로그인으로 이동'),
+    backLogin: pick('返回登入', 'Back to Login', 'ログインへ戻る', '로그인으로 돌아가기'),
+    home: pick('回首頁', 'Home', 'ホーム', '홈'),
+    title: pick('設定新密碼', 'Set New Password', '新しいパスワード設定', '새 비밀번호 설정'),
+    subtitle: pick('請輸入新密碼', 'Please enter your new password', '新しいパスワードを入力してください', '새 비밀번호를 입력해주세요'),
+    retry: pick('重新申請', 'Request Again', '再申請', '다시 요청'),
+    newPassword: pick('新密碼', 'New Password', '新しいパスワード', '새 비밀번호'),
+    confirmPassword: pick('確認新密碼', 'Confirm New Password', '新しいパスワード確認', '새 비밀번호 확인'),
+    newPlaceholder: pick('至少 6 個字元', 'At least 6 characters', '6文字以上', '최소 6자 이상'),
+    confirmPlaceholder: pick('再次輸入新密碼', 'Enter new password again', '新しいパスワードを再入力', '새 비밀번호를 다시 입력'),
+    submit: pick('確認重設密碼', 'Confirm Reset Password', 'パスワードを再設定', '비밀번호 재설정 확인'),
   };
 
   useEffect(() => {
@@ -198,3 +196,5 @@ const NewPassword: React.FC = () => {
 };
 
 export default NewPassword;
+
+

@@ -7,6 +7,7 @@ import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { normalizeLang } from '../../lib/i18n';
 import {
   getTranslationRuntimeState,
   translateCategoriesFromCacheOnly,
@@ -68,44 +69,45 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const { addItem } = useCart();
   const { lang } = useLanguage();
-  const locale = lang === 'ja' ? 'ja' : lang === 'ko' ? 'ko' : lang === 'en' ? 'en' : 'zh-TW';
+  const normalizedLang = normalizeLang(lang);
+  const locale = normalizedLang;
   const t4 = (zh: string, en: string, ja: string, ko: string) =>
     locale === 'ja' ? ja : locale === 'ko' ? ko : locale === 'en' ? en : zh;
 
   const labels = {
     notFoundTitle: t4('找不到商品', 'Product Not Found', '商品が見つかりません', '상품을 찾을 수 없습니다'),
-    notFoundDesc: t4('此商品可能已下架或不存在。', 'This product may be offline or removed.', 'この商品は公開終了または削除された可能性があります。', '이 상품은 비공개 또는 삭제되었을 수 있습니다.'),
-    backShop: t4('返回選物商店', 'Back to Shop', 'ショップへ戻る', '상점으로 돌아가기'),
-    reviewHint: t4('精選商品', 'Curated product', 'セレクト商品', '큐레이션 상품'),
-    listPriceHint: t4('原價與折扣依供應商活動為準。', 'List price may vary by supplier promotions.', '価格と割引は仕入先キャンペーンにより変動します。', '정가와 할인은 공급사 프로모션에 따라 달라질 수 있습니다.'),
-    detailsTitle: t4('商品介紹', 'Product Details', '商品情報', '상품 정보'),
+    notFoundDesc: t4('此商品可能已下架或移除。', 'This product may be offline or removed.', 'この商品は非公開または削除された可能性があります。', '이 상품은 비공개 또는 삭제되었을 수 있습니다.'),
+    backShop: t4('返回選物商店', 'Back to Shop', 'ショップへ戻る', '샵으로 돌아가기'),
+    reviewHint: t4('精選推薦商品', 'Curated product', 'セレクト商品', '큐레이션 상품'),
+    listPriceHint: t4('售價可能因供應商活動與批次有所調整。', 'List price may vary by supplier promotions.', '価格は仕入れやキャンペーンにより変動する場合があります。', '가격은 공급/프로모션에 따라 변동될 수 있습니다.'),
+    detailsTitle: t4('商品介紹', 'Product Details', '商品詳細', '상품 설명'),
     flavorTitle: t4('風味標籤', 'Flavor Notes', 'フレーバーノート', '풍미 노트'),
-    quantity: t4('購買數量', 'Quantity', '購入数量', '구매 수량'),
-    stockLeft: (count: number) => t4(`庫存 ${count} 件`, `${count} left`, `在庫 ${count}`, `재고 ${count}개`),
-    outOfStock: t4('售完', 'Sold Out', '売り切れ', '품절'),
-    adding: t4('加入中...', 'Adding...', '追加中...', '추가 중...'),
+    quantity: t4('購買數量', 'Quantity', '数量', '수량'),
+    stockLeft: (count: number) => t4(`剩餘 ${count} 件`, `${count} left`, `残り ${count}`, `${count}개 남음`),
+    outOfStock: t4('已售完', 'Sold Out', '売り切れ', '품절'),
+    adding: t4('加入中...', 'Adding...', '追加中...', '담는 중...'),
     added: t4('已加入', 'Added', '追加済み', '추가됨'),
-    addToCart: t4('加入購物車', 'Add to Cart', 'カートに追加', '장바구니에 담기'),
+    addToCart: t4('加入購物車', 'Add to Cart', 'カートに追加', '장바구니 담기'),
     buyNow: t4('立即購買', 'Buy Now', '今すぐ購入', '바로 구매'),
-    relatedTitle: t4('你可能也喜歡', 'You May Also Like', 'こちらもおすすめ', '함께 보면 좋은 상품'),
+    relatedTitle: t4('你可能也會喜歡', 'You May Also Like', 'あわせておすすめ', '함께 보면 좋은 상품'),
     viewMore: t4('查看更多', 'View More', 'もっと見る', '더 보기'),
     specsCategory: t4('分類', 'Category', 'カテゴリ', '카테고리'),
     specsOrigin: t4('產地', 'Origin', '産地', '원산지'),
-    specsRoast: t4('烘焙度', 'Roast Level', '焙煎度', '로스팅 정도'),
+    specsRoast: t4('焙度', 'Roast Level', '焙煎度', '로스팅'),
     specsProcess: t4('處理法', 'Process', '精製方法', '가공 방식'),
-    specsWeight: t4('重量', 'Weight', '重量', '중량'),
+    specsWeight: t4('重量', 'Weight', '内容量', '중량'),
     specsAltitude: t4('海拔', 'Altitude', '標高', '고도'),
-    specsVariety: t4('品種', 'Variety', '品種', '품種'),
+    specsVariety: t4('品種', 'Variety', '品種', '품종'),
     specsRoastDate: t4('烘焙日期', 'Roast Date', '焙煎日', '로스팅 날짜'),
-    guaranteeSecure: t4('安全結帳', 'Secure Checkout', '安全決済', '안전 결제'),
-    guaranteeSecureDesc: t4('加密付款與安全訂單流程。', 'Encrypted payment and verified order flow.', '暗号化決済と安全な注文フロー。', '암호화 결제와 안전한 주문 절차를 제공합니다.'),
-    guaranteeFast: t4('快速出貨', 'Fast Delivery', '迅速発送', '빠른 배송'),
-    guaranteeFastDesc: t4('快速出貨，提供物流追蹤。', 'Orders are processed quickly with tracking updates.', '迅速発送、配送追跡対応。', '빠르게 출고되며 배송 추적을 지원합니다.'),
-    guaranteeReturn: t4('安心退換', 'Easy Return', '安心返品', '안심 반품'),
-    guaranteeReturnDesc: t4('客服協助退換與售後處理。', 'Support team assists with return policies.', 'カスタマーサポートが返品交換をサポート。', '고객지원팀이 반품/교환을 도와드립니다.'),
-    guaranteeQuality: t4('品質把關', 'Quality Curated', '品質管理', '품질 관리'),
-    guaranteeQualityDesc: t4('精選旅行與日常都適合的好物。', 'Products are curated for travel and daily use.', '旅先でも日常でも使いやすい商品を厳選。', '여행과 일상에 모두 잘 맞는 상품을 엄선합니다.'),
-    breadcrumbShop: t4('選物商店', 'Shop', 'ショップ', '상점'),
+    guaranteeSecure: t4('安全結帳', 'Secure Checkout', '安全な決済', '안전 결제'),
+    guaranteeSecureDesc: t4('交易資料加密，訂單流程可追蹤。', 'Encrypted payment and verified order flow.', '決済情報は暗号化され、注文フローは検証済みです。', '결제 정보 암호화 및 검증된 주문 플로우를 제공합니다.'),
+    guaranteeFast: t4('快速出貨', 'Fast Delivery', 'スピード発送', '빠른 배송'),
+    guaranteeFastDesc: t4('訂單快速處理，並提供物流狀態更新。', 'Orders are processed quickly with tracking updates.', '注文は迅速に処理され、配送状況を追跡できます。', '주문을 빠르게 처리하고 배송 추적 정보를 제공합니다.'),
+    guaranteeReturn: t4('退換無憂', 'Easy Return', '返品サポート', '간편 반품'),
+    guaranteeReturnDesc: t4('客服團隊提供退換貨與售後協助。', 'Support team assists with return policies.', 'サポートチームが返品・交換をサポートします。', '고객지원팀이 반품/교환 정책을 안내합니다.'),
+    guaranteeQuality: t4('品質嚴選', 'Quality Curated', '品質セレクト', '품질 큐레이션'),
+    guaranteeQualityDesc: t4('以旅遊與日常使用情境精選商品。', 'Products are curated for travel and daily use.', '旅先と日常の両方で使いやすい商品を厳選。', '여행/일상 모두에 맞는 상품을 엄선했습니다.'),
+    breadcrumbShop: t4('選物商店', 'Shop', 'ショップ', '샵'),
   };
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -158,63 +160,63 @@ export default function ProductDetail() {
 
   useEffect(() => {
     let cancelled = false;
-    if (!product || lang === 'zh-TW') {
+    if (!product || normalizedLang === 'zh-TW') {
       setDisplayProduct(product);
       return () => {
         cancelled = true;
       };
     }
     setDisplayProduct(product);
-    translateProductsFromCacheOnly([product], lang).then(rows => {
+    translateProductsFromCacheOnly([product], normalizedLang).then(rows => {
       if (!cancelled && rows[0]) setDisplayProduct(rows[0] as Product);
     }).catch(() => {});
-    translateProductsOnDemand([product], lang).then(rows => {
+    translateProductsOnDemand([product], normalizedLang).then(rows => {
       if (!cancelled && rows[0]) setDisplayProduct(rows[0] as Product);
     }).catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [product, lang]);
+  }, [product, normalizedLang]);
 
   useEffect(() => {
     let cancelled = false;
-    if (!category || lang === 'zh-TW') {
+    if (!category || normalizedLang === 'zh-TW') {
       setDisplayCategory(category);
       return () => {
         cancelled = true;
       };
     }
     setDisplayCategory(category);
-    translateCategoriesFromCacheOnly([category], lang).then(rows => {
+    translateCategoriesFromCacheOnly([category], normalizedLang).then(rows => {
       if (!cancelled && rows[0]) setDisplayCategory(rows[0] as Category);
     }).catch(() => {});
-    translateCategoriesOnDemand([category], lang).then(rows => {
+    translateCategoriesOnDemand([category], normalizedLang).then(rows => {
       if (!cancelled && rows[0]) setDisplayCategory(rows[0] as Category);
     }).catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [category, lang]);
+  }, [category, normalizedLang]);
 
   useEffect(() => {
     let cancelled = false;
-    if (!related.length || lang === 'zh-TW') {
+    if (!related.length || normalizedLang === 'zh-TW') {
       setDisplayRelated(related);
       return () => {
         cancelled = true;
       };
     }
     setDisplayRelated(related);
-    translateProductsFromCacheOnly(related as Product[], lang).then(rows => {
+    translateProductsFromCacheOnly(related as Product[], normalizedLang).then(rows => {
       if (!cancelled) setDisplayRelated(rows as unknown as RelatedProduct[]);
     }).catch(() => {});
-    translateProductsOnDemand(related as Product[], lang).then(rows => {
+    translateProductsOnDemand(related as Product[], normalizedLang).then(rows => {
       if (!cancelled) setDisplayRelated(rows as unknown as RelatedProduct[]);
     }).catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [related, lang]);
+  }, [related, normalizedLang]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || window.location.hostname !== 'localhost') return;
@@ -473,3 +475,4 @@ export default function ProductDetail() {
     </div>
   );
 }
+

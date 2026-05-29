@@ -33,6 +33,7 @@ import {
 } from '../../lib/listData';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
+import { localeByLang, normalizeLang } from '../../lib/i18n';
 
 interface HotelSummary {
   id: string;
@@ -131,10 +132,11 @@ function localizeCityName(text: string | null | undefined, isNonZh: boolean) {
 
 export default function RoomList() {
   const { lang } = useLanguage();
-  const locale = lang === 'ja' ? 'ja' : lang === 'ko' ? 'ko' : lang === 'en' ? 'en' : 'zh-TW';
-  const isNonZh = locale !== 'zh-TW';
+  const normalizedLang = normalizeLang(lang);
+  const locale = localeByLang(normalizedLang);
+  const isNonZh = normalizedLang !== 'zh-TW';
   const t4 = (zh: string, en: string, ja: string, ko: string) =>
-    locale === 'ja' ? ja : locale === 'ko' ? ko : locale === 'en' ? en : zh;
+    normalizedLang === 'ja' ? ja : normalizedLang === 'ko' ? ko : normalizedLang === 'en' ? en : zh;
 
   const t = {
     title: t4('探索住宿', 'Curated Stays', '宿泊を探す', '숙소 탐색'),
@@ -259,7 +261,7 @@ export default function RoomList() {
 
   useEffect(() => {
     let cancelled = false;
-    if (!rooms.length || lang === 'zh-TW') {
+    if (!rooms.length || normalizedLang === 'zh-TW') {
       setDisplayRooms(rooms);
       setTranslationNotice('');
       return () => {
@@ -289,7 +291,7 @@ export default function RoomList() {
       );
     }
 
-    translateRoomsFromCacheOnly(rooms, lang)
+    translateRoomsFromCacheOnly(rooms, normalizedLang)
       .then(translated => {
         if (!cancelled) setDisplayRooms(translated);
       })
@@ -309,7 +311,7 @@ export default function RoomList() {
         }
       });
 
-    translateRoomsOnDemand(rooms, lang)
+    translateRoomsOnDemand(rooms, normalizedLang)
       .then(translated => {
         if (!cancelled) {
           setDisplayRooms(translated);
@@ -327,7 +329,7 @@ export default function RoomList() {
     return () => {
       cancelled = true;
     };
-  }, [rooms, lang, locale]);
+  }, [rooms, normalizedLang, locale]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { translations, type Lang, type Translations } from '../i18n/translations';
+import { normalizeLang } from '../lib/i18n';
 
 interface LanguageContextType {
   lang: Lang;
@@ -16,15 +17,16 @@ const LanguageContext = createContext<LanguageContextType>({
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => {
     try {
-      return (localStorage.getItem('nestobi-lang') as Lang) || 'zh-TW';
+      return normalizeLang(localStorage.getItem('nestobi-lang'));
     } catch {
       return 'zh-TW';
     }
   });
 
   const setLang = (newLang: Lang) => {
-    setLangState(newLang);
-    try { localStorage.setItem('nestobi-lang', newLang); } catch {}
+    const normalized = normalizeLang(newLang);
+    setLangState(normalized);
+    try { localStorage.setItem('nestobi-lang', normalized); } catch {}
   };
 
   return (

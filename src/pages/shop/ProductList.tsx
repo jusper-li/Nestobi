@@ -7,6 +7,7 @@ import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { localeByLang, normalizeLang } from '../../lib/i18n';
 import { useProgressiveList } from '../../hooks/useProgressiveList';
 import {
   getTranslationRuntimeState,
@@ -78,10 +79,11 @@ function sortProducts(products: Product[], sortMode: SortMode) {
 
 export default function ProductList() {
   const { lang } = useLanguage();
-  const locale = lang === 'ja' ? 'ja' : lang === 'ko' ? 'ko' : lang === 'en' ? 'en' : 'zh-TW';
-  const isEn = locale === 'en';
+  const normalizedLang = normalizeLang(lang);
+  const locale = localeByLang(normalizedLang);
+  const isEn = normalizedLang === 'en';
   const t4 = (zh: string, en: string, ja: string, ko: string) =>
-    locale === 'ja' ? ja : locale === 'ko' ? ko : locale === 'en' ? en : zh;
+    normalizedLang === 'ja' ? ja : normalizedLang === 'ko' ? ko : normalizedLang === 'en' ? en : zh;
   const labels = {
     seoTitle: t4('旅行選物商店', 'Travel Shop', '旅セレクトショップ', '여행 셀렉트 샵'),
     seoDesc: t4(
@@ -231,7 +233,7 @@ export default function ProductList() {
 
   useEffect(() => {
     let cancelled = false;
-    if (!products.length || lang === 'zh-TW') {
+    if (!products.length || normalizedLang === 'zh-TW') {
       setDisplayProducts(products);
       setTranslationNotice('');
       return () => { cancelled = true; };
@@ -243,7 +245,7 @@ export default function ProductList() {
         ? t4('目前先顯示原文商品，翻譯快取尚未就緒。', 'Showing source products first. Translation cache is not ready yet.', '翻訳キャッシュ未準備のため、原文商品を先に表示します。', '번역 캐시 준비 전이라 원문 상품을 먼저 표시합니다.')
         : t4('正在套用商品快取翻譯...', 'Applying cached product translations...', 'キャッシュ翻訳を適用中...', '캐시 번역 적용 중...')
     );
-    translateProductsFromCacheOnly(products, lang)
+    translateProductsFromCacheOnly(products, normalizedLang)
       .then(cachedTranslated => {
         if (!cancelled) setDisplayProducts(cachedTranslated);
       })
@@ -266,7 +268,7 @@ export default function ProductList() {
       for (let i = 0; i < batches.length; i += 1) {
         if (cancelled) return;
         try {
-          const translatedChunk = await translateProductsOnDemand(batches[i], lang);
+          const translatedChunk = await translateProductsOnDemand(batches[i], normalizedLang);
           if (cancelled) return;
           current = mergeTranslatedProducts(current, translatedChunk);
           setDisplayProducts(current);
@@ -281,11 +283,11 @@ export default function ProductList() {
     })();
 
     return () => { cancelled = true; };
-  }, [products, lang, isEn]);
+  }, [products, normalizedLang, isEn]);
 
   useEffect(() => {
     let cancelled = false;
-    if (!categories.length || lang === 'zh-TW') {
+    if (!categories.length || normalizedLang === 'zh-TW') {
       setDisplayCategories(categories);
       return () => {
         cancelled = true;
@@ -293,7 +295,7 @@ export default function ProductList() {
     }
 
     setDisplayCategories(categories);
-    translateCategoriesFromCacheOnly(categories, lang)
+    translateCategoriesFromCacheOnly(categories, normalizedLang)
       .then(cachedTranslated => {
         if (!cancelled) setDisplayCategories(cachedTranslated);
       })
@@ -301,7 +303,7 @@ export default function ProductList() {
         if (!cancelled) setDisplayCategories(categories);
       });
 
-    translateCategoriesOnDemand(categories, lang)
+    translateCategoriesOnDemand(categories, normalizedLang)
       .then(translated => {
         if (!cancelled) setDisplayCategories(translated);
       })
@@ -312,7 +314,7 @@ export default function ProductList() {
     return () => {
       cancelled = true;
     };
-  }, [categories, lang]);
+  }, [categories, normalizedLang]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -555,7 +557,13 @@ export default function ProductList() {
         <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-bold text-gray-900">
-              {isEn ? `${filtered.length} ${labels.foundProducts}` : `找到 ${filtered.length} ${labels.foundProducts}`}
+              {normalizedLang === 'zh-TW'
+                ? `找到 ${filtered.length} ${labels.foundProducts}`
+                : normalizedLang === 'ja'
+                  ? `${filtered.length}${labels.foundProducts}`
+                  : normalizedLang === 'ko'
+                    ? `${filtered.length}${labels.foundProducts}`
+                    : `${filtered.length} ${labels.foundProducts}`}
               <span className="ml-2 text-xs font-semibold text-slate-500">
                 {labels.shownCount} {Math.min(visibleCount, filtered.length)}，{inStockCount} {labels.purchasable}
               </span>

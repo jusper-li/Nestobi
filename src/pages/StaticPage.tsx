@@ -10,6 +10,7 @@ import { STATIC_PAGE_FALLBACKS } from '../lib/staticPageFallbacks';
 import { sanitizeHtml } from '../lib/security';
 import { useLanguage } from '../contexts/LanguageContext';
 import { callAI } from '../lib/openai';
+import { localeByLang, normalizeLang, pickByLang } from '../lib/i18n';
 
 interface PageData {
   title: string;
@@ -49,19 +50,28 @@ const writeStaticI18nCache = (value: Record<string, PageData>) => {
 
 const StaticPage: React.FC = () => {
   const { lang } = useLanguage();
+  const normalizedLang = normalizeLang(lang);
+  const targetLocale = localeByLang(normalizedLang);
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
+
   const location = useLocation();
   const navigate = useNavigate();
   const slug = location.pathname.replace('/', '');
   const [page, setPage] = useState<PageData | null>(null);
+  const [sourcePage, setSourcePage] = useState<PageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [translating, setTranslating] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
-  const ui = useMemo(() => ({
-    back: lang === 'en' ? 'Back' : lang === 'ja' ? '戻る' : lang === 'ko' ? '뒤로' : '返回',
-    updated: lang === 'en' ? 'Updated:' : lang === 'ja' ? '最終更新:' : lang === 'ko' ? '최종 업데이트:' : '最後更新：',
-    notFound: lang === 'en' ? 'Page not found' : lang === 'ja' ? 'ページが見つかりません' : lang === 'ko' ? '페이지를 찾을 수 없습니다' : '找不到頁面',
-  }), [lang]);
+  const ui = useMemo(
+    () => ({
+      back: pick('返回', 'Back', '戻る', '뒤로'),
+      updated: pick('最後更新：', 'Updated:', '最終更新：', '최종 업데이트:'),
+      notFound: pick('找不到頁面', 'Page not found', 'ページが見つかりません', '페이지를 찾을 수 없습니다'),
+      translating: pick('翻譯中...', 'Translating page...', '翻訳中...', '번역 중...'),
+    }),
+    [normalizedLang]
+  );
 
   useEffect(() => {
     const fetchPage = async () => {
@@ -73,14 +83,20 @@ const StaticPage: React.FC = () => {
         return;
       }
 
-      const { data, error } = await supabase.from('static_pages').select('title, content, meta_description, updated_at').eq('slug', slug).maybeSingle();
+      const { data, error } = await supabase
+        .from('static_pages')
+        .select('title, content, meta_description, updated_at')
+        .eq('slug', slug)
+        .maybeSingle();
 
-      if (error || !data) {
-        const fallback = STATIC_PAGE_FALLBACKS[slug];
-        if (fallback) setPage(fallback);
-        else setNotFound(true);
+      const fallback = STATIC_PAGE_FALLBACKS[slug];
+      const finalPage = (!error && data) || fallback || null;
+      if (!finalPage) {
+        setNotFound(true);
       } else {
-        setPage(data);
+        const casted = finalPage as PageData;
+        setSourcePage(casted);
+        setPage(casted);
       }
       setLoading(false);
     };
@@ -90,12 +106,15 @@ const StaticPage: React.FC = () => {
 
   useEffect(() => {
     const run = async () => {
-      if (!page) return;
-      if (lang === 'zh-TW') return;
+      if (!sourcePage) return;
       if (!VALID_SLUGS.includes(slug)) return;
+      if (normalizedLang === 'zh-TW') {
+        setPage(sourcePage);
+        return;
+      }
 
-      const sourceHash = hashText(`${page.title}|${page.meta_description}|${page.content}`);
-      const cacheKey = `${slug}:${lang}:${sourceHash}`;
+      const sourceHash = hashText(`${sourcePage.title}|${sourcePage.meta_description}|${sourcePage.content}`);
+      const cacheKey = `${slug}:${normalizedLang}:${sourceHash}`;
       const localCache = readStaticI18nCache();
       const cached = localCache[cacheKey];
       if (cached) {
@@ -106,37 +125,47 @@ const StaticPage: React.FC = () => {
       setTranslating(true);
       try {
         const [title, description, content] = await Promise.all([
-          callAI<string>('translate', { text: page.title, sourceLang: 'zh-TW', targetLang: lang, language: lang }),
-          callAI<string>('translate', { text: page.meta_description || page.title, sourceLang: 'zh-TW', targetLang: lang, language: lang }),
           callAI<string>('translate', {
-            text: `Translate the following HTML into ${lang}. Keep all HTML tags/attributes unchanged and only translate visible text content:\n\n${page.content}`,
+            text: sourcePage.title,
             sourceLang: 'zh-TW',
-            targetLang: lang,
-            language: lang,
+            targetLang: normalizedLang,
+            language: normalizedLang,
+          }),
+          callAI<string>('translate', {
+            text: sourcePage.meta_description || sourcePage.title,
+            sourceLang: 'zh-TW',
+            targetLang: normalizedLang,
+            language: normalizedLang,
+          }),
+          callAI<string>('translate', {
+            text: `Translate the following HTML into ${normalizedLang}. Keep all HTML tags/attributes unchanged and only translate visible text content:\n\n${sourcePage.content}`,
+            sourceLang: 'zh-TW',
+            targetLang: normalizedLang,
+            language: normalizedLang,
           }),
         ]);
 
         const translated: PageData = {
-          title: (title || page.title).trim(),
-          meta_description: (description || page.meta_description || page.title).trim(),
-          content: (content || page.content).trim(),
-          updated_at: page.updated_at,
+          title: (title || sourcePage.title).trim(),
+          meta_description: (description || sourcePage.meta_description || sourcePage.title).trim(),
+          content: (content || sourcePage.content).trim(),
+          updated_at: sourcePage.updated_at,
         };
 
-        const next = { ...localCache, [cacheKey]: translated };
-        writeStaticI18nCache(next);
+        writeStaticI18nCache({ ...localCache, [cacheKey]: translated });
         setPage(translated);
       } catch {
-        // keep source page if translation fails
+        setPage(sourcePage);
       } finally {
         setTranslating(false);
       }
     };
+
     run();
-  }, [page?.updated_at, slug, lang]);
+  }, [sourcePage, slug, normalizedLang]);
 
   const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString(lang === 'ja' ? 'ja-JP' : lang === 'ko' ? 'ko-KR' : lang === 'en' ? 'en-US' : 'zh-TW', {
+    new Date(iso).toLocaleDateString(targetLocale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -157,45 +186,52 @@ const StaticPage: React.FC = () => {
             description: page.meta_description || page.title,
             publisher: { '@type': 'Organization', name: 'Nestobi' },
             dateModified: page.updated_at,
-            inLanguage: lang,
+            inLanguage: normalizedLang,
           }}
         />
       )}
+
       <Navigation />
 
-      <div className="max-w-3xl mx-auto px-4 py-12">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-400 hover:text-[#2C1F10] mb-8 transition-colors group text-sm">
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+      <div className="mx-auto max-w-3xl px-4 py-12">
+        <button
+          onClick={() => navigate(-1)}
+          className="group mb-8 flex items-center gap-2 text-sm text-gray-400 transition-colors hover:text-[#2C1F10]"
+        >
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
           {ui.back}
         </button>
 
         {loading && (
           <div className="flex justify-center py-24">
-            <div className="w-8 h-8 border-4 border-[#2C1F10] border-t-transparent rounded-full animate-spin" />
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2C1F10] border-t-transparent" />
           </div>
         )}
 
         {notFound && !loading && (
-          <div className="text-center py-24">
-            <p className="text-gray-400 text-lg">{ui.notFound}</p>
+          <div className="py-24 text-center">
+            <p className="text-lg text-gray-400">{ui.notFound}</p>
           </div>
         )}
 
         {page && !loading && (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12">
+            <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm md:p-12">
               {translating && (
                 <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
-                  {lang === 'en' ? 'Translating page...' : lang === 'ja' ? 'ページを翻訳中...' : lang === 'ko' ? '페이지 번역 중...' : '頁面翻譯中...'}
+                  {ui.translating}
                 </div>
               )}
               {page.updated_at && (
-                <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-8">
-                  <Clock className="w-3.5 h-3.5" />
+                <div className="mb-8 flex items-center gap-1.5 text-xs text-gray-400">
+                  <Clock className="h-3.5 w-3.5" />
                   {ui.updated} {formatDate(page.updated_at)}
                 </div>
               )}
-              <div className="prose prose-gray prose-headings:font-bold prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(page.content) }} />
+              <div
+                className="prose prose-gray prose-headings:font-bold prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline max-w-none"
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(page.content) }}
+              />
             </div>
           </motion.div>
         )}
@@ -207,3 +243,4 @@ const StaticPage: React.FC = () => {
 };
 
 export default StaticPage;
+

@@ -1,3 +1,5 @@
+import { normalizeLang } from './i18n';
+
 export function formatCurrency(amount: number, currency = 'TWD'): string {
   if (currency === 'TWD') {
     return `NT$ ${Number(amount || 0).toLocaleString('zh-TW')}`;
@@ -45,7 +47,7 @@ export function cn(...classes: (string | undefined | null | false)[]): string {
 }
 
 export function getStatusLabel(status: string, lang: string = 'zh-TW'): string {
-  const isEn = lang === 'en';
+  const isEn = normalizeLang(lang) === 'en';
   const labels: Record<string, string> = isEn
     ? {
         pending: 'Pending',

@@ -5,6 +5,7 @@ import { AlertCircle, ArrowLeft, Eye, EyeOff, Home, Lock, Mail, Plane } from 'lu
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 import {
   clearLoginFailures,
   GENERIC_AUTH_ERROR_MESSAGE,
@@ -13,87 +14,25 @@ import {
   recordLoginFailure,
 } from '../../lib/security';
 
-type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
-
-const copy: Record<
-  UiLang,
-  {
-    back: string;
-    home: string;
-    welcome: string;
-    subtitle: string;
-    email: string;
-    password: string;
-    emailPlaceholder: string;
-    passwordPlaceholder: string;
-    forgot: string;
-    login: string;
-    noAccount: string;
-    register: string;
-  }
-> = {
-  'zh-TW': {
-    back: '返回上一頁',
-    home: '回首頁',
-    welcome: '歡迎回來',
-    subtitle: '登入您的旅遊帳號',
-    email: '電子郵件',
-    password: '密碼',
-    emailPlaceholder: 'your@email.com',
-    passwordPlaceholder: '請輸入密碼',
-    forgot: '忘記密碼？',
-    login: '登入',
-    noAccount: '還沒有帳號？',
-    register: '立即註冊',
-  },
-  en: {
-    back: 'Back',
-    home: 'Home',
-    welcome: 'Welcome Back',
-    subtitle: 'Sign in to your travel account',
-    email: 'Email',
-    password: 'Password',
-    emailPlaceholder: 'your@email.com',
-    passwordPlaceholder: 'Enter your password',
-    forgot: 'Forgot password?',
-    login: 'Login',
-    noAccount: 'No account yet?',
-    register: 'Sign up now',
-  },
-  ja: {
-    back: '前のページへ',
-    home: 'ホーム',
-    welcome: 'おかえりなさい',
-    subtitle: '旅行アカウントにログイン',
-    email: 'メールアドレス',
-    password: 'パスワード',
-    emailPlaceholder: 'your@email.com',
-    passwordPlaceholder: 'パスワードを入力',
-    forgot: 'パスワードをお忘れですか？',
-    login: 'ログイン',
-    noAccount: 'アカウントをお持ちでないですか？',
-    register: '今すぐ登録',
-  },
-  ko: {
-    back: '이전 페이지',
-    home: '홈',
-    welcome: '다시 오신 것을 환영합니다',
-    subtitle: '여행 계정으로 로그인하세요',
-    email: '이메일',
-    password: '비밀번호',
-    emailPlaceholder: 'your@email.com',
-    passwordPlaceholder: '비밀번호를 입력하세요',
-    forgot: '비밀번호를 잊으셨나요?',
-    login: '로그인',
-    noAccount: '아직 계정이 없으신가요?',
-    register: '지금 가입하기',
-  },
-};
-
 export default function Login() {
   const { lang } = useLanguage();
-  const locale = (lang as UiLang) in copy ? (lang as UiLang) : 'zh-TW';
-  const text = copy[locale];
+  const normalizedLang = normalizeLang(lang);
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
+
+  const text = {
+    back: pick('返回上一頁', 'Back', '戻る', '뒤로'),
+    home: pick('回首頁', 'Home', 'ホーム', '홈'),
+    welcome: pick('歡迎回來', 'Welcome Back', 'おかえりなさい', '다시 오신 것을 환영합니다'),
+    subtitle: pick('登入您的旅遊帳號', 'Sign in to your travel account', '旅行アカウントにログイン', '여행 계정으로 로그인하세요'),
+    email: pick('電子郵件', 'Email', 'メールアドレス', '이메일'),
+    password: pick('密碼', 'Password', 'パスワード', '비밀번호'),
+    emailPlaceholder: 'your@email.com',
+    passwordPlaceholder: pick('請輸入密碼', 'Enter your password', 'パスワードを入力', '비밀번호를 입력하세요'),
+    forgot: pick('忘記密碼？', 'Forgot password?', 'パスワードをお忘れですか？', '비밀번호를 잊으셨나요?'),
+    login: pick('登入', 'Login', 'ログイン', '로그인'),
+    noAccount: pick('還沒有帳號？', "Don't have an account?", 'アカウントをお持ちでないですか？', '아직 계정이 없으신가요?'),
+    register: pick('立即註冊', 'Sign up now', '今すぐ登録', '지금 가입하기'),
+  };
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -108,6 +47,7 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
     const normalizedEmail = email.trim().toLowerCase();
     const rateLimit = getLoginRateLimit(normalizedEmail);
     if (rateLimit.blocked) {
@@ -119,15 +59,18 @@ export default function Login() {
     try {
       await signIn(normalizedEmail, password);
       clearLoginFailures(normalizedEmail);
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
       if (user) {
         const { data: authData } = await supabase
           .from('tbl_user_auth')
           .select('role')
           .eq('user_id', user.id)
           .maybeSingle();
+
         const role = authData?.role ?? 'user';
         if (redirectParam) navigate(redirectParam, { replace: true });
         else if (role === 'superadmin') navigate('/superadmin', { replace: true });

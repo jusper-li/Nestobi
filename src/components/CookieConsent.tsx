@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Cookie, Settings, ShieldCheck, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
+import { normalizeLang } from '../lib/i18n';
 
 const STORAGE_KEY = 'nestobi:cookie-consent:v1';
 const COOKIE_NAME = 'nestobi_cookie_consent';
@@ -54,7 +55,8 @@ const Toggle = ({ checked, disabled, onClick }: { checked: boolean; disabled?: b
 
 export default function CookieConsent() {
   const { lang } = useLanguage();
-  const locale = lang === 'ja' ? 'ja' : lang === 'ko' ? 'ko' : lang === 'en' ? 'en' : 'zh';
+  const n = normalizeLang(lang);
+  const locale = n === 'zh-TW' ? 'zh' : n;
   const [visible, setVisible] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [preferences, setPreferences] = useState<CookiePreferences>(REQUIRED_ONLY);

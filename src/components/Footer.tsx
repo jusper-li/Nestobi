@@ -18,12 +18,13 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { normalizeLang } from '../lib/i18n';
 
 type Locale = 'zh-TW' | 'en' | 'ja' | 'ko';
 
 export default function Footer() {
   const { lang } = useLanguage();
-  const locale: Locale = lang === 'ja' || lang === 'ko' || lang === 'en' ? lang : 'zh-TW';
+  const locale: Locale = normalizeLang(lang) as Locale;
 
   const copy = {
     'zh-TW': {

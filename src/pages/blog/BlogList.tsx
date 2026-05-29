@@ -18,6 +18,7 @@ import Navigation from '../../components/Navigation';
 import Footer from '../../components/Footer';
 import SEOHead from '../../components/SEOHead';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { localeByLang, normalizeLang } from '../../lib/i18n';
 import { useProgressiveList } from '../../hooks/useProgressiveList';
 import {
   getTranslationRuntimeState,
@@ -135,7 +136,9 @@ async function fetchBlogCategoriesFromSupabase() {
 
 const BlogList: React.FC = () => {
   const { lang } = useLanguage();
-  const locale = lang === 'ja' ? 'ja' : lang === 'ko' ? 'ko' : lang === 'en' ? 'en' : 'zh-TW';
+  const normalizedLang = normalizeLang(lang);
+  const locale = normalizedLang;
+  const dateLocale = localeByLang(normalizedLang);
   const isEn = locale === 'en';
   const t4 = (zh: string, en: string, ja: string, ko: string) =>
     locale === 'ja' ? ja : locale === 'ko' ? ko : locale === 'en' ? en : zh;
@@ -250,7 +253,7 @@ const BlogList: React.FC = () => {
       return () => { cancelled = true; };
     }
     setDisplayBlogCategories(blogCategories);
-    translateBlogCategoriesFromCacheOnly(blogCategories, lang).then(translated => {
+    translateBlogCategoriesFromCacheOnly(blogCategories, normalizedLang).then(translated => {
       if (!cancelled) setDisplayBlogCategories(translated as BlogCategory[]);
     }).catch(() => {});
     const runCategorySync = async () => {
@@ -259,7 +262,7 @@ const BlogList: React.FC = () => {
         if (cancelled) return;
         const batch = blogCategories.slice(i, i + batchSize);
         try {
-          const translated = await translateBlogCategoriesOnDemand(batch, lang);
+          const translated = await translateBlogCategoriesOnDemand(batch, normalizedLang);
           if (cancelled) return;
           const byId = new Map((translated as BlogCategory[]).map(item => [item.id, item]));
           setDisplayBlogCategories(current => current.map(item => byId.get(item.id) || item));
@@ -270,7 +273,7 @@ const BlogList: React.FC = () => {
     };
     void runCategorySync();
     return () => { cancelled = true; };
-  }, [blogCategories, lang]);
+  }, [blogCategories, normalizedLang]);
 
   useEffect(() => {
     let cancelled = false;
@@ -283,7 +286,7 @@ const BlogList: React.FC = () => {
     const runtime = getTranslationRuntimeState();
     setTranslationNotice(runtime.tableUnavailable || runtime.isLocalProxyMode ? labels.transCacheNotReady : labels.transSyncing);
 
-    translateBlogPostsFromCacheOnly(posts, lang).then(translated => {
+    translateBlogPostsFromCacheOnly(posts, normalizedLang).then(translated => {
       if (!cancelled) setDisplayPosts(translated as BlogPost[]);
     }).catch(() => {});
 
@@ -294,7 +297,7 @@ const BlogList: React.FC = () => {
         if (cancelled) return;
         const batch = posts.slice(i, i + batchSize);
         try {
-          const translated = await translateBlogPostsOnDemand(batch, lang);
+          const translated = await translateBlogPostsOnDemand(batch, normalizedLang);
           if (cancelled) return;
           const byId = new Map((translated as BlogPost[]).map(item => [item.id, item]));
           setDisplayPosts(current => current.map(item => byId.get(item.id) || item));
@@ -309,7 +312,7 @@ const BlogList: React.FC = () => {
     void runPostSync();
 
     return () => { cancelled = true; };
-  }, [posts, lang, labels.transCacheNotReady, labels.transFallback, labels.transSyncing]);
+  }, [posts, normalizedLang, labels.transCacheNotReady, labels.transFallback, labels.transSyncing]);
 
   const orderedCategories = useMemo(() => sortCategoriesForTree(displayBlogCategories), [displayBlogCategories]);
   const categoryById = useMemo(() => new Map(displayBlogCategories.map(category => [category.id, category])), [displayBlogCategories]);
@@ -389,7 +392,7 @@ const BlogList: React.FC = () => {
   }, [aiFilters, displayBlogCategories, categoryId, categoryIdsByName, displayPosts]);
 
   const formatDate = (iso: string) =>
-    iso ? new Date(iso).toLocaleDateString(locale === 'zh-TW' ? 'zh-TW' : locale === 'ja' ? 'ja-JP' : locale === 'ko' ? 'ko-KR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+    iso ? new Date(iso).toLocaleDateString(dateLocale, { year: 'numeric', month: 'long', day: 'numeric' }) : '';
   const featured = filtered[0];
   const rest = useMemo(() => filtered.slice(1), [filtered]);
   const { visibleItems: visiblePosts, visibleCount, hasMore, sentinelRef, loadMore } = useProgressiveList(rest, {

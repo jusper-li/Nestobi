@@ -8,6 +8,7 @@ import Footer from '../../components/Footer';
 import SEOHead from '../../components/SEOHead';
 import { sanitizeHtml } from '../../lib/security';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { localeByLang, normalizeLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { translateBlogPostsFromCacheOnly, translateBlogPostsOnDemand } from '../../lib/contentTranslations';
 
@@ -42,7 +43,9 @@ interface RelatedPost {
 const BlogDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const { lang } = useLanguage();
-  const locale = lang === 'ja' ? 'ja' : lang === 'ko' ? 'ko' : lang === 'en' ? 'en' : 'zh-TW';
+  const normalizedLang = normalizeLang(lang);
+  const locale = normalizedLang;
+  const dateLocale = localeByLang(normalizedLang);
   const t4 = (zh: string, en: string, ja: string, ko: string) =>
     locale === 'ja' ? ja : locale === 'ko' ? ko : locale === 'en' ? en : zh;
 
@@ -81,50 +84,50 @@ const BlogDetail: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
-    if (!post || lang === 'zh-TW') {
+    if (!post || normalizedLang === 'zh-TW') {
       setDisplayPost(post);
       return () => {
         cancelled = true;
       };
     }
     setDisplayPost(post);
-    translateBlogPostsFromCacheOnly([post], lang).then(rows => {
+    translateBlogPostsFromCacheOnly([post], normalizedLang).then(rows => {
       if (!cancelled && rows[0]) setDisplayPost(rows[0] as BlogPost);
     }).catch(() => {});
-    translateBlogPostsOnDemand([post], lang).then(rows => {
+    translateBlogPostsOnDemand([post], normalizedLang).then(rows => {
       if (!cancelled && rows[0]) setDisplayPost(rows[0] as BlogPost);
     }).catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [post, lang]);
+  }, [post, normalizedLang]);
 
   useEffect(() => {
     let cancelled = false;
-    if (!related.length || lang === 'zh-TW') {
+    if (!related.length || normalizedLang === 'zh-TW') {
       setDisplayRelated(related);
       return () => {
         cancelled = true;
       };
     }
     setDisplayRelated(related);
-    translateBlogPostsFromCacheOnly(related as unknown as BlogPost[], lang).then(rows => {
+    translateBlogPostsFromCacheOnly(related as unknown as BlogPost[], normalizedLang).then(rows => {
       if (!cancelled) setDisplayRelated(rows as unknown as RelatedPost[]);
     }).catch(() => {});
-    translateBlogPostsOnDemand(related as unknown as BlogPost[], lang).then(rows => {
+    translateBlogPostsOnDemand(related as unknown as BlogPost[], normalizedLang).then(rows => {
       if (!cancelled) setDisplayRelated(rows as unknown as RelatedPost[]);
     }).catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [related, lang]);
+  }, [related, normalizedLang]);
 
   const viewPost = displayPost || post;
   const viewRelated = displayRelated.length ? displayRelated : related;
 
   const formatDate = (iso: string) =>
     iso
-      ? new Date(iso).toLocaleDateString(locale === 'zh-TW' ? 'zh-TW' : locale === 'ja' ? 'ja-JP' : locale === 'ko' ? 'ko-KR' : 'en-US', {
+      ? new Date(iso).toLocaleDateString(dateLocale, {
           year: 'numeric',
           month: 'long',
           day: 'numeric',
@@ -142,7 +145,7 @@ const BlogDetail: React.FC = () => {
         publisher: { '@type': 'Organization', name: 'Nestobi' },
         datePublished: viewPost.published_at,
         dateModified: viewPost.updated_at,
-        inLanguage: lang,
+        inLanguage: normalizedLang,
         keywords: viewPost.tags?.join(', '),
         articleSection: viewPost.category,
         mainEntityOfPage: { '@type': 'WebPage', '@id': `https://nestobi.netlify.app/blog/${viewPost.slug}` },

@@ -6,6 +6,7 @@ import Navigation from '../../components/Navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
 
@@ -32,7 +33,7 @@ function hasProduct(item: CartItemWithProduct): item is CartItemWithProduct & { 
 
 export default function Cart() {
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
+  const normalizedLang = normalizeLang(lang);
   const { user } = useAuth();
   const { items, removeItem, updateQuantity, clearCart } = useCart();
   const [cartItems, setCartItems] = useState<CartItemWithProduct[]>([]);
@@ -42,28 +43,28 @@ export default function Cart() {
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
-  const pick = (zh: string, en: string, ja: string, ko: string) => (lang === 'en' ? en : lang === 'ja' ? ja : lang === 'ko' ? ko : zh);
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
 
   const t = {
     loginTitle: pick('請先登入', 'Please log in', 'ログインしてください', '로그인이 필요합니다'),
-    loginDesc: pick('登入後即可查看購物車並完成結帳。', 'Log in to view your cart and complete checkout.', 'ログインするとカートを確認して、購入手続きへ進めます。', '로그인하면 장바구니를 확인하고 결제를 진행할 수 있습니다.'),
-    loginNow: pick('立即登入', 'Log in now', 'ログインする', '지금 로그인'),
+    loginDesc: pick('登入後即可查看購物車並完成結帳。', 'Log in to view your cart and complete checkout.', 'ログイン後にカート内容を確認して決済できます。', '로그인 후 장바구니 확인 및 결제가 가능합니다.'),
+    loginNow: pick('立即登入', 'Log in now', '今すぐログイン', '지금 로그인'),
     successTitle: pick('訂單完成', 'Order Completed', '注文が完了しました', '주문이 완료되었습니다'),
-    successDesc: pick('您的訂單已建立，可到我的訂單查看詳細資訊。', 'Your order has been placed. You can view details in My Orders.', '注文を受け付けました。マイオーダーで詳細を確認できます。', '주문이 접수되었습니다. 내 주문에서 상세 정보를 확인할 수 있습니다.'),
+    successDesc: pick('你的訂單已送出，可至「我的訂單」查看詳情。', 'Your order has been placed. You can view details in My Orders.', '注文は完了しました。「注文履歴」から詳細を確認できます。', '주문이 접수되었습니다. 마이 주문에서 상세를 확인할 수 있습니다.'),
     viewOrders: pick('查看我的訂單', 'View My Orders', '注文履歴を見る', '내 주문 보기'),
     checkout: pick('結帳', 'Checkout', 'チェックアウト', '결제'),
     continueShopping: pick('繼續購物', 'Continue Shopping', '買い物を続ける', '쇼핑 계속하기'),
     emptyCart: pick('購物車目前是空的', 'Your cart is empty', 'カートは空です', '장바구니가 비어 있습니다'),
-    removeUnavailable: pick('移除已下架商品', 'Remove unavailable items', '販売終了商品を削除', '판매 불가 상품 제거'),
-    backToShop: pick('返回商店', 'Back to Shop', 'ショップへ戻る', '상점으로 돌아가기'),
-    orderSummary: pick('訂單摘要', 'Order Summary', '注文サマリー', '주문 요약'),
+    removeUnavailable: pick('移除無法購買商品', 'Remove unavailable items', '購入不可商品を削除', '구매 불가 상품 제거'),
+    backToShop: pick('返回商店', 'Back to Shop', 'ショップへ戻る', '샵으로 돌아가기'),
+    orderSummary: pick('訂單摘要', 'Order Summary', '注文概要', '주문 요약'),
     subtotal: pick('小計', 'Subtotal', '小計', '소계'),
-    loginBeforeCheckout: pick('請先登入再進行結帳。', 'Please log in before checkout.', 'チェックアウト前にログインしてください。', '결제 전에 로그인해 주세요.'),
-    placeOrder: pick('送出訂單', 'Place Order', '注文を確定', '주문하기'),
-    checkoutFailed: pick('結帳失敗，請稍後再試。', 'Checkout failed. Please try again later.', '決済に失敗しました。後でもう一度お試しください。', '결제에 실패했습니다. 잠시 후 다시 시도해 주세요.'),
-    unavailableCount: (count: number) => pick(`發現 ${count} 件不可購買商品。`, `${count} unavailable item(s) found.`, `購入不可商品が ${count} 件あります。`, `구매 불가 상품 ${count}개가 있습니다.`),
-    pointsDesc: (points: number) => pick(`預計可得點數：${points}`, `Estimated points: ${points}`, `獲得予定ポイント：${points}`, `예상 적립 포인트: ${points}`),
-    pointsOrderDesc: pick('商城購物點數回饋', 'Shop purchase points reward', 'ショップ購入ポイント付与', '쇼핑몰 구매 포인트 적립'),
+    loginBeforeCheckout: pick('請先登入再進行結帳。', 'Please log in before checkout.', 'チェックアウト前にログインしてください。', '결제 전에 로그인해주세요.'),
+    placeOrder: pick('送出訂單', 'Place Order', '注文する', '주문하기'),
+    checkoutFailed: pick('結帳失敗，請稍後再試。', 'Checkout failed. Please try again later.', 'チェックアウトに失敗しました。しばらくしてから再試行してください。', '결제에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+    unavailableCount: (count: number) => pick(`偵測到 ${count} 件商品無法購買。`, `${count} unavailable item(s) found.`, `購入不可の商品が ${count} 件あります。`, `구매 불가 상품 ${count}개가 있습니다.`),
+    pointsDesc: (points: number) => pick(`預估可得點數：${points}`, `Estimated points: ${points}`, `獲得予定ポイント：${points}`, `예상 적립 포인트: ${points}`),
+    pointsOrderDesc: pick('商品購買點數回饋', 'Shop purchase points reward', '商品購入ポイント還元', '상품 구매 포인트 적립'),
   };
 
   useEffect(() => {
@@ -324,3 +325,4 @@ export default function Cart() {
     </div>
   );
 }
+

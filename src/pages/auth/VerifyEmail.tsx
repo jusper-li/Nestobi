@@ -1,9 +1,10 @@
-import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShieldCheck, AlertCircle, Plane, RefreshCw, ArrowLeft, Home } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 
 const VerifyEmail: React.FC = () => {
   const [code, setCode] = useState(['', '', '', '', '', '']);
@@ -14,25 +15,26 @@ const VerifyEmail: React.FC = () => {
   const navigate = useNavigate();
   const { signUp } = useAuth();
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
+  const normalizedLang = normalizeLang(lang);
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
   const email = searchParams.get('email') || '';
   const t = {
-    codeRequired: isEn ? 'Please enter the full 6-digit code.' : '請輸入完整的6位驗證碼。',
-    sessionExpired: isEn ? 'Verification data expired. Please register again.' : '驗證資料已過期，請重新填寫註冊資料。',
-    emailMismatch: isEn ? 'Email mismatch. Please register again.' : 'Email 不符合，請重新註冊。',
-    codeExpired: isEn ? 'Verification code expired (10 minutes). Please request again.' : '驗證碼已過期（10分鐘），請重新申請。',
-    codeWrong: isEn ? 'Incorrect verification code. Please try again.' : '驗證碼不正確，請重新輸入。',
-    alreadyRegistered: isEn ? 'This email is already registered. Please sign in.' : '此 Email 已註冊，請直接登入。',
-    failed: isEn ? 'Verification failed. Please try again later.' : '驗證失敗，請稍後再試。',
-    back: isEn ? 'Back' : '返回上一頁',
-    home: isEn ? 'Home' : '回首頁',
-    title: isEn ? 'Email Verification' : '電子郵件驗證',
-    subtitlePrefix: isEn ? 'Please enter the code sent to' : '請輸入發送至',
-    subtitleSuffix: isEn ? '' : '的驗證碼',
-    hint: isEn ? 'Enter the 6-digit code shown in the previous step. Valid for 10 minutes.' : '請輸入上一步畫面顯示的6位數驗證碼，10分鐘內有效',
-    confirm: isEn ? 'Confirm Verification' : '確認驗證',
-    requestAgain: isEn ? 'Request code again' : '重新取得驗證碼',
-    note: isEn ? 'The code appears in the yellow panel on the previous page. In production, a verification email is sent automatically.' : '驗證碼顯示在上一個頁面的黃色區塊中。正式環境會自動發送 Email 通知。',
+    codeRequired: pick('請輸入完整的 6 碼驗證碼', 'Please enter the full 6-digit code.', '6桁の認証コードを入力してください。', '6자리 인증 코드를 입력하세요.'),
+    sessionExpired: pick('驗證資料已過期，請重新註冊', 'Verification data expired. Please register again.', '認証情報の有効期限が切れました。再登録してください。', '인증 정보가 만료되었습니다. 다시 가입해주세요.'),
+    emailMismatch: pick('電子郵件不一致，請重新註冊', 'Email mismatch. Please register again.', 'メールアドレスが一致しません。再登録してください。', '이메일이 일치하지 않습니다. 다시 가입해주세요.'),
+    codeExpired: pick('驗證碼已過期（10 分鐘），請重新申請', 'Verification code expired (10 minutes). Please request again.', '認証コードの有効期限が切れました（10分）。再取得してください。', '인증 코드가 만료되었습니다(10분). 다시 요청해주세요.'),
+    codeWrong: pick('驗證碼錯誤，請再試一次', 'Incorrect verification code. Please try again.', '認証コードが正しくありません。もう一度お試しください。', '인증 코드가 올바르지 않습니다. 다시 시도해주세요.'),
+    alreadyRegistered: pick('此電子郵件已註冊，請直接登入', 'This email is already registered. Please sign in.', 'このメールはすでに登録されています。ログインしてください。', '이미 가입된 이메일입니다. 로그인해주세요.'),
+    failed: pick('驗證失敗，請稍後再試', 'Verification failed. Please try again later.', '認証に失敗しました。しばらくしてから再試行してください。', '인증에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+    back: pick('返回', 'Back', '戻る', '뒤로'),
+    home: pick('回首頁', 'Home', 'ホーム', '홈'),
+    title: pick('電子郵件驗證', 'Email Verification', 'メール認証', '이메일 인증'),
+    subtitlePrefix: pick('請輸入寄送到', 'Please enter the code sent to', '次に送信されたコードを入力してください', '다음으로 전송된 코드를 입력하세요'),
+    subtitleSuffix: pick('的驗證碼', '', 'の認証コード', '인증 코드'),
+    hint: pick('請輸入上一頁顯示的 6 碼驗證碼，有效期限 10 分鐘', 'Enter the 6-digit code shown in the previous step. Valid for 10 minutes.', '前ページに表示された6桁コードを入力してください。有効期限は10分です。', '이전 페이지의 6자리 코드를 입력하세요. 유효시간은 10분입니다.'),
+    confirm: pick('確認驗證', 'Confirm Verification', '認証する', '인증 확인'),
+    requestAgain: pick('重新取得驗證碼', 'Request code again', 'コードを再取得', '코드 다시 요청'),
+    note: pick('驗證碼會顯示在上一頁黃色提示區。正式環境會自動寄送驗證信。', 'The code appears in the yellow panel on the previous page. In production, a verification email is sent automatically.', 'コードは前ページの黄色パネルに表示されます。本番環境では認証メールが自動送信されます。', '코드는 이전 페이지의 노란 패널에 표시됩니다. 운영 환경에서는 인증 이메일이 자동 발송됩니다.'),
   };
 
   const handleChange = (idx: number, value: string) => {
@@ -185,3 +187,5 @@ const VerifyEmail: React.FC = () => {
 };
 
 export default VerifyEmail;
+
+

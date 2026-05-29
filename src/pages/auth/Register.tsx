@@ -1,8 +1,9 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AlertCircle, ArrowLeft, Eye, EyeOff, Home, Lock, Mail, Plane, User } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { generateOTP } from '../../lib/utils';
 
@@ -10,7 +11,8 @@ const EDGE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`;
 
 export default function Register() {
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
+  const normalizedLang = normalizeLang(lang);
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,20 +23,20 @@ export default function Register() {
   const navigate = useNavigate();
 
   const t = {
-    back: isEn ? 'Back' : '返回上一頁',
-    home: isEn ? 'Home' : '回首頁',
-    title: isEn ? 'Create Account' : '建立帳號',
-    subtitle: isEn ? 'Join Nestobi and start your travel plan' : '加入 Nestobi，開始你的旅程規劃',
-    name: isEn ? 'Display Name' : '顯示名稱',
-    email: isEn ? 'Email' : '電子郵件',
-    password: isEn ? 'Password' : '密碼',
-    confirm: isEn ? 'Confirm Password' : '確認密碼',
-    submit: isEn ? 'Send Verification Code' : '發送驗證碼',
-    haveAccount: isEn ? 'Already have an account?' : '已經有帳號？',
-    login: isEn ? 'Login now' : '立即登入',
-    pwMismatch: isEn ? 'Passwords do not match.' : '兩次輸入的密碼不一致。',
-    pwLength: isEn ? 'Password must be at least 6 characters.' : '密碼至少需要 6 個字元。',
-    failed: isEn ? 'Failed to send verification email.' : '驗證信發送失敗，請稍後再試。',
+    back: pick('返回', 'Back', '戻る', '뒤로'),
+    home: pick('回首頁', 'Home', 'ホーム', '홈'),
+    title: pick('建立帳號', 'Create Account', 'アカウント作成', '계정 만들기'),
+    subtitle: pick('加入 Nestobi，開始你的旅遊規劃', 'Join Nestobi and start your travel plan', 'Nestobiに参加して旅の計画を始めましょう', 'Nestobi에 가입하고 여행 계획을 시작하세요'),
+    name: pick('顯示名稱', 'Display Name', '表示名', '표시 이름'),
+    email: pick('電子郵件', 'Email', 'メール', '이메일'),
+    password: pick('密碼', 'Password', 'パスワード', '비밀번호'),
+    confirm: pick('確認密碼', 'Confirm Password', 'パスワード確認', '비밀번호 확인'),
+    submit: pick('發送驗證碼', 'Send Verification Code', '認証コード送信', '인증 코드 보내기'),
+    haveAccount: pick('已經有帳號？', 'Already have an account?', 'すでにアカウントがありますか？', '이미 계정이 있으신가요?'),
+    login: pick('立即登入', 'Login now', '今すぐログイン', '지금 로그인'),
+    pwMismatch: pick('兩次密碼不一致', 'Passwords do not match.', 'パスワードが一致しません。', '비밀번호가 일치하지 않습니다.'),
+    pwLength: pick('密碼至少需要 6 個字元', 'Password must be at least 6 characters.', 'パスワードは6文字以上必要です。', '비밀번호는 최소 6자 이상이어야 합니다.'),
+    failed: pick('發送驗證信失敗，請稍後再試', 'Failed to send verification email.', '認証メールの送信に失敗しました。', '인증 메일 전송에 실패했습니다.'),
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -186,3 +188,5 @@ export default function Register() {
     </div>
   );
 }
+
+

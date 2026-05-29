@@ -6,6 +6,7 @@ import Navigation from '../../components/Navigation';
 import Footer from '../../components/Footer';
 import SEOHead from '../../components/SEOHead';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { normalizeLang } from '../../lib/i18n';
 import { getTranslationRuntimeState, translateHotelsOnDemand, translateRoomsOnDemand } from '../../lib/contentTranslations';
 import { ROOM_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
 import { supabase } from '../../lib/supabase';
@@ -50,7 +51,8 @@ const ROOM_TYPE_LABELS: Record<string, { 'zh-TW': string; en: string; ja: string
 export default function RoomDetail() {
   const { id } = useParams<{ id: string }>();
   const { lang } = useLanguage();
-  const locale = lang === 'ja' ? 'ja' : lang === 'ko' ? 'ko' : lang === 'en' ? 'en' : 'zh-TW';
+  const normalizedLang = normalizeLang(lang);
+  const locale = normalizedLang;
   const t4 = (zh: string, en: string, ja: string, ko: string) =>
     locale === 'ja' ? ja : locale === 'ko' ? ko : locale === 'en' ? en : zh;
 
@@ -108,7 +110,7 @@ export default function RoomDetail() {
         cancelled = true;
       };
     }
-    if (lang === 'zh-TW') {
+    if (normalizedLang === 'zh-TW') {
       setDisplayRoom(room);
       setTranslationNotice('');
       return () => {
@@ -121,13 +123,13 @@ export default function RoomDetail() {
       const runtime = getTranslationRuntimeState();
       if (!cancelled) setTranslationNotice(runtime.tableUnavailable || runtime.isLocalProxyMode ? t.cacheNotReady : t.translatingRoom);
 
-      const [translatedRoom] = await translateRoomsOnDemand([room], lang);
+      const [translatedRoom] = await translateRoomsOnDemand([room], normalizedLang);
       if (cancelled) return;
       setDisplayRoom(translatedRoom);
       setTranslationNotice(t.translatingHotel);
 
       if (translatedRoom.hotels?.id) {
-        const [translatedHotel] = await translateHotelsOnDemand([translatedRoom.hotels], lang);
+        const [translatedHotel] = await translateHotelsOnDemand([translatedRoom.hotels], normalizedLang);
         if (cancelled) return;
         setDisplayRoom(prev => (prev ? { ...prev, hotels: translatedHotel } : prev));
       }
@@ -143,7 +145,7 @@ export default function RoomDetail() {
     return () => {
       cancelled = true;
     };
-  }, [room, lang, t.cacheNotReady, t.translatingRoom, t.translatingHotel, t.showingSource]);
+  }, [room, normalizedLang, t.cacheNotReady, t.translatingRoom, t.translatingHotel, t.showingSource]);
 
   const currentRoom = displayRoom || room;
   const gallery = useMemo(() => {

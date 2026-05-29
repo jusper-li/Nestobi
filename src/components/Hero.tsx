@@ -1,26 +1,29 @@
 import { ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
+import { normalizeLang, pickByLang } from '../lib/i18n';
 
 export default function Hero() {
   const { lang } = useLanguage();
-  const isEn = lang === 'en';
+  const normalizedLang = normalizeLang(lang);
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
 
   const text = {
-    title1: isEn ? 'Travel, Coffee,' : '旅行、咖啡、選物',
-    title2: isEn ? 'Curated in One Place' : '一次整理到位',
-    subtitle: isEn
-      ? 'From stays and coffee picks to AI planning, Nestobi helps you organize every journey with less effort.'
-      : '從精選住宿、咖啡選物到 AI 行程規劃，Nestobi 幫你把每次出發整理得更輕鬆。',
-    cta: isEn ? 'Start Exploring' : '開始探索',
-    aria: isEn ? 'Scroll to explore' : '向下捲動探索',
+    title1: pick('旅行與咖啡', 'Travel and Coffee', '旅とコーヒー', '여행과 커피'),
+    title2: pick('一次整合', 'Curated in One Place', 'ひとつに集約', '한곳에 큐레이션'),
+    subtitle: pick(
+      '從住宿、選物到 AI 規劃，Nestobi 幫你用更少心力完成每趟旅程。',
+      'From stays and picks to AI planning, Nestobi helps you complete every journey with less effort.',
+      '宿泊・セレクト・AI計画まで、Nestobiが旅をもっと簡単にします。',
+      '숙소, 셀렉트 상품, AI 일정까지 Nestobi가 여행을 더 쉽게 만들어줍니다.'
+    ),
+    cta: pick('開始探索', 'Start Exploring', '探索を始める', '탐색 시작'),
+    aria: pick('往下探索', 'Scroll to explore', '下へスクロール', '아래로 스크롤'),
   };
 
   const scrollToExplore = () => {
     const element = document.getElementById('explore');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (element) element.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -76,3 +79,4 @@ export default function Hero() {
     </section>
   );
 }
+
