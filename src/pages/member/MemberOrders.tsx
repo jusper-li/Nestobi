@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ChevronDown, ChevronUp, Package, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { localeByLang, normalizeLang } from '../../lib/i18n';
+import { localeByLang, normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
 
@@ -25,51 +25,21 @@ interface Order {
 
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 
-const copy: Record<UiLang, Record<string, string>> = {
-  'zh-TW': {
-    title: '我的訂單',
-    noData: '目前沒有訂單',
-    paid: '已付款',
-    unpaid: '未付款',
-    view: '查看明細',
-    hide: '收合明細',
-    items: '訂單品項',
-  },
-  en: {
-    title: 'My Orders',
-    noData: 'No orders yet',
-    paid: 'Paid',
-    unpaid: 'Unpaid',
-    view: 'View details',
-    hide: 'Hide details',
-    items: 'Order Items',
-  },
-  ja: {
-    title: '注文履歴',
-    noData: '注文履歴はまだありません',
-    paid: '支払い済み',
-    unpaid: '未払い',
-    view: '詳細を見る',
-    hide: '詳細を閉じる',
-    items: '注文商品',
-  },
-  ko: {
-    title: '내 주문',
-    noData: '주문 내역이 없습니다',
-    paid: '결제 완료',
-    unpaid: '미결제',
-    view: '상세 보기',
-    hide: '상세 닫기',
-    items: '주문 상품',
-  },
-};
-
 export default function MemberOrders() {
   const { user } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang) as UiLang;
   const dateLocale = localeByLang(locale);
-  const t = copy[locale];
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
+  const t = {
+    title: pick('我的訂單', 'My Orders', '注文履歴', '내 주문'),
+    noData: pick('目前沒有訂單', 'No orders yet', '注文履歴はまだありません', '주문 내역이 없습니다'),
+    paid: pick('已付款', 'Paid', '支払い済み', '결제 완료'),
+    unpaid: pick('未付款', 'Unpaid', '未払い', '미결제'),
+    view: pick('查看明細', 'View details', '詳細を見る', '상세 보기'),
+    hide: pick('收合明細', 'Hide details', '詳細を閉じる', '상세 닫기'),
+    items: pick('訂單品項', 'Order Items', '注文商品', '주문 상품'),
+  };
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);

@@ -1,4 +1,4 @@
-import type { Lang } from '../i18n/translations';
+export type Lang = 'zh-TW' | 'en' | 'ja' | 'ko';
 
 export function normalizeLang(raw: string | null | undefined): Lang {
   const v = String(raw || '').trim().toLowerCase();
@@ -23,4 +23,3 @@ export function localeByLang(lang: string | null | undefined): 'zh-TW' | 'en-US'
   if (n === 'ko') return 'ko-KR';
   return 'zh-TW';
 }
-

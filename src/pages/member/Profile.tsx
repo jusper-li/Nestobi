@@ -3,94 +3,39 @@ import { motion } from 'framer-motion';
 import { CheckCircle, FileText, Globe, Phone, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { normalizeLang } from '../../lib/i18n';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
-
-const copy: Record<UiLang, Record<string, string>> = {
-  'zh-TW': {
-    title: '個人資料',
-    saved: '個人資料已儲存',
-    saveFailed: '儲存個人資料失敗，請稍後再試',
-    displayName: '顯示名稱',
-    phone: '手機號碼',
-    bio: '自我介紹',
-    nationality: '國籍',
-    preferredLanguage: '偏好語言',
-    save: '儲存變更',
-    displayNamePlaceholder: '請輸入顯示名稱',
-    phonePlaceholder: '09XX-XXX-XXX',
-    bioPlaceholder: '簡單介紹一下你自己...',
-    nationalityPlaceholder: '例如：台灣',
-    zhTw: '繁體中文',
-    en: 'English',
-    ja: '日本語',
-    ko: '한국어',
-  },
-  en: {
-    title: 'Profile',
-    saved: 'Profile updated successfully',
-    saveFailed: 'Failed to save profile. Please try again.',
-    displayName: 'Display name',
-    phone: 'Phone',
-    bio: 'Bio',
-    nationality: 'Nationality',
-    preferredLanguage: 'Preferred language',
-    save: 'Save changes',
-    displayNamePlaceholder: 'Enter your display name',
-    phonePlaceholder: '09XX-XXX-XXX',
-    bioPlaceholder: 'Tell us a little about yourself...',
-    nationalityPlaceholder: 'e.g. Taiwan',
-    zhTw: 'Traditional Chinese',
-    en: 'English',
-    ja: 'Japanese',
-    ko: 'Korean',
-  },
-  ja: {
-    title: 'プロフィール',
-    saved: 'プロフィールを保存しました',
-    saveFailed: 'プロフィールの保存に失敗しました。後でもう一度お試しください。',
-    displayName: '表示名',
-    phone: '電話番号',
-    bio: '自己紹介',
-    nationality: '国籍',
-    preferredLanguage: '言語設定',
-    save: '変更を保存',
-    displayNamePlaceholder: '表示名を入力',
-    phonePlaceholder: '09XX-XXX-XXX',
-    bioPlaceholder: '自己紹介を入力してください...',
-    nationalityPlaceholder: '例：台湾',
-    zhTw: '繁體中文',
-    en: 'English',
-    ja: '日本語',
-    ko: '한국어',
-  },
-  ko: {
-    title: '프로필',
-    saved: '프로필이 저장되었습니다',
-    saveFailed: '프로필 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.',
-    displayName: '표시 이름',
-    phone: '휴대폰 번호',
-    bio: '자기소개',
-    nationality: '국적',
-    preferredLanguage: '선호 언어',
-    save: '변경 저장',
-    displayNamePlaceholder: '표시 이름을 입력하세요',
-    phonePlaceholder: '09XX-XXX-XXX',
-    bioPlaceholder: '자기소개를 입력하세요...',
-    nationalityPlaceholder: '예: 대만',
-    zhTw: '繁體中文',
-    en: 'English',
-    ja: '日本語',
-    ko: '한국어',
-  },
-};
 
 const Profile: React.FC = () => {
   const { profile, updateProfile } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang) as UiLang;
-  const text = copy[locale];
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
+  const text = {
+    title: pick('個人資料', 'Profile', 'プロフィール', '프로필'),
+    saved: pick('個人資料已儲存', 'Profile updated successfully', 'プロフィールを保存しました', '프로필이 저장되었습니다'),
+    saveFailed: pick(
+      '儲存個人資料失敗，請稍後再試',
+      'Failed to save profile. Please try again.',
+      'プロフィールの保存に失敗しました。後でもう一度お試しください。',
+      '프로필 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.'
+    ),
+    displayName: pick('顯示名稱', 'Display name', '表示名', '표시 이름'),
+    phone: pick('手機號碼', 'Phone', '電話番号', '휴대폰 번호'),
+    bio: pick('自我介紹', 'Bio', '自己紹介', '자기소개'),
+    nationality: pick('國籍', 'Nationality', '国籍', '국적'),
+    preferredLanguage: pick('偏好語言', 'Preferred language', '言語設定', '선호 언어'),
+    save: pick('儲存變更', 'Save changes', '変更を保存', '변경 저장'),
+    displayNamePlaceholder: pick('請輸入顯示名稱', 'Enter your display name', '表示名を入力', '표시 이름을 입력하세요'),
+    phonePlaceholder: '09XX-XXX-XXX',
+    bioPlaceholder: pick('簡單介紹一下你自己...', 'Tell us a little about yourself...', '自己紹介を入力してください...', '자기소개를 입력하세요...'),
+    nationalityPlaceholder: pick('例如：台灣', 'e.g. Taiwan', '例：台湾', '예: 대만'),
+    zhTw: pick('繁體中文', 'Traditional Chinese', '繁體中文', '번체 중국어'),
+    en: 'English',
+    ja: '日本語',
+    ko: '한국어',
+  };
 
   const [displayName, setDisplayName] = useState('');
   const [phone, setPhone] = useState('');

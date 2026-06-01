@@ -3,76 +3,28 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { BedDouble, Home, LogOut, Menu, Receipt, Settings, ShoppingBag, Star, User, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { normalizeLang } from '../../lib/i18n';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 import Navigation from '../../components/Navigation';
 
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
-
-const copy: Record<
-  UiLang,
-  {
-    center: string;
-    profile: string;
-    bookings: string;
-    orders: string;
-    purchases: string;
-    points: string;
-    preferences: string;
-    signOut: string;
-    member: string;
-  }
-> = {
-  'zh-TW': {
-    center: '會員中心',
-    profile: '個人資料',
-    bookings: '我的訂房',
-    orders: '我的訂單',
-    purchases: '購買紀錄',
-    points: '我的點數',
-    preferences: '偏好設定',
-    signOut: '登出',
-    member: '會員',
-  },
-  en: {
-    center: 'Member Center',
-    profile: 'Profile',
-    bookings: 'My Bookings',
-    orders: 'My Orders',
-    purchases: 'Purchase History',
-    points: 'My Points',
-    preferences: 'Preferences',
-    signOut: 'Logout',
-    member: 'Member',
-  },
-  ja: {
-    center: '会員センター',
-    profile: 'プロフィール',
-    bookings: '予約',
-    orders: '注文',
-    purchases: '購入履歴',
-    points: 'ポイント',
-    preferences: '設定',
-    signOut: 'ログアウト',
-    member: '会員',
-  },
-  ko: {
-    center: '회원 센터',
-    profile: '프로필',
-    bookings: '내 예약',
-    orders: '내 주문',
-    purchases: '구매 내역',
-    points: '포인트',
-    preferences: '환경 설정',
-    signOut: '로그아웃',
-    member: '회원',
-  },
-};
 
 export default function MemberLayout() {
   const { user, profile, signOut } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang) as UiLang;
-  const t = copy[locale];
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
+  const t = {
+    center: pick('會員中心', 'Member Center', '会員センター', '회원 센터'),
+    profile: pick('個人資料', 'Profile', 'プロフィール', '프로필'),
+    bookings: pick('我的訂房', 'My Bookings', '予約', '내 예약'),
+    orders: pick('我的訂單', 'My Orders', '注文', '내 주문'),
+    purchases: pick('購買紀錄', 'Purchase History', '購入履歴', '구매 내역'),
+    points: pick('我的點數', 'My Points', 'ポイント', '포인트'),
+    preferences: pick('偏好設定', 'Preferences', '設定', '환경 설정'),
+    signOut: pick('登出', 'Logout', 'ログアウト', '로그아웃'),
+    member: pick('會員', 'Member', '会員', '회원'),
+    toggleMenu: pick('切換會員選單', 'Toggle member menu', '会員メニュー切り替え', '회원 메뉴 전환'),
+  };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -142,7 +94,7 @@ export default function MemberLayout() {
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="rounded-lg p-1.5 text-gray-700 hover:bg-gray-100"
-            aria-label="Toggle member menu"
+            aria-label={t.toggleMenu}
           >
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>

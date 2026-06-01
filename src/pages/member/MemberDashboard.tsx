@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { BedDouble, BookMarked, ChevronRight, Receipt, Settings, ShoppingBag, Star, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { localeByLang, normalizeLang } from '../../lib/i18n';
+import { localeByLang, normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
 
@@ -26,83 +26,29 @@ interface Order {
 
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 
-const copy: Record<UiLang, Record<string, string>> = {
-  'zh-TW': {
-    welcome: '歡迎回來',
-    points: '目前點數',
-    profile: '個人資料',
-    bookings: '我的訂房',
-    orders: '我的訂單',
-    purchases: '購買紀錄',
-    myPoints: '我的點數',
-    preferences: '偏好設定',
-    passport: '旅遊護照',
-    recentBookings: '近期訂房',
-    recentOrders: '近期訂單',
-    viewAll: '查看全部',
-    noBooking: '目前沒有訂房資料',
-    noOrders: '目前沒有訂單資料',
-    room: '房型',
-  },
-  en: {
-    welcome: 'Welcome back',
-    points: 'Current points',
-    profile: 'Profile',
-    bookings: 'My Bookings',
-    orders: 'My Orders',
-    purchases: 'Purchases',
-    myPoints: 'My Points',
-    preferences: 'Preferences',
-    passport: 'Travel Passport',
-    recentBookings: 'Recent Bookings',
-    recentOrders: 'Recent Orders',
-    viewAll: 'View all',
-    noBooking: 'No bookings yet',
-    noOrders: 'No orders yet',
-    room: 'Room',
-  },
-  ja: {
-    welcome: 'おかえりなさい',
-    points: '現在のポイント',
-    profile: 'プロフィール',
-    bookings: '予約',
-    orders: '注文',
-    purchases: '購入履歴',
-    myPoints: 'マイポイント',
-    preferences: '設定',
-    passport: 'トラベルパスポート',
-    recentBookings: '最近の予約',
-    recentOrders: '最近の注文',
-    viewAll: 'すべて表示',
-    noBooking: '予約はまだありません',
-    noOrders: '注文はまだありません',
-    room: '部屋',
-  },
-  ko: {
-    welcome: '다시 오신 것을 환영합니다',
-    points: '현재 포인트',
-    profile: '프로필',
-    bookings: '내 예약',
-    orders: '내 주문',
-    purchases: '구매 내역',
-    myPoints: '내 포인트',
-    preferences: '설정',
-    passport: '트래블 패스포트',
-    recentBookings: '최근 예약',
-    recentOrders: '최근 주문',
-    viewAll: '전체 보기',
-    noBooking: '예약이 없습니다',
-    noOrders: '주문이 없습니다',
-    room: '객실',
-  },
-};
-
 export default function MemberDashboard() {
   const { user, profile } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang) as UiLang;
   const dateLocale = localeByLang(locale);
-  const t = copy[locale];
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
+  const t = {
+    welcome: pick('歡迎回來', 'Welcome back', 'おかえりなさい', '다시 오신 것을 환영합니다'),
+    points: pick('目前點數', 'Current points', '現在のポイント', '현재 포인트'),
+    profile: pick('個人資料', 'Profile', 'プロフィール', '프로필'),
+    bookings: pick('我的訂房', 'My Bookings', '予約', '내 예약'),
+    orders: pick('我的訂單', 'My Orders', '注文', '내 주문'),
+    purchases: pick('購買紀錄', 'Purchases', '購入履歴', '구매 내역'),
+    myPoints: pick('我的點數', 'My Points', 'マイポイント', '내 포인트'),
+    preferences: pick('偏好設定', 'Preferences', '設定', '설정'),
+    passport: pick('旅遊護照', 'Travel Passport', 'トラベルパスポート', '트래블 패스포트'),
+    recentBookings: pick('近期訂房', 'Recent Bookings', '最近の予約', '최근 예약'),
+    recentOrders: pick('近期訂單', 'Recent Orders', '最近の注文', '최근 주문'),
+    viewAll: pick('查看全部', 'View all', 'すべて表示', '전체 보기'),
+    noBooking: pick('目前沒有訂房資料', 'No bookings yet', '予約はまだありません', '예약이 없습니다'),
+    noOrders: pick('目前沒有訂單資料', 'No orders yet', '注文はまだありません', '주문이 없습니다'),
+    room: pick('房型', 'Room', '部屋', '객실'),
+  };
   const [points, setPoints] = useState(0);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);

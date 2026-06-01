@@ -76,7 +76,15 @@ export function VendorRoute({ children }: { children: ReactNode }) {
 export function PermissionRoute({ children, permission }: { children: ReactNode; permission: string }) {
   const { role, hasPermission, loading } = useAuth();
   const { lang } = useLanguage();
-  const isEn = normalizeLang(lang) === 'en';
+  const normalizedLang = normalizeLang(lang);
+  const title = pickByLang(normalizedLang, '沒有存取權限', 'Access Denied', 'アクセス権限がありません', '접근 권한이 없습니다');
+  const desc = pickByLang(
+    normalizedLang,
+    '你的帳號沒有此功能權限，請聯繫超級管理員。',
+    'Your account is not authorized for this feature. Please contact the super admin.',
+    'この機能を利用する権限がありません。スーパー管理者に連絡してください。',
+    '이 기능에 대한 권한이 없습니다. 최고 관리자에게 문의해 주세요.',
+  );
   if (loading) return <LoadingScreen />;
   if (role === 'superadmin') return <>{children}</>;
   if (!hasPermission(permission)) {
@@ -85,8 +93,8 @@ export function PermissionRoute({ children, permission }: { children: ReactNode;
         <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
           <ShieldOff className="w-8 h-8 text-red-400" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">{isEn ? 'Access Denied' : '沒有存取權限'}</h2>
-        <p className="text-gray-500 text-sm max-w-xs">{isEn ? 'Your account is not authorized for this feature. Please contact the super admin.' : '你的帳號沒有此功能權限，請聯繫超級管理員。'}</p>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">{title}</h2>
+        <p className="text-gray-500 text-sm max-w-xs">{desc}</p>
       </div>
     );
   }

@@ -6,7 +6,7 @@ import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../contexts/LanguageContext';
-import { normalizeLang } from '../lib/i18n';
+import { normalizeLang, pickByLang } from '../lib/i18n';
 import { supabase } from '../lib/supabase';
 
 interface FAQ {
@@ -19,7 +19,8 @@ interface FAQ {
 
 export default function FAQPage() {
   const { lang } = useLanguage();
-  const isEn = normalizeLang(lang) === 'en';
+  const normalizedLang = normalizeLang(lang);
+  const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -27,16 +28,32 @@ export default function FAQPage() {
   const [openId, setOpenId] = useState<string | null>(null);
 
   const t = {
-    title: isEn ? 'Frequently Asked Questions' : '常見問題',
-    subtitle: isEn ? 'Find quick answers for booking, shopping, AI tools, and member services.' : '快速查看訂房、購物、AI 工具與會員功能的常見解答。',
-    search: isEn ? 'Search questions...' : '搜尋問題...',
-    all: isEn ? 'All' : '全部',
-    empty: isEn ? 'No matching FAQ found' : '找不到符合的問題',
-    clear: isEn ? 'Clear search' : '清除搜尋',
-    ctaTitle: isEn ? 'Need more help?' : '需要更多協助？',
-    ctaDesc: isEn ? 'Use AI support or contact us directly.' : '你可以使用 AI 客服，或直接與我們聯繫。',
-    ctaAI: isEn ? 'AI Support' : 'AI 客服',
-    ctaContact: isEn ? 'Contact Us' : '聯絡我們',
+    title: t4('常見問題', 'Frequently Asked Questions', 'よくある質問', '자주 묻는 질문'),
+    subtitle: t4(
+      '快速查看訂房、購物、AI 工具與會員功能的常見解答。',
+      'Find quick answers for booking, shopping, AI tools, and member services.',
+      '予約・ショッピング・AI機能・会員サービスの質問をすぐ確認できます。',
+      '예약, 쇼핑, AI 기능, 회원 서비스 관련 답변을 빠르게 확인하세요.',
+    ),
+    search: t4('搜尋問題...', 'Search questions...', '質問を検索...', '질문 검색...'),
+    all: t4('全部', 'All', 'すべて', '전체'),
+    empty: t4('找不到符合的問題', 'No matching FAQ found', '一致するFAQが見つかりません', '일치하는 FAQ가 없습니다'),
+    clear: t4('清除搜尋', 'Clear search', '検索をクリア', '검색 초기화'),
+    ctaTitle: t4('需要更多協助？', 'Need more help?', 'さらにサポートが必要ですか？', '추가 도움이 필요하신가요?'),
+    ctaDesc: t4(
+      '你可以使用 AI 客服，或直接與我們聯繫。',
+      'Use AI support or contact us directly.',
+      'AIサポートを使うか、直接お問い合わせください。',
+      'AI 고객 지원을 이용하거나 직접 문의하세요.',
+    ),
+    ctaAI: t4('AI 客服', 'AI Support', 'AIサポート', 'AI 지원'),
+    ctaContact: t4('聯絡我們', 'Contact Us', 'お問い合わせ', '문의하기'),
+    seoKeywords: t4(
+      '常見問題, 訂房, 購物, AI客服, Nestobi',
+      'FAQ, booking, shopping, AI support, Nestobi',
+      'FAQ, 予約, ショッピング, AIサポート, Nestobi',
+      'FAQ, 예약, 쇼핑, AI 지원, Nestobi',
+    ),
   };
 
   useEffect(() => {
@@ -78,7 +95,7 @@ export default function FAQPage() {
       <SEOHead
         title={t.title}
         description={t.subtitle}
-        keywords={isEn ? 'FAQ, booking, shopping, AI support, Nestobi' : '常見問題, 訂房, 購物, AI客服, Nestobi'}
+        keywords={t.seoKeywords}
         pageType="faq"
       />
       <Navigation />

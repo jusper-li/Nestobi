@@ -7,7 +7,7 @@ import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { normalizeLang } from '../../lib/i18n';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 import {
   getTranslationRuntimeState,
   translateCategoriesFromCacheOnly,
@@ -70,9 +70,8 @@ export default function ProductDetail() {
   const { addItem } = useCart();
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
-  const locale = normalizedLang;
-  const t4 = (zh: string, en: string, ja: string, ko: string) =>
-    locale === 'ja' ? ja : locale === 'ko' ? ko : locale === 'en' ? en : zh;
+  const shouldTranslate = pickByLang(normalizedLang, '0', '1', '1', '1') === '1';
+  const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
 
   const labels = {
     notFoundTitle: t4('找不到商品', 'Product Not Found', '商品が見つかりません', '상품을 찾을 수 없습니다'),
@@ -160,7 +159,7 @@ export default function ProductDetail() {
 
   useEffect(() => {
     let cancelled = false;
-    if (!product || normalizedLang === 'zh-TW') {
+    if (!product || !shouldTranslate) {
       setDisplayProduct(product);
       return () => {
         cancelled = true;
@@ -176,11 +175,11 @@ export default function ProductDetail() {
     return () => {
       cancelled = true;
     };
-  }, [product, normalizedLang]);
+  }, [product, normalizedLang, shouldTranslate]);
 
   useEffect(() => {
     let cancelled = false;
-    if (!category || normalizedLang === 'zh-TW') {
+    if (!category || !shouldTranslate) {
       setDisplayCategory(category);
       return () => {
         cancelled = true;
@@ -196,11 +195,11 @@ export default function ProductDetail() {
     return () => {
       cancelled = true;
     };
-  }, [category, normalizedLang]);
+  }, [category, normalizedLang, shouldTranslate]);
 
   useEffect(() => {
     let cancelled = false;
-    if (!related.length || normalizedLang === 'zh-TW') {
+    if (!related.length || !shouldTranslate) {
       setDisplayRelated(related);
       return () => {
         cancelled = true;
@@ -216,7 +215,7 @@ export default function ProductDetail() {
     return () => {
       cancelled = true;
     };
-  }, [related, normalizedLang]);
+  }, [related, normalizedLang, shouldTranslate]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || window.location.hostname !== 'localhost') return;
@@ -475,4 +474,3 @@ export default function ProductDetail() {
     </div>
   );
 }
-

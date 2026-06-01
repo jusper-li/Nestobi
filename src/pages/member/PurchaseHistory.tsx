@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { localeByLang, normalizeLang } from '../../lib/i18n';
+import { localeByLang, normalizeLang, pickByLang } from '../../lib/i18n';
 
 interface PurchaseRecord {
   id: string;
@@ -19,75 +19,27 @@ interface PurchaseRecord {
 
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 
-const copy: Record<UiLang, Record<string, string>> = {
-  'zh-TW': {
-    title: '購買紀錄',
-    startDate: '開始日期',
-    endDate: '結束日期',
-    filter: '篩選',
-    reset: '重設',
-    noData: '目前沒有購買紀錄',
-    product: '商品',
-    qty: '數量',
-    unitPrice: '單價',
-    total: '總價',
-    date: '日期',
-    status: '狀態',
-    unknown: '未知商品',
-  },
-  en: {
-    title: 'Purchase History',
-    startDate: 'Start Date',
-    endDate: 'End Date',
-    filter: 'Filter',
-    reset: 'Reset',
-    noData: 'No purchase records yet',
-    product: 'Product',
-    qty: 'Qty',
-    unitPrice: 'Unit Price',
-    total: 'Total',
-    date: 'Date',
-    status: 'Status',
-    unknown: 'Unknown Product',
-  },
-  ja: {
-    title: '購入履歴',
-    startDate: '開始日',
-    endDate: '終了日',
-    filter: '絞り込み',
-    reset: 'リセット',
-    noData: '購入履歴はまだありません',
-    product: '商品',
-    qty: '数量',
-    unitPrice: '単価',
-    total: '合計',
-    date: '日付',
-    status: '状態',
-    unknown: '不明な商品',
-  },
-  ko: {
-    title: '구매 내역',
-    startDate: '시작일',
-    endDate: '종료일',
-    filter: '필터',
-    reset: '초기화',
-    noData: '구매 내역이 없습니다',
-    product: '상품',
-    qty: '수량',
-    unitPrice: '단가',
-    total: '합계',
-    date: '날짜',
-    status: '상태',
-    unknown: '알 수 없는 상품',
-  },
-};
-
 const PurchaseHistory: React.FC = () => {
   const { user } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang) as UiLang;
   const dateLocale = localeByLang(locale);
-  const t = copy[locale];
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
+  const t = {
+    title: pick('購買紀錄', 'Purchase History', '購入履歴', '구매 내역'),
+    startDate: pick('開始日期', 'Start Date', '開始日', '시작일'),
+    endDate: pick('結束日期', 'End Date', '終了日', '종료일'),
+    filter: pick('篩選', 'Filter', '絞り込み', '필터'),
+    reset: pick('重設', 'Reset', 'リセット', '초기화'),
+    noData: pick('目前沒有購買紀錄', 'No purchase records yet', '購入履歴はまだありません', '구매 내역이 없습니다'),
+    product: pick('商品', 'Product', '商品', '상품'),
+    qty: pick('數量', 'Qty', '数量', '수량'),
+    unitPrice: pick('單價', 'Unit Price', '単価', '단가'),
+    total: pick('總價', 'Total', '合計', '합계'),
+    date: pick('日期', 'Date', '日付', '날짜'),
+    status: pick('狀態', 'Status', '状態', '상태'),
+    unknown: pick('未知商品', 'Unknown Product', '不明な商品', '알 수 없는 상품'),
+  };
   const [records, setRecords] = useState<PurchaseRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState('');

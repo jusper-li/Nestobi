@@ -8,7 +8,7 @@ import Footer from '../../components/Footer';
 import SEOHead from '../../components/SEOHead';
 import { sanitizeHtml } from '../../lib/security';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { localeByLang, normalizeLang } from '../../lib/i18n';
+import { localeByLang, normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { translateBlogPostsFromCacheOnly, translateBlogPostsOnDemand } from '../../lib/contentTranslations';
 
@@ -44,10 +44,9 @@ const BlogDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
-  const locale = normalizedLang;
+  const shouldTranslate = pickByLang(normalizedLang, '0', '1', '1', '1') === '1';
   const dateLocale = localeByLang(normalizedLang);
-  const t4 = (zh: string, en: string, ja: string, ko: string) =>
-    locale === 'ja' ? ja : locale === 'ko' ? ko : locale === 'en' ? en : zh;
+  const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
 
   const t = {
     blogHome: t4('咖啡旅行家', 'Coffee Traveler', 'コーヒートラベラー', '커피 트래블러'),
@@ -84,7 +83,7 @@ const BlogDetail: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
-    if (!post || normalizedLang === 'zh-TW') {
+    if (!post || !shouldTranslate) {
       setDisplayPost(post);
       return () => {
         cancelled = true;
@@ -100,11 +99,11 @@ const BlogDetail: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [post, normalizedLang]);
+  }, [post, normalizedLang, shouldTranslate]);
 
   useEffect(() => {
     let cancelled = false;
-    if (!related.length || normalizedLang === 'zh-TW') {
+    if (!related.length || !shouldTranslate) {
       setDisplayRelated(related);
       return () => {
         cancelled = true;
@@ -120,7 +119,7 @@ const BlogDetail: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [related, normalizedLang]);
+  }, [related, normalizedLang, shouldTranslate]);
 
   const viewPost = displayPost || post;
   const viewRelated = displayRelated.length ? displayRelated : related;

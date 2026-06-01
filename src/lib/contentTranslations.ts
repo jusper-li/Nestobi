@@ -101,6 +101,16 @@ const AI_COOLDOWN_KEY = 'nestobi:translation-ai-cooldown-until';
 const AI_COOLDOWN_MS = 2 * 60 * 1000;
 const TRANSLATION_CONCURRENCY = 3;
 
+function isMojibakeLike(text: string): boolean {
+  if (!text) return false;
+  if (text.includes('\uFFFD')) return true; // mojibake-check-ignore: replacement char detector
+  // Private use area characters are frequently seen in mojibake payloads in this project.
+  if (/[\uE000-\uF8FF]/.test(text)) return true;
+  // Common corrupted token pattern seen in prior bad payloads.
+  if (/\?[^\s]{1,3}/.test(text) && /[蝜銝敺撱憿雿鈭頛瘝閮鞈瑯賢箇颯擐霅蝭噯麮窶篞諻鴔鼒諈黺賱鮈諤]/.test(text)) return true; // mojibake-check-ignore: detector token set
+  return false;
+}
+
 if (typeof window !== 'undefined') {
   try {
     contentTranslationsTableUnavailable = window.sessionStorage.getItem(STORAGE_KEY) === '1';
@@ -281,6 +291,7 @@ function isUsableTranslation(source: string, translated: string): boolean {
   const src = source.trim();
   const txt = translated.trim();
   if (!txt || !src) return false;
+  if (isMojibakeLike(txt)) return false;
   const lower = txt.toLowerCase();
   if (lower.includes(EMPTY_TRANSLATION_HINT) || lower.includes(EMPTY_TRANSLATION_HINT_2)) return false;
   return true;

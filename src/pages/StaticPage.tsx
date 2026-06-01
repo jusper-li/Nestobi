@@ -51,6 +51,7 @@ const writeStaticI18nCache = (value: Record<string, PageData>) => {
 const StaticPage: React.FC = () => {
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
+  const shouldTranslate = pickByLang(normalizedLang, '0', '1', '1', '1') === '1';
   const targetLocale = localeByLang(normalizedLang);
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
 
@@ -67,8 +68,8 @@ const StaticPage: React.FC = () => {
     () => ({
       back: pick('返回', 'Back', '戻る', '뒤로'),
       updated: pick('最後更新：', 'Updated:', '最終更新：', '최종 업데이트:'),
-      notFound: pick('找不到頁面', 'Page not found', 'ページが見つかりません', '페이지를 찾을 수 없습니다'),
-      translating: pick('翻譯中...', 'Translating page...', '翻訳中...', '번역 중...'),
+      notFound: pick('找不到此頁面', 'Page not found', 'ページが見つかりません', '페이지를 찾을 수 없습니다'),
+      translating: pick('頁面翻譯中...', 'Translating page...', 'ページ翻訳中...', '페이지 번역 중...'),
     }),
     [normalizedLang]
   );
@@ -101,14 +102,14 @@ const StaticPage: React.FC = () => {
       setLoading(false);
     };
 
-    fetchPage();
+    void fetchPage();
   }, [slug, location.pathname]);
 
   useEffect(() => {
     const run = async () => {
       if (!sourcePage) return;
       if (!VALID_SLUGS.includes(slug)) return;
-      if (normalizedLang === 'zh-TW') {
+      if (!shouldTranslate) {
         setPage(sourcePage);
         return;
       }
@@ -125,18 +126,8 @@ const StaticPage: React.FC = () => {
       setTranslating(true);
       try {
         const [title, description, content] = await Promise.all([
-          callAI<string>('translate', {
-            text: sourcePage.title,
-            sourceLang: 'zh-TW',
-            targetLang: normalizedLang,
-            language: normalizedLang,
-          }),
-          callAI<string>('translate', {
-            text: sourcePage.meta_description || sourcePage.title,
-            sourceLang: 'zh-TW',
-            targetLang: normalizedLang,
-            language: normalizedLang,
-          }),
+          callAI<string>('translate', { text: sourcePage.title, sourceLang: 'zh-TW', targetLang: normalizedLang, language: normalizedLang }),
+          callAI<string>('translate', { text: sourcePage.meta_description || sourcePage.title, sourceLang: 'zh-TW', targetLang: normalizedLang, language: normalizedLang }),
           callAI<string>('translate', {
             text: `Translate the following HTML into ${normalizedLang}. Keep all HTML tags/attributes unchanged and only translate visible text content:\n\n${sourcePage.content}`,
             sourceLang: 'zh-TW',
@@ -161,8 +152,8 @@ const StaticPage: React.FC = () => {
       }
     };
 
-    run();
-  }, [sourcePage, slug, normalizedLang]);
+    void run();
+  }, [sourcePage, slug, normalizedLang, shouldTranslate]);
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString(targetLocale, {
@@ -194,10 +185,7 @@ const StaticPage: React.FC = () => {
       <Navigation />
 
       <div className="mx-auto max-w-3xl px-4 py-12">
-        <button
-          onClick={() => navigate(-1)}
-          className="group mb-8 flex items-center gap-2 text-sm text-gray-400 transition-colors hover:text-[#2C1F10]"
-        >
+        <button onClick={() => navigate(-1)} className="group mb-8 flex items-center gap-2 text-sm text-gray-400 transition-colors hover:text-[#2C1F10]">
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
           {ui.back}
         </button>
@@ -217,11 +205,7 @@ const StaticPage: React.FC = () => {
         {page && !loading && (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm md:p-12">
-              {translating && (
-                <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
-                  {ui.translating}
-                </div>
-              )}
+              {translating && <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">{ui.translating}</div>}
               {page.updated_at && (
                 <div className="mb-8 flex items-center gap-1.5 text-xs text-gray-400">
                   <Clock className="h-3.5 w-3.5" />
@@ -243,4 +227,3 @@ const StaticPage: React.FC = () => {
 };
 
 export default StaticPage;
-

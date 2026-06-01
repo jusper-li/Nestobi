@@ -7,7 +7,7 @@ import Footer from '../components/Footer';
 import Navigation from '../components/Navigation';
 import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../contexts/LanguageContext';
-import { localeByLang, normalizeLang } from '../lib/i18n';
+import { localeByLang, normalizeLang, pickByLang } from '../lib/i18n';
 import {
   getTranslationRuntimeState,
   translateBlogPostsFromCacheOnly,
@@ -84,48 +84,48 @@ function localizeCityName(text: string | null | undefined, nonZh: boolean) {
 export default function Home() {
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
+  const shouldTranslate = pickByLang(normalizedLang, '0', '1', '1', '1') === '1';
   const locale = localeByLang(normalizedLang);
-  const nonZh = normalizedLang !== 'zh-TW';
-  const t4 = (zh: string, en: string, ja: string, ko: string) =>
-    normalizedLang === 'ja' ? ja : normalizedLang === 'ko' ? ko : normalizedLang === 'en' ? en : zh;
+  const nonZh = shouldTranslate;
+  const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
 
   const t = {
-    pageTitle: t4('Nestobi 旅遊購物平台', 'Nestobi Travel & Shop Platform', 'Nestobi 旅行ショッピングプラットフォーム', 'Nestobi 여행 쇼핑 플랫폼'),
-    pageDesc: t4('一站整合住宿、購物與 AI 旅遊工具。', 'One-stop stays, shopping, and AI travel tools.', '宿泊・買い物・AI旅ツールを一つに。', '숙소, 쇼핑, AI 여행 도구를 한 곳에서.'),
-    heroTitle1: t4('從下一趟旅程開始', 'Start Your Next', '次の旅をここから', '다음 여행을 여기서'),
+    pageTitle: t4('Nestobi 旅遊選物平台', 'Nestobi Travel & Shop Platform', 'Nestobi 旅と買い物プラットフォーム', 'Nestobi 여행 & 쇼핑 플랫폼'),
+    pageDesc: t4('一站整合住宿、旅遊選物與 AI 工具。', 'One-stop stays, shopping, and AI travel tools.', '宿泊・買い物・AIツールをひとつに。', '숙소, 쇼핑, AI 여행 도구를 한곳에.'),
+    heroTitle1: t4('從下一趟旅程開始', 'Start Your Next', '次の旅を始めよう', '다음 여행을 시작하세요'),
     heroTitle2: t4('讓平台替你少想一點', 'Journey Here', '旅の準備をもっと軽く', '여행 준비를 더 가볍게'),
     heroDesc: t4(
       '從精選住宿、咖啡選物到 AI 行程規劃，Nestobi 幫你把旅程、購物與日常整理在同一個地方。',
       'From curated stays and coffee picks to AI itinerary planning, Nestobi helps you travel, shop, and organize in one place.',
-      '厳選宿泊、コーヒーセレクト、AI行程作成まで。Nestobiで旅と買い物を一つに。',
-      '엄선 숙소, 커피 셀렉트, AI 일정 계획까지. Nestobi에서 여행과 쇼핑을 한 번에.',
+      '厳選宿泊、コーヒーセレクト、AI旅程作成まで。Nestobiで旅と買い物をひとつに。',
+      '엄선 숙소, 커피 셀렉션, AI 일정 계획까지. Nestobi에서 여행과 쇼핑을 한 번에.',
     ),
-    shopNow: t4('逛選物商店', 'Shop', 'ショップを見る', '샵 둘러보기'),
+    shopNow: t4('逛選物商店', 'Shop', 'ショップへ', '샵 보기'),
     exploreStays: t4('尋找住宿', 'Find Stays', '宿を探す', '숙소 찾기'),
     stays: t4('住宿', 'Stays', '宿泊', '숙소'),
     shop: t4('選物商店', 'Shop', 'ショップ', '샵'),
     journal: t4('咖啡旅誌', 'Coffee Journal', 'コーヒージャーナル', '커피 저널'),
     featuredStays: t4('精選住宿', 'Featured Stays', '注目の宿泊', '추천 숙소'),
     featuredShop: t4('精選商品', 'Featured Products', '注目の商品', '추천 상품'),
-    featuredJournal: t4('最新文章', 'Latest Stories', '最新記事', '최신 글'),
+    featuredJournal: t4('最新文章', 'Latest Stories', '最新記事', '최신 스토리'),
     viewAllStays: t4('查看全部住宿', 'View All Stays', 'すべての宿泊を見る', '모든 숙소 보기'),
     viewAllShop: t4('查看全部商品', 'View All Products', 'すべての商品を見る', '모든 상품 보기'),
     viewAllJournal: t4('查看全部文章', 'View All Articles', 'すべての記事を見る', '모든 글 보기'),
     perNight: t4('/ 晚', '/ night', '/ 泊', '/ 박'),
     guests: t4('人', 'guests', '名', '명'),
-    translationSyncing: t4('首頁翻譯背景同步中...', 'Homepage translation is syncing in background...', 'ホーム翻訳をバックグラウンド同期中...', '홈 번역을 백그라운드 동기화 중...'),
-    translationFallback: t4('目前先顯示原文內容，翻譯快取尚未就緒。', 'Showing source content first. Translation cache is not ready yet.', '翻訳キャッシュ未準備のため原文を先に表示します。', '번역 캐시 준비 전이라 원문을 먼저 표시합니다.'),
-    closeTitle: t4('讓每趟旅程更輕鬆、更安心', 'Make every trip easier and calmer.', '旅をもっとラクに、もっと安心に。', '모든 여행을 더 쉽고 편안하게.'),
-    trustStaysTitle: t4('精選住宿', 'Trusted Stays', '厳選ステイ', '엄선 숙소'),
-    trustStaysDesc: t4('嚴選合作房源，重視品質與入住體驗。', 'Verified and quality-picked rooms.', '品質重視で選ばれた宿泊先。', '품질 검증된 숙소만 선별.'),
-    trustShopTitle: t4('旅行選物', 'Curated Shop', '旅のセレクト', '여행 셀렉트'),
-    trustShopDesc: t4('咖啡與旅行好物一次挑選，不用分散比對。', 'Coffee and travel picks in one place.', 'コーヒーと旅のおすすめを一か所で。', '커피와 여행 아이템을 한곳에서.'),
-    trustAiTitle: t4('AI 支援', 'AI Support', 'AIサポート', 'AI 지원'),
-    trustAiDesc: t4('行程、翻譯與旅遊客服，隨時都能使用。', 'Plan, translate, and chat anytime.', '行程作成・翻訳・サポートをいつでも。', '일정, 번역, 여행 상담을 언제든.'),
+    translationSyncing: t4('首頁翻譯正在背景同步中...', 'Homepage translation is syncing in background...', 'ホームページ翻訳をバックグラウンドで同期中...', '홈페이지 번역을 백그라운드에서 동기화 중...'),
+    translationFallback: t4('目前先顯示原文內容，翻譯快取尚未就緒。', 'Showing source content first. Translation cache is not ready yet.', '翻訳キャッシュ未準備のため原文を表示しています。', '번역 캐시가 준비되지 않아 원문을 먼저 표시합니다.'),
+    closeTitle: t4('讓每次旅行都更輕鬆安心', 'Make every trip easier and calmer.', 'すべての旅をもっと軽く、穏やかに。', '모든 여행을 더 쉽고 편안하게.'),
+    trustStaysTitle: t4('安心住宿', 'Trusted Stays', '信頼できる宿泊', '신뢰할 수 있는 숙소'),
+    trustStaysDesc: t4('每間房源都經過驗證與品質篩選。', 'Verified and quality-picked rooms.', '認証済みで品質重視の宿泊先。', '검증된 고품질 숙소만 엄선.'),
+    trustShopTitle: t4('精選購物', 'Curated Shop', '厳選ショップ', '큐레이션 쇼핑'),
+    trustShopDesc: t4('把咖啡與旅途選物一次整合。', 'Coffee and travel picks in one place.', 'コーヒーと旅のセレクトをひとつに。', '커피와 여행 셀렉션을 한곳에.'),
+    trustAiTitle: t4('AI 協作', 'AI Support', 'AIサポート', 'AI 지원'),
+    trustAiDesc: t4('隨時安排、翻譯與對話，出發更從容。', 'Plan, translate, and chat anytime.', '計画、翻訳、チャットをいつでも。', '일정, 번역, 채팅을 언제든.'),
   };
 
   const stats = [
-    { value: '120+', label: t4('精選商品', 'Curated Products', '厳選アイテム', '엄선 상품') },
+    { value: '120+', label: t4('精選商品', 'Curated Products', '厳選商品', '큐레이션 상품') },
     { value: '24/7', label: t4('AI 旅遊支援', 'AI Support', 'AIサポート', 'AI 지원') },
     { value: '5%', label: t4('購物點數回饋', 'Points Back', 'ポイント還元', '포인트 적립') },
     { value: '1 stop', label: t4('一站整合', 'All-in-one', 'ワンストップ', '원스톱') },
@@ -196,7 +196,7 @@ export default function Home() {
 
   useEffect(() => {
     let cancelled = false;
-    if (!featuredRooms.length || normalizedLang === 'zh-TW') {
+    if (!featuredRooms.length || !shouldTranslate) {
       setDisplayRooms(featuredRooms);
       setTranslationNotice('');
       return () => {
@@ -264,7 +264,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [featuredRooms, normalizedLang, t.translationFallback, t.translationSyncing]);
+  }, [featuredRooms, normalizedLang, shouldTranslate, t.translationFallback, t.translationSyncing]);
 
   useEffect(() => {
     let cancelled = false;

@@ -18,7 +18,7 @@ import Navigation from '../../components/Navigation';
 import Footer from '../../components/Footer';
 import SEOHead from '../../components/SEOHead';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { localeByLang, normalizeLang } from '../../lib/i18n';
+import { localeByLang, normalizeLang, pickByLang } from '../../lib/i18n';
 import { useProgressiveList } from '../../hooks/useProgressiveList';
 import {
   getTranslationRuntimeState,
@@ -137,11 +137,8 @@ async function fetchBlogCategoriesFromSupabase() {
 const BlogList: React.FC = () => {
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
-  const locale = normalizedLang;
   const dateLocale = localeByLang(normalizedLang);
-  const isEn = locale === 'en';
-  const t4 = (zh: string, en: string, ja: string, ko: string) =>
-    locale === 'ja' ? ja : locale === 'ko' ? ko : locale === 'en' ? en : zh;
+  const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
 
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [displayPosts, setDisplayPosts] = useState<BlogPost[]>([]);

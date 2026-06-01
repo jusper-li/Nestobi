@@ -7,7 +7,7 @@ import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { localeByLang, normalizeLang } from '../../lib/i18n';
+import { localeByLang, normalizeLang, pickByLang } from '../../lib/i18n';
 import { useProgressiveList } from '../../hooks/useProgressiveList';
 import {
   getTranslationRuntimeState,
@@ -80,10 +80,9 @@ function sortProducts(products: Product[], sortMode: SortMode) {
 export default function ProductList() {
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
+  const shouldTranslate = pickByLang(normalizedLang, '0', '1', '1', '1') === '1';
   const locale = localeByLang(normalizedLang);
-  const isEn = normalizedLang === 'en';
-  const t4 = (zh: string, en: string, ja: string, ko: string) =>
-    normalizedLang === 'ja' ? ja : normalizedLang === 'ko' ? ko : normalizedLang === 'en' ? en : zh;
+  const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
   const labels = {
     seoTitle: t4('旅行選物商店', 'Travel Shop', '旅セレクトショップ', '여행 셀렉트 샵'),
     seoDesc: t4(
@@ -233,7 +232,7 @@ export default function ProductList() {
 
   useEffect(() => {
     let cancelled = false;
-    if (!products.length || normalizedLang === 'zh-TW') {
+    if (!products.length || !shouldTranslate) {
       setDisplayProducts(products);
       setTranslationNotice('');
       return () => { cancelled = true; };
@@ -283,11 +282,11 @@ export default function ProductList() {
     })();
 
     return () => { cancelled = true; };
-  }, [products, normalizedLang, isEn]);
+  }, [products, normalizedLang, shouldTranslate]);
 
   useEffect(() => {
     let cancelled = false;
-    if (!categories.length || normalizedLang === 'zh-TW') {
+    if (!categories.length || !shouldTranslate) {
       setDisplayCategories(categories);
       return () => {
         cancelled = true;
@@ -314,7 +313,7 @@ export default function ProductList() {
     return () => {
       cancelled = true;
     };
-  }, [categories, normalizedLang]);
+  }, [categories, normalizedLang, shouldTranslate]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -557,13 +556,13 @@ export default function ProductList() {
         <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-bold text-gray-900">
-              {normalizedLang === 'zh-TW'
-                ? `找到 ${filtered.length} ${labels.foundProducts}`
-                : normalizedLang === 'ja'
-                  ? `${filtered.length}${labels.foundProducts}`
-                  : normalizedLang === 'ko'
-                    ? `${filtered.length}${labels.foundProducts}`
-                    : `${filtered.length} ${labels.foundProducts}`}
+              {pickByLang(
+                normalizedLang,
+                `找到 ${filtered.length} ${labels.foundProducts}`,
+                `${filtered.length} ${labels.foundProducts}`,
+                `${filtered.length}${labels.foundProducts}`,
+                `${filtered.length}${labels.foundProducts}`,
+              )}
               <span className="ml-2 text-xs font-semibold text-slate-500">
                 {labels.shownCount} {Math.min(visibleCount, filtered.length)}，{inStockCount} {labels.purchasable}
               </span>

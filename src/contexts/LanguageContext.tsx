@@ -1,17 +1,14 @@
 import React, { createContext, useContext, useState } from 'react';
-import { translations, type Lang, type Translations } from '../i18n/translations';
-import { normalizeLang } from '../lib/i18n';
+import { normalizeLang, type Lang } from '../lib/i18n';
 
 interface LanguageContextType {
   lang: Lang;
   setLang: (lang: Lang) => void;
-  t: Translations;
 }
 
 const LanguageContext = createContext<LanguageContextType>({
   lang: 'zh-TW',
   setLang: () => {},
-  t: translations['zh-TW'],
 });
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
@@ -30,7 +27,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <LanguageContext.Provider value={{ lang, setLang, t: translations[lang] }}>
+    <LanguageContext.Provider value={{ lang, setLang }}>
       {children}
     </LanguageContext.Provider>
   );

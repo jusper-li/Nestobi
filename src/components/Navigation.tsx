@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -29,133 +29,63 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { LANG_OPTIONS, type Lang } from '../i18n/translations';
+import { normalizeLang, pickByLang } from '../lib/i18n';
 
-const NAV_I18N = {
-  'zh-TW': {
-    home: '首頁',
-    cart: '購物車',
-    stores: '門市據點',
-    rooms: '住宿',
-    shop: '選物商店',
-    blog: '咖啡旅誌',
-    aiItinerary: 'AI 行程規劃',
-    aiTranslator: 'AI 即時翻譯',
-    aiChat: 'AI 客服',
-    travelPassport: '旅遊護照',
-    login: '登入',
-    register: '註冊',
-    member: '會員',
-    memberCenter: '會員中心',
-    myBookings: '我的訂房',
-    myOrders: '我的訂單',
-    myPurchases: '購買紀錄',
-    myPoints: '我的點數',
-    profile: '個人資料',
-    settings: '偏好設定',
-    adminPanel: '管理後台',
-    superAdmin: '超級管理',
-    logout: '登出',
-    closeMenu: '關閉選單',
-  },
-  en: {
-    home: 'Home',
-    cart: 'Cart',
-    stores: 'Store Locations',
-    rooms: 'Stays',
-    shop: 'Shop',
-    blog: 'Coffee Journal',
-    aiItinerary: 'AI Planner',
-    aiTranslator: 'AI Translate',
-    aiChat: 'AI Support',
-    travelPassport: 'Travel Passport',
-    login: 'Login',
-    register: 'Sign up',
-    member: 'Member',
-    memberCenter: 'Member Center',
-    myBookings: 'My Bookings',
-    myOrders: 'My Orders',
-    myPurchases: 'Purchase History',
-    myPoints: 'My Points',
-    profile: 'Profile',
-    settings: 'Preferences',
-    adminPanel: 'Admin',
-    superAdmin: 'Super Admin',
-    logout: 'Logout',
-    closeMenu: 'Close menu',
-  },
-  ja: {
-    home: 'ホーム',
-    cart: 'カート',
-    stores: '店舗一覧',
-    rooms: '宿泊',
-    shop: 'ショップ',
-    blog: 'コーヒージャーナル',
-    aiItinerary: 'AI 旅程プランナー',
-    aiTranslator: 'AI 翻訳',
-    aiChat: 'AI サポート',
-    travelPassport: '旅のパスポート',
-    login: 'ログイン',
-    register: '新規登録',
-    member: '会員',
-    memberCenter: '会員センター',
-    myBookings: '宿泊予約',
-    myOrders: '注文履歴',
-    myPurchases: '購入履歴',
-    myPoints: 'ポイント',
-    profile: 'プロフィール',
-    settings: '設定',
-    adminPanel: '管理画面',
-    superAdmin: 'スーパー管理',
-    logout: 'ログアウト',
-    closeMenu: 'メニューを閉じる',
-  },
-  ko: {
-    home: '홈',
-    cart: '장바구니',
-    stores: '매장 위치',
-    rooms: '숙소',
-    shop: '샵',
-    blog: '커피 저널',
-    aiItinerary: 'AI 플래너',
-    aiTranslator: 'AI 번역',
-    aiChat: 'AI 고객지원',
-    travelPassport: '여행 패스포트',
-    login: '로그인',
-    register: '회원가입',
-    member: '회원',
-    memberCenter: '회원센터',
-    myBookings: '내 예약',
-    myOrders: '내 주문',
-    myPurchases: '구매 내역',
-    myPoints: '포인트',
-    profile: '프로필',
-    settings: '설정',
-    adminPanel: '관리',
-    superAdmin: '슈퍼 관리자',
-    logout: '로그아웃',
-    closeMenu: '메뉴 닫기',
-  },
-} as const;
+type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 
 export default function Navigation() {
   const { user, profile, role, signOut } = useAuth();
   const { totalItems } = useCart();
-  const { lang, setLang, t } = useLanguage();
+  const { lang, setLang } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
 
-  const labels = NAV_I18N[lang];
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const locale = normalizeLang(lang) as UiLang;
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
 
-  const handleSignOut = async () => {
-    await signOut();
-    setUserMenuOpen(false);
-    navigate('/');
-  };
+  const labels = useMemo(() => ({
+    home: pick('首頁', 'Home', 'ホーム', '홈'),
+    cart: pick('購物車', 'Cart', 'カート', '장바구니'),
+    stores: pick('門市據點', 'Store Locations', '店舗一覧', '매장 위치'),
+    rooms: pick('住宿', 'Stays', '宿泊', '숙소'),
+    shop: pick('選物商店', 'Shop', 'ショップ', '샵'),
+    blog: pick('咖啡旅誌', 'Coffee Journal', 'コーヒージャーナル', '커피 저널'),
+    aiItinerary: pick('AI 行程規劃', 'AI Planner', 'AI 旅程プランナー', 'AI 플래너'),
+    aiTranslator: pick('AI 即時翻譯', 'AI Translate', 'AI 翻訳', 'AI 번역'),
+    aiChat: pick('AI 客服', 'AI Support', 'AI サポート', 'AI 고객지원'),
+    travelPassport: pick('旅遊護照', 'Travel Passport', '旅のパスポート', '여행 패스포트'),
+    login: pick('登入', 'Login', 'ログイン', '로그인'),
+    register: pick('註冊', 'Sign up', '新規登録', '회원가입'),
+    member: pick('會員', 'Member', '会員', '회원'),
+    memberCenter: pick('會員中心', 'Member Center', '会員センター', '회원센터'),
+    myBookings: pick('我的訂房', 'My Bookings', '宿泊予約', '내 예약'),
+    myOrders: pick('我的訂單', 'My Orders', '注文履歴', '내 주문'),
+    myPurchases: pick('購買紀錄', 'Purchase History', '購入履歴', '구매 내역'),
+    myPoints: pick('我的點數', 'My Points', 'ポイント', '포인트'),
+    profile: pick('個人資料', 'Profile', 'プロフィール', '프로필'),
+    preferences: pick('偏好設定', 'Preferences', '設定', '설정'),
+    adminPanel: pick('管理後台', 'Admin', '管理画面', '관리'),
+    superAdmin: pick('超級管理', 'Super Admin', 'スーパー管理', '슈퍼 관리자'),
+    logout: pick('登出', 'Logout', 'ログアウト', '로그아웃'),
+    closeMenu: pick('關閉選單', 'Close menu', 'メニューを閉じる', '메뉴 닫기'),
+    language: pick('語言', 'Language', '言語', '언어'),
+  }), [locale]);
+
+  const languageOptions = useMemo(
+    () => [
+      { code: 'zh-TW' as const, label: pick('繁體中文', 'Traditional Chinese', '繁體中文', '번체중문'), short: 'TW' },
+      { code: 'en' as const, label: pick('英文', 'English', '英語', '영어'), short: 'EN' },
+      { code: 'ja' as const, label: pick('日文', 'Japanese', '日本語', '일본어'), short: 'JP' },
+      { code: 'ko' as const, label: pick('韓文', 'Korean', '韓国語', '한국어'), short: 'KR' },
+    ],
+    [locale],
+  );
+
+  const currentLangOption = languageOptions.find(option => option.code === locale) || languageOptions[0];
+  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   const navLinks = [
     { to: '/rooms', label: labels.rooms, icon: Hotel },
@@ -176,10 +106,14 @@ export default function Navigation() {
     { to: '/member/points', label: labels.myPoints, icon: Star },
     { to: '/ai/passport', label: labels.travelPassport, icon: BookMarked },
     { to: '/member/profile', label: labels.profile, icon: User },
-    { to: '/member/preferences', label: labels.settings, icon: Settings },
+    { to: '/member/preferences', label: labels.preferences, icon: Settings },
   ];
 
-  const currentLangOption = LANG_OPTIONS.find(option => option.code === lang);
+  const handleSignOut = async () => {
+    await signOut();
+    setUserMenuOpen(false);
+    navigate('/');
+  };
 
   return (
     <nav className="sticky top-0 z-50 border-b border-[#2C1F10]/10 bg-white/95 shadow-sm backdrop-blur">
@@ -218,7 +152,7 @@ export default function Navigation() {
                 className="flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100"
               >
                 <Globe size={16} />
-                <span className="hidden sm:block">{currentLangOption?.flag}</span>
+                <span className="hidden sm:block">{currentLangOption.short}</span>
                 <ChevronDown size={13} />
               </button>
               <AnimatePresence>
@@ -229,19 +163,19 @@ export default function Navigation() {
                     exit={{ opacity: 0, y: -8, scale: 0.96 }}
                     className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-xl border border-gray-100 bg-white py-1 shadow-xl"
                   >
-                    <p className="border-b border-gray-100 px-4 py-2 text-xs font-semibold text-gray-400">{t.common.language}</p>
-                    {LANG_OPTIONS.map(option => (
+                    <p className="border-b border-gray-100 px-4 py-2 text-xs font-semibold text-gray-400">{labels.language}</p>
+                    {languageOptions.map(option => (
                       <button
                         key={option.code}
                         type="button"
                         onClick={() => {
-                          setLang(option.code as Lang);
+                          setLang(option.code);
                           setLangMenuOpen(false);
                         }}
                         className="flex w-full items-center justify-between px-4 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-50"
                       >
-                        <span>{option.flag} {option.label}</span>
-                        {lang === option.code && <Check size={14} className="text-[#C09A6A]" />}
+                        <span>{option.short} {option.label}</span>
+                        {locale === option.code && <Check size={14} className="text-[#C09A6A]" />}
                       </button>
                     ))}
                   </motion.div>
@@ -378,4 +312,3 @@ export default function Navigation() {
     </nav>
   );
 }
-
