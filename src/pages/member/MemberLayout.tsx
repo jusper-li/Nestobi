@@ -18,7 +18,7 @@ export default function MemberLayout() {
     profile: pick('個人資料', 'Profile', 'プロフィール', '프로필'),
     bookings: pick('我的訂房', 'My Bookings', '予約', '내 예약'),
     orders: pick('我的訂單', 'My Orders', '注文', '내 주문'),
-    purchases: pick('購買紀錄', 'Purchase History', '購入履歴', '구매 내역'),
+    purchases: pick('消費紀錄', 'Consumption Records', '利用履歴', '소비 내역'),
     points: pick('我的點數', 'My Points', 'ポイント', '포인트'),
     preferences: pick('偏好設定', 'Preferences', '設定', '환경 설정'),
     signOut: pick('登出', 'Logout', 'ログアウト', '로그아웃'),

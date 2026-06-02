@@ -96,7 +96,7 @@ function localizeCityName(text: string | null | undefined, shouldTranslate: bool
   const value = (text || '').trim();
   if (!value || !shouldTranslate) return value;
   let output = value;
-  for (const [zh, en] of Object.entries(CITY_ZH_EN)) output = output.replaceAll(zh, en);
+  for (const [zh, en] of Object.entries(CITY_ZH_EN)) output = output.split(zh).join(en);
   return output;
 }
 

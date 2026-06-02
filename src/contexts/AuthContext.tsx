@@ -40,8 +40,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUserData = async (userId: string) => {
     try {
       const [profileRes, authRes] = await Promise.all([
-        supabase.from('tbl_mn5wgzh0').select('*').eq('user_id', userId).maybeSingle(),
-        supabase.from('tbl_user_auth').select('*').eq('user_id', userId).maybeSingle(),
+        withTimeout(supabase.from('tbl_mn5wgzh0').select('*').eq('user_id', userId).maybeSingle(), 8000),
+        withTimeout(supabase.from('tbl_user_auth').select('*').eq('user_id', userId).maybeSingle(), 8000),
       ]);
       if (profileRes.data) setProfile(profileRes.data as MemberProfile);
       if (authRes.data) {
@@ -203,6 +203,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+function withTimeout<T>(promise: PromiseLike<T>, timeoutMs: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error('timeout')), timeoutMs);
+    promise.then(
+      value => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      error => {
+        window.clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
 }
 
 export function useAuth() {

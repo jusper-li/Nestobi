@@ -1,4 +1,4 @@
-import { normalizeLang } from './i18n';
+import { pickByLang } from './i18n';
 
 export function formatCurrency(amount: number, currency = 'TWD'): string {
   if (currency === 'TWD') {
@@ -47,72 +47,22 @@ export function cn(...classes: (string | undefined | null | false)[]): string {
 }
 
 export function getStatusLabel(status: string, lang: string = 'zh-TW'): string {
-  const normalizedLang = normalizeLang(lang);
-
-  const labelsByLang: Record<string, Record<string, string>> = {
-    'zh-TW': {
-      pending: '待處理',
-      confirmed: '已確認',
-      cancelled: '已取消',
-      completed: '已完成',
-      processing: '處理中',
-      shipped: '已出貨',
-      paid: '已付款',
-      unpaid: '未付款',
-      refunded: '已退款',
-      active: '啟用',
-      inactive: '停用',
-      draft: '草稿',
-      shared: '已分享',
-    },
-    en: {
-      pending: 'Pending',
-      confirmed: 'Confirmed',
-      cancelled: 'Cancelled',
-      completed: 'Completed',
-      processing: 'Processing',
-      shipped: 'Shipped',
-      paid: 'Paid',
-      unpaid: 'Unpaid',
-      refunded: 'Refunded',
-      active: 'Active',
-      inactive: 'Inactive',
-      draft: 'Draft',
-      shared: 'Shared',
-    },
-    ja: {
-      pending: '保留中',
-      confirmed: '確定済み',
-      cancelled: 'キャンセル済み',
-      completed: '完了',
-      processing: '処理中',
-      shipped: '発送済み',
-      paid: '支払い済み',
-      unpaid: '未払い',
-      refunded: '返金済み',
-      active: '有効',
-      inactive: '無効',
-      draft: '下書き',
-      shared: '共有済み',
-    },
-    ko: {
-      pending: '대기 중',
-      confirmed: '확정됨',
-      cancelled: '취소됨',
-      completed: '완료됨',
-      processing: '처리 중',
-      shipped: '배송됨',
-      paid: '결제 완료',
-      unpaid: '미결제',
-      refunded: '환불됨',
-      active: '활성',
-      inactive: '비활성',
-      draft: '임시저장',
-      shared: '공유됨',
-    },
+  const labels: Record<string, string> = {
+    pending: pickByLang(lang, '\u5f85\u8655\u7406', 'Pending', 'Pending', 'Pending'),
+    confirmed: pickByLang(lang, '\u5df2\u78ba\u8a8d', 'Confirmed', 'Confirmed', 'Confirmed'),
+    cancelled: pickByLang(lang, '\u5df2\u53d6\u6d88', 'Cancelled', 'Cancelled', 'Cancelled'),
+    completed: pickByLang(lang, '\u5df2\u5b8c\u6210', 'Completed', 'Completed', 'Completed'),
+    processing: pickByLang(lang, '\u8655\u7406\u4e2d', 'Processing', 'Processing', 'Processing'),
+    shipped: pickByLang(lang, '\u5df2\u51fa\u8ca8', 'Shipped', 'Shipped', 'Shipped'),
+    paid: pickByLang(lang, '\u5df2\u4ed8\u6b3e', 'Paid', 'Paid', 'Paid'),
+    unpaid: pickByLang(lang, '\u672a\u4ed8\u6b3e', 'Unpaid', 'Unpaid', 'Unpaid'),
+    refunded: pickByLang(lang, '\u5df2\u9000\u6b3e', 'Refunded', 'Refunded', 'Refunded'),
+    active: pickByLang(lang, '\u555f\u7528\u4e2d', 'Active', 'Active', 'Active'),
+    inactive: pickByLang(lang, '\u505c\u7528\u4e2d', 'Inactive', 'Inactive', 'Inactive'),
+    draft: pickByLang(lang, '\u8349\u7a3f', 'Draft', 'Draft', 'Draft'),
+    shared: pickByLang(lang, '\u5df2\u5206\u4eab', 'Shared', 'Shared', 'Shared'),
   };
 
-  const labels = labelsByLang[normalizedLang] || labelsByLang['zh-TW'];
   return labels[status] || status;
 }
 

@@ -32,23 +32,26 @@ export default function FAQPage() {
   useEffect(() => {
     let cancelled = false;
 
-    supabase
-      .from('faqs')
-      .select('id, question, answer, category, sort_order')
-      .eq('is_published', true)
-      .order('category')
-      .order('sort_order')
-      .then(({ data, error }) => {
+    const fetchFaqs = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('faqs')
+          .select('id, question, answer, category, sort_order')
+          .eq('is_published', true)
+          .order('category')
+          .order('sort_order');
         if (cancelled) return;
         if (error) throw error;
         setSourceFaqs((data || []) as FAQ[]);
-        setLoading(false);
-      })
-      .catch(() => {
+      } catch {
         if (cancelled) return;
         setSourceFaqs([]);
-        setLoading(false);
-      });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void fetchFaqs();
 
     return () => {
       cancelled = true;

@@ -77,7 +77,7 @@ function localizeCityName(text: string | null | undefined, nonZh: boolean) {
   const value = (text || '').trim();
   if (!value || !nonZh) return value;
   let output = value;
-  for (const [zh, en] of Object.entries(CITY_TRANSLATIONS_EN)) output = output.replaceAll(zh, en);
+  for (const [zh, en] of Object.entries(CITY_TRANSLATIONS_EN)) output = output.split(zh).join(en);
   return output;
 }
 
@@ -85,7 +85,7 @@ export default function Home() {
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
   const shouldTranslate = pickByLang(normalizedLang, '0', '1', '1', '1') === '1';
-  const dateLocale = normalizedLang === 'zh-TW' ? 'zh-TW' : normalizedLang === 'en' ? 'en-US' : normalizedLang === 'ja' ? 'ja-JP' : 'ko-KR';
+  const dateLocale = pickByLang(normalizedLang, 'zh-TW', 'en-US', 'ja-JP', 'ko-KR');
   const nonZh = shouldTranslate;
   const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
 

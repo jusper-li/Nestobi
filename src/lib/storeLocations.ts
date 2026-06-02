@@ -10,7 +10,7 @@ export interface StoreLocationHours {
 }
 
 export interface StoreLocation {
-  id?: string;
+  id: string;
   name: string;
   name_en: string;
   slug: string;
@@ -29,7 +29,7 @@ export interface StoreLocation {
   updated_at?: string;
 }
 
-export const LEGACY_EN_STORE_LOCATIONS: StoreLocation[] = [
+export const LEGACY_EN_STORE_LOCATIONS: Array<Partial<StoreLocation>> = [
   {
     name: '信義品牌概念店',
     name_en: 'Xinyi Brand Concept Store',
@@ -104,7 +104,7 @@ export const LEGACY_EN_STORE_LOCATIONS: StoreLocation[] = [
   },
 ];
 
-export const DEFAULT_STORE_LOCATIONS: StoreLocation[] = [
+export const DEFAULT_STORE_LOCATIONS: Array<Partial<StoreLocation>> = [
   {
     name: '信義品牌概念店',
     name_en: 'Xinyi Brand Concept Store',
@@ -192,10 +192,11 @@ function normalizeHours(value: unknown): StoreLocationHours {
 }
 
 export function normalizeStoreLocation(value: Partial<StoreLocation>, index = 0): StoreLocation {
+  const slug = value.slug || `store-${index + 1}`;
   return {
     name: value.name || '',
     name_en: value.name_en || '',
-    slug: value.slug || `store-${index + 1}`,
+    slug,
     city: value.city || '',
     district: value.district || '',
     address: value.address || '',
@@ -207,7 +208,7 @@ export function normalizeStoreLocation(value: Partial<StoreLocation>, index = 0)
     is_active: value.is_active !== false,
     source_url: value.source_url || STORE_LOCATIONS_SOURCE_URL,
     source_image_url: value.source_image_url || '',
-    id: value.id,
+    id: value.id || slug,
     created_at: value.created_at,
     updated_at: value.updated_at,
   };
@@ -354,10 +355,12 @@ export async function saveStoreLocations(
 }
 
 export function createEmptyStoreLocation(order: number): StoreLocation {
+  const slug = `store-${Date.now()}`;
   return {
+    id: slug,
     name: '',
     name_en: '',
-    slug: `store-${Date.now()}`,
+    slug,
     city: '台北市',
     district: '',
     address: '',

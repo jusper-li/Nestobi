@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BedDouble, BookMarked, ChevronRight, Receipt, Settings, ShoppingBag, Star, User } from 'lucide-react';
+import { BedDouble, BookMarked, ChevronRight, Heart, MapPin, Receipt, Settings, ShoppingBag, Star, Ticket, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
@@ -14,7 +14,7 @@ interface Booking {
   check_out_date: string;
   total_price: number;
   status: string;
-  tbl_rooms: { name: string } | null;
+  tbl_rooms: { name: string; location: string } | null;
 }
 
 interface Order {
@@ -30,15 +30,15 @@ export default function MemberDashboard() {
   const { user, profile } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang) as UiLang;
-  const dateLocale = locale === 'zh-TW' ? 'zh-TW' : locale === 'en' ? 'en-US' : locale === 'ja' ? 'ja-JP' : 'ko-KR';
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
+  const dateLocale = pickByLang(locale, 'zh-TW', 'en-US', 'ja-JP', 'ko-KR');
   const t = {
     welcome: pick('歡迎回來', 'Welcome back', 'おかえりなさい', '다시 오신 것을 환영합니다'),
     points: pick('目前點數', 'Current points', '現在のポイント', '현재 포인트'),
     profile: pick('個人資料', 'Profile', 'プロフィール', '프로필'),
     bookings: pick('我的訂房', 'My Bookings', '予約', '내 예약'),
     orders: pick('我的訂單', 'My Orders', '注文', '내 주문'),
-    purchases: pick('購買紀錄', 'Purchases', '購入履歴', '구매 내역'),
+    purchases: pick('消費紀錄', 'Consumption Records', '利用履歴', '소비 내역'),
     myPoints: pick('我的點數', 'My Points', 'マイポイント', '내 포인트'),
     preferences: pick('偏好設定', 'Preferences', '設定', '설정'),
     passport: pick('旅遊護照', 'Travel Passport', 'トラベルパスポート', '트래블 패스포트'),
@@ -48,6 +48,14 @@ export default function MemberDashboard() {
     noBooking: pick('目前沒有訂房資料', 'No bookings yet', '予約はまだありません', '예약이 없습니다'),
     noOrders: pick('目前沒有訂單資料', 'No orders yet', '注文はまだありません', '주문이 없습니다'),
     room: pick('房型', 'Room', '部屋', '객실'),
+    memberTools: pick('會員價值功能', 'Member Value Tools', '会員向け機能', '회원 가치 기능'),
+    favorites: pick('我的收藏', 'My Favorites', 'お気に入り', '내 찜 목록'),
+    coupons: pick('我的優惠券', 'My Coupons', 'マイクーポン', '내 쿠폰'),
+    reviews: pick('我的評價', 'My Reviews', 'マイレビュー', '내 리뷰'),
+    footprint: pick('旅遊足跡', 'Travel Footprint', '旅の足跡', '여행 발자취'),
+    staysCount: pick('已入住', 'Stays', '宿泊済み', '숙박 완료'),
+    citiesCount: pick('已探索城市', 'Cities explored', '探索した都市', '탐험한 도시'),
+    nightsCount: pick('累積住宿晚數', 'Total nights', '累計宿泊数', '누적 숙박일'),
   };
   const [points, setPoints] = useState(0);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -61,10 +69,9 @@ export default function MemberDashboard() {
         supabase.from('points').select('amount').eq('user_id', user.id),
         supabase
           .from('tbl_bookings')
-          .select('*, tbl_rooms(name)')
+          .select('*, tbl_rooms(name, location)')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(2),
+          .order('created_at', { ascending: false }),
         supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(2),
       ]);
       setPoints((pts || []).reduce((sum: number, row: { amount?: number }) => sum + (row.amount || 0), 0));
@@ -83,6 +90,21 @@ export default function MemberDashboard() {
     { to: '/member/points', icon: <Star className="h-6 w-6" />, label: t.myPoints, color: 'bg-yellow-50 text-yellow-600' },
     { to: '/member/preferences', icon: <Settings className="h-6 w-6" />, label: t.preferences, color: 'bg-gray-50 text-gray-600' },
     { to: '/ai/passport', icon: <BookMarked className="h-6 w-6" />, label: t.passport, color: 'bg-amber-50 text-amber-700' },
+  ];
+
+  const completedBookings = bookings.filter(item => item.status === 'completed');
+  const exploredCities = new Set(completedBookings.map(item => item.tbl_rooms?.location || '').filter(Boolean)).size;
+  const totalNights = completedBookings.reduce((sum, item) => {
+    const start = new Date(item.check_in_date);
+    const end = new Date(item.check_out_date);
+    return sum + Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+  }, 0);
+
+  const valueTools = [
+    { to: '/rooms', icon: <Heart className="h-5 w-5" />, label: t.favorites, value: '0', color: 'bg-pink-50 text-pink-600' },
+    { to: '/member/points', icon: <Ticket className="h-5 w-5" />, label: t.coupons, value: String(Math.max(0, Math.floor(points / 100))), color: 'bg-orange-50 text-orange-600' },
+    { to: '/shop', icon: <Star className="h-5 w-5" />, label: t.reviews, value: '0', color: 'bg-yellow-50 text-yellow-700' },
+    { to: '/ai/passport', icon: <MapPin className="h-5 w-5" />, label: t.footprint, value: `${completedBookings.length}/${totalNights}`, color: 'bg-teal-50 text-teal-700' },
   ];
 
   if (loading) {
@@ -115,6 +137,24 @@ export default function MemberDashboard() {
         ))}
       </div>
 
+      <div className="rounded-2xl bg-white p-5 shadow-sm">
+        <h2 className="mb-4 font-semibold text-gray-900">{t.memberTools}</h2>
+        <div className="grid gap-3 sm:grid-cols-4">
+          {valueTools.map(tool => (
+            <Link key={tool.label} to={tool.to} className="rounded-xl border border-gray-100 p-4 transition hover:border-[#C09A6A] hover:shadow-sm">
+              <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${tool.color}`}>{tool.icon}</div>
+              <p className="text-sm font-medium text-gray-800">{tool.label}</p>
+              <p className="mt-1 text-xl font-bold text-[#2C1F10]">{tool.value}</p>
+            </Link>
+          ))}
+        </div>
+        <div className="mt-4 grid gap-3 text-sm text-gray-600 sm:grid-cols-3">
+          <p>{t.staysCount}：<span className="font-semibold text-gray-900">{completedBookings.length}</span></p>
+          <p>{t.citiesCount}：<span className="font-semibold text-gray-900">{exploredCities}</span></p>
+          <p>{t.nightsCount}：<span className="font-semibold text-gray-900">{totalNights}</span></p>
+        </div>
+      </div>
+
       <div className="grid gap-6 md:grid-cols-2">
         <div className="rounded-2xl bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
@@ -131,7 +171,7 @@ export default function MemberDashboard() {
             <p className="py-4 text-center text-sm text-gray-400">{t.noBooking}</p>
           ) : (
             <div className="space-y-3">
-              {bookings.map(item => (
+              {bookings.slice(0, 2).map(item => (
                 <div key={item.id} className="flex items-center justify-between border-b border-gray-50 py-2 last:border-0">
                   <div>
                     <p className="text-sm font-medium text-gray-900">{item.tbl_rooms?.name || t.room}</p>

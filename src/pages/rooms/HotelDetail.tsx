@@ -30,7 +30,11 @@ interface Room {
   price_per_night: number;
   weekend_price?: number | null;
   image_url: string | null;
+  images?: string[] | null;
+  location: string | null;
+  amenities: string[] | null;
   is_available: boolean;
+  hotels?: { id: string; name: string; city: string; star_rating?: number } | null;
 }
 
 export default function HotelDetail() {
@@ -52,11 +56,11 @@ export default function HotelDetail() {
     const run = async () => {
       const [h, r] = await Promise.all([
         supabase.from('hotels').select('id,name,description,city,image_url,star_rating').eq('id', id).maybeSingle(),
-        supabase.from('tbl_rooms').select('id,name,description,room_type,capacity,min_capacity,price_per_night,weekend_price,image_url,is_available').eq('hotel_id', id).order('price_per_night', { ascending: true }),
+        supabase.from('tbl_rooms').select('id,name,description,room_type,capacity,min_capacity,price_per_night,weekend_price,image_url,images,location,amenities,is_available,hotels(id,name,city,star_rating)').eq('hotel_id', id).order('price_per_night', { ascending: true }),
       ]);
       if (cancelled) return;
       setHotel((h.data || null) as Hotel | null);
-      setRooms((r.data || []) as Room[]);
+      setRooms((r.data || []) as unknown as Room[]);
       setLoading(false);
     };
     if (id) void run();
@@ -89,7 +93,7 @@ export default function HotelDetail() {
       .then(([translatedHotel, translatedRooms]) => {
         if (cancelled) return;
         setDisplayHotel((translatedHotel[0] || hotel) as Hotel);
-        setDisplayRooms(translatedRooms);
+        setDisplayRooms(translatedRooms as Room[]);
         setNotice('');
       })
       .catch(() => {});
