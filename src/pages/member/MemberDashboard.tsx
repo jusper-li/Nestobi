@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { BedDouble, BookMarked, ChevronRight, Receipt, Settings, ShoppingBag, Star, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { localeByLang, normalizeLang, pickByLang } from '../../lib/i18n';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
 
@@ -30,7 +30,7 @@ export default function MemberDashboard() {
   const { user, profile } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang) as UiLang;
-  const dateLocale = localeByLang(locale);
+  const dateLocale = locale === 'zh-TW' ? 'zh-TW' : locale === 'en' ? 'en-US' : locale === 'ja' ? 'ja-JP' : 'ko-KR';
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
   const t = {
     welcome: pick('歡迎回來', 'Welcome back', 'おかえりなさい', '다시 오신 것을 환영합니다'),

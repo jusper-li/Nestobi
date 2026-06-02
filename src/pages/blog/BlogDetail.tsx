@@ -8,7 +8,7 @@ import SEOHead from '../../components/SEOHead';
 import { BLOG_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
 import { sanitizeHtml } from '../../lib/security';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { localeByLang, normalizeLang, pickByLang } from '../../lib/i18n';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { translateBlogPostsFromCacheOnly, translateBlogPostsOnDemand } from '../../lib/contentTranslations';
 
@@ -34,7 +34,7 @@ export default function BlogDetail() {
   const { lang } = useLanguage();
   const locale = normalizeLang(lang);
   const shouldTranslate = pickByLang(locale, '0', '1', '1', '1') === '1';
-  const dateLocale = localeByLang(locale);
+  const dateLocale = locale === 'zh-TW' ? 'zh-TW' : locale === 'en' ? 'en-US' : locale === 'ja' ? 'ja-JP' : 'ko-KR';
   const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
 
   const labels = {

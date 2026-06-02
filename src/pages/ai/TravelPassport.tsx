@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
-import { localeByLang, normalizeLang, pickByLang } from '../../lib/i18n';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 
 interface Stamp {
   id: string;
@@ -24,7 +24,7 @@ export default function TravelPassport() {
   const { user } = useAuth();
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
-  const locale = localeByLang(normalizedLang);
+  const locale = normalizedLang === 'zh-TW' ? 'zh-TW' : normalizedLang === 'en' ? 'en-US' : normalizedLang === 'ja' ? 'ja-JP' : 'ko-KR';
   const t = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
 
   const [stamps, setStamps] = useState<Stamp[]>([]);

@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { localeByLang, normalizeLang, pickByLang } from '../../lib/i18n';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 
 interface PurchaseRecord {
   id: string;
@@ -23,7 +23,7 @@ const PurchaseHistory: React.FC = () => {
   const { user } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang) as UiLang;
-  const dateLocale = localeByLang(locale);
+  const dateLocale = locale === 'zh-TW' ? 'zh-TW' : locale === 'en' ? 'en-US' : locale === 'ja' ? 'ja-JP' : 'ko-KR';
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
   const t = {
     title: pick('購買紀錄', 'Purchase History', '購入履歴', '구매 내역'),

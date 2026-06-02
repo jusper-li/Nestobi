@@ -7,7 +7,7 @@ import Footer from '../components/Footer';
 import Navigation from '../components/Navigation';
 import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../contexts/LanguageContext';
-import { localeByLang, normalizeLang, pickByLang } from '../lib/i18n';
+import { normalizeLang, pickByLang } from '../lib/i18n';
 import {
   getTranslationRuntimeState,
   translateBlogPostsFromCacheOnly,
@@ -85,7 +85,7 @@ export default function Home() {
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
   const shouldTranslate = pickByLang(normalizedLang, '0', '1', '1', '1') === '1';
-  const locale = localeByLang(normalizedLang);
+  const dateLocale = normalizedLang === 'zh-TW' ? 'zh-TW' : normalizedLang === 'en' ? 'en-US' : normalizedLang === 'ja' ? 'ja-JP' : 'ko-KR';
   const nonZh = shouldTranslate;
   const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
 
@@ -405,7 +405,7 @@ export default function Home() {
                     {post.excerpt && <p className="mt-2 line-clamp-2 text-sm leading-6 text-gray-500">{post.excerpt}</p>}
                     <p className="mt-5 flex items-center gap-1 border-t border-gray-100 pt-4 text-xs font-medium text-gray-400">
                       <Calendar size={13} />
-                      {new Date(post.published_at).toLocaleDateString(locale)}
+                      {new Date(post.published_at).toLocaleDateString(dateLocale)}
                     </p>
                   </div>
                 </Link>

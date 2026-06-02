@@ -15,11 +15,3 @@ export function pickByLang(lang: string | null | undefined, zh: string, en: stri
   if (n === 'ko') return ko;
   return zh;
 }
-
-export function localeByLang(lang: string | null | undefined): 'zh-TW' | 'en-US' | 'ja-JP' | 'ko-KR' {
-  const n = normalizeLang(lang);
-  if (n === 'en') return 'en-US';
-  if (n === 'ja') return 'ja-JP';
-  if (n === 'ko') return 'ko-KR';
-  return 'zh-TW';
-}

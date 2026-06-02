@@ -5,7 +5,7 @@ import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { localeByLang, normalizeLang, pickByLang } from '../../lib/i18n';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 
 type Locale = 'zh-TW' | 'en' | 'ja' | 'ko';
@@ -49,7 +49,7 @@ const writeLocalPlans = (userId: string, plans: SavedPlan[]) => {
     all[userId] = plans;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
   } catch {
-    // noop
+    // ignore localStorage errors
   }
 };
 
@@ -57,7 +57,7 @@ export default function ItineraryPlanner() {
   const { user } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang) as Locale;
-  const dateLocale = localeByLang(locale);
+  const dateLocale = locale === 'zh-TW' ? 'zh-TW' : locale === 'en' ? 'en-US' : locale === 'ja' ? 'ja-JP' : 'ko-KR';
   const t = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
 
   const [destination, setDestination] = useState('');
@@ -77,35 +77,39 @@ export default function ItineraryPlanner() {
   }, [startDate, endDate]);
 
   useEffect(() => {
-    const load = async () => {
+    const loadPlans = async () => {
       if (!user) return;
+
       const { data, error } = await supabase
         .from('itinerary_plans')
         .select('id,title,destination,start_date,end_date,plan_data')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10);
+
       if (error) {
         setUseLocalFallback(true);
         setPlans(readLocalPlans(user.id));
         return;
       }
+
       setUseLocalFallback(false);
       setPlans((data as SavedPlan[]) || []);
     };
-    void load();
+
+    void loadPlans();
   }, [user]);
 
   const budgetLabel = (value: BudgetKey) => {
-    if (value === 'budget') return t('經濟實惠', 'Budget', '節約', '절약');
-    if (value === 'luxury') return t('奢華享受', 'Luxury', '贅沢', '럭셔리');
-    return t('中等預算', 'Standard', '標準', '표준');
+    if (value === 'budget') return t('節約', 'Budget', '節約', '절약');
+    if (value === 'luxury') return t('奢華', 'Luxury', 'ラグジュアリー', '럭셔리');
+    return t('標準', 'Standard', '標準', '표준');
   };
 
   const interestLabel = (key: InterestKey) => {
     switch (key) {
       case 'food':
-        return t('美食', 'Food', 'グルメ', '음식');
+        return t('美食', 'Food', 'グルメ', '맛집');
       case 'culture':
         return t('文化古蹟', 'Culture', '文化', '문화');
       case 'shopping':
@@ -113,11 +117,11 @@ export default function ItineraryPlanner() {
       case 'nature':
         return t('自然景觀', 'Nature', '自然', '자연');
       case 'adventure':
-        return t('冒險運動', 'Adventure', '冒険', '모험');
+        return t('冒險運動', 'Adventure', 'アドベンチャー', '모험');
       case 'family':
-        return t('家庭親子', 'Family', '家族', '가족');
+        return t('家庭親子', 'Family', 'ファミリー', '가족');
       case 'art':
-        return t('藝術博物館', 'Art', '美術館', '예술');
+        return t('藝術博物館', 'Art', 'アート', '예술');
       case 'nightlife':
         return t('夜生活', 'Nightlife', 'ナイトライフ', '야간생활');
     }
@@ -126,27 +130,29 @@ export default function ItineraryPlanner() {
   const generatePlan = (): DayPlan[] => {
     const start = new Date(startDate);
     const dayCount = days || 1;
+
     return Array.from({ length: dayCount }, (_, index) => {
       const current = new Date(start);
       current.setDate(start.getDate() + index);
+
       return {
         day: index + 1,
         date: current.toLocaleDateString(dateLocale, { month: 'numeric', day: 'numeric', weekday: 'short' }),
-        theme: t(`第 ${index + 1} 天行程`, `Day ${index + 1} Plan`, `${index + 1}日目プラン`, `${index + 1}일차 일정`),
+        theme: t(`第 ${index + 1} 天行程`, `Day ${index + 1} Plan`, `${index + 1}日目の旅程`, `${index + 1}일차 일정`),
         activities: [
           {
             time: '09:00',
-            title: t('文化探索', 'Culture Walk', '文化散策', '문화 탐방'),
-            description: t('探索在地文化景點。', 'Explore local culture spots.', '地域の文化スポットを巡ります。', '현지 문화 명소를 탐방합니다.'),
+            title: t('文化散步', 'Culture Walk', '文化散策', '문화 산책'),
+            description: t('走訪在地文化景點與特色街區。', 'Explore local culture spots and neighborhoods.', 'ローカルの文化スポットや街歩きを楽しみます。', '지역 문화 명소와 골목을 둘러봅니다.'),
           },
           {
             time: '14:00',
-            title: t('特色體驗', 'Signature Experience', '体験アクティビティ', '특색 체험'),
-            description: t('安排一項當地手作或特色行程。', 'Enjoy one local hands-on activity.', 'ご当地体験を1つ楽しみます。', '현지 체험 활동을 하나 즐깁니다.'),
+            title: t('體驗活動', 'Signature Experience', '体験アクティビティ', '체험 활동'),
+            description: t('安排一個在地手作或特色體驗。', 'Enjoy one local hands-on activity.', 'その土地ならではの体験や手作りアクティビティを楽しみます。', '현지의 손수 체험이나 시그니처 활동을 즐깁니다.'),
           },
         ],
-        dining: t('推薦美食：安排一餐在地代表料理。', 'Dining pick: local signature dish.', 'おすすめグルメ：ご当地料理を1つ。', '추천 식사: 지역 대표 음식을 선택합니다.'),
-        tip: t('小貼士：熱門景點請提前預約。', 'Tip: reserve popular places early.', 'ヒント：人気スポットは早めに予約。', '팁: 인기 장소는 미리 예약하세요.'),
+        dining: t('餐食推薦：在地特色料理。', 'Dining pick: local signature dish.', 'おすすめの食事：地元の名物料理。', '식사 추천: 현지 대표 요리.'),
+        tip: t('小提醒：熱門地點建議提早預約。', 'Tip: reserve popular places early.', 'ヒント：人気スポットは早めの予約がおすすめです。', '팁: 인기 장소는 미리 예약하는 것이 좋습니다.'),
       };
     });
   };
@@ -159,7 +165,8 @@ export default function ItineraryPlanner() {
 
   const handleSave = async () => {
     if (!user || !itinerary) return;
-    const title = `${destination || t('我的旅程', 'My Trip', 'マイトリップ', '내 여행')} ${t('計畫', 'Plan', 'プラン', '플랜')}`;
+
+    const title = `${destination || t('我的旅程', 'My Trip', 'マイトリップ', '내 여행')} ${t('行程', 'Plan', 'プラン', '일정')}`;
     const payload = {
       user_id: user.id,
       title,
@@ -171,7 +178,14 @@ export default function ItineraryPlanner() {
 
     if (useLocalFallback) {
       const next: SavedPlan[] = [
-        { id: `local-${Date.now()}`, title, destination, start_date: startDate, end_date: endDate, plan_data: { itinerary, budget, interests } },
+        {
+          id: `local-${Date.now()}`,
+          title,
+          destination,
+          start_date: startDate,
+          end_date: endDate,
+          plan_data: { itinerary, budget, interests },
+        },
         ...plans,
       ].slice(0, 10);
       setPlans(next);
@@ -184,18 +198,21 @@ export default function ItineraryPlanner() {
       .insert(payload)
       .select('id,title,destination,start_date,end_date,plan_data')
       .single();
+
     if (error) return;
     if (data) setPlans(prev => [data as SavedPlan, ...prev].slice(0, 10));
   };
 
   const handleDelete = async (id: string) => {
     if (!user) return;
+
     if (useLocalFallback || id.startsWith('local-')) {
       const next = plans.filter(plan => plan.id !== id);
       setPlans(next);
       writeLocalPlans(user.id, next);
       return;
     }
+
     await supabase.from('itinerary_plans').delete().eq('id', id);
     setPlans(prev => prev.filter(plan => plan.id !== id));
   };
@@ -203,15 +220,27 @@ export default function ItineraryPlanner() {
   return (
     <div className="min-h-screen bg-slate-50">
       <SEOHead
-        title={t('AI 行程規劃', 'AI Itinerary Planner', 'AI 行程プランナー', 'AI 일정 플래너')}
-        description={t('輸入目的地與偏好，快速產生可編輯行程。', 'Create editable plans from your destination and preferences.', '目的地と好みに合わせて編集可能な行程を作成。', '여행지와 취향에 맞는 편집 가능한 일정을 생성합니다.')}
+        title={t('AI 行程規劃', 'AI Itinerary Planner', 'AI旅程プランナー', 'AI 일정 플래너')}
+        description={t(
+          '依照你的目的地與喜好，快速產生可編輯的旅遊行程。',
+          'Create editable plans from your destination and preferences.',
+          '目的地と好みに合わせて、編集可能な旅行プランを素早く作成します。',
+          '여행지와 취향에 맞춰 편집 가능한 여행 일정을 빠르게 생성합니다.',
+        )}
       />
       <Navigation />
 
       <div className="mx-auto max-w-6xl p-4 md:p-6">
         <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-gray-900">{t('AI 行程規劃', 'AI Itinerary Planner', 'AI 行程プランナー', 'AI 일정 플래너')}</h1>
-          <p className="mt-1.5 text-gray-500">{t('輸入目的地與偏好，快速產生可編輯行程。', 'Create editable plans from your destination and preferences.', '目的地と好みに合わせて編集可能な行程を作成。', '여행지와 취향에 맞는 편집 가능한 일정을 생성합니다。')}</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('AI 行程規劃', 'AI Itinerary Planner', 'AI旅程プランナー', 'AI 일정 플래너')}</h1>
+          <p className="mt-1.5 text-gray-500">
+            {t(
+              '依照你的目的地與喜好，快速產生可編輯的旅遊行程。',
+              'Create editable plans from your destination and preferences.',
+              '目的地と好みに合わせて、編集可能な旅行プランを素早く作成します。',
+              '여행지와 취향에 맞춰 편집 가능한 여행 일정을 빠르게 생성합니다.',
+            )}
+          </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-5">
@@ -227,17 +256,17 @@ export default function ItineraryPlanner() {
                   <input
                     value={destination}
                     onChange={e => setDestination(e.target.value)}
-                    placeholder={t('例如：沖繩、東京、台南', 'e.g. Okinawa, Tokyo, Tainan', '例：沖縄、東京、台南', '예: 오키나와, 도쿄, 타이난')}
+                    placeholder={t('例：沖繩、東京、台南', 'e.g. Okinawa, Tokyo, Tainan', '例：沖縄、東京、台南', '예: 오키나와, 도쿄, 타이난')}
                     className="w-full rounded-xl border px-4 py-2.5 text-sm"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('出發日期', 'Start date', '開始日', '출발일')}</label>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('出發日期', 'Start date', '出発日', '출발일')}</label>
                     <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full rounded-xl border px-3 py-2.5 text-sm" />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('回程日期', 'End date', '終了日', '복귀일')}</label>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('回程日期', 'End date', '戻り日', '복귀일')}</label>
                     <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full rounded-xl border px-3 py-2.5 text-sm" />
                   </div>
                 </div>
@@ -266,14 +295,16 @@ export default function ItineraryPlanner() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">{t('預算等級', 'Budget', '予算', '예산')}</label>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">{t('預算', 'Budget', '予算', '예산')}</label>
                   <div className="flex gap-2">
                     {BUDGETS.map(value => (
                       <button
                         key={value}
                         type="button"
                         onClick={() => setBudget(value)}
-                        className={`flex-1 rounded-xl border py-2 text-xs ${budget === value ? 'border-sky-600 bg-sky-600 text-white' : 'border-gray-200 text-gray-600'}`}
+                        className={`flex-1 rounded-xl border py-2 text-xs ${
+                          budget === value ? 'border-sky-600 bg-sky-600 text-white' : 'border-gray-200 text-gray-600'
+                        }`}
                       >
                         {budgetLabel(value)}
                       </button>
@@ -282,7 +313,9 @@ export default function ItineraryPlanner() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">{t('旅遊興趣（可多選）', 'Interests (multi-select)', '興味（複数選択）', '관심사(복수 선택)')}</label>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    {t('興趣（可複選）', 'Interests (multi-select)', '興味（複数選択）', '관심사(복수 선택)')}
+                  </label>
                   <div className="flex flex-wrap gap-2">
                     {INTERESTS.map(value => (
                       <button
@@ -291,7 +324,9 @@ export default function ItineraryPlanner() {
                         onClick={() =>
                           setInterests(prev => (prev.includes(value) ? prev.filter(item => item !== value) : [...prev, value]))
                         }
-                        className={`rounded-full border px-2.5 py-1 text-xs ${interests.includes(value) ? 'border-sky-600 bg-sky-600 text-white' : 'border-gray-200 text-gray-600'}`}
+                        className={`rounded-full border px-2.5 py-1 text-xs ${
+                          interests.includes(value) ? 'border-sky-600 bg-sky-600 text-white' : 'border-gray-200 text-gray-600'
+                        }`}
                       >
                         {interestLabel(value)}
                       </button>
@@ -299,9 +334,12 @@ export default function ItineraryPlanner() {
                   </div>
                 </div>
 
-                <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 py-3 font-semibold text-white">
+                <button
+                  type="submit"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 py-3 font-semibold text-white"
+                >
                   <Sparkles className="h-5 w-5" />
-                  {t('生成行程', 'Generate plan', 'プラン生成', '일정 생성')}
+                  {t('行程生成', 'Generate plan', '旅程生成', '일정 생성')}
                 </button>
               </form>
             </div>
@@ -310,15 +348,15 @@ export default function ItineraryPlanner() {
           <div className="space-y-4 lg:col-span-3">
             {itinerary && (
               <div className="rounded-2xl border bg-white p-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900">{destination || t('新行程', 'New itinerary', '新しい行程', '새 일정')}</h3>
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="font-semibold text-gray-900">{destination || t('新行程', 'New itinerary', '新しい旅程', '새 일정')}</h3>
                   <button onClick={handleSave} className="rounded-xl border px-3 py-2 text-xs">
-                    {t('儲存行程', 'Save plan', 'プラン保存', '일정 저장')}
+                    {t('儲存行程', 'Save plan', 'プランを保存', '일정 저장')}
                   </button>
                 </div>
                 <div className="mt-2 text-xs text-gray-500">
                   {t('預算', 'Budget', '予算', '예산')}: {budgetLabel(budget)} · {t('興趣', 'Interests', '興味', '관심사')}:{' '}
-                  {interests.length ? interests.map(interestLabel).join(' / ') : t('未選擇', 'none', '未選択', '미선택')}
+                  {interests.length ? interests.map(interestLabel).join(' / ') : t('無', 'none', 'なし', '없음')}
                 </div>
                 <div className="mt-4 space-y-3">
                   {itinerary.map(day => (
@@ -326,6 +364,22 @@ export default function ItineraryPlanner() {
                       <div className="flex items-center justify-between">
                         <p className="font-semibold text-gray-900">{day.theme}</p>
                         <p className="text-xs text-gray-500">{day.date}</p>
+                      </div>
+                      <div className="mt-3 space-y-3">
+                        {day.activities.map(activity => (
+                          <div key={`${day.day}-${activity.time}`} className="rounded-lg bg-slate-50 p-3">
+                            <div className="flex items-center gap-2 text-xs text-sky-600">
+                              <Clock className="h-3.5 w-3.5" />
+                              {activity.time}
+                            </div>
+                            <div className="mt-1 font-medium text-gray-900">{activity.title}</div>
+                            <p className="mt-1 text-sm text-gray-600">{activity.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 grid gap-2 md:grid-cols-2">
+                        <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{day.dining}</div>
+                        <div className="rounded-lg bg-yellow-50 p-3 text-sm text-yellow-900">{day.tip}</div>
                       </div>
                     </div>
                   ))}
@@ -336,10 +390,10 @@ export default function ItineraryPlanner() {
             <div className="rounded-2xl border bg-white p-5">
               <div className="mb-3 flex items-center gap-2 font-semibold text-gray-900">
                 <Clock className="h-4 w-4 text-sky-600" />
-                {t('已儲存的行程', 'Saved Itineraries', '保存済み行程', '저장된 일정')}
+                {t('已儲存的行程', 'Saved Itineraries', '保存済みの旅程', '저장된 일정')}
               </div>
               {plans.length === 0 ? (
-                <p className="text-sm text-gray-500">{t('目前沒有已儲存行程。', 'No saved plans yet.', '保存された行程はありません。', '저장된 일정이 없습니다.')}</p>
+                <p className="text-sm text-gray-500">{t('目前還沒有儲存的行程。', 'No saved plans yet.', 'まだ保存された旅程はありません。', '저장된 일정이 아직 없습니다.')}</p>
               ) : (
                 <div className="space-y-2">
                   {plans.map(plan => {

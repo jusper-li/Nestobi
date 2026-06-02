@@ -10,7 +10,7 @@ import { STATIC_PAGE_FALLBACKS } from '../lib/staticPageFallbacks';
 import { sanitizeHtml } from '../lib/security';
 import { useLanguage } from '../contexts/LanguageContext';
 import { callAI } from '../lib/openai';
-import { localeByLang, normalizeLang, pickByLang } from '../lib/i18n';
+import { normalizeLang, pickByLang } from '../lib/i18n';
 
 interface PageData {
   title: string;
@@ -52,7 +52,7 @@ const StaticPage: React.FC = () => {
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
   const shouldTranslate = pickByLang(normalizedLang, '0', '1', '1', '1') === '1';
-  const targetLocale = localeByLang(normalizedLang);
+  const targetLocale = normalizedLang === 'zh-TW' ? 'zh-TW' : normalizedLang === 'en' ? 'en-US' : normalizedLang === 'ja' ? 'ja-JP' : 'ko-KR';
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
 
   const location = useLocation();

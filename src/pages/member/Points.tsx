@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle, Gift, Star, TrendingDown, TrendingUp } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { localeByLang, normalizeLang, pickByLang } from '../../lib/i18n';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { formatDate } from '../../lib/utils';
 
@@ -22,7 +22,7 @@ export default function Points() {
   const { user } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang) as Locale;
-  const dateLocale = localeByLang(locale);
+  const dateLocale = locale === 'zh-TW' ? 'zh-TW' : locale === 'en' ? 'en-US' : locale === 'ja' ? 'ja-JP' : 'ko-KR';
 
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<PointTx[]>([]);
