@@ -1,12 +1,13 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Search, HelpCircle, MessageCircle, ArrowRight } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowRight, ChevronDown, HelpCircle, MessageCircle, Search } from 'lucide-react';
 import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../lib/i18n';
+import { localizeFaqRows } from '../lib/faqTranslations';
 import { supabase } from '../lib/supabase';
 
 interface FAQ {
@@ -21,32 +22,61 @@ export default function FAQPage() {
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
   const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
-  const [faqs, setFaqs] = useState<FAQ[]>([]);
+
+  const [sourceFaqs, setSourceFaqs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeCat, setActiveCat] = useState('all');
   const [openId, setOpenId] = useState<string | null>(null);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    supabase
+      .from('faqs')
+      .select('id, question, answer, category, sort_order')
+      .eq('is_published', true)
+      .order('category')
+      .order('sort_order')
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) throw error;
+        setSourceFaqs((data || []) as FAQ[]);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSourceFaqs([]);
+        setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const translatedFaqs = useMemo(() => localizeFaqRows(sourceFaqs, normalizedLang), [sourceFaqs, normalizedLang]);
+
   const t = {
     title: t4('常見問題', 'Frequently Asked Questions', 'よくある質問', '자주 묻는 질문'),
     subtitle: t4(
-      '快速查看訂房、購物、AI 工具與會員功能的常見解答。',
+      '快速查看訂房、購物、AI 功能與會員服務相關問題。',
       'Find quick answers for booking, shopping, AI tools, and member services.',
       '予約・ショッピング・AI機能・会員サービスの質問をすぐ確認できます。',
-      '예약, 쇼핑, AI 기능, 회원 서비스 관련 답변을 빠르게 확인하세요.',
+      '예약, 쇼핑, AI 기능, 회원 서비스에 대한 질문을 빠르게 확인할 수 있습니다.',
     ),
     search: t4('搜尋問題...', 'Search questions...', '質問を検索...', '질문 검색...'),
     all: t4('全部', 'All', 'すべて', '전체'),
     empty: t4('找不到符合的問題', 'No matching FAQ found', '一致するFAQが見つかりません', '일치하는 FAQ가 없습니다'),
-    clear: t4('清除搜尋', 'Clear search', '検索をクリア', '검색 초기화'),
-    ctaTitle: t4('需要更多協助？', 'Need more help?', 'さらにサポートが必要ですか？', '추가 도움이 필요하신가요?'),
+    clear: t4('清除搜尋', 'Clear search', '検索をクリア', '검색 지우기'),
+    ctaTitle: t4('需要更多協助？', 'Need more help?', 'もっとヘルプが必要ですか？', '도움이 더 필요하신가요?'),
     ctaDesc: t4(
-      '你可以使用 AI 客服，或直接與我們聯繫。',
+      '使用 AI 客服或直接聯絡我們。',
       'Use AI support or contact us directly.',
-      'AIサポートを使うか、直接お問い合わせください。',
-      'AI 고객 지원을 이용하거나 직접 문의하세요.',
+      'AIサポートまたはお問い合わせをご利用ください。',
+      'AI 고객지원 또는 직접 문의를 이용해 주세요.',
     ),
-    ctaAI: t4('AI 客服', 'AI Support', 'AIサポート', 'AI 지원'),
+    ctaAI: t4('AI 客服', 'AI Support', 'AIサポート', 'AI 고객지원'),
     ctaContact: t4('聯絡我們', 'Contact Us', 'お問い合わせ', '문의하기'),
     seoKeywords: t4(
       '常見問題, 訂房, 購物, AI客服, Nestobi',
@@ -56,30 +86,25 @@ export default function FAQPage() {
     ),
   };
 
-  useEffect(() => {
-    supabase
-      .from('faqs')
-      .select('id, question, answer, category, sort_order')
-      .eq('is_published', true)
-      .order('category')
-      .order('sort_order')
-      .then(({ data }) => {
-        setFaqs((data || []) as FAQ[]);
-        setLoading(false);
-      });
-  }, []);
-
-  const categories = useMemo(() => Array.from(new Set(faqs.map(f => f.category))), [faqs]);
+  const categories = useMemo(
+    () => Array.from(new Set(translatedFaqs.map(faq => faq.category))),
+    [translatedFaqs],
+  );
 
   const filtered = useMemo(() => {
-    let list = faqs;
-    if (activeCat !== 'all') list = list.filter(f => f.category === activeCat);
+    let list = translatedFaqs;
+    if (activeCat !== 'all') list = list.filter(faq => faq.category === activeCat);
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter(f => f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q));
+      list = list.filter(
+        faq =>
+          faq.question.toLowerCase().includes(q) ||
+          faq.answer.toLowerCase().includes(q) ||
+          faq.category.toLowerCase().includes(q),
+      );
     }
     return list;
-  }, [faqs, activeCat, search]);
+  }, [translatedFaqs, activeCat, search]);
 
   const grouped = useMemo(() => {
     const map: Record<string, FAQ[]> = {};
@@ -92,12 +117,7 @@ export default function FAQPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <SEOHead
-        title={t.title}
-        description={t.subtitle}
-        keywords={t.seoKeywords}
-        pageType="faq"
-      />
+      <SEOHead title={t.title} description={t.subtitle} keywords={t.seoKeywords} pageType="faq" />
       <Navigation />
 
       <section className="bg-gradient-to-b from-[#F0E4C8]/50 to-white py-16 md:py-24">
@@ -121,17 +141,21 @@ export default function FAQPage() {
         <div className="mx-auto flex max-w-4xl gap-2 overflow-x-auto px-4">
           <button
             onClick={() => setActiveCat('all')}
-            className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${activeCat === 'all' ? 'border-[#2C1F10] bg-[#2C1F10] text-white' : 'border-gray-200 bg-white text-gray-600'}`}
+            className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
+              activeCat === 'all' ? 'border-[#2C1F10] bg-[#2C1F10] text-white' : 'border-gray-200 bg-white text-gray-600'
+            }`}
           >
-            {t.all} ({faqs.length})
+            {t.all} ({translatedFaqs.length})
           </button>
           {categories.map(cat => (
             <button
               key={cat}
               onClick={() => setActiveCat(cat)}
-              className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${activeCat === cat ? 'border-[#2C1F10] bg-[#2C1F10] text-white' : 'border-gray-200 bg-white text-gray-600'}`}
+              className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
+                activeCat === cat ? 'border-[#2C1F10] bg-[#2C1F10] text-white' : 'border-gray-200 bg-white text-gray-600'
+              }`}
             >
-              {cat} ({faqs.filter(f => f.category === cat).length})
+              {cat} ({translatedFaqs.filter(faq => faq.category === cat).length})
             </button>
           ))}
         </div>
@@ -147,12 +171,24 @@ export default function FAQPage() {
             <div className="py-20 text-center">
               <HelpCircle className="mx-auto mb-4 h-12 w-12 text-gray-300" />
               <p className="text-gray-500">{t.empty}</p>
-              {search && <button onClick={() => setSearch('')} className="mt-3 text-sm font-medium text-[#C09A6A] hover:underline">{t.clear}</button>}
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="mt-3 text-sm font-medium text-[#C09A6A] hover:underline"
+                >
+                  {t.clear}
+                </button>
+              )}
             </div>
           ) : (
             <div className="space-y-8">
               {Object.entries(grouped).map(([category, items]) => (
-                <motion.div key={category} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+                <motion.div
+                  key={category}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                >
                   <h2 className="mb-4 text-lg font-bold text-[#2C1F10]">{category}</h2>
                   <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
                     {items.map(faq => (
@@ -162,7 +198,9 @@ export default function FAQPage() {
                           className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left hover:bg-gray-50"
                         >
                           <span className="text-sm font-medium text-[#2C1F10]">{faq.question}</span>
-                          <ChevronDown className={`h-5 w-5 text-[#C09A6A] transition-transform ${openId === faq.id ? 'rotate-180' : ''}`} />
+                          <ChevronDown
+                            className={`h-5 w-5 text-[#C09A6A] transition-transform ${openId === faq.id ? 'rotate-180' : ''}`}
+                          />
                         </button>
                         <AnimatePresence initial={false}>
                           {openId === faq.id && (
@@ -192,11 +230,19 @@ export default function FAQPage() {
           <h2 className="mb-3 text-2xl font-serif font-bold text-[#2C1F10]">{t.ctaTitle}</h2>
           <p className="mb-6 text-sm text-gray-500">{t.ctaDesc}</p>
           <div className="flex flex-wrap justify-center gap-3">
-            <Link to="/ai/chat" className="inline-flex items-center gap-2 rounded-xl bg-[#C09A6A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#8B6840]">
-              <MessageCircle className="h-4 w-4" />{t.ctaAI}
+            <Link
+              to="/ai/chat"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#C09A6A] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#8B6840]"
+            >
+              <MessageCircle className="h-4 w-4" />
+              {t.ctaAI}
             </Link>
-            <Link to="/contact" className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-2.5 text-sm font-semibold text-[#2C1F10] hover:border-[#C09A6A]/40">
-              {t.ctaContact}<ArrowRight className="h-4 w-4" />
+            <Link
+              to="/contact"
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-2.5 text-sm font-semibold text-[#2C1F10] hover:border-[#C09A6A]/40"
+            >
+              {t.ctaContact}
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>
@@ -206,4 +252,3 @@ export default function FAQPage() {
     </div>
   );
 }
-
