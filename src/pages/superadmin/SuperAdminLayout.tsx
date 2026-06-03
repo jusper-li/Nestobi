@@ -27,6 +27,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 
 const navLinks = [
+  { to: '/superadmin/engagement', icon: <MessageSquare className="h-5 w-5" />, label: '連動管理' },
   { to: '/superadmin', icon: <LayoutDashboard className="h-5 w-5" />, label: '總覽', end: true },
   { to: '/superadmin/products', icon: <ShoppingBag className="h-5 w-5" />, label: '商品管理' },
   { to: '/superadmin/product-categories', icon: <Tags className="h-5 w-5" />, label: '商品分類管理' },

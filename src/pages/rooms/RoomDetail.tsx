@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Building2, Calendar, MapPin, Star, Users } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Building2, Calendar, Heart, MapPin, Star, Users } from 'lucide-react';
 import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
+import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useMemberFavorite } from '../../hooks/useMemberFavorite';
 import { getTranslationRuntimeState, translateHotelsOnDemand, translateRoomsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { ROOM_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
@@ -38,6 +40,13 @@ interface Room {
   hotels?: Hotel | null;
 }
 
+interface RoomReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+}
+
 const ROOM_TYPE_LABELS: Record<string, { 'zh-TW': string; en: string; ja: string; ko: string }> = {
   single: { 'zh-TW': '單人房', en: 'Single', ja: 'シングル', ko: '싱글' },
   double: { 'zh-TW': '雙人房', en: 'Double', ja: 'ダブル', ko: '더블' },
@@ -49,6 +58,8 @@ const ROOM_TYPE_LABELS: Record<string, { 'zh-TW': string; en: string; ja: string
 
 export default function RoomDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang);
   const shouldTranslate = pickByLang(locale, '0', '1', '1', '1') === '1';
@@ -59,6 +70,8 @@ export default function RoomDetail() {
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState('');
   const [translationNotice, setTranslationNotice] = useState('');
+  const [reviews, setReviews] = useState<RoomReview[]>([]);
+  const { isFavorite, loading: favoriteLoading, toggleFavorite } = useMemberFavorite(user?.id, 'room', id);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,6 +86,28 @@ export default function RoomDetail() {
       setLoading(false);
     };
     if (id) void fetchRoom();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchReviews = async () => {
+      if (!id) {
+        setReviews([]);
+        return;
+      }
+      const { data } = await supabase
+        .from('room_reviews')
+        .select('id,rating,comment,created_at')
+        .eq('room_id', id)
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(6);
+      if (!cancelled) setReviews((data || []) as RoomReview[]);
+    };
+    void fetchReviews();
     return () => {
       cancelled = true;
     };
@@ -169,7 +204,22 @@ export default function RoomDetail() {
       ? `${currentRoom.min_capacity}-${currentRoom.capacity}`
       : `${currentRoom.capacity}`;
   const roomType = ROOM_TYPE_LABELS[currentRoom.room_type];
-  const typeLabel = roomType ? roomType[locale] : currentRoom.room_type;
+  const typeLabel = roomType ? pickByLang(locale, roomType['zh-TW'], roomType.en, roomType.ja, roomType.ko) : currentRoom.room_type;
+  const favoriteLabel = isFavorite
+    ? t4('已收藏', 'Favorited', 'お気に入り済み', '찜 완료')
+    : t4('加入收藏', 'Add Favorite', 'お気に入りに追加', '찜하기');
+  const reviewsTitle = t4('房型評價', 'Room Reviews', '客室レビュー', '객실 리뷰');
+  const noReviews = t4('目前尚無評價', 'No reviews yet', 'レビューはまだありません', '아직 리뷰가 없습니다');
+  const loginToFavorite = t4('請先登入後再收藏', 'Please sign in to save favorites.', 'お気に入りにはログインが必要です。', '찜하려면 먼저 로그인해 주세요.');
+  const averageRating = reviews.length ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0;
+  const handleFavorite = async () => {
+    if (!user) {
+      window.alert(loginToFavorite);
+      navigate('/auth/login');
+      return;
+    }
+    await toggleFavorite();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -250,8 +300,39 @@ export default function RoomDetail() {
                 {t4('返回列表', 'Back', '一覧へ戻る', '목록으로')}
               </Link>
             </div>
+            <button type="button" onClick={() => void handleFavorite()} disabled={favoriteLoading} className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition disabled:opacity-50 ${isFavorite ? 'border-pink-200 bg-pink-50 text-pink-600' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`}>
+              <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
+              {favoriteLabel}
+            </button>
           </section>
         </div>
+        <section className="mt-8 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-bold text-[#2C1F10]">{reviewsTitle}</h2>
+            {reviews.length > 0 ? (
+              <div className="inline-flex items-center gap-1 rounded-full bg-yellow-50 px-3 py-1 text-sm font-semibold text-yellow-700">
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                {averageRating.toFixed(1)}
+              </div>
+            ) : null}
+          </div>
+          {reviews.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {reviews.map(review => (
+                <article key={review.id} className="rounded-xl border border-gray-100 p-4">
+                  <div className="mb-2 flex gap-0.5">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <Star key={index} className={`h-4 w-4 ${index < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'}`} />
+                    ))}
+                  </div>
+                  {review.comment ? <p className="text-sm leading-6 text-gray-700">{review.comment}</p> : null}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">{noReviews}</p>
+          )}
+        </section>
       </div>
       <Footer />
     </div>

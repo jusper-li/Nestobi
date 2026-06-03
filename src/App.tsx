@@ -97,6 +97,7 @@ import VendorOrders from './pages/vendor/VendorOrders';
 import VendorProfile from './pages/vendor/VendorProfile';
 import VendorBlog from './pages/vendor/VendorBlog';
 import VendorBlogForm from './pages/vendor/VendorBlogForm';
+import EngagementManagement from './pages/management/EngagementManagement';
 
 function App() {
   return (
@@ -161,6 +162,7 @@ function App() {
               <Route path="staff" element={<VendorStaff />} />
               <Route path="products" element={<VendorProducts />} />
               <Route path="orders" element={<VendorOrders />} />
+              <Route path="engagement" element={<EngagementManagement mode="vendor" />} />
               <Route path="blog" element={<VendorBlog />} />
               <Route path="blog/new" element={<VendorBlogForm />} />
               <Route path="blog/:id" element={<VendorBlogForm />} />
@@ -178,6 +180,7 @@ function App() {
               <Route path="products/new" element={<PermissionRoute permission="manage_products"><AdminProductForm /></PermissionRoute>} />
               <Route path="products/:id" element={<PermissionRoute permission="manage_products"><AdminProductForm /></PermissionRoute>} />
               <Route path="orders" element={<PermissionRoute permission="manage_orders"><AdminOrders /></PermissionRoute>} />
+              <Route path="engagement" element={<PermissionRoute permission="manage_orders"><EngagementManagement mode="admin" /></PermissionRoute>} />
               <Route path="users" element={<PermissionRoute permission="manage_users"><AdminUsers /></PermissionRoute>} />
               <Route path="ai-analytics" element={<PermissionRoute permission="view_ai"><AIAnalytics /></PermissionRoute>} />
               <Route path="static-pages" element={<PermissionRoute permission="manage_static_pages"><AdminStaticPages /></PermissionRoute>} />
@@ -199,6 +202,7 @@ function App() {
               <Route path="products/new" element={<SuperAdminProductForm />} />
               <Route path="products/:id" element={<SuperAdminProductForm />} />
               <Route path="orders" element={<SuperAdminOrders />} />
+              <Route path="engagement" element={<EngagementManagement mode="superadmin" />} />
               <Route path="revenue" element={<SuperAdminRevenue />} />
               <Route path="ai-analytics" element={<SuperAdminAIAnalytics />} />
               <Route path="chatbot" element={<SuperAdminChatbot />} />

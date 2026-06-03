@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AlertCircle, BedDouble, Calendar, Download, ExternalLink, Home, Mail, MapPin, MessageCircle, Phone, Receipt, RotateCcw } from 'lucide-react';
+import { AlertCircle, BedDouble, Calendar, ChevronDown, ChevronUp, Download, ExternalLink, Home, Mail, MapPin, MessageCircle, Phone, Receipt, RotateCcw } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
@@ -76,6 +76,8 @@ export default function MemberBookings() {
     noExtraBed: pick('0 \u4eba', '0 guests', '0 guests', '0 guests'),
     pendingPayment: pick('\u5f85\u4ed8\u6b3e\u78ba\u8a8d', 'Pending payment confirmation', 'Pending payment confirmation', 'Pending payment confirmation'),
     viewOrder: pick('\u67e5\u770b\u8a02\u55ae', 'View Order', 'View Order', 'View Order'),
+    viewDetails: pick('\u67e5\u770b\u660e\u7d30', 'View Details', 'View Details', 'View Details'),
+    hideDetails: pick('\u6536\u5408\u660e\u7d30', 'Hide Details', 'Hide Details', 'Hide Details'),
     cancel: pick('\u53d6\u6d88\u8a02\u623f', 'Cancel Booking', 'Cancel Booking', 'Cancel Booking'),
     cancelling: pick('\u53d6\u6d88\u4e2d...', 'Cancelling...', 'Cancelling...', 'Cancelling...'),
     modifyDates: pick('\u4fee\u6539\u65e5\u671f', 'Modify Dates', 'Modify Dates', 'Modify Dates'),
@@ -92,6 +94,7 @@ export default function MemberBookings() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelId, setCancelId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -167,6 +170,7 @@ export default function MemberBookings() {
           const hostName = hotel?.name || vendor?.name || room?.name || t.room;
           const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address || hostName)}`;
           const paid = booking.status !== 'pending' && booking.status !== 'cancelled';
+          const isExpanded = expandedId === booking.id;
 
           return (
             <motion.article key={booking.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="overflow-hidden rounded-2xl bg-white shadow-sm">
@@ -182,7 +186,20 @@ export default function MemberBookings() {
                     <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${getStatusColor(booking.status)}`}>{getStatusLabel(booking.status, lang)}</span>
                   </div>
 
-                  <section>
+                  <div className="grid grid-cols-2 gap-3 text-sm sm:hidden">
+                    <Info label={t.checkIn} value={formatDate(booking.check_in_date, dateLocale)} />
+                    <Info label={t.checkOut} value={formatDate(booking.check_out_date, dateLocale)} />
+                    <Info label={t.nights} value={`${nights} ${t.nightUnit}`} />
+                    <Info label={t.total} value={formatCurrency(booking.total_price)} strong />
+                  </div>
+
+                  <button type="button" onClick={() => setExpandedId(isExpanded ? null : booking.id)} className="flex w-full items-center justify-between rounded-xl border border-gray-100 px-3 py-2 text-sm font-medium text-gray-600 sm:hidden">
+                    {isExpanded ? t.hideDetails : t.viewDetails}
+                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </button>
+
+                  <div className={`${isExpanded ? 'block' : 'hidden'} space-y-5 sm:block`}>
+                    <section>
                     <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900"><Calendar className="h-4 w-4 text-[#C09A6A]" />{t.bookingInfo}</h4>
                     <div className="grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
                       <Info label={t.orderNo} value={`#${booking.id.slice(-10).toUpperCase()}`} />
@@ -232,9 +249,9 @@ export default function MemberBookings() {
                       <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                       <span>{t.specialRequests}: {booking.special_requests}</span>
                     </div>
-                  )}
+                    )}
 
-                  <section>
+                    <section>
                     <h4 className="mb-3 text-sm font-semibold text-gray-900">{t.timeline}</h4>
                     <div className="grid gap-2 sm:grid-cols-5">
                       {timelineSteps.map(step => {
@@ -257,6 +274,7 @@ export default function MemberBookings() {
                     <Link to={booking.room_id ? `/booking/${booking.room_id}` : '/rooms'} className="inline-flex items-center gap-1.5 rounded-lg bg-[#C09A6A] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#8B6840]"><RotateCcw className="h-4 w-4" />{t.bookAgain}</Link>
                     <button type="button" disabled className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-400"><Download className="h-4 w-4" />{t.downloadInvoice}</button>
                     {hotel?.email && <a href={`mailto:${hotel.email}`} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"><Mail className="h-4 w-4" />{hotel.email}</a>}
+                  </div>
                   </div>
                 </div>
               </div>

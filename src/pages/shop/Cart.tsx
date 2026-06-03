@@ -15,6 +15,7 @@ const SEND_EMAIL_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-e
 interface CartProduct {
   id: string;
   name: string;
+  vendor_id: string | null;
   price: number;
   image_url: string | null;
   stock_quantity: number;
@@ -41,6 +42,8 @@ export default function Cart() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [availablePoints, setAvailablePoints] = useState(0);
+  const [pointsToUse, setPointsToUse] = useState(0);
   const navigate = useNavigate();
 
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
@@ -81,10 +84,25 @@ export default function Cart() {
     fetchCartItems();
   }, [user, items]);
 
+  useEffect(() => {
+    const fetchPointBalance = async () => {
+      if (!user) {
+        setAvailablePoints(0);
+        return;
+      }
+      const { data } = await supabase.from('member_point_balances').select('current_points').eq('user_id', user.id).maybeSingle();
+      setAvailablePoints(Number(data?.current_points || 0));
+    };
+    void fetchPointBalance();
+  }, [user]);
+
   const validCartItems = cartItems.filter(hasProduct);
   const unavailableCartItems = cartItems.filter((item) => !item.products);
   const subtotal = validCartItems.reduce((sum, item) => sum + item.products.price * item.quantity, 0);
-  const pointsEarned = Math.floor(subtotal / 100) * 5;
+  const maxPointUse = Math.max(0, Math.min(availablePoints, subtotal));
+  const pointDiscount = Math.max(0, Math.min(pointsToUse, maxPointUse));
+  const payableSubtotal = Math.max(0, subtotal - pointDiscount);
+  const pointsEarned = Math.floor(payableSubtotal / 100) * 5;
 
   const handleRemoveUnavailableItems = async () => {
     await Promise.all(unavailableCartItems.map((item) => removeItem(item.id)));
@@ -105,7 +123,7 @@ export default function Cart() {
         .from('orders')
         .insert({
           user_id: user.id,
-          total_amount: subtotal,
+          total_amount: payableSubtotal,
           status: 'pending',
           payment_method: 'credit_card',
           payment_status: 'paid',
@@ -135,7 +153,23 @@ export default function Cart() {
           amount: pointsEarned,
           transaction_type: 'earn',
           reference_id: order.id,
+          source_type: 'order',
+          source_id: order.id,
+          vendor_id: validCartItems[0]?.products.vendor_id || null,
           description: t.pointsOrderDesc,
+        });
+      }
+
+      if (pointDiscount > 0) {
+        await supabase.from('points').insert({
+          user_id: user.id,
+          amount: -pointDiscount,
+          transaction_type: 'spent',
+          reference_id: order.id,
+          source_type: 'order',
+          source_id: order.id,
+          vendor_id: validCartItems[0]?.products.vendor_id || null,
+          description: pick('使用點數折抵', 'Points redemption', 'ポイント利用', '포인트 사용'),
         });
       }
 
@@ -162,7 +196,7 @@ export default function Cart() {
                 quantity: item.quantity,
                 price: item.products.price,
               })),
-              totalAmount: subtotal,
+              totalAmount: payableSubtotal,
               pointsEarned,
             },
           }),
@@ -306,9 +340,33 @@ export default function Cart() {
                 ))}
               </div>
               <div className="mb-4 border-t border-gray-100 pt-4">
-                <div className="flex justify-between text-lg font-bold">
+                <div className="flex justify-between text-sm text-gray-600">
                   <span>{t.subtotal}</span>
                   <span className="text-[#C09A6A]">{formatCurrency(subtotal)}</span>
+                </div>
+                <div className="mt-3 space-y-2">
+                  <label className="flex items-center justify-between gap-3 text-sm text-gray-700">
+                    <span>{pick('使用點數折抵', 'Use points', 'ポイント利用', '포인트 사용')}</span>
+                    <span>{pick('可用', 'Available', '利用可能', '사용 가능')} {availablePoints.toLocaleString()} NP</span>
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={maxPointUse}
+                    value={pointsToUse}
+                    onChange={event => setPointsToUse(Math.max(0, Math.min(Number(event.target.value || 0), maxPointUse)))}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#C09A6A]"
+                  />
+                  {pointDiscount > 0 ? (
+                    <div className="flex justify-between text-sm text-red-600">
+                      <span>{pick('點數折抵', 'Point discount', 'ポイント割引', '포인트 할인')}</span>
+                      <span>-{formatCurrency(pointDiscount)}</span>
+                    </div>
+                  ) : null}
+                </div>
+                <div className="mt-3 flex justify-between border-t border-gray-100 pt-3 text-lg font-bold">
+                  <span>{pick('應付金額', 'Total', '合計', '총액')}</span>
+                  <span className="text-[#C09A6A]">{formatCurrency(payableSubtotal)}</span>
                 </div>
                 <p className="mt-1 text-xs font-semibold text-[#8B6840]">{t.pointsDesc(pointsEarned)}</p>
               </div>
@@ -325,4 +383,3 @@ export default function Cart() {
     </div>
   );
 }
-

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, BedDouble, Package, ShoppingBag, User, LogOut, Menu, Store, ClipboardList, Users, Home, Hotel, FileText } from 'lucide-react';
+import { LayoutDashboard, BedDouble, Package, ShoppingBag, User, LogOut, Menu, Store, ClipboardList, Users, Home, Hotel, FileText, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const navLinks = [
+  { to: '/vendor/engagement', icon: <MessageSquare className="w-5 h-5" />, label: '互動管理' },
   { to: '/vendor', icon: <LayoutDashboard className="w-5 h-5" />, label: '儀表板', end: true },
   { to: '/vendor/hotels', icon: <Hotel className="w-5 h-5" />, label: '飯店管理' },
   { to: '/vendor/rooms', icon: <BedDouble className="w-5 h-5" />, label: '房間管理' },

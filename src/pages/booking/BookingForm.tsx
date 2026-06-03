@@ -14,6 +14,7 @@ const SEND_EMAIL_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-e
 interface Room {
   id: string;
   name: string;
+  vendor_id: string | null;
   price_per_night: number;
   image_url: string | null;
   location: string | null;
@@ -65,11 +66,13 @@ const BookingForm: React.FC = () => {
   const [fetchLoading, setFetchLoading] = useState(true);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [availablePoints, setAvailablePoints] = useState(0);
+  const [pointsToUse, setPointsToUse] = useState(0);
 
   useEffect(() => {
     const fetchRoom = async () => {
       const [{ data }, { data: prices }] = await Promise.all([
-        supabase.from('tbl_rooms').select('id,name,price_per_night,image_url,location,capacity').eq('id', roomId).single(),
+        supabase.from('tbl_rooms').select('id,name,vendor_id,price_per_night,image_url,location,capacity').eq('id', roomId).single(),
         supabase.from('tbl_room_day_prices').select('day_of_week,price').eq('room_id', roomId),
       ]);
 
@@ -86,14 +89,29 @@ const BookingForm: React.FC = () => {
     if (roomId) void fetchRoom();
   }, [roomId]);
 
+  useEffect(() => {
+    const fetchPointBalance = async () => {
+      if (!user) {
+        setAvailablePoints(0);
+        return;
+      }
+      const { data } = await supabase.from('member_point_balances').select('current_points').eq('user_id', user.id).maybeSingle();
+      setAvailablePoints(Number(data?.current_points || 0));
+    };
+    void fetchPointBalance();
+  }, [user]);
+
   const nights = checkIn && checkOut ? dateDiffInDays(checkIn, checkOut) : 0;
   const nightBreakdown = useMemo(
     () => (nights > 0 && room ? calcNightPrices(checkIn, checkOut, room.price_per_night, dayPrices) : []),
     [checkIn, checkOut, nights, room, dayPrices],
   );
   const totalPrice = nightBreakdown.reduce((sum, row) => sum + row.price, 0);
+  const maxPointUse = Math.max(0, Math.min(availablePoints, totalPrice));
+  const pointDiscount = Math.max(0, Math.min(pointsToUse, maxPointUse));
+  const payableTotal = Math.max(0, totalPrice - pointDiscount);
   const hasVariablePricing = Object.values(dayPrices).some(v => v > 0);
-  const pointsEarned = Math.floor(totalPrice / 100) * 10;
+  const pointsEarned = Math.floor(payableTotal / 100) * 10;
 
   const dayLabel = (day: number) => {
     const item = DAY_LABELS[day];
@@ -123,7 +141,7 @@ const BookingForm: React.FC = () => {
           check_in_date: checkIn,
           check_out_date: checkOut,
           guests,
-          total_price: totalPrice,
+          total_price: payableTotal,
           status: 'confirmed',
           special_requests: specialRequests,
         })
@@ -138,7 +156,23 @@ const BookingForm: React.FC = () => {
           amount: pointsEarned,
           transaction_type: 'earn',
           reference_id: booking.id,
+          source_type: 'booking',
+          source_id: booking.id,
+          vendor_id: room.vendor_id,
           description: t(`訂房回饋點數 - ${room.name}`, `Booking reward points - ${room.name}`, `宿泊予約ポイント還元 - ${room.name}`, `예약 보상 포인트 - ${room.name}`),
+        });
+      }
+
+      if (pointDiscount > 0) {
+        await supabase.from('points').insert({
+          user_id: user.id,
+          amount: -pointDiscount,
+          transaction_type: 'spent',
+          reference_id: booking.id,
+          source_type: 'booking',
+          source_id: booking.id,
+          vendor_id: room.vendor_id,
+          description: t('使用點數折抵', 'Points redemption', 'ポイント利用', '포인트 사용'),
         });
       }
 
@@ -164,7 +198,7 @@ const BookingForm: React.FC = () => {
               checkIn: formatDate(checkIn),
               checkOut: formatDate(checkOut),
               guests,
-              totalPrice,
+              totalPrice: payableTotal,
               nights,
               pointsEarned,
             },
@@ -205,7 +239,7 @@ const BookingForm: React.FC = () => {
               {t('本次獲得', 'You earned', '獲得ポイント', '획득 포인트')} <strong className="text-[#2C1F10]">{pointsEarned}</strong> {t('點', 'pts', 'pt', '점')}
             </p>
             <p className="mb-8 text-gray-500">
-              {t('總金額', 'Total', '合計', '총액')}: <strong>{formatCurrency(totalPrice)}</strong>
+              {t('總金額', 'Total', '合計', '총액')}: <strong>{formatCurrency(payableTotal)}</strong>
             </p>
             <button onClick={() => navigate('/member')} className="rounded-xl bg-[#C09A6A] px-8 py-3 font-semibold text-white transition hover:bg-[#8B6840]">
               {t('前往會員中心', 'Go to Member Center', '会員センターへ', '회원 센터로 이동')}
@@ -336,9 +370,29 @@ const BookingForm: React.FC = () => {
                 <span>{t('回饋點數', 'Reward points', '獲得ポイント', '리워드 포인트')}</span>
                 <span>+{pointsEarned}</span>
               </div>
+              <div className="space-y-2 pt-2">
+                <label className="flex items-center justify-between gap-3 text-sm text-gray-700">
+                  <span>{t('使用點數折抵', 'Use points', 'ポイント利用', '포인트 사용')}</span>
+                  <span>{t('可用', 'Available', '利用可能', '사용 가능')} {availablePoints.toLocaleString()} NP</span>
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={maxPointUse}
+                  value={pointsToUse}
+                  onChange={event => setPointsToUse(Math.max(0, Math.min(Number(event.target.value || 0), maxPointUse)))}
+                  className="w-full rounded-lg border border-[#D5CDB8] bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#C09A6A]"
+                />
+                {pointDiscount > 0 ? (
+                  <div className="flex justify-between text-sm text-red-600">
+                    <span>{t('點數折抵', 'Point discount', 'ポイント割引', '포인트 할인')}</span>
+                    <span>-{formatCurrency(pointDiscount)}</span>
+                  </div>
+                ) : null}
+              </div>
               <div className="flex justify-between border-t border-[#D5CDB8] pt-2 text-lg font-bold text-gray-900">
                 <span>{t('總金額', 'Total', '合計', '총액')}</span>
-                <span className="text-[#2C1F10]">{formatCurrency(totalPrice)}</span>
+                <span className="text-[#2C1F10]">{formatCurrency(payableTotal)}</span>
               </div>
             </div>
           )}

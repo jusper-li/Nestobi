@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, BedDouble, Package, Building, Users, BarChart2, LogOut, Menu, Plane, FileText, Coffee } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, BedDouble, Package, Building, Users, BarChart2, LogOut, Menu, Plane, FileText, Coffee, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface NavLinkDef {
@@ -12,6 +12,7 @@ interface NavLinkDef {
 }
 
 const ALL_NAV_LINKS: NavLinkDef[] = [
+  { to: '/admin/engagement', icon: <MessageSquare className="w-5 h-5" />, label: '連動管理', permission: 'manage_orders' },
   { to: '/admin', icon: <LayoutDashboard className="w-5 h-5" />, label: '儀表板', end: true },
   { to: '/admin/orders', icon: <ShoppingBag className="w-5 h-5" />, label: '訂單管理', permission: 'manage_orders' },
   { to: '/admin/rooms', icon: <BedDouble className="w-5 h-5" />, label: '房間管理', permission: 'manage_rooms' },

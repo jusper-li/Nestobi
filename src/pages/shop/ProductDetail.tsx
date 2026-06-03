@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ChevronRight, Minus, Plus, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Heart, Minus, Plus, ShoppingCart, Star } from 'lucide-react';
 import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
+import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useMemberFavorite } from '../../hooks/useMemberFavorite';
 import { translateCategoriesFromCacheOnly, translateCategoriesOnDemand, translateProductsFromCacheOnly, translateProductsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { sanitizeHtml } from '../../lib/security';
@@ -33,9 +35,17 @@ interface Category {
   slug: string;
 }
 
+interface ProductReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+}
+
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { addItem } = useCart();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang);
@@ -58,6 +68,14 @@ export default function ProductDetail() {
     details: t4('詳情', 'Details', '詳細', '상세'),
   };
 
+  const actionLabels = {
+    favorite: t4('加入收藏', 'Add Favorite', 'お気に入りに追加', '찜하기'),
+    favorited: t4('已收藏', 'Favorited', 'お気に入り済み', '찜 완료'),
+    reviews: t4('商品評價', 'Product Reviews', '商品レビュー', '상품 리뷰'),
+    noReviews: t4('目前尚無評價', 'No reviews yet', 'レビューはまだありません', '아직 리뷰가 없습니다'),
+    loginToFavorite: t4('請先登入後再收藏', 'Please sign in to save favorites.', 'お気に入りにはログインが必要です。', '찜하려면 먼저 로그인해 주세요.'),
+  };
+
   const [product, setProduct] = useState<Product | null>(null);
   const [category, setCategory] = useState<Category | null>(null);
   const [related, setRelated] = useState<Product[]>([]);
@@ -68,6 +86,8 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
   const [activeImage, setActiveImage] = useState<string | null>(null);
+  const [reviews, setReviews] = useState<ProductReview[]>([]);
+  const { isFavorite, loading: favoriteLoading, toggleFavorite } = useMemberFavorite(user?.id, 'product', id);
 
   useEffect(() => {
     const run = async () => {
@@ -93,6 +113,28 @@ export default function ProductDetail() {
       setLoading(false);
     };
     if (id) void run();
+  }, [id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchReviews = async () => {
+      if (!id) {
+        setReviews([]);
+        return;
+      }
+      const { data } = await supabase
+        .from('product_reviews')
+        .select('id,rating,comment,created_at')
+        .eq('product_id', id)
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(6);
+      if (!cancelled) setReviews((data || []) as ProductReview[]);
+    };
+    void fetchReviews();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   useEffect(() => {
@@ -164,6 +206,15 @@ export default function ProductDetail() {
     }
   };
 
+  const handleFavorite = async () => {
+    if (!user) {
+      window.alert(actionLabels.loginToFavorite);
+      navigate('/auth/login');
+      return;
+    }
+    await toggleFavorite();
+  };
+
   if (loading) {
     return <div className="min-h-screen bg-gray-50"><Navigation /><div className="flex justify-center py-24"><div className="h-10 w-10 animate-spin rounded-full border-4 border-[#C09A6A] border-t-transparent" /></div></div>;
   }
@@ -183,6 +234,7 @@ export default function ProductDetail() {
 
   const inStock = viewProduct.stock_quantity > 0;
   const mainImage = activeImage || images[0];
+  const averageRating = reviews.length ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -236,6 +288,11 @@ export default function ProductDetail() {
               </button>
             </div>
 
+            <button type="button" onClick={() => void handleFavorite()} disabled={favoriteLoading} className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition disabled:opacity-50 ${isFavorite ? 'border-pink-200 bg-pink-50 text-pink-600' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`}>
+              <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
+              {isFavorite ? actionLabels.favorited : actionLabels.favorite}
+            </button>
+
             <div className="rounded-2xl border bg-white p-4">
               <h2 className="mb-3 text-lg font-semibold">{labels.info}</h2>
               <div className="grid grid-cols-1 gap-2 text-sm text-gray-600">
@@ -253,6 +310,34 @@ export default function ProductDetail() {
             <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(viewProduct.description) }} />
           </section>
         ) : null}
+
+        <section className="mt-10 rounded-2xl border bg-white p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-bold text-charcoal">{actionLabels.reviews}</h2>
+            {reviews.length > 0 ? (
+              <div className="inline-flex items-center gap-1 rounded-full bg-yellow-50 px-3 py-1 text-sm font-semibold text-yellow-700">
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                {averageRating.toFixed(1)}
+              </div>
+            ) : null}
+          </div>
+          {reviews.length > 0 ? (
+            <div className="space-y-3">
+              {reviews.map(review => (
+                <article key={review.id} className="rounded-xl border border-gray-100 p-4">
+                  <div className="mb-2 flex gap-0.5">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <Star key={index} className={`h-4 w-4 ${index < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'}`} />
+                    ))}
+                  </div>
+                  {review.comment ? <p className="text-sm leading-6 text-gray-700">{review.comment}</p> : null}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">{actionLabels.noReviews}</p>
+          )}
+        </section>
 
         {viewRelated.length > 0 && (
           <section className="mt-12">

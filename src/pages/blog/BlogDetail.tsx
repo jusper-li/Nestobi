@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, BookOpen, Calendar, ChevronRight, Coffee, Tag, User } from 'lucide-react';
+import { ArrowLeft, BookOpen, Calendar, ChevronRight, Coffee, Heart, Tag, User } from 'lucide-react';
 import Navigation from '../../components/Navigation';
 import Footer from '../../components/Footer';
 import SEOHead from '../../components/SEOHead';
 import { BLOG_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
 import { sanitizeHtml } from '../../lib/security';
+import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useMemberFavorite } from '../../hooks/useMemberFavorite';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { translateBlogPostsFromCacheOnly, translateBlogPostsOnDemand } from '../../lib/contentTranslations';
@@ -31,10 +33,12 @@ type RelatedPost = Pick<BlogPost, 'id' | 'title' | 'slug' | 'cover_image_url' | 
 
 export default function BlogDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang);
   const shouldTranslate = pickByLang(locale, '0', '1', '1', '1') === '1';
-  const dateLocale = locale === 'zh-TW' ? 'zh-TW' : locale === 'en' ? 'en-US' : locale === 'ja' ? 'ja-JP' : 'ko-KR';
+  const dateLocale = pickByLang(locale, 'zh-TW', 'en-US', 'ja-JP', 'ko-KR');
   const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
 
   const labels = {
@@ -42,6 +46,12 @@ export default function BlogDetail() {
     notFound: t4('找不到文章', 'Article not found', '記事が見つかりません', '게시글을 찾을 수 없습니다'),
     back: t4('返回咖啡旅誌', 'Back to Journal', 'ジャーナルへ戻る', '저널로 돌아가기'),
     related: t4('相關文章', 'Related Articles', '関連記事', '관련 글'),
+  };
+
+  const actionLabels = {
+    favorite: t4('加入收藏', 'Add Favorite', 'お気に入りに追加', '찜하기'),
+    favorited: t4('已收藏', 'Favorited', 'お気に入り済み', '찜 완료'),
+    loginToFavorite: t4('請先登入後再收藏', 'Please sign in to save favorites.', 'お気に入りにはログインが必要です。', '찜하려면 먼저 로그인해 주세요.'),
   };
 
   const [post, setPost] = useState<BlogPost | null>(null);
@@ -99,9 +109,19 @@ export default function BlogDetail() {
 
   const viewPost = displayPost || post;
   const viewRelated = displayRelated.length ? displayRelated : related;
+  const { isFavorite, loading: favoriteLoading, toggleFavorite } = useMemberFavorite(user?.id, 'blog_post', viewPost?.id);
 
   const formatDate = (iso: string) =>
     iso ? new Date(iso).toLocaleDateString(dateLocale, { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+
+  const handleFavorite = async () => {
+    if (!user) {
+      window.alert(actionLabels.loginToFavorite);
+      navigate('/auth/login');
+      return;
+    }
+    await toggleFavorite();
+  };
 
   if (loading) return <div className="min-h-screen bg-gray-50"><Navigation /><div className="flex justify-center py-28"><div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-700 border-t-transparent" /></div></div>;
 
@@ -146,6 +166,10 @@ export default function BlogDetail() {
               <div className="mb-8 flex flex-wrap items-center gap-4 border-b border-gray-100 pb-6 text-sm text-gray-500">
                 <div className="flex items-center gap-1.5"><User className="h-4 w-4" />{viewPost.author_name}</div>
                 <div className="flex items-center gap-1.5"><Calendar className="h-4 w-4" />{formatDate(viewPost.published_at)}</div>
+                <button type="button" onClick={() => void handleFavorite()} disabled={favoriteLoading} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${isFavorite ? 'border-pink-200 bg-pink-50 text-pink-600' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}>
+                  <Heart className={`h-3.5 w-3.5 ${isFavorite ? 'fill-current' : ''}`} />
+                  {isFavorite ? actionLabels.favorited : actionLabels.favorite}
+                </button>
                 {viewPost.tags?.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Tag className="h-4 w-4" />

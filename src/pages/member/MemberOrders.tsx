@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronDown, ChevronUp, Heart, Headphones, Package, Receipt, RotateCcw, Search, ShoppingBag, Star, Truck } from 'lucide-react';
+import { AlertCircle, CheckCircle, ChevronDown, ChevronUp, Heart, Headphones, Package, Receipt, RotateCcw, Search, ShoppingBag, Star, Truck } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
@@ -10,6 +11,7 @@ import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../.
 
 interface PurchaseRecord {
   id: string;
+  product_id: string | null;
   quantity: number;
   unit_price: number;
   total_price: number;
@@ -31,7 +33,9 @@ type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 
 export default function MemberOrders() {
   const { user } = useAuth();
+  const { addItem } = useCart();
   const { lang } = useLanguage();
+  const navigate = useNavigate();
   const locale = normalizeLang(lang) as UiLang;
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
   const dateLocale = pickByLang(locale, 'zh-TW', 'en-US', 'ja-JP', 'ko-KR');
@@ -73,6 +77,19 @@ export default function MemberOrders() {
     buyAgain: pick('\u518d\u6b21\u8cfc\u8cb7', 'Buy Again', 'Buy Again', 'Buy Again'),
     favorite: pick('\u52a0\u5165\u6536\u85cf', 'Add Favorite', 'Add Favorite', 'Add Favorite'),
     review: pick('\u8a55\u50f9\u5546\u54c1', 'Review Product', 'Review Product', 'Review Product'),
+    returnRequested: pick('\u5df2\u7533\u8acb\u9000\u8ca8', 'Return Requested', 'Return Requested', 'Return Requested'),
+    refundRequested: pick('\u5df2\u7533\u8acb\u9000\u6b3e', 'Refund Requested', 'Refund Requested', 'Refund Requested'),
+    requestSent: pick('\u7533\u8acb\u5df2\u9001\u51fa\uff0c\u5ba2\u670d\u6703\u76e1\u5feb\u806f\u7d61\u4f60\u3002', 'Request sent. Support will contact you soon.', 'Request sent. Support will contact you soon.', 'Request sent. Support will contact you soon.'),
+    addedToCart: pick('\u5df2\u52a0\u5165\u8cfc\u7269\u8eca', 'Added to cart', 'Added to cart', 'Added to cart'),
+    addedFavorite: pick('\u5df2\u52a0\u5165\u6536\u85cf', 'Added to favorites', 'Added to favorites', 'Added to favorites'),
+    favorited: pick('\u5df2\u6536\u85cf', 'Favorited', 'Favorited', 'Favorited'),
+    reviewPlaceholder: pick('\u5206\u4eab\u9019\u6b21\u5546\u54c1\u9ad4\u9a57...', 'Share your product experience...', 'Share your product experience...', 'Share your product experience...'),
+    submitReview: pick('\u9001\u51fa\u8a55\u50f9', 'Submit Review', 'Submit Review', 'Submit Review'),
+    reviewed: pick('\u5df2\u9001\u51fa\u8a55\u50f9', 'Review Submitted', 'Review Submitted', 'Review Submitted'),
+    reviewRequired: pick('\u8acb\u5148\u8f38\u5165\u8a55\u50f9\u5167\u5bb9', 'Please enter a review first.', 'Please enter a review first.', 'Please enter a review first.'),
+    actionFailed: pick('\u64cd\u4f5c\u5931\u6557\uff0c\u8acb\u7a0d\u5f8c\u518d\u8a66\u3002', 'Action failed. Please try again.', 'Action failed. Please try again.', 'Action failed. Please try again.'),
+    contactSubject: pick('\u8a02\u55ae\u552e\u5f8c\u670d\u52d9', 'Order After-sales Service', 'Order After-sales Service', 'Order After-sales Service'),
+    contactBody: pick('\u6211\u60f3\u8a62\u554f\u9019\u7b46\u8a02\u55ae\u7684\u552e\u5f8c\u670d\u52d9\uff1a', 'I would like to ask about after-sales service for this order:', 'I would like to ask about after-sales service for this order:', 'I would like to ask about after-sales service for this order:'),
     recommendations: pick('\u63a8\u85a6\u5546\u54c1', 'Recommended Products', 'Recommended Products', 'Recommended Products'),
     unknown: pick('\u672a\u77e5\u5546\u54c1', 'Unknown Product', 'Unknown Product', 'Unknown Product'),
     defaultSpec: pick('\u6a19\u6e96\u898f\u683c', 'Standard', 'Standard', 'Standard'),
@@ -82,6 +99,13 @@ export default function MemberOrders() {
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, PurchaseRecord[]>>({});
+  const [afterSalesRequests, setAfterSalesRequests] = useState<Record<string, true>>({});
+  const [favoriteProductIds, setFavoriteProductIds] = useState<Record<string, true>>({});
+  const [reviewedItems, setReviewedItems] = useState<Record<string, true>>({});
+  const [reviewingOrderId, setReviewingOrderId] = useState<string | null>(null);
+  const [reviewText, setReviewText] = useState('');
+  const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -94,6 +118,33 @@ export default function MemberOrders() {
       setLoading(false);
     };
     void fetchOrders();
+  }, [user]);
+
+  useEffect(() => {
+    const fetchAfterSalesState = async () => {
+      if (!user) {
+        setAfterSalesRequests({});
+        setFavoriteProductIds({});
+        setReviewedItems({});
+        return;
+      }
+
+      const [{ data: requests }, { data: favorites }, { data: reviews }] = await Promise.all([
+        supabase.from('after_sales_requests').select('order_id, request_type').eq('user_id', user.id),
+        supabase.from('member_favorites').select('target_id').eq('user_id', user.id).eq('target_type', 'product'),
+        supabase.from('product_reviews').select('purchase_record_id').eq('user_id', user.id),
+      ]);
+
+      setAfterSalesRequests(Object.fromEntries(((requests || []) as { order_id: string; request_type: string }[]).map(item => [`${item.order_id}:${item.request_type}`, true])) as Record<string, true>);
+      setFavoriteProductIds(Object.fromEntries(((favorites || []) as { target_id: string }[]).map(item => [item.target_id, true])) as Record<string, true>);
+      setReviewedItems(Object.fromEntries(((reviews || []) as { purchase_record_id: string }[]).map(item => [item.purchase_record_id, true])) as Record<string, true>);
+    };
+
+    void fetchAfterSalesState().catch(() => {
+      setAfterSalesRequests({});
+      setFavoriteProductIds({});
+      setReviewedItems({});
+    });
   }, [user]);
 
   const toggleExpand = async (orderId: string) => {
@@ -120,6 +171,160 @@ export default function MemberOrders() {
     return formatDate(date.toISOString(), dateLocale);
   };
 
+  const showMessage = (type: 'success' | 'error', text: string) => {
+    setActionMessage({ type, text });
+    window.setTimeout(() => setActionMessage(null), 3000);
+  };
+
+  const persistAfterSalesRequest = async (orderId: string, type: 'return' | 'refund') => {
+    if (!user) {
+      showMessage('error', t.actionFailed);
+      return;
+    }
+    setBusyAction(`${orderId}:${type}`);
+    try {
+      const { error } = await supabase
+        .from('after_sales_requests')
+        .upsert({
+          user_id: user.id,
+          order_id: orderId,
+          request_type: type,
+          status: 'pending',
+          message: `${type} request from member order page`,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,order_id,request_type' });
+      if (error) throw error;
+      setAfterSalesRequests(prev => ({ ...prev, [`${orderId}:${type}`]: true }));
+      showMessage('success', t.requestSent);
+    } catch {
+      showMessage('error', t.actionFailed);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const orderProductIds = (items: PurchaseRecord[]) => items.map(item => item.product_id || item.products?.id).filter(Boolean) as string[];
+
+  const handleBuyAgain = async (orderId: string, items: PurchaseRecord[]) => {
+    const productIds = orderProductIds(items);
+    if (productIds.length === 0) {
+      showMessage('error', t.actionFailed);
+      return;
+    }
+    setBusyAction(`${orderId}:buy`);
+    try {
+      for (const productId of productIds) {
+        const item = items.find(record => (record.product_id || record.products?.id) === productId);
+        await addItem(productId, item?.quantity || 1);
+      }
+      showMessage('success', t.addedToCart);
+      navigate('/cart');
+    } catch {
+      showMessage('error', t.actionFailed);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleFavorite = async (items: PurchaseRecord[]) => {
+    if (!user) {
+      showMessage('error', t.actionFailed);
+      return;
+    }
+    const productIds = orderProductIds(items);
+    if (productIds.length === 0) {
+      showMessage('error', t.actionFailed);
+      return;
+    }
+    setBusyAction('favorite');
+    try {
+      const { error } = await supabase
+        .from('member_favorites')
+        .upsert(productIds.map(productId => ({ user_id: user.id, target_type: 'product', target_id: productId })), { onConflict: 'user_id,target_type,target_id', ignoreDuplicates: true });
+      if (error) throw error;
+      setFavoriteProductIds(prev => {
+        const next = { ...prev };
+        productIds.forEach(productId => {
+          next[productId] = true;
+        });
+        return next;
+      });
+      showMessage('success', t.addedFavorite);
+    } catch {
+      showMessage('error', t.actionFailed);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleSubmitReview = async (orderId: string, items: PurchaseRecord[]) => {
+    if (!user) {
+      showMessage('error', t.actionFailed);
+      return;
+    }
+    if (!reviewText.trim()) {
+      showMessage('error', t.reviewRequired);
+      return;
+    }
+    const reviewRows = items
+      .map(item => {
+        const productId = item.product_id || item.products?.id;
+        if (!productId) return null;
+        return {
+          user_id: user.id,
+          order_id: orderId,
+          purchase_record_id: item.id,
+          product_id: productId,
+          rating: 5,
+          comment: reviewText.trim(),
+          status: 'published',
+          updated_at: new Date().toISOString(),
+        };
+      })
+      .filter(Boolean) as {
+        user_id: string;
+        order_id: string;
+        purchase_record_id: string;
+        product_id: string;
+        rating: number;
+        comment: string;
+        status: string;
+        updated_at: string;
+      }[];
+    if (reviewRows.length === 0) {
+      showMessage('error', t.actionFailed);
+      return;
+    }
+    setBusyAction(`${orderId}:review`);
+    try {
+      const { error } = await supabase
+        .from('product_reviews')
+        .upsert(reviewRows, { onConflict: 'user_id,purchase_record_id' });
+      if (error) throw error;
+      setReviewedItems(prev => {
+        const next = { ...prev };
+        reviewRows.forEach(item => {
+          next[item.purchase_record_id] = true;
+        });
+        return next;
+      });
+      setReviewText('');
+      setReviewingOrderId(null);
+      showMessage('success', t.reviewed);
+    } catch {
+      showMessage('error', t.actionFailed);
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const contactHref = (orderId: string) => {
+    const shortId = orderId.slice(-10).toUpperCase();
+    const subject = `${t.contactSubject} #${shortId}`;
+    const body = `${t.contactBody} #${shortId}`;
+    return `mailto:service@nestobi.com.tw?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-16">
@@ -134,6 +339,13 @@ export default function MemberOrders() {
         <ShoppingBag className="h-5 w-5 text-[#0D9488]" />
         {t.title}
       </h2>
+
+      {actionMessage && (
+        <div className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${actionMessage.type === 'success' ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+          {actionMessage.type === 'success' ? <CheckCircle className="h-4 w-4 flex-shrink-0" /> : <AlertCircle className="h-4 w-4 flex-shrink-0" />}
+          {actionMessage.text}
+        </div>
+      )}
 
       {orders.length === 0 ? (
         <div className="rounded-2xl bg-white p-12 text-center shadow-sm">
@@ -161,30 +373,39 @@ export default function MemberOrders() {
                   </div>
                 </div>
 
-                <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                  <Info label={t.orderNo} value={`#${order.id.slice(-10).toUpperCase()}`} />
+                <div className="grid grid-cols-2 gap-3 text-sm sm:hidden">
                   <Info label={t.orderDate} value={formatDate(order.created_at, dateLocale)} />
-                  <Info label={t.paymentMethod} value={order.payment_method === 'credit_card' ? t.creditCard : order.payment_method} />
-                  <Info label={t.paymentStatus} value={order.payment_status === 'paid' ? t.paid : t.unpaid} />
-                  <Info label={t.logisticsStatus} value={deliveryLabel(order.status)} />
-                  <Info label={t.invoiceStatus} value={t.invoicePending} />
-                  <Info label={t.recommendations} value={order.discount_code || t.notProvided} />
                   <Info label={t.summary} value={formatCurrency(order.total_amount, order.currency || 'TWD')} strong />
+                  <Info label={t.paymentMethod} value={order.payment_method === 'credit_card' ? t.creditCard : order.payment_method} />
+                  <Info label={t.logisticsStatus} value={deliveryLabel(order.status)} />
                 </div>
 
-                <section className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                  <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900"><Truck className="h-4 w-4 text-[#0D9488]" />{t.logistics}</h4>
+                <div className={`${isExpanded ? 'block' : 'hidden'} space-y-4 sm:block`}>
                   <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                    <Info label={t.company} value={t.blackCat} />
-                    <Info label={t.trackingNo} value={order.status === 'shipped' || order.status === 'completed' ? `NTB${order.id.slice(-8).toUpperCase()}` : t.notProvided} />
-                    <Info label={t.deliveryStatus} value={deliveryLabel(order.status)} />
-                    <Info label={t.estimatedArrival} value={estimatedArrival(order.created_at)} />
+                    <Info label={t.orderNo} value={`#${order.id.slice(-10).toUpperCase()}`} />
+                    <Info label={t.orderDate} value={formatDate(order.created_at, dateLocale)} />
+                    <Info label={t.paymentMethod} value={order.payment_method === 'credit_card' ? t.creditCard : order.payment_method} />
+                    <Info label={t.paymentStatus} value={order.payment_status === 'paid' ? t.paid : t.unpaid} />
+                    <Info label={t.logisticsStatus} value={deliveryLabel(order.status)} />
+                    <Info label={t.invoiceStatus} value={t.invoicePending} />
+                    <Info label={t.recommendations} value={order.discount_code || t.notProvided} />
+                    <Info label={t.summary} value={formatCurrency(order.total_amount, order.currency || 'TWD')} strong />
                   </div>
-                  <button type="button" className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
-                    <Search className="h-4 w-4" />
-                    {t.queryLogistics}
-                  </button>
-                </section>
+
+                  <section className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                    <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900"><Truck className="h-4 w-4 text-[#0D9488]" />{t.logistics}</h4>
+                    <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                      <Info label={t.company} value={t.blackCat} />
+                      <Info label={t.trackingNo} value={order.status === 'shipped' || order.status === 'completed' ? `NTB${order.id.slice(-8).toUpperCase()}` : t.notProvided} />
+                      <Info label={t.deliveryStatus} value={deliveryLabel(order.status)} />
+                      <Info label={t.estimatedArrival} value={estimatedArrival(order.created_at)} />
+                    </div>
+                    <button type="button" className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
+                      <Search className="h-4 w-4" />
+                      {t.queryLogistics}
+                    </button>
+                  </section>
+                </div>
 
                 <div className="flex items-center justify-between border-t border-gray-100 pt-4">
                   <p className="text-lg font-bold text-[#2C1F10]">{formatCurrency(order.total_amount, order.currency || 'TWD')}</p>
@@ -220,13 +441,19 @@ export default function MemberOrders() {
                   <section>
                     <h4 className="mb-3 flex items-center gap-1.5 font-medium text-gray-700"><Headphones className="h-4 w-4" />{t.afterSales}</h4>
                     <div className="flex flex-wrap gap-2">
-                      <button type="button" className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"><Package className="h-4 w-4" />{t.return}</button>
-                      <button type="button" className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"><Receipt className="h-4 w-4" />{t.refund}</button>
-                      <Link to="/contact" className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"><Headphones className="h-4 w-4" />{t.contact}</Link>
-                      <Link to="/shop" className="inline-flex items-center gap-1.5 rounded-lg bg-[#C09A6A] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#8B6840]"><RotateCcw className="h-4 w-4" />{t.buyAgain}</Link>
-                      <button type="button" className="inline-flex items-center gap-1.5 rounded-lg border border-pink-200 px-3 py-2 text-sm font-medium text-pink-600 transition hover:bg-pink-50"><Heart className="h-4 w-4" />{t.favorite}</button>
-                      <button type="button" className="inline-flex items-center gap-1.5 rounded-lg border border-yellow-200 px-3 py-2 text-sm font-medium text-yellow-700 transition hover:bg-yellow-50"><Star className="h-4 w-4" />{t.review}</button>
+                      <button type="button" onClick={() => void persistAfterSalesRequest(order.id, 'return')} disabled={afterSalesRequests[`${order.id}:return`] || busyAction === `${order.id}:return`} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:border-green-200 disabled:bg-green-50 disabled:text-green-700"><Package className="h-4 w-4" />{afterSalesRequests[`${order.id}:return`] ? t.returnRequested : t.return}</button>
+                      <button type="button" onClick={() => void persistAfterSalesRequest(order.id, 'refund')} disabled={afterSalesRequests[`${order.id}:refund`] || busyAction === `${order.id}:refund`} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:border-green-200 disabled:bg-green-50 disabled:text-green-700"><Receipt className="h-4 w-4" />{afterSalesRequests[`${order.id}:refund`] ? t.refundRequested : t.refund}</button>
+                      <a href={contactHref(order.id)} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"><Headphones className="h-4 w-4" />{t.contact}</a>
+                      <button type="button" onClick={() => handleBuyAgain(order.id, items)} disabled={busyAction === `${order.id}:buy`} className="inline-flex items-center gap-1.5 rounded-lg bg-[#C09A6A] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#8B6840] disabled:opacity-60"><RotateCcw className="h-4 w-4" />{t.buyAgain}</button>
+                      <button type="button" onClick={() => void handleFavorite(items)} disabled={busyAction === 'favorite'} className="inline-flex items-center gap-1.5 rounded-lg border border-pink-200 px-3 py-2 text-sm font-medium text-pink-600 transition hover:bg-pink-50 disabled:opacity-60"><Heart className="h-4 w-4" />{orderProductIds(items).every(productId => favoriteProductIds[productId]) && items.length > 0 ? t.favorited : t.favorite}</button>
+                      <button type="button" onClick={() => setReviewingOrderId(reviewingOrderId === order.id ? null : order.id)} disabled={items.length > 0 && items.every(item => reviewedItems[item.id])} className="inline-flex items-center gap-1.5 rounded-lg border border-yellow-200 px-3 py-2 text-sm font-medium text-yellow-700 transition hover:bg-yellow-50 disabled:border-green-200 disabled:bg-green-50 disabled:text-green-700"><Star className="h-4 w-4" />{items.length > 0 && items.every(item => reviewedItems[item.id]) ? t.reviewed : t.review}</button>
                     </div>
+                    {reviewingOrderId === order.id && (
+                      <div className="mt-3 rounded-xl border border-yellow-100 bg-yellow-50 p-3">
+                        <textarea value={reviewText} onChange={event => setReviewText(event.target.value)} rows={3} placeholder={t.reviewPlaceholder} className="w-full resize-none rounded-lg border border-yellow-100 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-yellow-300" />
+                        <button type="button" onClick={() => void handleSubmitReview(order.id, items)} disabled={busyAction === `${order.id}:review`} className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-yellow-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-yellow-600 disabled:opacity-60"><Star className="h-4 w-4" />{t.submitReview}</button>
+                      </div>
+                    )}
                   </section>
                 </motion.div>
               )}

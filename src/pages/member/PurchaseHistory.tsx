@@ -198,7 +198,7 @@ const PurchaseHistory: React.FC = () => {
         <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <SummaryCard icon={<ShoppingBag className="h-4 w-4" />} label={t.product} value={summary.product} />
         <SummaryCard icon={<BedDouble className="h-4 w-4" />} label={t.booking} value={summary.booking} />
         <SummaryCard icon={<Star className="h-4 w-4" />} label={t.points} value={summary.points} />
@@ -235,7 +235,27 @@ const PurchaseHistory: React.FC = () => {
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
-          <div className="overflow-x-auto">
+          <div className="divide-y divide-gray-50 md:hidden">
+            {records.map((record, i) => (
+              <motion.article key={record.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+                    {typeIcon(record.type)}
+                    {typeLabel(record.type)}
+                  </span>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${record.status === 'used' ? 'bg-orange-100 text-orange-700' : getStatusColor(record.status)}`}>
+                    {record.status === 'used' ? t.used : getStatusLabel(record.status, lang)}
+                  </span>
+                </div>
+                <h3 className="mt-3 text-sm font-semibold text-gray-900">{record.title}</h3>
+                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                  <Info label={t.date} value={formatDate(record.date, dateLocale)} />
+                  <Info label={t.amount} value={`${record.amount < 0 ? '-' : ''}${formatCurrency(Math.abs(record.amount))}`} strong={record.amount >= 0} />
+                </div>
+              </motion.article>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full">
               <thead className="border-b border-gray-100 bg-gray-50">
                 <tr>
@@ -276,10 +296,19 @@ const PurchaseHistory: React.FC = () => {
 
 function SummaryCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-sm">
-      <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-700">{icon}</div>
+    <div className="rounded-2xl bg-white p-3 shadow-sm sm:p-4">
+      <div className="mb-2 flex h-7 w-7 items-center justify-center rounded-lg bg-gray-100 text-gray-700 sm:h-8 sm:w-8">{icon}</div>
       <p className="text-xs text-gray-500">{label}</p>
-      <p className="mt-1 text-xl font-bold text-gray-900">{value}</p>
+      <p className="mt-1 text-lg font-bold text-gray-900 sm:text-xl">{value}</p>
+    </div>
+  );
+}
+
+function Info({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-xs text-gray-400">{label}</p>
+      <p className={`mt-0.5 truncate ${strong ? 'font-bold text-[#2C1F10]' : 'font-medium text-gray-800'}`}>{value}</p>
     </div>
   );
 }

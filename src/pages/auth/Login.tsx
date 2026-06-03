@@ -14,6 +14,22 @@ import {
   recordLoginFailure,
 } from '../../lib/security';
 
+function roleHome(role: string) {
+  if (role === 'superadmin') return '/superadmin';
+  if (role === 'admin') return '/admin';
+  if (role === 'vendor') return '/vendor';
+  return '/member';
+}
+
+function roleCanAccessRedirect(role: string, redirect: string) {
+  if (!redirect.startsWith('/')) return false;
+  if (redirect.startsWith('//')) return false;
+  if (redirect.startsWith('/superadmin')) return role === 'superadmin';
+  if (redirect.startsWith('/admin')) return role === 'admin' || role === 'superadmin';
+  if (redirect.startsWith('/vendor')) return role === 'vendor' || role === 'admin' || role === 'superadmin';
+  return true;
+}
+
 export default function Login() {
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
@@ -68,11 +84,8 @@ export default function Login() {
         const { data: authData } = await supabase.from('tbl_user_auth').select('role').eq('user_id', user.id).maybeSingle();
         const role = authData?.role ?? 'user';
 
-        if (redirectParam) navigate(redirectParam, { replace: true });
-        else if (role === 'superadmin') navigate('/superadmin', { replace: true });
-        else if (role === 'admin') navigate('/admin', { replace: true });
-        else if (role === 'vendor') navigate('/vendor', { replace: true });
-        else navigate('/member', { replace: true });
+        if (redirectParam && roleCanAccessRedirect(role, redirectParam)) navigate(redirectParam, { replace: true });
+        else navigate(roleHome(role), { replace: true });
       }
     } catch (err) {
       recordLoginFailure(normalizedEmail);
@@ -168,4 +181,3 @@ export default function Login() {
     </div>
   );
 }
-
