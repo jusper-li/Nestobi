@@ -5,6 +5,7 @@ import { AlertCircle, CheckCircle, ChevronDown, ChevronUp, Heart, Headphones, Pa
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { translateProductsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
@@ -40,59 +41,59 @@ export default function MemberOrders() {
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
   const dateLocale = pickByLang(locale, 'zh-TW', 'en-US', 'ja-JP', 'ko-KR');
   const t = {
-    title: pick('\u6211\u7684\u8a02\u55ae', 'My Orders', 'My Orders', 'My Orders'),
-    noData: pick('\u76ee\u524d\u6c92\u6709\u8a02\u55ae', 'No orders yet', 'No orders yet', 'No orders yet'),
-    summary: pick('\u8a02\u55ae\u6458\u8981', 'Order Summary', 'Order Summary', 'Order Summary'),
-    items: pick('\u5546\u54c1\u8cc7\u8a0a', 'Product Items', 'Product Items', 'Product Items'),
-    logistics: pick('\u7269\u6d41\u8cc7\u8a0a', 'Logistics', 'Logistics', 'Logistics'),
-    afterSales: pick('\u552e\u5f8c\u670d\u52d9', 'After-sales Service', 'After-sales Service', 'After-sales Service'),
-    orderNo: pick('\u8a02\u55ae\u7de8\u865f', 'Order No.', 'Order No.', 'Order No.'),
-    orderDate: pick('\u8a02\u55ae\u65e5\u671f', 'Order Date', 'Order Date', 'Order Date'),
-    paymentMethod: pick('\u4ed8\u6b3e\u65b9\u5f0f', 'Payment Method', 'Payment Method', 'Payment Method'),
-    paymentStatus: pick('\u4ed8\u6b3e\u72c0\u614b', 'Payment Status', 'Payment Status', 'Payment Status'),
-    logisticsStatus: pick('\u7269\u6d41\u72c0\u614b', 'Logistics Status', 'Logistics Status', 'Logistics Status'),
-    invoiceStatus: pick('\u767c\u7968\u72c0\u614b', 'Invoice Status', 'Invoice Status', 'Invoice Status'),
-    paid: pick('\u5df2\u4ed8\u6b3e', 'Paid', 'Paid', 'Paid'),
-    unpaid: pick('\u672a\u4ed8\u6b3e', 'Unpaid', 'Unpaid', 'Unpaid'),
-    creditCard: pick('\u4fe1\u7528\u5361', 'Credit Card', 'Credit Card', 'Credit Card'),
-    invoicePending: pick('\u5f85\u958b\u7acb', 'Pending', 'Pending', 'Pending'),
-    spec: pick('\u898f\u683c', 'Spec', 'Spec', 'Spec'),
-    qty: pick('\u6578\u91cf', 'Qty', 'Qty', 'Qty'),
-    unitPrice: pick('\u55ae\u50f9', 'Unit Price', 'Unit Price', 'Unit Price'),
-    company: pick('\u7269\u6d41\u516c\u53f8', 'Carrier', 'Carrier', 'Carrier'),
-    trackingNo: pick('\u7269\u6d41\u55ae\u865f', 'Tracking No.', 'Tracking No.', 'Tracking No.'),
-    deliveryStatus: pick('\u914d\u9001\u72c0\u614b', 'Delivery Status', 'Delivery Status', 'Delivery Status'),
-    estimatedArrival: pick('\u9810\u8a08\u5230\u8ca8', 'Estimated Arrival', 'Estimated Arrival', 'Estimated Arrival'),
-    blackCat: pick('\u9ed1\u8c93\u5b85\u6025\u4fbf', 'T-Cat Express', 'T-Cat Express', 'T-Cat Express'),
-    notProvided: pick('\u5c1a\u672a\u63d0\u4f9b', 'Not provided', 'Not provided', 'Not provided'),
-    preparing: pick('\u5099\u8ca8\u4e2d', 'Preparing', 'Preparing', 'Preparing'),
-    shipped: pick('\u5df2\u51fa\u8ca8', 'Shipped', 'Shipped', 'Shipped'),
-    delivered: pick('\u5df2\u9001\u9054', 'Delivered', 'Delivered', 'Delivered'),
-    queryLogistics: pick('\u67e5\u8a62\u7269\u6d41', 'Track Package', 'Track Package', 'Track Package'),
-    view: pick('\u67e5\u770b\u660e\u7d30', 'View Details', 'View Details', 'View Details'),
-    hide: pick('\u6536\u5408\u660e\u7d30', 'Hide Details', 'Hide Details', 'Hide Details'),
-    return: pick('\u7533\u8acb\u9000\u8ca8', 'Return', 'Return', 'Return'),
-    refund: pick('\u7533\u8acb\u9000\u6b3e', 'Refund', 'Refund', 'Refund'),
-    contact: pick('\u806f\u7d61\u5ba2\u670d', 'Contact Support', 'Contact Support', 'Contact Support'),
-    buyAgain: pick('\u518d\u6b21\u8cfc\u8cb7', 'Buy Again', 'Buy Again', 'Buy Again'),
-    favorite: pick('\u52a0\u5165\u6536\u85cf', 'Add Favorite', 'Add Favorite', 'Add Favorite'),
-    review: pick('\u8a55\u50f9\u5546\u54c1', 'Review Product', 'Review Product', 'Review Product'),
-    returnRequested: pick('\u5df2\u7533\u8acb\u9000\u8ca8', 'Return Requested', 'Return Requested', 'Return Requested'),
-    refundRequested: pick('\u5df2\u7533\u8acb\u9000\u6b3e', 'Refund Requested', 'Refund Requested', 'Refund Requested'),
-    requestSent: pick('\u7533\u8acb\u5df2\u9001\u51fa\uff0c\u5ba2\u670d\u6703\u76e1\u5feb\u806f\u7d61\u4f60\u3002', 'Request sent. Support will contact you soon.', 'Request sent. Support will contact you soon.', 'Request sent. Support will contact you soon.'),
-    addedToCart: pick('\u5df2\u52a0\u5165\u8cfc\u7269\u8eca', 'Added to cart', 'Added to cart', 'Added to cart'),
-    addedFavorite: pick('\u5df2\u52a0\u5165\u6536\u85cf', 'Added to favorites', 'Added to favorites', 'Added to favorites'),
-    favorited: pick('\u5df2\u6536\u85cf', 'Favorited', 'Favorited', 'Favorited'),
-    reviewPlaceholder: pick('\u5206\u4eab\u9019\u6b21\u5546\u54c1\u9ad4\u9a57...', 'Share your product experience...', 'Share your product experience...', 'Share your product experience...'),
-    submitReview: pick('\u9001\u51fa\u8a55\u50f9', 'Submit Review', 'Submit Review', 'Submit Review'),
-    reviewed: pick('\u5df2\u9001\u51fa\u8a55\u50f9', 'Review Submitted', 'Review Submitted', 'Review Submitted'),
-    reviewRequired: pick('\u8acb\u5148\u8f38\u5165\u8a55\u50f9\u5167\u5bb9', 'Please enter a review first.', 'Please enter a review first.', 'Please enter a review first.'),
-    actionFailed: pick('\u64cd\u4f5c\u5931\u6557\uff0c\u8acb\u7a0d\u5f8c\u518d\u8a66\u3002', 'Action failed. Please try again.', 'Action failed. Please try again.', 'Action failed. Please try again.'),
-    contactSubject: pick('\u8a02\u55ae\u552e\u5f8c\u670d\u52d9', 'Order After-sales Service', 'Order After-sales Service', 'Order After-sales Service'),
-    contactBody: pick('\u6211\u60f3\u8a62\u554f\u9019\u7b46\u8a02\u55ae\u7684\u552e\u5f8c\u670d\u52d9\uff1a', 'I would like to ask about after-sales service for this order:', 'I would like to ask about after-sales service for this order:', 'I would like to ask about after-sales service for this order:'),
-    recommendations: pick('\u63a8\u85a6\u5546\u54c1', 'Recommended Products', 'Recommended Products', 'Recommended Products'),
-    unknown: pick('\u672a\u77e5\u5546\u54c1', 'Unknown Product', 'Unknown Product', 'Unknown Product'),
-    defaultSpec: pick('\u6a19\u6e96\u898f\u683c', 'Standard', 'Standard', 'Standard'),
+    title: pick('我的訂單', 'My Orders', '注文', '내 주문'),
+    noData: pick('目前沒有訂單', 'No orders yet', '注文はまだありません', '주문 내역이 없습니다'),
+    summary: pick('訂單摘要', 'Order Summary', '注文概要', '주문 요약'),
+    items: pick('商品資訊', 'Product Items', '商品情報', '상품 정보'),
+    logistics: pick('物流資訊', 'Logistics', '配送情報', '배송 정보'),
+    afterSales: pick('售後服務', 'After-sales Service', 'アフターサービス', 'A/S 서비스'),
+    orderNo: pick('訂單編號', 'Order No.', '注文番号', '주문 번호'),
+    orderDate: pick('訂單日期', 'Order Date', '注文日', '주문일'),
+    paymentMethod: pick('付款方式', 'Payment Method', '支払い方法', '결제 방식'),
+    paymentStatus: pick('付款狀態', 'Payment Status', '支払い状況', '결제 상태'),
+    logisticsStatus: pick('物流狀態', 'Logistics Status', '配送状況', '배송 상태'),
+    invoiceStatus: pick('發票狀態', 'Invoice Status', '領収書状況', '영수증 상태'),
+    paid: pick('已付款', 'Paid', '支払い済み', '결제 완료'),
+    unpaid: pick('未付款', 'Unpaid', '未払い', '미결제'),
+    creditCard: pick('信用卡', 'Credit Card', 'クレジットカード', '신용카드'),
+    invoicePending: pick('待開立', 'Pending', '発行待ち', '발행 대기'),
+    spec: pick('規格', 'Spec', '規格', '규격'),
+    qty: pick('數量', 'Qty', '数量', '수량'),
+    unitPrice: pick('單價', 'Unit Price', '単価', '단가'),
+    company: pick('物流公司', 'Carrier', '配送会社', '택배사'),
+    trackingNo: pick('物流單號', 'Tracking No.', '追跡番号', '운송장 번호'),
+    deliveryStatus: pick('配送狀態', 'Delivery Status', '配送状況', '배송 상태'),
+    estimatedArrival: pick('預計到貨', 'Estimated Arrival', '到着予定', '도착 예정'),
+    blackCat: pick('黑貓宅急便', 'T-Cat Express', 'クロネコ宅急便', '블랙캣 택배'),
+    notProvided: pick('尚未提供', 'Not provided', '未提供', '아직 제공되지 않음'),
+    preparing: pick('備貨中', 'Preparing', '準備中', '준비 중'),
+    shipped: pick('已出貨', 'Shipped', '発送済み', '배송됨'),
+    delivered: pick('已送達', 'Delivered', '配達済み', '배송 완료'),
+    queryLogistics: pick('查詢物流', 'Track Package', '配送を確認', '배송 조회'),
+    view: pick('查看明細', 'View Details', '詳細を見る', '상세 보기'),
+    hide: pick('收合明細', 'Hide Details', '詳細を閉じる', '상세 접기'),
+    return: pick('申請退貨', 'Return', '返品申請', '반품 신청'),
+    refund: pick('申請退款', 'Refund', '返金申請', '환불 신청'),
+    contact: pick('聯絡客服', 'Contact Support', 'サポートに連絡', '고객센터 문의'),
+    buyAgain: pick('再次購買', 'Buy Again', '再購入', '다시 구매'),
+    favorite: pick('加入收藏', 'Add Favorite', 'お気に入りに追加', '즐겨찾기 추가'),
+    review: pick('評價商品', 'Review Product', '商品を評価', '상품 평가'),
+    returnRequested: pick('已申請退貨', 'Return Requested', '返品申請済み', '반품 신청됨'),
+    refundRequested: pick('已申請退款', 'Refund Requested', '返金申請済み', '환불 신청됨'),
+    requestSent: pick('申請已送出，客服會盡快聯絡你。', 'Request sent. Support will contact you soon.', '申請を送信しました。サポートより近日中に連絡します。', '신청이 접수되었습니다. 고객센터에서 곧 연락드립니다.'),
+    addedToCart: pick('已加入購物車', 'Added to cart', 'カートに追加しました', '장바구니에 추가됨'),
+    addedFavorite: pick('已加入收藏', 'Added to favorites', 'お気に入りに追加しました', '즐겨찾기에 추가됨'),
+    favorited: pick('已收藏', 'Favorited', 'お気に入り済み', '즐겨찾기됨'),
+    reviewPlaceholder: pick('分享這次商品體驗...', 'Share your product experience...', '商品の感想を共有してください...', '상품 경험을 공유해 주세요...'),
+    submitReview: pick('送出評價', 'Submit Review', '評価を送信', '평가 제출'),
+    reviewed: pick('已送出評價', 'Review Submitted', '評価送信済み', '평가 제출됨'),
+    reviewRequired: pick('請先輸入評價內容', 'Please enter a review first.', '先に評価内容を入力してください。', '먼저 평가 내용을 입력해 주세요.'),
+    actionFailed: pick('操作失敗，請稍後再試。', 'Action failed. Please try again.', '操作に失敗しました。しばらくしてから再試行してください。', '작업에 실패했습니다. 잠시 후 다시 시도해 주세요.'),
+    contactSubject: pick('訂單售後服務', 'Order After-sales Service', '注文アフターサービス', '주문 A/S 서비스'),
+    contactBody: pick('我想詢問這筆訂單的售後服務：', 'I would like to ask about after-sales service for this order:', 'この注文のアフターサービスについて問い合わせたいです：', '이 주문의 A/S 서비스에 대해 문의하고 싶습니다:'),
+    recommendations: pick('推薦商品', 'Recommended Products', 'おすすめ商品', '추천 상품'),
+    unknown: pick('未知商品', 'Unknown Product', '不明な商品', '알 수 없는 상품'),
+    defaultSpec: pick('標準規格', 'Standard', '標準規格', '표준 규격'),
   };
 
   const [orders, setOrders] = useState<Order[]>([]);
@@ -119,6 +120,11 @@ export default function MemberOrders() {
     };
     void fetchOrders();
   }, [user]);
+
+  useEffect(() => {
+    setDetails({});
+    setExpandedId(null);
+  }, [locale]);
 
   useEffect(() => {
     const fetchAfterSalesState = async () => {
@@ -155,7 +161,30 @@ export default function MemberOrders() {
     setExpandedId(orderId);
     if (!details[orderId]) {
       const { data } = await supabase.from('purchase_records').select('*, products(id, name, image_url, sku)').eq('order_id', orderId);
-      setDetails(prev => ({ ...prev, [orderId]: (data as PurchaseRecord[]) || [] }));
+      const rows = (data as PurchaseRecord[]) || [];
+      if (locale === 'zh-TW') {
+        setDetails(prev => ({ ...prev, [orderId]: rows }));
+        return;
+      }
+      const translatedProducts = await translateProductsOnDemand(
+        rows
+          .filter(item => item.products?.id)
+          .map(item => ({
+            id: item.products?.id || '',
+            name: item.products?.name || '',
+            description: '',
+          })),
+        locale,
+      );
+      const translatedById = new Map(translatedProducts.map(product => [product.id, product]));
+      setDetails(prev => ({
+        ...prev,
+        [orderId]: rows.map(item => {
+          const translated = item.products?.id ? translatedById.get(item.products.id) : null;
+          if (!translated || !item.products) return item;
+          return { ...item, products: { ...item.products, name: translated.name || item.products.name } };
+        }),
+      }));
     }
   };
 

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { AlertCircle, BedDouble, Calendar, ChevronDown, ChevronUp, Download, ExternalLink, Home, Mail, MapPin, MessageCircle, Phone, Receipt, RotateCcw } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { translateRoomsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { dateDiffInDays, formatCurrency, formatDate, formatDateTime, getStatusColor, getStatusLabel } from '../../lib/utils';
@@ -38,57 +39,57 @@ export default function MemberBookings() {
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
   const dateLocale = pickByLang(locale, 'zh-TW', 'en-US', 'ja-JP', 'ko-KR');
   const t = {
-    title: pick('\u6211\u7684\u8a02\u623f', 'My Bookings', 'My Bookings', 'My Bookings'),
-    noData: pick('\u76ee\u524d\u6c92\u6709\u8a02\u623f\u8cc7\u6599', 'No bookings yet', 'No bookings yet', 'No bookings yet'),
-    bookingInfo: pick('\u8a02\u623f\u8cc7\u8a0a', 'Booking Info', 'Booking Info', 'Booking Info'),
-    propertyInfo: pick('\u623f\u6e90\u8cc7\u8a0a', 'Property Info', 'Property Info', 'Property Info'),
-    paymentInfo: pick('\u4ed8\u6b3e\u8cc7\u8a0a', 'Payment Info', 'Payment Info', 'Payment Info'),
-    timeline: pick('\u72c0\u614b\u8ffd\u8e64', 'Status Timeline', 'Status Timeline', 'Status Timeline'),
-    orderNo: pick('\u8a02\u55ae\u7de8\u865f', 'Order No.', 'Order No.', 'Order No.'),
-    bookingDate: pick('\u8a02\u623f\u65e5\u671f', 'Booked On', 'Booked On', 'Booked On'),
-    checkIn: pick('\u5165\u4f4f\u65e5\u671f', 'Check-in', 'Check-in', 'Check-in'),
-    checkOut: pick('\u9000\u623f\u65e5\u671f', 'Check-out', 'Check-out', 'Check-out'),
-    nights: pick('\u4f4f\u5bbf\u5929\u6578', 'Nights', 'Nights', 'Nights'),
-    guestName: pick('\u623f\u5ba2\u59d3\u540d', 'Guest Name', 'Guest Name', 'Guest Name'),
-    phone: pick('\u806f\u7d61\u96fb\u8a71', 'Phone', 'Phone', 'Phone'),
+    title: pick('我的訂房', 'My Bookings', '予約', '내 예약'),
+    noData: pick('目前沒有訂房資料', 'No bookings yet', '予約はまだありません', '예약 내역이 없습니다'),
+    bookingInfo: pick('訂房資訊', 'Booking Info', '予約情報', '예약 정보'),
+    propertyInfo: pick('房源資訊', 'Property Info', '宿泊施設情報', '숙소 정보'),
+    paymentInfo: pick('付款資訊', 'Payment Info', '支払い情報', '결제 정보'),
+    timeline: pick('狀態追蹤', 'Status Timeline', 'ステータス履歴', '상태 추적'),
+    orderNo: pick('訂單編號', 'Order No.', '注文番号', '주문 번호'),
+    bookingDate: pick('訂房日期', 'Booked On', '予約日', '예약일'),
+    checkIn: pick('入住日期', 'Check-in', 'チェックイン', '체크인'),
+    checkOut: pick('退房日期', 'Check-out', 'チェックアウト', '체크아웃'),
+    nights: pick('住宿天數', 'Nights', '宿泊数', '숙박일수'),
+    guestName: pick('房客姓名', 'Guest Name', '宿泊者名', '투숙객 이름'),
+    phone: pick('聯絡電話', 'Phone', '電話番号', '연락처'),
     email: pick('Email', 'Email', 'Email', 'Email'),
-    guests: pick('\u5165\u4f4f\u4eba\u6578', 'Guests', 'Guests', 'Guests'),
-    extraBeds: pick('\u52a0\u5e8a\u4eba\u6578', 'Extra Beds', 'Extra Beds', 'Extra Beds'),
-    host: pick('\u623f\u6771\u540d\u7a31', 'Host', 'Host', 'Host'),
-    propertyPhone: pick('\u6c11\u5bbf\u96fb\u8a71', 'Property Phone', 'Property Phone', 'Property Phone'),
-    address: pick('\u5730\u5740', 'Address', 'Address', 'Address'),
-    navigate: pick('\u5c0e\u822a\u524d\u5f80', 'Navigate', 'Navigate', 'Navigate'),
-    contactHost: pick('\u806f\u7d61\u623f\u6771', 'Contact Host', 'Contact Host', 'Contact Host'),
-    lineService: pick('LINE\u5ba2\u670d', 'LINE Support', 'LINE Support', 'LINE Support'),
-    roomPrice: pick('\u623f\u50f9', 'Room Rate', 'Room Rate', 'Room Rate'),
-    cleaningFee: pick('\u6e05\u6f54\u8cbb', 'Cleaning Fee', 'Cleaning Fee', 'Cleaning Fee'),
-    serviceFee: pick('\u670d\u52d9\u8cbb', 'Service Fee', 'Service Fee', 'Service Fee'),
-    discount: pick('\u6298\u6263', 'Discount', 'Discount', 'Discount'),
-    coupon: pick('\u512a\u60e0\u5238', 'Coupon', 'Coupon', 'Coupon'),
-    total: pick('\u7e3d\u91d1\u984d', 'Total', 'Total', 'Total'),
-    paymentMethod: pick('\u4ed8\u6b3e\u65b9\u5f0f', 'Payment Method', 'Payment Method', 'Payment Method'),
-    paymentTime: pick('\u4ed8\u6b3e\u6642\u9593', 'Payment Time', 'Payment Time', 'Payment Time'),
-    invoice: pick('\u767c\u7968', 'Invoice', 'Invoice', 'Invoice'),
-    onlinePayment: pick('\u7dda\u4e0a\u4ed8\u6b3e', 'Online Payment', 'Online Payment', 'Online Payment'),
-    notIssued: pick('\u5c1a\u672a\u958b\u7acb', 'Not issued', 'Not issued', 'Not issued'),
-    noCoupon: pick('\u672a\u4f7f\u7528', 'Not used', 'Not used', 'Not used'),
-    included: pick('\u5df2\u5305\u542b', 'Included', 'Included', 'Included'),
-    noExtraBed: pick('0 \u4eba', '0 guests', '0 guests', '0 guests'),
-    pendingPayment: pick('\u5f85\u4ed8\u6b3e\u78ba\u8a8d', 'Pending payment confirmation', 'Pending payment confirmation', 'Pending payment confirmation'),
-    viewOrder: pick('\u67e5\u770b\u8a02\u55ae', 'View Order', 'View Order', 'View Order'),
-    viewDetails: pick('\u67e5\u770b\u660e\u7d30', 'View Details', 'View Details', 'View Details'),
-    hideDetails: pick('\u6536\u5408\u660e\u7d30', 'Hide Details', 'Hide Details', 'Hide Details'),
-    cancel: pick('\u53d6\u6d88\u8a02\u623f', 'Cancel Booking', 'Cancel Booking', 'Cancel Booking'),
-    cancelling: pick('\u53d6\u6d88\u4e2d...', 'Cancelling...', 'Cancelling...', 'Cancelling...'),
-    modifyDates: pick('\u4fee\u6539\u65e5\u671f', 'Modify Dates', 'Modify Dates', 'Modify Dates'),
-    bookAgain: pick('\u518d\u6b21\u9810\u8a02', 'Book Again', 'Book Again', 'Book Again'),
-    downloadInvoice: pick('\u4e0b\u8f09\u767c\u7968', 'Download Invoice', 'Download Invoice', 'Download Invoice'),
-    specialRequests: pick('\u7279\u6b8a\u9700\u6c42', 'Special Requests', 'Special Requests', 'Special Requests'),
-    room: pick('\u623f\u578b', 'Room', 'Room', 'Room'),
-    unknownGuest: pick('\u65c5\u4eba', 'Traveler', 'Traveler', 'Traveler'),
-    confirmCancel: pick('\u78ba\u5b9a\u8981\u53d6\u6d88\u9019\u7b46\u8a02\u623f\u55ce\uff1f', 'Cancel this booking?', 'Cancel this booking?', 'Cancel this booking?'),
-    nightUnit: pick('\u665a', 'nights', 'nights', 'nights'),
-    guestUnit: pick('\u4eba', 'guests', 'guests', 'guests'),
+    guests: pick('入住人數', 'Guests', '宿泊人数', '투숙 인원'),
+    extraBeds: pick('加床人數', 'Extra Beds', 'エキストラベッド人数', '추가 침대 인원'),
+    host: pick('房東名稱', 'Host', 'ホスト名', '호스트 이름'),
+    propertyPhone: pick('民宿電話', 'Property Phone', '宿泊施設電話', '숙소 전화'),
+    address: pick('地址', 'Address', '住所', '주소'),
+    navigate: pick('導航前往', 'Navigate', 'ナビで行く', '길찾기'),
+    contactHost: pick('聯絡房東', 'Contact Host', 'ホストに連絡', '호스트 문의'),
+    lineService: pick('LINE客服', 'LINE Support', 'LINEサポート', 'LINE 고객지원'),
+    roomPrice: pick('房價', 'Room Rate', '宿泊料金', '객실 요금'),
+    cleaningFee: pick('清潔費', 'Cleaning Fee', '清掃料金', '청소비'),
+    serviceFee: pick('服務費', 'Service Fee', 'サービス料', '서비스 수수료'),
+    discount: pick('折扣', 'Discount', '割引', '할인'),
+    coupon: pick('優惠券', 'Coupon', 'クーポン', '쿠폰'),
+    total: pick('總金額', 'Total', '合計金額', '총 금액'),
+    paymentMethod: pick('付款方式', 'Payment Method', '支払い方法', '결제 방식'),
+    paymentTime: pick('付款時間', 'Payment Time', '支払い時間', '결제 시간'),
+    invoice: pick('發票', 'Invoice', '領収書', '영수증'),
+    onlinePayment: pick('線上付款', 'Online Payment', 'オンライン決済', '온라인 결제'),
+    notIssued: pick('尚未開立', 'Not issued', '未発行', '미발행'),
+    noCoupon: pick('未使用', 'Not used', '未使用', '사용 안 함'),
+    included: pick('已包含', 'Included', '含まれています', '포함됨'),
+    noExtraBed: pick('0 人', '0 guests', '0名', '0명'),
+    pendingPayment: pick('待付款確認', 'Pending payment confirmation', '支払い確認待ち', '결제 확인 대기'),
+    viewOrder: pick('查看訂單', 'View Order', '注文を見る', '주문 보기'),
+    viewDetails: pick('查看明細', 'View Details', '詳細を見る', '상세 보기'),
+    hideDetails: pick('收合明細', 'Hide Details', '詳細を閉じる', '상세 접기'),
+    cancel: pick('取消訂房', 'Cancel Booking', '予約をキャンセル', '예약 취소'),
+    cancelling: pick('取消中...', 'Cancelling...', 'キャンセル中...', '취소 중...'),
+    modifyDates: pick('修改日期', 'Modify Dates', '日程を変更', '날짜 변경'),
+    bookAgain: pick('再次預訂', 'Book Again', '再予約', '다시 예약'),
+    downloadInvoice: pick('下載發票', 'Download Invoice', '領収書をダウンロード', '영수증 다운로드'),
+    specialRequests: pick('特殊需求', 'Special Requests', '特別リクエスト', '특별 요청'),
+    room: pick('房型', 'Room', '部屋', '객실'),
+    unknownGuest: pick('旅人', 'Traveler', '旅行者', '여행자'),
+    confirmCancel: pick('確定要取消這筆訂房嗎？', 'Cancel this booking?', 'この予約をキャンセルしますか？', '이 예약을 취소하시겠어요?'),
+    nightUnit: pick('晚', 'nights', '泊', '박'),
+    guestUnit: pick('人', 'guests', '名', '명'),
   };
 
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -107,11 +108,38 @@ export default function MemberBookings() {
         .select('*, tbl_rooms(name, location, image_url, price_per_night, vendors(name, contact_phone, address), hotels(name, address, phone, email, line_id))')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-      setBookings((data as Booking[]) || []);
+      const rows = ((data as Booking[]) || []);
+      if (locale === 'zh-TW') {
+        setBookings(rows);
+      } else {
+        const rooms = rows
+          .filter(item => item.room_id && item.tbl_rooms)
+          .map(item => ({
+            id: item.room_id as string,
+            name: item.tbl_rooms?.name || '',
+            description: '',
+            location: item.tbl_rooms?.location || '',
+            amenities: [],
+          }));
+        const translatedRooms = await translateRoomsOnDemand(rooms, locale);
+        const translatedById = new Map(translatedRooms.map(room => [room.id, room]));
+        setBookings(rows.map(item => {
+          const translated = item.room_id ? translatedById.get(item.room_id) : null;
+          if (!translated || !item.tbl_rooms) return item;
+          return {
+            ...item,
+            tbl_rooms: {
+              ...item.tbl_rooms,
+              name: translated.name || item.tbl_rooms.name,
+              location: translated.location || item.tbl_rooms.location,
+            },
+          };
+        }));
+      }
       setLoading(false);
     };
     void fetchBookings();
-  }, [user]);
+  }, [locale, user]);
 
   const handleCancel = async (id: string) => {
     if (!window.confirm(t.confirmCancel)) return;
@@ -125,11 +153,11 @@ export default function MemberBookings() {
   };
 
   const timelineSteps = [
-    { key: 'ordered', label: pick('\u5df2\u4e0b\u8a02', 'Booked', 'Booked', 'Booked') },
-    { key: 'paid', label: pick('\u5df2\u4ed8\u6b3e', 'Paid', 'Paid', 'Paid') },
-    { key: 'confirmed', label: pick('\u623f\u6771\u78ba\u8a8d', 'Host Confirmed', 'Host Confirmed', 'Host Confirmed') },
-    { key: 'upcoming', label: pick('\u5373\u5c07\u5165\u4f4f', 'Upcoming Stay', 'Upcoming Stay', 'Upcoming Stay') },
-    { key: 'completed', label: pick('\u5df2\u5b8c\u6210\u5165\u4f4f', 'Stay Completed', 'Stay Completed', 'Stay Completed') },
+    { key: 'ordered', label: pick('已下訂', 'Booked', '予約済み', '예약됨') },
+    { key: 'paid', label: pick('已付款', 'Paid', '支払い済み', '결제 완료') },
+    { key: 'confirmed', label: pick('房東確認', 'Host Confirmed', 'ホスト確認済み', '호스트 확인') },
+    { key: 'upcoming', label: pick('即將入住', 'Upcoming Stay', '宿泊予定', '곧 체크인') },
+    { key: 'completed', label: pick('已完成入住', 'Stay Completed', '宿泊完了', '투숙 완료') },
   ];
 
   const isStepDone = (booking: Booking, step: string) => {

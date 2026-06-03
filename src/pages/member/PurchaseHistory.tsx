@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { translateProductsOnDemand, translateRoomsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 
 interface PurchaseRecord {
@@ -12,7 +13,7 @@ interface PurchaseRecord {
   total_price: number;
   status: string;
   created_at: string;
-  products: { name: string; image_url: string } | { name: string; image_url: string }[] | null;
+  products: { id: string; name: string; image_url: string } | { id: string; name: string; image_url: string }[] | null;
 }
 
 interface BookingRecord {
@@ -20,7 +21,7 @@ interface BookingRecord {
   total_price: number;
   status: string;
   created_at: string;
-  tbl_rooms: { name: string } | { name: string }[] | null;
+  tbl_rooms: { id: string; name: string; location?: string | null } | { id: string; name: string; location?: string | null }[] | null;
 }
 
 interface PointRecord {
@@ -48,27 +49,27 @@ const PurchaseHistory: React.FC = () => {
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
   const dateLocale = pickByLang(locale, 'zh-TW', 'en-US', 'ja-JP', 'ko-KR');
   const t = {
-    title: pick('\u6d88\u8cbb\u7d00\u9304', 'Consumption Records', 'Consumption Records', 'Consumption Records'),
-    subtitle: pick('\u7d71\u4e00\u7ba1\u7406\u5546\u54c1\u6d88\u8cbb\u3001\u8a02\u623f\u6d88\u8cbb\u3001\u8cfc\u7269\u91d1\u4f7f\u7528\u3001\u512a\u60e0\u5238\u4f7f\u7528\u8207\u9000\u6b3e\u7d00\u9304\u3002', 'Manage product purchases, stays, credits, coupons, and refunds in one place.', 'Manage product purchases, stays, credits, coupons, and refunds in one place.', 'Manage product purchases, stays, credits, coupons, and refunds in one place.'),
-    startDate: pick('\u958b\u59cb\u65e5\u671f', 'Start Date', 'Start Date', 'Start Date'),
-    endDate: pick('\u7d50\u675f\u65e5\u671f', 'End Date', 'End Date', 'End Date'),
-    filter: pick('\u7be9\u9078', 'Filter', 'Filter', 'Filter'),
-    reset: pick('\u91cd\u8a2d', 'Reset', 'Reset', 'Reset'),
-    noData: pick('\u76ee\u524d\u6c92\u6709\u6d88\u8cbb\u7d00\u9304', 'No consumption records yet', 'No consumption records yet', 'No consumption records yet'),
-    type: pick('\u985e\u578b', 'Type', 'Type', 'Type'),
-    item: pick('\u9805\u76ee', 'Item', 'Item', 'Item'),
-    date: pick('\u65e5\u671f', 'Date', 'Date', 'Date'),
-    amount: pick('\u91d1\u984d', 'Amount', 'Amount', 'Amount'),
-    status: pick('\u72c0\u614b', 'Status', 'Status', 'Status'),
-    product: pick('\u5546\u54c1\u6d88\u8cbb', 'Product', 'Product', 'Product'),
-    booking: pick('\u8a02\u623f\u6d88\u8cbb', 'Booking', 'Booking', 'Booking'),
-    points: pick('\u8cfc\u7269\u91d1\u4f7f\u7528', 'Store Credit', 'Store Credit', 'Store Credit'),
-    coupon: pick('\u512a\u60e0\u5238\u4f7f\u7528', 'Coupon Usage', 'Coupon Usage', 'Coupon Usage'),
-    refund: pick('\u9000\u6b3e\u7d00\u9304', 'Refunds', 'Refunds', 'Refunds'),
-    used: pick('\u6298\u62b5', 'Used', 'Used', 'Used'),
-    unknownProduct: pick('\u672a\u77e5\u5546\u54c1', 'Unknown Product', 'Unknown Product', 'Unknown Product'),
-    unknownRoom: pick('\u4f4f\u5bbf\u8a02\u623f', 'Room Booking', 'Room Booking', 'Room Booking'),
-    pointTx: pick('Nest\u5e63\u7570\u52d5', 'Nest Coin Change', 'Nest Coin Change', 'Nest Coin Change'),
+    title: pick('消費紀錄', 'Consumption Records', '利用履歴', '소비 내역'),
+    subtitle: pick('統一管理商品消費、訂房消費、購物金使用、優惠券使用與退款紀錄。', 'Manage product purchases, stays, credits, coupons, and refunds in one place.', '商品の購入、宿泊、クレジット、クーポン、返金履歴をまとめて管理します。', '상품 구매, 숙박, 적립금, 쿠폰, 환불 내역을 한곳에서 관리합니다.'),
+    startDate: pick('開始日期', 'Start Date', '開始日', '시작일'),
+    endDate: pick('結束日期', 'End Date', '終了日', '종료일'),
+    filter: pick('篩選', 'Filter', '絞り込み', '필터'),
+    reset: pick('重設', 'Reset', 'リセット', '초기화'),
+    noData: pick('目前沒有消費紀錄', 'No consumption records yet', '利用履歴はまだありません', '소비 내역이 없습니다'),
+    type: pick('類型', 'Type', '種類', '유형'),
+    item: pick('項目', 'Item', '項目', '항목'),
+    date: pick('日期', 'Date', '日付', '날짜'),
+    amount: pick('金額', 'Amount', '金額', '금액'),
+    status: pick('狀態', 'Status', '状態', '상태'),
+    product: pick('商品消費', 'Product', '商品購入', '상품 구매'),
+    booking: pick('訂房消費', 'Booking', '宿泊予約', '숙박 예약'),
+    points: pick('購物金使用', 'Store Credit', 'ストアクレジット', '스토어 크레딧'),
+    coupon: pick('優惠券使用', 'Coupon Usage', 'クーポン利用', '쿠폰 사용'),
+    refund: pick('退款紀錄', 'Refunds', '返金履歴', '환불 내역'),
+    used: pick('折抵', 'Used', '使用済み', '사용됨'),
+    unknownProduct: pick('未知商品', 'Unknown Product', '不明な商品', '알 수 없는 상품'),
+    unknownRoom: pick('住宿訂房', 'Room Booking', '宿泊予約', '숙박 예약'),
+    pointTx: pick('Nest幣異動', 'Nest Coin Change', 'Nestコイン変動', 'Nest 코인 변동'),
   };
 
   const [records, setRecords] = useState<ConsumptionRecord[]>([]);
@@ -83,8 +84,8 @@ const PurchaseHistory: React.FC = () => {
     }
     setLoading(true);
 
-    let productQuery = supabase.from('purchase_records').select('id, total_price, status, created_at, products(name, image_url)').eq('user_id', user.id);
-    let bookingQuery = supabase.from('tbl_bookings').select('id, total_price, status, created_at, tbl_rooms(name)').eq('user_id', user.id);
+    let productQuery = supabase.from('purchase_records').select('id, total_price, status, created_at, products(id, name, image_url)').eq('user_id', user.id);
+    let bookingQuery = supabase.from('tbl_bookings').select('id, total_price, status, created_at, tbl_rooms(id, name, location)').eq('user_id', user.id);
     let pointQuery = supabase.from('points').select('id, amount, description, created_at').eq('user_id', user.id);
 
     if (startDate) {
@@ -105,24 +106,39 @@ const PurchaseHistory: React.FC = () => {
       pointQuery.order('created_at', { ascending: false }),
     ]);
 
-    const productRows = (((products || []) as unknown) as PurchaseRecord[]).map(row => {
+    const productRecords = ((products || []) as unknown) as PurchaseRecord[];
+    const bookingRecords = ((bookings || []) as unknown) as BookingRecord[];
+    const productSource = productRecords.map(row => firstRelation(row.products)).filter((item): item is { id: string; name: string; image_url: string } => Boolean(item?.id));
+    const roomSource = bookingRecords.map(row => firstRelation(row.tbl_rooms)).filter((item): item is { id: string; name: string; location?: string | null } => Boolean(item?.id));
+    const [translatedProducts, translatedRooms] = locale === 'zh-TW'
+      ? [productSource, roomSource]
+      : await Promise.all([
+        translateProductsOnDemand(productSource.map(item => ({ id: item.id, name: item.name, description: '' })), locale),
+        translateRoomsOnDemand(roomSource.map(item => ({ id: item.id, name: item.name, description: '', location: item.location || '', amenities: [] })), locale),
+      ]);
+    const translatedProductsById = new Map(translatedProducts.map(item => [item.id, item]));
+    const translatedRoomsById = new Map(translatedRooms.map(item => [item.id, item]));
+
+    const productRows = productRecords.map(row => {
       const product = firstRelation(row.products);
+      const translated = product?.id ? translatedProductsById.get(product.id) : null;
       return {
         id: `product-${row.id}`,
         type: 'product' as const,
-        title: product?.name || t.unknownProduct,
+        title: translated?.name || product?.name || t.unknownProduct,
         date: row.created_at,
         amount: row.total_price,
         status: row.status || 'completed',
       };
     });
 
-    const bookingRows = (((bookings || []) as unknown) as BookingRecord[]).map(row => {
+    const bookingRows = bookingRecords.map(row => {
       const room = firstRelation(row.tbl_rooms);
+      const translated = room?.id ? translatedRoomsById.get(room.id) : null;
       return {
         id: `booking-${row.id}`,
         type: 'booking' as const,
-        title: room?.name || t.unknownRoom,
+        title: translated?.name || room?.name || t.unknownRoom,
         date: row.created_at,
         amount: row.total_price,
         status: row.status || 'completed',
@@ -144,7 +160,7 @@ const PurchaseHistory: React.FC = () => {
 
   useEffect(() => {
     void fetchRecords();
-  }, [user]);
+  }, [locale, user]);
 
   const summary = useMemo(() => ({
     product: records.filter(record => record.type === 'product').length,

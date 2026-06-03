@@ -48,19 +48,19 @@ export function cn(...classes: (string | undefined | null | false)[]): string {
 
 export function getStatusLabel(status: string, lang: string = 'zh-TW'): string {
   const labels: Record<string, string> = {
-    pending: pickByLang(lang, '\u5f85\u8655\u7406', 'Pending', 'Pending', 'Pending'),
-    confirmed: pickByLang(lang, '\u5df2\u78ba\u8a8d', 'Confirmed', 'Confirmed', 'Confirmed'),
-    cancelled: pickByLang(lang, '\u5df2\u53d6\u6d88', 'Cancelled', 'Cancelled', 'Cancelled'),
-    completed: pickByLang(lang, '\u5df2\u5b8c\u6210', 'Completed', 'Completed', 'Completed'),
-    processing: pickByLang(lang, '\u8655\u7406\u4e2d', 'Processing', 'Processing', 'Processing'),
-    shipped: pickByLang(lang, '\u5df2\u51fa\u8ca8', 'Shipped', 'Shipped', 'Shipped'),
-    paid: pickByLang(lang, '\u5df2\u4ed8\u6b3e', 'Paid', 'Paid', 'Paid'),
-    unpaid: pickByLang(lang, '\u672a\u4ed8\u6b3e', 'Unpaid', 'Unpaid', 'Unpaid'),
-    refunded: pickByLang(lang, '\u5df2\u9000\u6b3e', 'Refunded', 'Refunded', 'Refunded'),
-    active: pickByLang(lang, '\u555f\u7528\u4e2d', 'Active', 'Active', 'Active'),
-    inactive: pickByLang(lang, '\u505c\u7528\u4e2d', 'Inactive', 'Inactive', 'Inactive'),
-    draft: pickByLang(lang, '\u8349\u7a3f', 'Draft', 'Draft', 'Draft'),
-    shared: pickByLang(lang, '\u5df2\u5206\u4eab', 'Shared', 'Shared', 'Shared'),
+    pending: pickByLang(lang, '待處理', 'Pending', '保留中', '대기 중'),
+    confirmed: pickByLang(lang, '已確認', 'Confirmed', '確認済み', '확인됨'),
+    cancelled: pickByLang(lang, '已取消', 'Cancelled', 'キャンセル済み', '취소됨'),
+    completed: pickByLang(lang, '已完成', 'Completed', '完了', '완료됨'),
+    processing: pickByLang(lang, '處理中', 'Processing', '処理中', '처리 중'),
+    shipped: pickByLang(lang, '已出貨', 'Shipped', '発送済み', '배송됨'),
+    paid: pickByLang(lang, '已付款', 'Paid', '支払い済み', '결제 완료'),
+    unpaid: pickByLang(lang, '未付款', 'Unpaid', '未払い', '미결제'),
+    refunded: pickByLang(lang, '已退款', 'Refunded', '返金済み', '환불됨'),
+    active: pickByLang(lang, '啟用中', 'Active', '有効', '활성'),
+    inactive: pickByLang(lang, '停用中', 'Inactive', '無効', '비활성'),
+    draft: pickByLang(lang, '草稿', 'Draft', '下書き', '초안'),
+    shared: pickByLang(lang, '已分享', 'Shared', '共有済み', '공유됨'),
   };
 
   return labels[status] || status;
