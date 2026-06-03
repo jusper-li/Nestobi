@@ -2,24 +2,34 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, BedDouble, Package, ShoppingBag, User, LogOut, Menu, Store, ClipboardList, Users, Home, Hotel, FileText, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-
-const navLinks = [
-  { to: '/vendor/engagement', icon: <MessageSquare className="w-5 h-5" />, label: '互動管理' },
-  { to: '/vendor', icon: <LayoutDashboard className="w-5 h-5" />, label: '儀表板', end: true },
-  { to: '/vendor/hotels', icon: <Hotel className="w-5 h-5" />, label: '飯店管理' },
-  { to: '/vendor/rooms', icon: <BedDouble className="w-5 h-5" />, label: '房間管理' },
-  { to: '/vendor/housekeeping', icon: <ClipboardList className="w-5 h-5" />, label: '房務管理' },
-  { to: '/vendor/staff', icon: <Users className="w-5 h-5" />, label: '管理人員' },
-  { to: '/vendor/products', icon: <Package className="w-5 h-5" />, label: '商品管理' },
-  { to: '/vendor/orders', icon: <ShoppingBag className="w-5 h-5" />, label: '訂單與訂房' },
-  { to: '/vendor/blog', icon: <FileText className="w-5 h-5" />, label: '文章管理' },
-  { to: '/vendor/profile', icon: <User className="w-5 h-5" />, label: '廠商資料' },
-];
+import { useLanguage } from '../../contexts/LanguageContext';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 
 const VendorLayout: React.FC = () => {
   const { user, signOut } = useAuth();
+  const { lang } = useLanguage();
+  const locale = normalizeLang(lang);
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const t = {
+    section: pick('廠商專區', 'Vendor Portal', '事業者ポータル', '업체 포털'),
+    mobileTitle: pick('廠商後台', 'Vendor Admin', '事業者管理', '업체 관리자'),
+    home: pick('回首頁', 'Home', 'ホーム', '홈'),
+    signOut: pick('登出', 'Logout', 'ログアウト', '로그아웃'),
+  };
+  const navLinks = [
+    { to: '/vendor/engagement', icon: <MessageSquare className="w-5 h-5" />, label: pick('互動管理', 'Engagement', '連動管理', '연동 관리') },
+    { to: '/vendor', icon: <LayoutDashboard className="w-5 h-5" />, label: pick('儀表板', 'Dashboard', 'ダッシュボード', '대시보드'), end: true },
+    { to: '/vendor/hotels', icon: <Hotel className="w-5 h-5" />, label: pick('飯店管理', 'Hotels', 'ホテル管理', '호텔 관리') },
+    { to: '/vendor/rooms', icon: <BedDouble className="w-5 h-5" />, label: pick('房間管理', 'Rooms', '部屋管理', '객실 관리') },
+    { to: '/vendor/housekeeping', icon: <ClipboardList className="w-5 h-5" />, label: pick('房務管理', 'Housekeeping', '清掃管理', '하우스키핑') },
+    { to: '/vendor/staff', icon: <Users className="w-5 h-5" />, label: pick('管理人員', 'Staff', 'スタッフ', '직원') },
+    { to: '/vendor/products', icon: <Package className="w-5 h-5" />, label: pick('商品管理', 'Products', '商品管理', '상품 관리') },
+    { to: '/vendor/orders', icon: <ShoppingBag className="w-5 h-5" />, label: pick('訂單與訂房', 'Orders & Bookings', '注文と予約', '주문 및 예약') },
+    { to: '/vendor/blog', icon: <FileText className="w-5 h-5" />, label: pick('文章管理', 'Articles', '記事管理', '글 관리') },
+    { to: '/vendor/profile', icon: <User className="w-5 h-5" />, label: pick('廠商資料', 'Vendor Profile', '事業者情報', '업체 정보') },
+  ];
 
   const handleSignOut = async () => { await signOut(); navigate('/auth/login'); };
 
@@ -31,7 +41,7 @@ const VendorLayout: React.FC = () => {
             <Store className="w-6 h-6 text-emerald-900" />
           </div>
           <div>
-            <p className="font-bold text-white text-sm">廠商專區</p>
+            <p className="font-bold text-white text-sm">{t.section}</p>
             <span className="text-xs bg-emerald-400 text-emerald-900 px-1.5 py-0.5 rounded font-bold">VENDOR</span>
           </div>
         </div>
@@ -47,10 +57,10 @@ const VendorLayout: React.FC = () => {
       <div className="p-3 border-t border-emerald-800 space-y-1">
         <p className="text-emerald-300 text-xs px-3 mb-2 truncate">{user?.email}</p>
         <NavLink to="/" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-emerald-200 hover:text-white hover:bg-emerald-700 w-full transition">
-          <Home className="w-5 h-5" />回首頁
+          <Home className="w-5 h-5" />{t.home}
         </NavLink>
         <button onClick={handleSignOut} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-emerald-800 w-full transition">
-          <LogOut className="w-5 h-5" />登出
+          <LogOut className="w-5 h-5" />{t.signOut}
         </button>
       </div>
     </div>
@@ -72,7 +82,7 @@ const VendorLayout: React.FC = () => {
           <button onClick={() => setSidebarOpen(true)} className="p-2 hover:bg-emerald-800 rounded-lg">
             <Menu className="w-5 h-5 text-white" />
           </button>
-          <span className="font-semibold text-white">廠商後台</span>
+          <span className="font-semibold text-white">{t.mobileTitle}</span>
         </header>
         <main className="flex-1 p-4 md:p-6 overflow-auto">
           <Outlet />
