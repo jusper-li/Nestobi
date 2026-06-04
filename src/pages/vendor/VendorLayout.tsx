@@ -13,22 +13,22 @@ const VendorLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const t = {
-    section: pick('廠商專區', 'Vendor Portal', '事業者ポータル', '업체 포털'),
-    mobileTitle: pick('廠商後台', 'Vendor Admin', '事業者管理', '업체 관리자'),
+    section: pick('廠商管理', 'Vendor Portal', 'ベンダーポータル', '업체 포털'),
+    mobileTitle: pick('廠商管理', 'Vendor Admin', 'ベンダー管理', '업체 관리'),
     home: pick('回首頁', 'Home', 'ホーム', '홈'),
     signOut: pick('登出', 'Logout', 'ログアウト', '로그아웃'),
   };
   const navLinks = [
-    { to: '/vendor/engagement', icon: <MessageSquare className="w-5 h-5" />, label: pick('互動管理', 'Engagement', '連動管理', '연동 관리') },
-    { to: '/vendor', icon: <LayoutDashboard className="w-5 h-5" />, label: pick('儀表板', 'Dashboard', 'ダッシュボード', '대시보드'), end: true },
-    { to: '/vendor/hotels', icon: <Hotel className="w-5 h-5" />, label: pick('飯店管理', 'Hotels', 'ホテル管理', '호텔 관리') },
-    { to: '/vendor/rooms', icon: <BedDouble className="w-5 h-5" />, label: pick('房間管理', 'Rooms', '部屋管理', '객실 관리') },
-    { to: '/vendor/housekeeping', icon: <ClipboardList className="w-5 h-5" />, label: pick('房務管理', 'Housekeeping', '清掃管理', '하우스키핑') },
-    { to: '/vendor/staff', icon: <Users className="w-5 h-5" />, label: pick('管理人員', 'Staff', 'スタッフ', '직원') },
-    { to: '/vendor/products', icon: <Package className="w-5 h-5" />, label: pick('商品管理', 'Products', '商品管理', '상품 관리') },
-    { to: '/vendor/orders', icon: <ShoppingBag className="w-5 h-5" />, label: pick('訂單與訂房', 'Orders & Bookings', '注文と予約', '주문 및 예약') },
-    { to: '/vendor/blog', icon: <FileText className="w-5 h-5" />, label: pick('文章管理', 'Articles', '記事管理', '글 관리') },
-    { to: '/vendor/profile', icon: <User className="w-5 h-5" />, label: pick('廠商資料', 'Vendor Profile', '事業者情報', '업체 정보') },
+    { to: '/vendor/engagement', icon: <MessageSquare className="w-5 h-5" />, label: pick('連動管理', 'Engagement', '連携管理', '연동 관리') },
+    { to: '/vendor', icon: <LayoutDashboard className="w-5 h-5" />, label: pick('總覽', 'Dashboard', 'ダッシュボード', '대시보드'), end: true },
+    { to: '/vendor/hotels', icon: <Hotel className="w-5 h-5" />, label: pick('Nestopia 民宿', 'Nestopia Hotels', 'Nestopia 民宿', 'Nestopia 숙소') },
+    { to: '/vendor/rooms', icon: <BedDouble className="w-5 h-5" />, label: pick('Nestopia 房型', 'Nestopia Rooms', 'Nestopia 部屋', 'Nestopia 객실') },
+    { to: '/vendor/housekeeping', icon: <ClipboardList className="w-5 h-5" />, label: pick('Nestopia 房務', 'Nestopia Housekeeping', 'Nestopia 清掃管理', 'Nestopia 객실 관리') },
+    { to: '/vendor/staff', icon: <Users className="w-5 h-5" />, label: pick('團隊成員', 'Staff', 'スタッフ', '직원') },
+    { to: '/vendor/products', icon: <Package className="w-5 h-5" />, label: pick('根本在旅行商品', 'Genbon Products', '根本在旅行の商品', '근본재여행 상품') },
+    { to: '/vendor/orders', icon: <ShoppingBag className="w-5 h-5" />, label: pick('商品訂單與訂房', 'Orders & Bookings', '注文と予約', '주문 및 예약') },
+    { to: '/vendor/blog', icon: <FileText className="w-5 h-5" />, label: pick('咖啡旅行家文章', 'Coffee Traveler Articles', 'コーヒートラベラー記事', '커피 트래블러 글') },
+    { to: '/vendor/profile', icon: <User className="w-5 h-5" />, label: pick('廠商資料', 'Vendor Profile', 'ベンダー情報', '업체 정보') },
   ];
 
   const handleSignOut = async () => { await signOut(); navigate('/auth/login'); };

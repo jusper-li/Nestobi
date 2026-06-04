@@ -49,26 +49,26 @@ export default function Navigation() {
   const labels = useMemo(() => ({
     home: pick('首頁', 'Home', 'ホーム', '홈'),
     cart: pick('購物車', 'Cart', 'カート', '장바구니'),
-    stores: pick('門市據點', 'Store Locations', '店舗一覧', '매장 위치'),
-    rooms: pick('住宿', 'Stays', '宿泊', '숙소'),
-    shop: pick('選物商店', 'Shop', 'ショップ', '샵'),
-    blog: pick('咖啡旅誌', 'Coffee Journal', 'コーヒージャーナル', '커피 저널'),
-    aiItinerary: pick('AI 行程規劃', 'AI Planner', 'AI 旅程プランナー', 'AI 플래너'),
-    aiTranslator: pick('AI 即時翻譯', 'AI Translate', 'AI 翻訳', 'AI 번역'),
+    stores: pick('門市', 'Stores', '店舗', '매장'),
+    rooms: pick('Nestopia', 'Nestopia', 'Nestopia', 'Nestopia'),
+    shop: pick('根本在旅行', 'Genbon Travel Shop', '根本在旅行', '근본재여행'),
+    blog: pick('咖啡旅行家', 'Coffee Traveler', 'コーヒートラベラー', '커피 트래블러'),
+    aiItinerary: pick('AI 行程規劃', 'AI Planner', 'AI 旅程プランナー', 'AI 일정 플래너'),
+    aiTranslator: pick('AI 翻譯', 'AI Translate', 'AI 翻訳', 'AI 번역'),
     aiChat: pick('AI 客服', 'AI Support', 'AI サポート', 'AI 고객지원'),
-    travelPassport: pick('旅遊護照', 'Travel Passport', '旅のパスポート', '여행 패스포트'),
+    travelPassport: pick('旅行護照', 'Travel Passport', '旅のパスポート', '여행 패스포트'),
     login: pick('登入', 'Login', 'ログイン', '로그인'),
-    register: pick('註冊', 'Sign up', '新規登録', '회원가입'),
+    register: pick('註冊', 'Sign up', '登録', '가입'),
     member: pick('會員', 'Member', '会員', '회원'),
-    memberCenter: pick('會員中心', 'Member Center', '会員センター', '회원센터'),
-    myBookings: pick('我的訂房', 'My Bookings', '宿泊予約', '내 예약'),
-    myOrders: pick('我的訂單', 'My Orders', '注文履歴', '내 주문'),
-    myPurchases: pick('購買紀錄', 'Purchase History', '購入履歴', '구매 내역'),
-    myPoints: pick('我的點數', 'My Points', 'ポイント', '포인트'),
+    memberCenter: pick('會員中心', 'Member Center', '会員センター', '회원 센터'),
+    myBookings: pick('Nestopia 訂房', 'Nestopia Bookings', 'Nestopia 予約', 'Nestopia 예약'),
+    myOrders: pick('根本在旅行訂單', 'Shop Orders', '根本在旅行の注文', '근본재여행 주문'),
+    myPurchases: pick('消費紀錄', 'Consumption Records', '利用履歴', '소비 내역'),
+    myPoints: pick('我的點數', 'My Points', 'ポイント', '내 포인트'),
     profile: pick('個人資料', 'Profile', 'プロフィール', '프로필'),
-    preferences: pick('偏好設定', 'Preferences', '設定', '설정'),
-    adminPanel: pick('管理後台', 'Admin', '管理画面', '관리'),
-    superAdmin: pick('超級管理', 'Super Admin', 'スーパー管理', '슈퍼 관리자'),
+    preferences: pick('偏好設定', 'Preferences', '設定', '환경설정'),
+    adminPanel: pick('後台管理', 'Admin', '管理画面', '관리자'),
+    superAdmin: pick('超級管理員', 'Super Admin', 'スーパー管理者', '슈퍼 관리자'),
     logout: pick('登出', 'Logout', 'ログアウト', '로그아웃'),
     closeMenu: pick('關閉選單', 'Close menu', 'メニューを閉じる', '메뉴 닫기'),
     language: pick('語言', 'Language', '言語', '언어'),
@@ -76,7 +76,7 @@ export default function Navigation() {
 
   const languageOptions = useMemo(
     () => [
-      { code: 'zh-TW' as const, label: pick('繁體中文', 'Traditional Chinese', '繁體中文', '번체중문'), short: 'TW' },
+      { code: 'zh-TW' as const, label: pick('繁體中文', 'Traditional Chinese', '繁体字中国語', '번체 중국어'), short: 'TW' },
       { code: 'en' as const, label: pick('英文', 'English', '英語', '영어'), short: 'EN' },
       { code: 'ja' as const, label: pick('日文', 'Japanese', '日本語', '일본어'), short: 'JP' },
       { code: 'ko' as const, label: pick('韓文', 'Korean', '韓国語', '한국어'), short: 'KR' },
@@ -86,6 +86,31 @@ export default function Navigation() {
 
   const currentLangOption = languageOptions.find(option => option.code === locale) || languageOptions[0];
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const brand = useMemo(() => {
+    const path = location.pathname;
+    if (path.startsWith('/shop') || path.startsWith('/stores') || path.startsWith('/genbon-travel')) {
+      return {
+        to: '/shop',
+        alt: pick('根本在旅行', 'Genbon Travel', '根本在旅行', '근본재여행'),
+        image: '/genbon-travel-logo.png',
+        className: 'h-8 w-auto md:h-10',
+      };
+    }
+    if (path.startsWith('/blog') || path.startsWith('/coffee-traveler')) {
+      return {
+        to: '/blog',
+        alt: pick('咖啡旅行家', 'Coffee Traveler', 'Coffee Traveler', 'Coffee Traveler'),
+        image: '',
+        className: '',
+      };
+    }
+    return {
+      to: '/rooms',
+      alt: pick('Nestopia', 'Nestopia', 'Nestopia', 'Nestopia'),
+      image: '/20260407_nestobi_logo.svg',
+      className: 'h-10 w-auto md:h-12',
+    };
+  }, [location.pathname, locale]);
 
   const navLinks = [
     { to: '/rooms', label: labels.rooms, icon: Hotel },
@@ -119,8 +144,12 @@ export default function Navigation() {
     <nav className="sticky top-0 z-50 border-b border-[#2C1F10]/10 bg-white/95 shadow-sm backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-3">
-          <Link to="/" className="flex items-center gap-3">
-            <img src="/20260407_nestobi_logo.svg" alt="Nestobi" className="h-10 w-auto md:h-12" />
+          <Link to={brand.to} className="flex min-w-0 items-center gap-3">
+            {brand.image ? (
+              <img src={brand.image} alt={brand.alt} className={brand.className} />
+            ) : (
+              <span className="font-serif text-lg font-bold tracking-wide text-[#2C1F10] md:text-xl">{brand.alt}</span>
+            )}
           </Link>
 
           <div className="hidden items-center gap-1 md:flex">

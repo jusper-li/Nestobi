@@ -1,10 +1,11 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, ChevronRight, Eye, Loader2, Package, Search, ShoppingCart, SlidersHorizontal, Sparkles, Tag, X } from 'lucide-react';
 import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
+import ThemeHeroCarousel from '../../components/ThemeHeroCarousel';
 import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
@@ -83,48 +84,34 @@ export default function ProductList() {
   const shouldTranslate = pickByLang(normalizedLang, '0', '1', '1', '1') === '1';
   const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
   const labels = {
-    seoTitle: t4('旅行選物商店', 'Travel Shop', '旅セレクトショップ', '여행 셀렉트 샵'),
-    seoDesc: t4(
-      '精選咖啡、茶點、器物與旅途好物，支援搜尋、分類、排序與快速加入購物車。',
-      'Curated coffee, gifts, and travel goods with smart filters and quick add-to-cart.',
-      'コーヒー・お茶・雑貨を厳選。検索、分類、並び替え、カート追加をすばやく。',
-      '커피, 티, 여행 굿즈를 엄선. 검색, 분류, 정렬, 빠른 장바구니 담기를 지원합니다.',
-    ),
-    heroTitle: t4('旅行選物商店', 'Travel Shop', '旅セレクトショップ', '여행 셀렉트 샵'),
-    heroDesc: t4(
-      '從產地咖啡、茶點到旅行器物，把旅程中的味道和日常用品一起帶回家。',
-      'From origin coffee and tea snacks to travel goods, bring the taste of the journey home.',
-      '産地コーヒーやお茶、お土産雑貨まで、旅の味わいを日常へ。',
-      '원두 커피와 티 스낵부터 여행 굿즈까지, 여행의 분위기를 일상으로 가져오세요.',
-    ),
-    heroPlaceholder: t4(
-      '試試：果香咖啡、送禮茶包、沖繩旅行紀念品',
-      'Try: fruity coffee, gift tea bag, Okinawa souvenir',
-      '例：フルーティーなコーヒー、ギフト茶包、沖縄お土産',
-      '예: 과일향 커피, 선물용 티백, 오키나와 기념품',
-    ),
+    seoTitle: t4('根本在旅行', 'Genbon Travel Shop', '根本在旅行', '근본재여행'),
+    seoDesc: t4('根本在旅行整合旅行選物、咖啡茶品、門市體驗與購物訂單，讓旅途中的味道可以帶回日常。', 'Genbon Travel Shop brings together travel goods, coffee and tea, store experiences, shopping, and orders for travel-inspired daily goods.', '根本在旅行は旅の選物、コーヒーやお茶、店舗体験、買い物と注文をまとめ、旅先の味を日常へ持ち帰ります。', '근본재여행은 여행 셀렉트 상품, 커피와 차, 매장 경험, 쇼핑과 주문을 모아 여행의 맛을 일상으로 가져옵니다.'),
+    heroKicker: t4('選物與門市主題首頁', 'Products and Stores Home', '選物と店舗のテーマホーム', '상품과 매장 테마 홈'),
+    heroTitle: t4('根本在旅行', 'Genbon Travel Shop', '根本在旅行', '근본재여행'),
+    heroDesc: t4('從產地咖啡、茶點到旅行器物，把旅程中的味道和日常用品一起帶回家。', 'From origin coffee and tea snacks to travel tools, bring the taste of the journey and daily essentials home together.', '産地のコーヒー、お茶菓子、旅の道具まで、旅の味と日用品を一緒に持ち帰れます。', '산지 커피와 차 간식부터 여행 도구까지, 여행의 맛과 생활용품을 함께 가져가세요.'),
+    heroPlaceholder: t4('試試：果香咖啡、送禮茶包、沖繩旅行紀念品', 'Try: fruity coffee, gift tea bags, Okinawa souvenirs', '例：果実感のあるコーヒー、ギフト茶包、沖縄旅行のお土産', '예: 과일향 커피, 선물용 티백, 오키나와 여행 기념품'),
     search: t4('搜尋', 'Search', '検索', '검색'),
-    clearHint: t4('清除提示', 'Clear hint', 'ヒントを消去', '안내 지우기'),
-    allProducts: t4('全部商品', 'All Products', '全商品', '전체 상품'),
-    subCategories: t4('次分類', 'Subcategories', 'サブカテゴリ', '하위 카테고리'),
-    shownCount: t4('已顯示', 'Showing', '表示中', '표시'),
+    clearHint: t4('清除提示', 'Clear hint', 'ヒントを消す', '힌트 지우기'),
+    allProducts: t4('全部商品', 'All Products', 'すべての商品', '전체 상품'),
+    subCategories: t4('子分類', 'Subcategories', 'サブカテゴリ', '하위 카테고리'),
+    shownCount: t4('已顯示', 'Showing', '表示中', '표시 중'),
     foundProducts: t4('件商品', 'products found', '件の商品', '개 상품'),
-    purchasable: t4('件可購買', 'purchasable', '件購入可能', '개 구매 가능'),
-    quickFilterHint: t4('商品可依庫存、價格與分類快速篩選。', 'Filter by stock, price, and category.', '在庫・価格・カテゴリで素早く絞り込めます。', '재고, 가격, 카테고리로 빠르게 필터링할 수 있습니다.'),
+    purchasable: t4('件可購買', 'purchasable', '件購入可', '개 구매 가능'),
+    quickFilterHint: t4('商品可依庫存、價格與分類快速篩選。', 'Filter Genbon Travel products by stock, price, category, and keywords.', '在庫、価格、カテゴリ、キーワードで根本在旅行の商品を絞り込めます。', '재고, 가격, 카테고리, 키워드로 근본재여행 상품을 빠르게 필터링하세요.'),
     recommended: t4('推薦排序', 'Recommended', 'おすすめ順', '추천순'),
-    priceAsc: t4('價格由低到高', 'Price: Low to High', '価格: 安い順', '가격: 낮은 순'),
-    priceDesc: t4('價格由高到低', 'Price: High to Low', '価格: 高い順', '가격: 높은 순'),
-    stockMost: t4('庫存最多', 'Most In Stock', '在庫が多い順', '재고 많은 순'),
-    lowStock: t4('僅剩 {count}', 'Only {count} left', '残り{count}', '재고 {count}개 남음'),
+    priceAsc: t4('價格由低到高', 'Price: Low to High', '価格の安い順', '가격 낮은순'),
+    priceDesc: t4('價格由高到低', 'Price: High to Low', '価格の高い順', '가격 높은순'),
+    stockMost: t4('庫存最多', 'Most In Stock', '在庫が多い順', '재고 많은순'),
+    lowStock: t4('僅剩 {count}', 'Only {count} left', '残り {count}', '{count}개 남음'),
     soldOut: t4('售完', 'Sold Out', '売り切れ', '품절'),
-    details: t4('詳情', 'Details', '詳細', '상세'),
-    addOn: t4('加購', 'Add', '追加', '담기'),
-    loadMore: t4('載入更多商品', 'Load More Products', 'さらに読み込む', '상품 더 보기'),
-    empty: t4('沒有符合條件的商品。', 'No products match the current filters.', '条件に合う商品がありません。', '조건에 맞는 상품이 없습니다.'),
-    clearFilters: t4('清除篩選', 'Clear filters', 'フィルターをクリア', '필터 초기화'),
+    details: t4('查看商品', 'View Product', '商品を見る', '상품 보기'),
+    addOn: t4('加入購物車', 'Add', '追加', '담기'),
+    loadMore: t4('載入更多商品', 'Load More Products', 'さらに商品を表示', '상품 더 보기'),
+    empty: t4('沒有商品符合目前篩選。', 'No products match the current filters.', '現在の条件に合う商品がありません。', '현재 조건에 맞는 상품이 없습니다.'),
+    clearFilters: t4('清除篩選', 'Clear filters', '条件をクリア', '필터 지우기'),
     aiUnavailable: t4('AI 搜尋暫時無法使用', 'AI search is temporarily unavailable', 'AI検索は一時的に利用できません', 'AI 검색을 일시적으로 사용할 수 없습니다'),
-    aiSummary: t4('已依照你的描述整理商品結果', 'Results organized based on your description.', '入力内容に基づいて商品を整理しました。', '입력한 설명을 기준으로 상품을 정리했습니다.'),
-    seoKeywords: t4('旅行選物, 咖啡商品, 旅遊購物, Nestobi', 'travel shop, coffee goods, curated products, Nestobi', '旅セレクト, コーヒー商品, 旅行ショッピング, Nestobi', '여행 셀렉트, 커피 상품, 여행 쇼핑, Nestobi'),
+    aiSummary: t4('已依照你的描述整理商品。', 'Results organized based on your description.', '説明に合わせて商品を整理しました。', '입력한 설명을 바탕으로 상품을 정리했습니다.'),
+    seoKeywords: t4('根本在旅行, 商品, 門市, 咖啡選物, 旅行商店', 'Genbon Travel, products, stores, coffee goods, travel shop', '根本在旅行, 商品, 店舗, コーヒー選物, 旅行ショップ', '근본재여행, 상품, 매장, 커피 상품, 여행 상점'),
   };
   const [products, setProducts] = useState<Product[]>([]);
   const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
@@ -411,44 +398,25 @@ export default function ProductList() {
       />
       <Navigation />
 
-      <section className="bg-[#FEF9EC] px-4 py-14">
-        <div className="mx-auto max-w-5xl text-center">
-          <p className="section-label">{labels.heroTitle}</p>
-          <h1 className="section-title text-4xl md:text-5xl">{labels.heroTitle}</h1>
-          <span className="gold-bar-center" />
-          <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-[#2C1F10]/65">
-            {labels.heroDesc}
-          </p>
-
-          <div className={`mx-auto mt-8 flex max-w-2xl items-center rounded-2xl bg-white shadow-card transition ${aiLoading ? 'ring-2 ring-[#C09A6A]/40' : 'focus-within:ring-2 focus-within:ring-[#C09A6A]/30'}`}>
-            <div className="pl-4 text-[#C09A6A]">
-              {aiLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-            </div>
-            <input
-              value={search}
-              onChange={event => setSearch(event.target.value)}
-              onKeyDown={event => event.key === 'Enter' && handleAISearch()}
-              placeholder={labels.heroPlaceholder}
-              className="min-w-0 flex-1 bg-transparent px-3 py-4 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none"
-            />
-            {search && (
-              <button type="button" onClick={() => { setSearch(''); setAiSummary(''); setAiError(''); }} className="p-2 text-gray-400 transition hover:text-gray-600">
-                <X className="h-4 w-4" />
+      <ThemeHeroCarousel
+        themeKey="genbon_travel"
+        kicker={labels.heroKicker}
+        title={labels.heroTitle}
+        description={labels.heroDesc}
+      >
+        <div className="rounded-3xl border border-white/12 bg-white/90 p-4 shadow-2xl backdrop-blur">
+            <div className={`flex max-w-2xl items-center rounded-2xl bg-white shadow-card transition ${aiLoading ? 'ring-2 ring-[#C09A6A]/40' : 'focus-within:ring-2 focus-within:ring-[#C09A6A]/30'}`}>
+              <div className="pl-4 text-[#C09A6A]">{aiLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}</div>
+              <input value={search} onChange={event => setSearch(event.target.value)} onKeyDown={event => event.key === 'Enter' && handleAISearch()} placeholder={labels.heroPlaceholder} className="min-w-0 flex-1 bg-transparent px-3 py-4 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none" />
+              {search && <button type="button" onClick={() => { setSearch(''); setAiSummary(''); setAiError(''); }} className="p-2 text-gray-400 transition hover:text-gray-600"><X className="h-4 w-4" /></button>}
+              <button type="button" onClick={handleAISearch} disabled={aiLoading || !search.trim()} className="m-1.5 inline-flex items-center gap-1.5 rounded-xl bg-[#C09A6A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#8B6840] disabled:opacity-50">
+                <Search className="h-4 w-4" />
+                {labels.search}
               </button>
-            )}
-            <button
-              type="button"
-              onClick={handleAISearch}
-              disabled={aiLoading || !search.trim()}
-              className="m-1.5 inline-flex items-center gap-1.5 rounded-xl bg-[#C09A6A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#8B6840] disabled:opacity-50"
-            >
-              <Search className="h-4 w-4" />
-              {labels.search}
-            </button>
-          </div>
+            </div>
+          <p className="mt-3 text-sm font-semibold text-[#2C1F10]/70">{visibleCount} / {filtered.length} {labels.foundProducts}</p>
         </div>
-      </section>
-
+      </ThemeHeroCarousel>
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <AnimatePresence>
           {aiError && (

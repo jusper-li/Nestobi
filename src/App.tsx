@@ -84,6 +84,7 @@ import SuperAdminBlogCategories from './pages/superadmin/SuperAdminBlogCategorie
 import SuperAdminStoreLocations from './pages/superadmin/SuperAdminStoreLocations';
 import SuperAdminCoffeeQuiz from './pages/superadmin/SuperAdminCoffeeQuiz';
 import SuperAdminRoomTranslations from './pages/superadmin/SuperAdminRoomTranslations';
+import SuperAdminThemeBanners from './pages/superadmin/SuperAdminThemeBanners';
 
 import VendorLayout from './pages/vendor/VendorLayout';
 import VendorDashboard from './pages/vendor/VendorDashboard';
@@ -109,6 +110,9 @@ function App() {
           <ScrollToTop />
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/nestopia" element={<Navigate to="/rooms" replace />} />
+            <Route path="/genbon-travel" element={<Navigate to="/shop" replace />} />
+            <Route path="/coffee-traveler" element={<Navigate to="/blog" replace />} />
             <Route path="/rooms" element={<RoomList />} />
             <Route path="/rooms/:id" element={<RoomDetail />} />
             <Route path="/hotels/:id" element={<HotelDetail />} />
@@ -209,6 +213,7 @@ function App() {
               <Route path="static-pages" element={<AdminStaticPages />} />
               <Route path="permissions" element={<Permissions />} />
               <Route path="site-settings" element={<SuperAdminSiteSettings />} />
+              <Route path="theme-banners" element={<SuperAdminThemeBanners />} />
               <Route path="store-locations" element={<SuperAdminStoreLocations />} />
               <Route path="faq" element={<SuperAdminFAQ />} />
               <Route path="listing-command" element={<SuperAdminListingCommand />} />

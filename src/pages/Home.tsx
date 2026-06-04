@@ -57,78 +57,51 @@ function stripHtml(value: string | null | undefined) {
   return value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-const CITY_TRANSLATIONS_EN: Record<string, string> = {
-  宜蘭: 'Yilan',
-  台北: 'Taipei',
-  臺北: 'Taipei',
-  新北: 'New Taipei',
-  桃園: 'Taoyuan',
-  台中: 'Taichung',
-  臺中: 'Taichung',
-  台南: 'Tainan',
-  臺南: 'Tainan',
-  高雄: 'Kaohsiung',
-  花蓮: 'Hualien',
-  台東: 'Taitung',
-  臺東: 'Taitung',
-};
-
-function localizeCityName(text: string | null | undefined, nonZh: boolean) {
-  const value = (text || '').trim();
-  if (!value || !nonZh) return value;
-  let output = value;
-  for (const [zh, en] of Object.entries(CITY_TRANSLATIONS_EN)) output = output.split(zh).join(en);
-  return output;
+function localizeCityName(text: string | null | undefined) {
+  return (text || '').trim();
 }
-
 export default function Home() {
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
   const shouldTranslate = pickByLang(normalizedLang, '0', '1', '1', '1') === '1';
   const dateLocale = pickByLang(normalizedLang, 'zh-TW', 'en-US', 'ja-JP', 'ko-KR');
-  const nonZh = shouldTranslate;
   const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
 
   const t = {
-    pageTitle: t4('Nestobi 旅遊選物平台', 'Nestobi Travel & Shop Platform', 'Nestobi 旅と買い物プラットフォーム', 'Nestobi 여행 & 쇼핑 플랫폼'),
-    pageDesc: t4('一站整合住宿、旅遊選物與 AI 工具。', 'One-stop stays, shopping, and AI travel tools.', '宿泊・買い物・AIツールをひとつに。', '숙소, 쇼핑, AI 여행 도구를 한곳에.'),
-    heroTitle1: t4('從下一趟旅程開始', 'Start Your Next', '次の旅を始めよう', '다음 여행을 시작하세요'),
-    heroTitle2: t4('讓平台替你少想一點', 'Journey Here', '旅の準備をもっと軽く', '여행 준비를 더 가볍게'),
-    heroDesc: t4(
-      '從精選住宿、咖啡選物到 AI 行程規劃，Nestobi 幫你把旅程、購物與日常整理在同一個地方。',
-      'From curated stays and coffee picks to AI itinerary planning, Nestobi helps you travel, shop, and organize in one place.',
-      '厳選宿泊、コーヒーセレクト、AI旅程作成まで。Nestobiで旅と買い物をひとつに。',
-      '엄선 숙소, 커피 셀렉션, AI 일정 계획까지. Nestobi에서 여행과 쇼핑을 한 번에.',
-    ),
-    shopNow: t4('逛選物商店', 'Shop', 'ショップへ', '샵 보기'),
-    exploreStays: t4('尋找住宿', 'Find Stays', '宿を探す', '숙소 찾기'),
-    stays: t4('住宿', 'Stays', '宿泊', '숙소'),
-    shop: t4('選物商店', 'Shop', 'ショップ', '샵'),
-    journal: t4('咖啡旅誌', 'Coffee Journal', 'コーヒージャーナル', '커피 저널'),
-    featuredStays: t4('精選住宿', 'Featured Stays', '注目の宿泊', '추천 숙소'),
-    featuredShop: t4('精選商品', 'Featured Products', '注目の商品', '추천 상품'),
-    featuredJournal: t4('最新文章', 'Latest Stories', '最新記事', '최신 스토리'),
-    viewAllStays: t4('查看全部住宿', 'View All Stays', 'すべての宿泊を見る', '모든 숙소 보기'),
-    viewAllShop: t4('查看全部商品', 'View All Products', 'すべての商品を見る', '모든 상품 보기'),
-    viewAllJournal: t4('查看全部文章', 'View All Articles', 'すべての記事を見る', '모든 글 보기'),
+    pageTitle: t4('Nestopia・根本在旅行・咖啡旅行家', 'Nestopia, Genbon Travel Shop, and Coffee Traveler', 'Nestopia・根本在旅行・コーヒートラベラー', 'Nestopia, 근본재여행, 커피 트래블러'),
+    pageDesc: t4('住宿交給 Nestopia，商品與門市交給根本在旅行，文章由咖啡旅行家獨立展開。', 'Nestopia is for stays, Genbon Travel Shop is for products and stores, and Coffee Traveler is the independent article theme.', '宿泊はNestopia、商品と店舗は根本在旅行、記事はコーヒートラベラーとして独立展開します。', '숙박은 Nestopia, 상품과 매장은 근본재여행, 글은 커피 트래블러가 독립적으로 다룹니다.'),
+    heroTitle1: t4('三個主題', 'Three Themes', '3つのテーマ', '세 가지 주제'),
+    heroTitle2: t4('各自清楚出發', 'Clearly Separated', 'それぞれ明確に', '명확하게 나누어'),
+    heroDesc: t4('Nestopia 專注住宿；根本在旅行負責商品與門市；咖啡旅行家獨立整理文章內容，三個主題清楚分工，也能在會員中心彼此連動。', 'Nestopia focuses on stays, Genbon Travel handles products and stores, and Coffee Traveler organizes articles as its own theme.', 'Nestopiaは宿泊、根本在旅行は商品と店舗、コーヒートラベラーは記事を独立テーマとして整理します。', 'Nestopia는 숙박, 근본재여행은 상품과 매장, 커피 트래블러는 글 콘텐츠를 독립 주제로 정리합니다.'),
+    shopNow: t4('逛根本在旅行', 'Shop Genbon Travel', '根本在旅行を見る', '근본재여행 보기'),
+    exploreStays: t4('前往 Nestopia', 'Explore Nestopia', 'Nestopiaへ', 'Nestopia 보기'),
+    stays: t4('Nestopia', 'Nestopia', 'Nestopia', 'Nestopia'),
+    shop: t4('根本在旅行', 'Genbon Travel Shop', '根本在旅行', '근본재여행'),
+    journal: t4('咖啡旅行家', 'Coffee Traveler', 'コーヒートラベラー', '커피 트래블러'),
+    featuredStays: t4('Nestopia 精選住宿', 'Nestopia Featured Stays', 'Nestopia 注目の宿泊', 'Nestopia 추천 숙소'),
+    featuredShop: t4('根本在旅行精選商品', 'Genbon Travel Picks', '根本在旅行のおすすめ商品', '근본재여행 추천 상품'),
+    featuredJournal: t4('咖啡旅行家最新文章', 'Latest from Coffee Traveler', 'コーヒートラベラー最新記事', '커피 트래블러 최신 글'),
+    viewAllStays: t4('查看 Nestopia 住宿', 'View Nestopia Stays', 'Nestopiaの宿泊を見る', 'Nestopia 숙소 보기'),
+    viewAllShop: t4('查看根本在旅行商品', 'View Genbon Travel Products', '根本在旅行の商品を見る', '근본재여행 상품 보기'),
+    viewAllJournal: t4('查看咖啡旅行家文章', 'View Coffee Traveler Articles', 'コーヒートラベラーの記事を見る', '커피 트래블러 글 보기'),
     perNight: t4('/ 晚', '/ night', '/ 泊', '/ 박'),
     guests: t4('人', 'guests', '名', '명'),
-    translationSyncing: t4('首頁翻譯正在背景同步中...', 'Homepage translation is syncing in background...', 'ホームページ翻訳をバックグラウンドで同期中...', '홈페이지 번역을 백그라운드에서 동기화 중...'),
-    translationFallback: t4('目前先顯示原文內容，翻譯快取尚未就緒。', 'Showing source content first. Translation cache is not ready yet.', '翻訳キャッシュ未準備のため原文を表示しています。', '번역 캐시가 준비되지 않아 원문을 먼저 표시합니다.'),
-    closeTitle: t4('讓每次旅行都更輕鬆安心', 'Make every trip easier and calmer.', 'すべての旅をもっと軽く、穏やかに。', '모든 여행을 더 쉽고 편안하게.'),
-    trustStaysTitle: t4('安心住宿', 'Trusted Stays', '信頼できる宿泊', '신뢰할 수 있는 숙소'),
-    trustStaysDesc: t4('每間房源都經過驗證與品質篩選。', 'Verified and quality-picked rooms.', '認証済みで品質重視の宿泊先。', '검증된 고품질 숙소만 엄선.'),
-    trustShopTitle: t4('精選購物', 'Curated Shop', '厳選ショップ', '큐레이션 쇼핑'),
-    trustShopDesc: t4('把咖啡與旅途選物一次整合。', 'Coffee and travel picks in one place.', 'コーヒーと旅のセレクトをひとつに。', '커피와 여행 셀렉션을 한곳에.'),
-    trustAiTitle: t4('AI 協作', 'AI Support', 'AIサポート', 'AI 지원'),
-    trustAiDesc: t4('隨時安排、翻譯與對話，出發更從容。', 'Plan, translate, and chat anytime.', '計画、翻訳、チャットをいつでも。', '일정, 번역, 채팅을 언제든.'),
+    translationSyncing: t4('首頁翻譯背景同步中...', 'Homepage translation is syncing in background...', 'ホームページ翻訳をバックグラウンドで同期中...', '홈페이지 번역을 백그라운드에서 동기화 중...'),
+    translationFallback: t4('目前先顯示原文內容，翻譯快取尚未就緒。', 'Showing source content first. Translation cache is not ready yet.', '翻訳キャッシュ未準備のため原文を先に表示しています。', '번역 캐시가 아직 준비되지 않아 원문을 먼저 표시합니다.'),
+    closeTitle: t4('住宿、商品、文章分開管理，也能彼此連動。', 'Stays, products, and articles are managed separately while staying connected.', '宿泊・商品・記事を分けて管理しながら連携できます。', '숙박, 상품, 글을 분리 관리하면서도 서로 연결합니다.'),
+    trustStaysTitle: t4('Nestopia 住宿', 'Nestopia Stays', 'Nestopia 宿泊', 'Nestopia 숙소'),
+    trustStaysDesc: t4('專注民宿、房型、訂房與入住體驗。', 'Focused on stays, rooms, bookings, and check-in experiences.', '民宿・部屋・予約・宿泊体験に集中します。', '숙소, 객실, 예약, 체크인 경험에 집중합니다.'),
+    trustShopTitle: t4('根本在旅行商品與門市', 'Genbon Travel Products and Stores', '根本在旅行の商品と店舗', '근본재여행 상품과 매장'),
+    trustShopDesc: t4('商品、購物、訂單、售後與門市據點歸在同一主題。', 'Products, shopping, orders, after-sales, and stores sit under one theme.', '商品・買い物・注文・アフターサービス・店舗を同じテーマにまとめます。', '상품, 쇼핑, 주문, A/S, 매장을 하나의 주제로 묶습니다.'),
+    trustAiTitle: t4('咖啡旅行家內容', 'Coffee Traveler Content', 'コーヒートラベラーの記事', '커피 트래블러 콘텐츠'),
+    trustAiDesc: t4('文章作為獨立主題，也能關聯住宿、商品與門市。', 'Articles are independent, but can link to stays, products, and stores.', '記事は独立テーマとして、宿泊・商品・店舗にも関連できます。', '글은 독립 주제이면서 숙소, 상품, 매장과 연결될 수 있습니다.'),
   };
 
   const stats = [
-    { value: '120+', label: t4('精選商品', 'Curated Products', '厳選商品', '큐레이션 상품') },
-    { value: '24/7', label: t4('AI 旅遊支援', 'AI Support', 'AIサポート', 'AI 지원') },
-    { value: '5%', label: t4('購物點數回饋', 'Points Back', 'ポイント還元', '포인트 적립') },
-    { value: '1 stop', label: t4('一站整合', 'All-in-one', 'ワンストップ', '원스톱') },
+    { value: '120+', label: t4('根本在旅行商品', 'Genbon Products', '根本在旅行の商品', '근본재여행 상품') },
+    { value: '24/7', label: t4('AI 支援', 'AI Support', 'AI サポート', 'AI 지원') },
+    { value: '5%', label: t4('點數回饋', 'Points Back', 'ポイント還元', '포인트 적립') },
+    { value: '3 themes', label: t4('三大主題', 'Three Themes', '3つのテーマ', '세 가지 주제') },
   ];
 
   const [featuredRooms, setFeaturedRooms] = useState<Room[]>([]);
@@ -345,7 +318,7 @@ export default function Home() {
                       {room.hotels?.name && <p className="mb-2 flex items-center gap-1 text-xs font-semibold text-[#8B6840]"><Building2 size={13} />{room.hotels.name}</p>}
                       <h3 className="text-base font-bold text-gray-900">{room.name}</h3>
                       <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-500">
-                        <span className="flex items-center gap-1"><MapPin size={13} />{localizeCityName(room.location || room.hotels?.city || '-', nonZh)}</span>
+                        <span className="flex items-center gap-1"><MapPin size={13} />{localizeCityName(room.location || room.hotels?.city || '-')}</span>
                         <span className="flex items-center gap-1"><Users size={13} />{room.capacity} {t.guests}</span>
                       </div>
                       <div className="mt-5 flex items-end justify-between border-t border-gray-100 pt-4">

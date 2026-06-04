@@ -17,23 +17,23 @@ export default function StoreLocations() {
   const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
 
   const labels = {
-    seoTitle: t4('門市據點', 'Store Locator', '店舗情報', '매장 안내'),
-    seoDesc: t4('查找 Nestobi 門市、營業時間、電話與地圖位置。', 'Find Nestobi stores, opening hours, phone numbers, and map links.', 'Nestobi 店舗の営業時間、電話、地図情報を確認できます。', 'Nestobi 매장 위치, 영업시간, 전화, 지도 정보를 확인하세요.'),
-    seoKeywords: t4('門市據點,nestobi,咖啡門市,地址,地圖', 'store locator,nestobi,coffee store,address,map', '店舗情報,nestobi,コーヒーショップ,住所,地図', '매장 안내,nestobi,카페 매장,주소,지도'),
-    sectionLabel: t4('門市據點', 'Store Locator', '店舗情報', '매장 안내'),
-    title: t4('門市據點', 'Store Locations', '店舗一覧', '매장 목록'),
-    intro: t4('找到離你最近的門市，確認營業時間、電話與地圖位置。', 'Find the nearest store and check hours, phone, and map details.', '最寄り店舗の営業時間、電話、地図を確認できます。', '가까운 매장을 찾고 영업시간, 전화, 지도 정보를 확인하세요.'),
-    storeCount: t4('已建立門市據點', 'Stores Available', '登録済み店舗数', '등록된 매장 수'),
+    seoTitle: t4('根本在旅行門市', 'Genbon Travel Stores', '根本在旅行の店舗', '근본재여행 매장'),
+    seoDesc: t4('查找根本在旅行門市、營業時間、電話與地圖位置。', 'Find Genbon Travel stores, opening hours, phone numbers, and map links.', '根本在旅行の店舗営業時間、電話、地図情報を確認できます。', '근본재여행 매장 위치, 영업시간, 전화, 지도 정보를 확인하세요.'),
+    seoKeywords: t4('根本在旅行門市,咖啡門市,地址,地圖', 'Genbon Travel stores, coffee store, address, map', '根本在旅行 店舗, コーヒーショップ, 住所, 地図', '근본재여행 매장, 카페 매장, 주소, 지도'),
+    sectionLabel: t4('根本在旅行', 'Genbon Travel', '根本在旅行', '근본재여행'),
+    title: t4('根本在旅行門市', 'Genbon Travel Stores', '根本在旅行の店舗', '근본재여행 매장'),
+    intro: t4('找到離你最近的根本在旅行門市，確認營業時間、電話與地圖位置。', 'Find the nearest Genbon Travel store and check hours, phone, and map details.', '最寄りの根本在旅行店舗の営業時間、電話、地図を確認できます。', '가까운 근본재여행 매장을 찾고 영업시간, 전화, 지도 정보를 확인하세요.'),
+    storeCount: t4('已建立門市', 'Stores Available', '登録済み店舗数', '등록된 매장 수'),
     searchPlaceholder: t4('搜尋門市、地址或電話', 'Search by name, address, or phone', '店舗名・住所・電話で検索', '매장명, 주소, 전화로 검색'),
     noStoreNotice: t4('目前尚無門市資料。', 'No store data available yet.', '店舗データがありません。', '매장 데이터가 없습니다.'),
     fallbackNotice: t4('目前無法載入門市資料，請稍後再試。', 'Unable to load store data right now. Please try again later.', '店舗データを読み込めません。しばらくして再試行してください。', '매장 데이터를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.'),
     noResult: t4('找不到符合的門市', 'No matching stores found', '一致する店舗がありません', '일치하는 매장이 없습니다'),
     noResultHint: t4('請嘗試其他關鍵字。', 'Try another keyword.', '別のキーワードをお試しください。', '다른 키워드를 시도해 주세요.'),
-    openInfo: t4('營業中資訊', 'Business info', '営業情報', '영업 정보'),
-    mapNav: t4('地圖導航', 'Map navigation', '地図ナビ', '지도 길찾기'),
+    openInfo: t4('營業資訊', 'Business info', '営業情報', '영업 정보'),
+    mapNav: t4('地圖導航', 'Map navigation', '地図で見る', '지도 길찾기'),
     transCacheNotReady: t4('目前先顯示原文門市資料，翻譯快取尚未就緒。', 'Showing source store data first. Translation cache is not ready yet.', '原文の店舗データを先に表示しています。翻訳キャッシュは未準備です。', '원문 매장 데이터를 먼저 표시합니다. 번역 캐시가 아직 준비되지 않았습니다.'),
     transSyncing: t4('背景同步其餘門市翻譯中...', 'Syncing remaining store translations in background...', '残りの店舗翻訳をバックグラウンドで同期中...', '남은 매장 번역을 백그라운드에서 동기화 중...'),
-    transFallback: t4('先顯示原文/快取門市資料。', 'Showing source/cached store data.', '原文/キャッシュの店舗データを表示中。', '원문/캐시 매장 데이터를 표시합니다.'),
+    transFallback: t4('先顯示原文或快取門市資料。', 'Showing source or cached store data.', '原文またはキャッシュの店舗データを表示中。', '원문 또는 캐시 매장 데이터를 표시합니다.'),
   };
 
   const [locations, setLocations] = useState<StoreLocation[]>([]);

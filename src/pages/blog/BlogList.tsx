@@ -7,7 +7,6 @@ import {
   BookOpen,
   Calendar,
   ChevronRight,
-  Coffee,
   Loader2,
   Search,
   Sparkles,
@@ -17,6 +16,7 @@ import {
 import Navigation from '../../components/Navigation';
 import Footer from '../../components/Footer';
 import SEOHead from '../../components/SEOHead';
+import ThemeHeroCarousel from '../../components/ThemeHeroCarousel';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { useProgressiveList } from '../../hooks/useProgressiveList';
@@ -71,17 +71,16 @@ const SYSTEM_BLOG_SLUGS = new Set(['system-store-locations']);
 
 const DEFAULT_BLOG_CATEGORIES: BlogCategory[] = [
   { id: 'coffee-travel', name: '咖啡旅行', slug: 'coffee-travel', parent_id: null, display_order: 10 },
-  { id: 'coffee-travel-japan-cafes', name: '日本各地咖啡廳介紹', slug: 'coffee-travel-japan-cafes', parent_id: 'coffee-travel', display_order: 11 },
+  { id: 'coffee-travel-japan-cafes', name: '日本咖啡館', slug: 'coffee-travel-japan-cafes', parent_id: 'coffee-travel', display_order: 11 },
   { id: 'japan-travel', name: '日本旅行', slug: 'japan-travel', parent_id: null, display_order: 20 },
-  { id: 'japan-travel-food-souvenirs-menu', name: '日本旅行美食/伴手禮/菜單', slug: 'japan-travel-food-souvenirs-menu', parent_id: 'japan-travel', display_order: 21 },
-  { id: 'okinawa-travel', name: '沖繩美好旅行', slug: 'okinawa-travel', parent_id: null, display_order: 30 },
-  { id: 'okinawa-local-guide', name: '沖繩在地人推薦', slug: 'okinawa-local-guide', parent_id: 'okinawa-travel', display_order: 31 },
-  { id: 'home-coffee', name: '在宅咖啡', slug: 'home-coffee', parent_id: null, display_order: 40 },
-  { id: 'home-coffee-basics', name: '在宅咖啡入門', slug: 'home-coffee-basics', parent_id: 'home-coffee', display_order: 41 },
+  { id: 'japan-travel-food-souvenirs-menu', name: '美食與伴手禮', slug: 'japan-travel-food-souvenirs-menu', parent_id: 'japan-travel', display_order: 21 },
+  { id: 'okinawa-travel', name: '沖繩旅行', slug: 'okinawa-travel', parent_id: null, display_order: 30 },
+  { id: 'okinawa-local-guide', name: '沖繩在地指南', slug: 'okinawa-local-guide', parent_id: 'okinawa-travel', display_order: 31 },
+  { id: 'home-coffee', name: '居家咖啡', slug: 'home-coffee', parent_id: null, display_order: 40 },
+  { id: 'home-coffee-basics', name: '咖啡入門', slug: 'home-coffee-basics', parent_id: 'home-coffee', display_order: 41 },
   { id: 'craftsman-stories', name: '職人故事', slug: 'craftsman-stories', parent_id: null, display_order: 50 },
-  { id: 'craftsman-stories-people', name: '烘豆師與咖啡店人物專訪', slug: 'craftsman-stories-people', parent_id: 'craftsman-stories', display_order: 51 },
+  { id: 'craftsman-stories-people', name: '咖啡職人與店家', slug: 'craftsman-stories-people', parent_id: 'craftsman-stories', display_order: 51 },
 ];
-
 function normalizeCategories(items: BlogCategory[]) {
   return items.length ? items : DEFAULT_BLOG_CATEGORIES;
 }
@@ -137,7 +136,7 @@ async function fetchBlogCategoriesFromSupabase() {
 const BlogList: React.FC = () => {
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
-  const dateLocale = normalizedLang === 'zh-TW' ? 'zh-TW' : normalizedLang === 'en' ? 'en-US' : normalizedLang === 'ja' ? 'ja-JP' : 'ko-KR';
+  const dateLocale = pickByLang(normalizedLang, 'zh-TW', 'en-US', 'ja-JP', 'ko-KR');
   const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
 
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -155,33 +154,35 @@ const BlogList: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const labels = {
-    pageTitle: t4('咖啡旅行家 - 旅誌', 'Coffee Traveler - Blog', 'Coffee Traveler - ブログ', 'Coffee Traveler - 블로그'),
-    pageDesc: t4('探索日本、沖繩與各地咖啡文化故事。', 'Explore coffee journeys across Japan, Okinawa, and beyond.', '日本・沖縄・各地のコーヒー旅ストーリー。', '일본, 오키나와, 그리고 다양한 지역의 커피 여행 이야기.'),
+    pageTitle: t4('咖啡旅行家 - 文章', 'Coffee Traveler - Articles', 'Coffee Traveler - 記事', 'Coffee Traveler - 글'),
+    pageDesc: t4('以咖啡為入口，探索日本、沖繩與旅途中的店家、風味和職人故事。', 'Explore shops, flavors, and craft stories across Japan, Okinawa, and the road through coffee.', 'コーヒーを入口に、日本、沖縄、旅先の店、味、職人の物語を探索します。', '커피를入口로 일본, 오키나와, 여행지의 매장, 맛, 장인 이야기를 탐험합니다.'),
+    seoKeywords: t4('咖啡旅行家, 日本旅行, 沖繩咖啡, 咖啡文章, 旅行文章', 'coffee traveler, japan travel, okinawa coffee, coffee journal, travel articles', 'コーヒートラベラー, 日本旅行, 沖縄コーヒー, コーヒー記事, 旅行記事', '커피 여행가, 일본 여행, 오키나와 커피, 커피 글, 여행 글'),
+    heroKicker: t4('文章主題首頁', 'Article Theme Home', '記事テーマホーム', '글 테마 홈'),
     heroTitle: t4('咖啡旅行家', 'Coffee Traveler', 'Coffee Traveler', 'Coffee Traveler'),
-    heroDesc: t4('每一杯咖啡是一段旅程的起點。探索在地咖啡文化，記錄旅途中美好風景。', 'Every cup is a journey. Discover local coffee culture and stories from the road.', '一杯のコーヒーから旅が始まる。ローカル文化と旅の記録を楽しもう。', '한 잔의 커피에서 여행이 시작됩니다. 현지 커피 문화와 여행 이야기를 만나보세요.'),
-    searchPlaceholder: t4('輸入任何描述，AI 幫您找文章', 'Type any description, AI will find articles', '説明を入力するとAIが記事を探します', '설명을 입력하면 AI가 글을 찾아줍니다'),
+    heroDesc: t4('咖啡是一條旅行路線。從城市角落、地方店家到沖繩與日本街區，把每一杯背後的風景寫下來。', 'Coffee is a travel route. From city corners and local shops to Okinawa and Japan neighborhoods, collect the views behind every cup.', 'コーヒーは旅のルートです。街角やローカル店、沖縄と日本の街から、一杯の後ろにある景色を綴ります。', '커피는 여행 경로입니다. 도시의 골목, 로컬 매장, 오키나와와 일본 동네에서 한 잔 뒤의 풍경을 기록합니다.'),
+    searchPlaceholder: t4('輸入想看的主題，AI 幫你找文章', 'Type any topic, AI will find articles', '見たいテーマを入力すると AI が記事を探します', '보고 싶은 주제를 입력하면 AI가 글을 찾아줍니다'),
     search: t4('搜尋', 'Search', '検索', '검색'),
     clear: t4('清除', 'Clear', 'クリア', '지우기'),
     all: t4('全部文章', 'All Articles', 'すべての記事', '전체 글'),
-    subCategories: t4('次分類', 'Subcategories', 'サブカテゴリ', '하위 카테고리'),
+    subCategories: t4('子分類', 'Subcategories', 'サブカテゴリ', '하위 카테고리'),
     showingCount: t4('顯示', 'Showing', '表示', '표시'),
-    found: t4('篇文章', 'articles found', '件の記事', '개의 글'),
+    found: t4('篇文章', 'articles found', '件の記事', '개 글'),
     featured: t4('精選文章', 'Featured Article', '注目記事', '추천 글'),
-    mostRelevant: t4('最相關', 'Most Relevant', '関連度順', '관련도순'),
-    readMore: t4('閱讀更多', 'Read More', '続きを読む', '더 보기'),
-    loadMore: t4('載入更多文章', 'Load More Articles', 'さらに読み込む', '글 더 불러오기'),
+    mostRelevant: t4('最相關', 'Most Relevant', '最も関連', '가장 관련 있음'),
+    readMore: t4('閱讀更多', 'Read More', '続きを読む', '더 읽기'),
+    loadMore: t4('載入更多文章', 'Load More Articles', 'さらに記事を表示', '글 더 보기'),
     noResult: t4('找不到符合條件的文章', 'No matching articles found', '条件に合う記事が見つかりません', '조건에 맞는 글을 찾을 수 없습니다'),
-    noResultHint: t4('請嘗試其他關鍵字，或查看全部文章。', 'Try another keyword or browse all articles.', '別のキーワードを試すか、すべての記事をご覧ください。', '다른 키워드를 시도하거나 전체 글을 확인해 보세요.'),
+    noResultHint: t4('試試其他關鍵字，或瀏覽全部文章。', 'Try another keyword or browse all articles.', '別のキーワードを試すか、すべての記事を見てください。', '다른 키워드를 시도하거나 전체 글을 둘러보세요.'),
     browseAll: t4('查看全部文章', 'Browse all articles', 'すべての記事を見る', '전체 글 보기'),
-    noCategoryData: t4('此分類暫無文章', 'No articles in this category', 'このカテゴリに記事はありません', '이 카테고리에 글이 없습니다'),
+    noCategoryData: t4('這個分類目前沒有文章', 'No articles in this category', 'このカテゴリにはまだ記事がありません', '이 카테고리에는 아직 글이 없습니다'),
     aiSummary: t4('AI 摘要', 'AI Summary', 'AI要約', 'AI 요약'),
     aiCategories: t4('分類', 'Categories', 'カテゴリ', '카테고리'),
-    dataNotice: t4('Supabase 連線暫時不穩，已改用快照文章加速顯示。', 'Supabase is temporarily unstable. Snapshot articles are displayed first.', 'Supabase接続が不安定のため、スナップショット記事を先に表示します。', 'Supabase 연결이 불안정하여 스냅샷 글을 먼저 표시합니다.'),
+    dataNotice: t4('Supabase 暫時不穩，先顯示快照文章。', 'Supabase is temporarily unstable. Snapshot articles are displayed first.', 'Supabase が一時的に不安定なため、スナップショット記事を先に表示します。', 'Supabase가 일시적으로 불안정하여 스냅샷 글을 먼저 표시합니다.'),
     transCacheNotReady: t4('目前先顯示原文文章，翻譯快取尚未就緒。', 'Showing source articles first. Translation cache is not ready yet.', '翻訳キャッシュ未準備のため、原文記事を先に表示します。', '번역 캐시 준비 전이라 원문 글을 먼저 표시합니다.'),
-    transSyncing: t4('背景同步文章翻譯中...', 'Syncing article translations in background...', '기사 번역을 백그라운드 동기화 중...', '글 번역을 백그라운드 동기화 중...'),
+    transSyncing: t4('正在背景同步文章翻譯...', 'Syncing article translations in background...', '記事翻訳をバックグラウンドで同期しています...', '글 번역을 백그라운드에서 동기화하는 중...'),
     transFallback: t4('目前顯示原文或快取文章。', 'Showing source/cached articles.', '原文またはキャッシュ記事を表示しています。', '원문 또는 캐시 글을 표시합니다.'),
     aiSearchFailed: t4('AI 搜尋失敗', 'AI search failed', 'AI検索に失敗しました', 'AI 검색 실패'),
-    aiSearchRetry: t4('AI 搜尋暫時無法使用，請稍後再試。', 'AI search failed, please try again later.', 'AI検索は一時的に利用できません。しばらくして再試行してください。', 'AI 검색을 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.'),
+    aiSearchRetry: t4('AI 搜尋暫時無法使用，請稍後再試。', 'AI search failed, please try again later.', 'AI検索は一時的に利用できません。後でもう一度お試しください。', 'AI 검색을 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해주세요.'),
   };
 
   useEffect(() => {
@@ -402,27 +403,22 @@ const BlogList: React.FC = () => {
       <SEOHead
         title={labels.pageTitle}
         description={labels.pageDesc}
-        keywords={t4('咖啡旅行家, 日本旅行, 沖繩咖啡, 咖啡旅誌', 'coffee traveler, nestobi blog, japan travel, okinawa coffee, coffee journal', 'コーヒートラベラー, 日本旅行, 沖縄コーヒー, ブログ', '커피 트래블러, 일본 여행, 오키나와 커피, 블로그')}
+        keywords={labels.seoKeywords}
         ogType="blog"
       />
       <Navigation />
 
-      <div className="relative overflow-hidden bg-[#2C1810] px-4 py-24 text-white">
-        <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: 'url(https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg)' }} />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#2C1810]/60 to-[#2C1810]/95" />
-        <div className="relative mx-auto max-w-4xl text-center">
-          <div className="mb-4 flex items-center justify-center gap-2">
-            <Coffee className="h-5 w-5 text-amber-400" />
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-400">{labels.heroTitle}</span>
-          </div>
-          <h1 className="mb-4 font-serif text-4xl font-bold md:text-5xl">{labels.heroTitle}</h1>
-          <div className="mx-auto mb-5 h-[2px] w-10 bg-amber-500" />
-          <p className="mx-auto max-w-md text-base leading-relaxed text-amber-200/70">{labels.heroDesc}</p>
-
-          <div className="mx-auto mt-8 max-w-lg">
+      <ThemeHeroCarousel
+        themeKey="coffee_traveler"
+        kicker={labels.heroKicker}
+        title={labels.heroTitle}
+        description={labels.heroDesc}
+        accentClassName="text-amber-700"
+      >
+        <div className="rounded-3xl border border-white/12 bg-white/90 p-4 shadow-2xl backdrop-blur">
             <div className="relative flex items-center gap-2">
-              <div className="relative flex-1">
-                <Sparkles className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-400" />
+              <div className="relative min-w-0 flex-1">
+                <Sparkles className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-500" />
                 <input
                   ref={inputRef}
                   value={search}
@@ -446,10 +442,9 @@ const BlogList: React.FC = () => {
                 {labels.search}
               </button>
             </div>
-          </div>
+          <p className="mt-3 text-sm font-semibold text-[#2C1F10]/70">{filtered.length} {labels.found}</p>
         </div>
-      </div>
-
+      </ThemeHeroCarousel>
       <div className="mx-auto max-w-6xl px-4 py-10">
         {aiFilters && (
           <div className="mb-6 flex flex-wrap items-center gap-2">

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, ShoppingBag, BedDouble, Package, Building, Users, BarChart2, LogOut, Menu, Plane, FileText, Coffee, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 
 interface NavLinkDef {
   to: string;
@@ -11,25 +13,30 @@ interface NavLinkDef {
   permission?: string;
 }
 
-const ALL_NAV_LINKS: NavLinkDef[] = [
-  { to: '/admin/engagement', icon: <MessageSquare className="w-5 h-5" />, label: '連動管理', permission: 'manage_orders' },
-  { to: '/admin', icon: <LayoutDashboard className="w-5 h-5" />, label: '儀表板', end: true },
-  { to: '/admin/orders', icon: <ShoppingBag className="w-5 h-5" />, label: '訂單管理', permission: 'manage_orders' },
-  { to: '/admin/rooms', icon: <BedDouble className="w-5 h-5" />, label: '房間管理', permission: 'manage_rooms' },
-  { to: '/admin/products', icon: <Package className="w-5 h-5" />, label: '商品管理', permission: 'manage_products' },
-  { to: '/admin/vendors', icon: <Building className="w-5 h-5" />, label: '廠商管理', permission: 'manage_vendors' },
-  { to: '/admin/users', icon: <Users className="w-5 h-5" />, label: '用戶管理', permission: 'manage_users' },
-  { to: '/admin/blog', icon: <Coffee className="w-5 h-5" />, label: '咖啡旅行家', permission: 'manage_blog' },
-  { to: '/admin/ai-analytics', icon: <BarChart2 className="w-5 h-5" />, label: 'AI 用量', permission: 'view_ai' },
-  { to: '/admin/static-pages', icon: <FileText className="w-5 h-5" />, label: '靜態頁面', permission: 'manage_static_pages' },
-];
+function getNavLinks(pick: (zh: string, en: string, ja: string, ko: string) => string): NavLinkDef[] {
+  return [
+    { to: '/admin/engagement', icon: <MessageSquare className="w-5 h-5" />, label: pick('連動管理', 'Engagement', '連携管理', '연동 관리'), permission: 'manage_orders' },
+    { to: '/admin', icon: <LayoutDashboard className="w-5 h-5" />, label: pick('總覽', 'Dashboard', 'ダッシュボード', '대시보드'), end: true },
+    { to: '/admin/orders', icon: <ShoppingBag className="w-5 h-5" />, label: pick('根本在旅行訂單', 'Genbon Orders', '根本在旅行の注文', '근본재여행 주문'), permission: 'manage_orders' },
+    { to: '/admin/rooms', icon: <BedDouble className="w-5 h-5" />, label: pick('Nestopia 住宿', 'Nestopia Stays', 'Nestopia 宿泊', 'Nestopia 숙소'), permission: 'manage_rooms' },
+    { to: '/admin/products', icon: <Package className="w-5 h-5" />, label: pick('根本在旅行商品', 'Genbon Products', '根本在旅行の商品', '근본재여행 상품'), permission: 'manage_products' },
+    { to: '/admin/vendors', icon: <Building className="w-5 h-5" />, label: pick('廠商管理', 'Vendors', 'ベンダー管理', '업체 관리'), permission: 'manage_vendors' },
+    { to: '/admin/users', icon: <Users className="w-5 h-5" />, label: pick('會員管理', 'Members', '会員管理', '회원 관리'), permission: 'manage_users' },
+    { to: '/admin/blog', icon: <Coffee className="w-5 h-5" />, label: pick('咖啡旅行家文章', 'Coffee Traveler Articles', 'コーヒートラベラー記事', '커피 트래블러 글'), permission: 'manage_blog' },
+    { to: '/admin/ai-analytics', icon: <BarChart2 className="w-5 h-5" />, label: pick('AI 分析', 'AI Analytics', 'AI 分析', 'AI 분석'), permission: 'view_ai' },
+    { to: '/admin/static-pages', icon: <FileText className="w-5 h-5" />, label: pick('靜態頁面', 'Static Pages', '静的ページ', '정적 페이지'), permission: 'manage_static_pages' },
+  ];
+}
 
 const AdminLayout: React.FC = () => {
   const { user, role, signOut, hasPermission } = useAuth();
+  const { lang } = useLanguage();
+  const locale = normalizeLang(lang);
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
-  const visibleLinks = ALL_NAV_LINKS.filter(link =>
+  const visibleLinks = getNavLinks(pick).filter(link =>
     !link.permission || hasPermission(link.permission)
   );
 
@@ -41,7 +48,7 @@ const AdminLayout: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-[#C09A6A] rounded-xl flex items-center justify-center"><Plane className="w-5 h-5 text-white" /></div>
           <div>
-            <p className="font-bold text-white text-sm">旅遊平台</p>
+            <p className="font-bold text-white text-sm">{pick('後台管理', 'Admin', '管理画面', '관리자')}</p>
             <span className="text-xs bg-[#C09A6A] text-white px-1.5 py-0.5 rounded font-medium">{role === 'superadmin' ? 'SUPER ADMIN' : 'ADMIN'}</span>
           </div>
         </div>
@@ -57,7 +64,7 @@ const AdminLayout: React.FC = () => {
       <div className="p-3 border-t border-gray-800">
         <p className="text-gray-500 text-xs px-3 mb-2 truncate">{user?.email}</p>
         <button onClick={handleSignOut} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-gray-700 w-full transition">
-          <LogOut className="w-5 h-5" />登出
+          <LogOut className="w-5 h-5" />{pick('登出', 'Logout', 'ログアウト', '로그아웃')}
         </button>
       </div>
     </div>
@@ -77,7 +84,7 @@ const AdminLayout: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="md:hidden bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 sticky top-0 z-40">
           <button onClick={() => setSidebarOpen(true)} className="p-2 hover:bg-gray-100 rounded-lg"><Menu className="w-5 h-5" /></button>
-          <span className="font-semibold text-gray-900">管理後台</span>
+          <span className="font-semibold text-gray-900">{pick('後台管理', 'Admin', '管理画面', '관리자')}</span>
         </header>
         <main className="flex-1 p-4 md:p-6 overflow-auto">
           <Outlet />

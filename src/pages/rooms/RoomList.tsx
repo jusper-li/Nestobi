@@ -4,6 +4,7 @@ import { Building2, MapPin, Search, Users } from 'lucide-react';
 import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
+import ThemeHeroCarousel from '../../components/ThemeHeroCarousel';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getTranslationRuntimeState, translateRoomsFromCacheOnly, translateRoomsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
@@ -41,29 +42,6 @@ const ROOMS_CACHE_KEY = 'nestobi:list:rooms:v2';
 const ROOMS_SNAPSHOT_PATH = '/snapshots/rooms.json';
 const ROOM_TYPES = ['all', 'single', 'double', 'suite', 'deluxe', 'family', 'villa'];
 
-const CITY_ZH_EN: Record<string, string> = {
-  宜蘭: 'Yilan',
-  台北: 'Taipei',
-  新北: 'New Taipei',
-  桃園: 'Taoyuan',
-  台中: 'Taichung',
-  台南: 'Tainan',
-  高雄: 'Kaohsiung',
-  花蓮: 'Hualien',
-  台東: 'Taitung',
-  屏東: 'Pingtung',
-  基隆: 'Keelung',
-  新竹: 'Hsinchu',
-  苗栗: 'Miaoli',
-  彰化: 'Changhua',
-  南投: 'Nantou',
-  雲林: 'Yunlin',
-  嘉義: 'Chiayi',
-  澎湖: 'Penghu',
-  金門: 'Kinmen',
-  連江: 'Lienchiang',
-};
-
 function getHotel(room: Room): HotelSummary | null {
   if (Array.isArray(room.hotels)) return room.hotels[0] || null;
   return room.hotels || null;
@@ -92,12 +70,8 @@ function sortRooms(rooms: Room[], sortMode: SortMode) {
   return list.sort((a, b) => Number(b.weekend_price || 0) - Number(a.weekend_price || 0));
 }
 
-function localizeCityName(text: string | null | undefined, shouldTranslate: boolean) {
-  const value = (text || '').trim();
-  if (!value || !shouldTranslate) return value;
-  let output = value;
-  for (const [zh, en] of Object.entries(CITY_ZH_EN)) output = output.split(zh).join(en);
-  return output;
+function localizeCityName(text: string | null | undefined) {
+  return (text || '').trim();
 }
 
 export default function RoomList() {
@@ -115,10 +89,45 @@ export default function RoomList() {
   const [search, setSearch] = useState('');
   const [translationNotice, setTranslationNotice] = useState('');
 
+  const labels = {
+    seoTitle: t4('Nestopia 住宿', 'Nestopia Stays', 'Nestopia 宿泊', 'Nestopia 숙소'),
+    seoDesc: t4(
+      'Nestopia 專注民宿、房型與訂房體驗，依城市、預算與人數找到適合的住宿。',
+      'Nestopia focuses on stays, rooms, and booking experiences, helping you find the right place by city, budget, and group size.',
+      'Nestopia は民宿、客室、予約体験に特化し、都市、予算、人数から最適な宿泊先を探せます。',
+      'Nestopia는 숙소, 객실, 예약 경험에 집중하며 도시, 예산, 인원에 맞는 숙소를 찾도록 돕습니다.',
+    ),
+    heroKicker: t4('住宿主題首頁', 'Stay Theme Home', '宿泊テーマホーム', '숙박 테마 홈'),
+    heroTitle: t4('Nestopia', 'Nestopia', 'Nestopia', 'Nestopia'),
+    heroDesc: t4(
+      '把住宿從商品與文章中分離出來，專心探索民宿、房型、入住人數與旅程停留。',
+      'A dedicated home for stays, separated from products and articles, focused on rooms, hosts, guests, and overnight journeys.',
+      '商品や記事から宿泊を切り分け、民宿、客室、人数、旅の滞在に集中して探せます。',
+      '상품과 글에서 숙박을 분리해 숙소, 객실, 인원, 여행의 머무름에 집중합니다.',
+    ),
+    searchPlaceholder: t4(
+      '試試：雙人房、近車站、有浴缸、預算一萬內',
+      'Try: double room, near station, bathtub, under NT$10,000',
+      '例：ダブルルーム、駅近、浴槽あり、NT$10,000以内',
+      '예: 더블룸, 역 근처, 욕조, NT$10,000 이하',
+    ),
+    featuredCount: t4('間 Nestopia 住宿', 'Nestopia stays', '件の Nestopia 宿泊', '개의 Nestopia 숙소'),
+    maxPrice: t4('最高', 'Max', '上限', '최대'),
+    recommended: t4('推薦排序', 'Recommended', 'おすすめ順', '추천순'),
+    priceAsc: t4('價格由低到高', 'Price: Low to High', '価格の安い順', '가격 낮은순'),
+    priceDesc: t4('價格由高到低', 'Price: High to Low', '価格の高い順', '가격 높은순'),
+    capacity: t4('入住人數', 'Capacity', '宿泊人数', '숙박 인원'),
+    locationUnavailable: t4('地點未提供', 'Location unavailable', '場所未設定', '위치 미제공'),
+    guests: t4('人', 'guests', '名', '명'),
+    noDescription: t4('尚無房型介紹。', 'No room description yet.', '客室紹介はまだありません。', '객실 설명이 아직 없습니다.'),
+    weekend: t4('週末', 'Weekend', '週末', '주말'),
+    details: t4('查看住宿', 'View Stay', '宿泊を見る', '숙소 보기'),
+    empty: t4('找不到符合條件的住宿。', 'No matching stays found.', '条件に合う宿泊が見つかりません。', '조건에 맞는 숙소를 찾을 수 없습니다.'),
+  };
   const typeLabels: Record<string, string> = {
-    all: t4('全部房型', 'All Rooms', 'すべての部屋', '전체 객실'),
-    single: t4('單人房', 'Single', 'シングル', '싱글룸'),
-    double: t4('雙人房', 'Double', 'ダブル', '더블룸'),
+    all: t4('全部房型', 'All Rooms', 'すべての客室', '전체 객실'),
+    single: t4('單人房', 'Single', 'シングル', '싱글'),
+    double: t4('雙人房', 'Double', 'ダブル', '더블'),
     suite: t4('套房', 'Suite', 'スイート', '스위트'),
     deluxe: t4('豪華房', 'Deluxe', 'デラックス', '디럭스'),
     family: t4('家庭房', 'Family', 'ファミリー', '패밀리'),
@@ -182,13 +191,8 @@ export default function RoomList() {
     const runtime = getTranslationRuntimeState();
     setTranslationNotice(
       runtime.tableUnavailable || runtime.isLocalProxyMode
-        ? t4(
-            '目前先顯示原文房型資料，翻譯快取尚未就緒。',
-            'Showing source room data first. Translation cache is not ready yet.',
-            '原文の客室データを先に表示しています。翻訳キャッシュは未準備です。',
-            '원문 객실 데이터를 먼저 표시합니다. 번역 캐시가 아직 준비되지 않았습니다.',
-          )
-        : t4('套用已快取翻譯中…', 'Applying cached translations...', 'キャッシュ済み翻訳を適用中…', '캐시된 번역을 적용하는 중…'),
+        ? t4('目前先顯示原文住宿資料，翻譯快取尚未就緒。', 'Showing source stay data first. Translation cache is not ready yet.', '翻訳キャッシュ未準備のため、原文の宿泊データを先に表示します。', '번역 캐시가 아직 준비되지 않아 원문 숙소 데이터를 먼저 표시합니다.')
+        : t4('正在套用住宿快取翻譯...', 'Applying cached stay translations...', '宿泊のキャッシュ翻訳を適用しています...', '숙소 캐시 번역을 적용하는 중...'),
     );
 
     translateRoomsFromCacheOnly(rooms, locale)
@@ -225,47 +229,34 @@ export default function RoomList() {
   return (
     <div className="min-h-screen bg-gray-50">
       <SEOHead
-        title={t4('探索住宿', 'Curated Stays', '宿泊を探す', '숙소 찾기')}
-        description={t4(
-          '從城市、預算與人數快速找到適合的房型。',
-          'Find the right room by city, budget, and group size.',
-          '都市・予算・人数から最適な客室を見つけましょう。',
-          '도시, 예산, 인원 기준으로 알맞은 객실을 찾으세요.',
-        )}
+        title={labels.seoTitle}
+        description={labels.seoDesc}
       />
       <Navigation />
 
-      <section className="bg-[#FEF9EC] px-4 py-12">
-        <div className="mx-auto max-w-6xl">
-          <h1 className="text-4xl font-bold">{t4('探索住宿', 'Curated Stays', '宿泊を探す', '숙소 찾기')}</h1>
-          <p className="mt-2 text-gray-600">
-            {t4(
-              '從城市、預算與人數快速找到適合的房型。',
-              'Find the right room by city, budget, and group size.',
-              '都市・予算・人数から最適な客室を見つけましょう。',
-              '도시, 예산, 인원 기준으로 알맞은 객실을 찾으세요.',
-            )}
-          </p>
-          <div className="mt-4 flex gap-2">
+      <ThemeHeroCarousel
+        themeKey="nestopia"
+        kicker={labels.heroKicker}
+        title={labels.heroTitle}
+        description={labels.heroDesc}
+      >
+        <div className="rounded-3xl border border-white/12 bg-white/90 p-4 shadow-2xl backdrop-blur">
+          <div className="flex items-center gap-2 rounded-2xl bg-white p-2 shadow-sm">
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder={t4(
-                '試試：雙人房、近車站、有浴缸、預算一萬內',
-                'Try: double room, near station, with bathtub, under NT$10,000',
-                '例：ダブル、駅近、浴槽あり、予算1万NT$以下',
-                '예: 더블룸, 역 근처, 욕조 포함, NT$10,000 이하',
-              )}
-              className="w-full rounded-xl border px-4 py-3"
+              placeholder={labels.searchPlaceholder}
+              className="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none"
             />
-            <button type="button" className="rounded-xl bg-[#C09A6A] px-4 py-3 text-white">
+            <button type="button" className="rounded-xl bg-[#C09A6A] px-4 py-3 text-white transition hover:bg-[#8B6840]">
               <Search className="h-4 w-4" />
             </button>
           </div>
+          <p className="mt-3 text-sm font-semibold text-[#2C1F10]/70">{filtered.length} {labels.featuredCount}</p>
         </div>
-      </section>
+      </ThemeHeroCarousel>
 
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main className="mx-auto max-w-6xl px-4 py-8">
         {translationNotice && (
           <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">{translationNotice}</div>
         )}
@@ -283,33 +274,29 @@ export default function RoomList() {
           ))}
           <div className="ml-auto flex items-center gap-2">
             <span className="text-sm">
-              {t4('最高', 'Max', '上限', '최대')} NT$ {maxPrice.toLocaleString()}
+              {labels.maxPrice} NT$ {maxPrice.toLocaleString()}
             </span>
             <input type="range" min={1000} max={30000} step={500} value={maxPrice} onChange={e => setMaxPrice(Number(e.target.value))} />
             <select value={sortMode} onChange={e => setSortMode(e.target.value as SortMode)} className="rounded-xl border px-3 py-2">
-              <option value="recommended">{t4('推薦排序', 'Recommended', 'おすすめ順', '추천순')}</option>
-              <option value="price-asc">{t4('價格：低到高', 'Price: Low to High', '価格：安い順', '가격 낮은순')}</option>
-              <option value="price-desc">{t4('價格：高到低', 'Price: High to Low', '価格：高い順', '가격 높은순')}</option>
-              <option value="capacity">{t4('容納人數', 'Capacity', '定員', '수용 인원')}</option>
+              <option value="recommended">{labels.recommended}</option>
+              <option value="price-asc">{labels.priceAsc}</option>
+              <option value="price-desc">{labels.priceDesc}</option>
+              <option value="capacity">{labels.capacity}</option>
             </select>
           </div>
         </div>
 
-        <p className="mb-4 text-sm text-gray-600">
-          {filtered.length} {t4('間住宿', 'rooms found', '件の宿泊', '개 숙소')}
-        </p>
+        <p className="mb-4 text-sm font-medium text-gray-600">{filtered.length} {labels.featuredCount}</p>
 
         {loading ? (
           <div className="py-12 text-center text-gray-500">Loading...</div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-xl border bg-white p-8 text-center text-gray-500">
-            {t4('找不到符合條件的房型。', 'No matching rooms found.', '条件に合う客室が見つかりません。', '조건에 맞는 객실을 찾지 못했습니다.')}
-          </div>
+          <div className="rounded-xl border bg-white p-8 text-center text-gray-500">{labels.empty}</div>
         ) : (
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {filtered.map(room => {
               const hotel = getHotel(room);
-              const city = localizeCityName(room.location || hotel?.city || '', shouldTranslate);
+              const city = localizeCityName(room.location || hotel?.city || '');
               const capacityText = room.min_capacity && room.min_capacity !== room.capacity ? `${room.min_capacity}-${room.capacity}` : `${room.capacity}`;
 
               return (
@@ -331,14 +318,14 @@ export default function RoomList() {
                     <p className="mt-1 flex items-center gap-3 text-sm text-gray-500">
                       <span className="inline-flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
-                        {city || t4('地點未提供', 'Location unavailable', '所在地未設定', '위치 정보 없음')}
+                        {city || labels.locationUnavailable}
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <Users className="h-4 w-4" />
-                        {capacityText} {t4('人', 'guests', '名', '명')}
+                        {capacityText} {labels.guests}
                       </span>
                     </p>
-                    <p className="mt-3 line-clamp-2 text-sm text-gray-600">{room.description || t4('尚無房型描述。', 'No description yet.', '説明はまだありません。', '아직 설명이 없습니다.')}</p>
+                    <p className="mt-3 line-clamp-2 text-sm text-gray-600">{room.description || labels.noDescription}</p>
                     {room.amenities && room.amenities.length > 0 && (
                       <div className="mt-3 flex flex-wrap gap-2">
                         {room.amenities.slice(0, 3).map((amenity, i) => (
@@ -353,13 +340,11 @@ export default function RoomList() {
                         <div className="text-4xl font-bold text-[#2C1F10]">{formatCurrency(room.price_per_night)}</div>
                         {room.weekend_price ? (
                           <div className="text-sm text-gray-500">
-                            {t4('假日', 'Weekend', '週末', '주말')} {formatCurrency(room.weekend_price)}
+                            {labels.weekend} {formatCurrency(room.weekend_price)}
                           </div>
                         ) : null}
                       </div>
-                      <Link to={`/rooms/${room.id}`} className="rounded-xl bg-[#C09A6A] px-4 py-2 text-sm font-semibold text-white">
-                        {t4('詳情', 'Details', '詳細', '상세')}
-                      </Link>
+                      <Link to={`/rooms/${room.id}`} className="rounded-xl bg-[#C09A6A] px-4 py-2 text-sm font-semibold text-white">{labels.details}</Link>
                     </div>
                   </div>
                 </article>
