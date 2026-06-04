@@ -157,7 +157,6 @@ const BlogList: React.FC = () => {
     pageTitle: t4('咖啡旅行家 - 文章', 'Coffee Traveler - Articles', 'Coffee Traveler - 記事', 'Coffee Traveler - 글'),
     pageDesc: t4('以咖啡為入口，探索日本、沖繩與旅途中的店家、風味和職人故事。', 'Explore shops, flavors, and craft stories across Japan, Okinawa, and the road through coffee.', 'コーヒーを入口に、日本、沖縄、旅先の店、味、職人の物語を探索します。', '커피를入口로 일본, 오키나와, 여행지의 매장, 맛, 장인 이야기를 탐험합니다.'),
     seoKeywords: t4('咖啡旅行家, 日本旅行, 沖繩咖啡, 咖啡文章, 旅行文章', 'coffee traveler, japan travel, okinawa coffee, coffee journal, travel articles', 'コーヒートラベラー, 日本旅行, 沖縄コーヒー, コーヒー記事, 旅行記事', '커피 여행가, 일본 여행, 오키나와 커피, 커피 글, 여행 글'),
-    heroKicker: t4('文章主題首頁', 'Article Theme Home', '記事テーマホーム', '글 테마 홈'),
     heroTitle: t4('咖啡旅行家', 'Coffee Traveler', 'Coffee Traveler', 'Coffee Traveler'),
     heroDesc: t4('咖啡是一條旅行路線。從城市角落、地方店家到沖繩與日本街區，把每一杯背後的風景寫下來。', 'Coffee is a travel route. From city corners and local shops to Okinawa and Japan neighborhoods, collect the views behind every cup.', 'コーヒーは旅のルートです。街角やローカル店、沖縄と日本の街から、一杯の後ろにある景色を綴ります。', '커피는 여행 경로입니다. 도시의 골목, 로컬 매장, 오키나와와 일본 동네에서 한 잔 뒤의 풍경을 기록합니다.'),
     searchPlaceholder: t4('輸入想看的主題，AI 幫你找文章', 'Type any topic, AI will find articles', '見たいテーマを入力すると AI が記事を探します', '보고 싶은 주제를 입력하면 AI가 글을 찾아줍니다'),
@@ -410,7 +409,6 @@ const BlogList: React.FC = () => {
 
       <ThemeHeroCarousel
         themeKey="coffee_traveler"
-        kicker={labels.heroKicker}
         title={labels.heroTitle}
         description={labels.heroDesc}
         accentClassName="text-amber-700"

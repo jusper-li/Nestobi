@@ -86,7 +86,6 @@ export default function ProductList() {
   const labels = {
     seoTitle: t4('根本在旅行', 'Genbon Travel Shop', '根本在旅行', '근본재여행'),
     seoDesc: t4('根本在旅行整合旅行選物、咖啡茶品、門市體驗與購物訂單，讓旅途中的味道可以帶回日常。', 'Genbon Travel Shop brings together travel goods, coffee and tea, store experiences, shopping, and orders for travel-inspired daily goods.', '根本在旅行は旅の選物、コーヒーやお茶、店舗体験、買い物と注文をまとめ、旅先の味を日常へ持ち帰ります。', '근본재여행은 여행 셀렉트 상품, 커피와 차, 매장 경험, 쇼핑과 주문을 모아 여행의 맛을 일상으로 가져옵니다.'),
-    heroKicker: t4('選物與門市主題首頁', 'Products and Stores Home', '選物と店舗のテーマホーム', '상품과 매장 테마 홈'),
     heroTitle: t4('根本在旅行', 'Genbon Travel Shop', '根本在旅行', '근본재여행'),
     heroDesc: t4('從產地咖啡、茶點到旅行器物，把旅程中的味道和日常用品一起帶回家。', 'From origin coffee and tea snacks to travel tools, bring the taste of the journey and daily essentials home together.', '産地のコーヒー、お茶菓子、旅の道具まで、旅の味と日用品を一緒に持ち帰れます。', '산지 커피와 차 간식부터 여행 도구까지, 여행의 맛과 생활용품을 함께 가져가세요.'),
     heroPlaceholder: t4('試試：果香咖啡、送禮茶包、沖繩旅行紀念品', 'Try: fruity coffee, gift tea bags, Okinawa souvenirs', '例：果実感のあるコーヒー、ギフト茶包、沖縄旅行のお土産', '예: 과일향 커피, 선물용 티백, 오키나와 여행 기념품'),
@@ -400,7 +399,6 @@ export default function ProductList() {
 
       <ThemeHeroCarousel
         themeKey="genbon_travel"
-        kicker={labels.heroKicker}
         title={labels.heroTitle}
         description={labels.heroDesc}
       >

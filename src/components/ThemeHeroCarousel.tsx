@@ -7,7 +7,7 @@ import { fetchThemeBanners, getFallbackThemeBanners, type ThemeBanner, type Them
 
 interface ThemeHeroCarouselProps {
   themeKey: ThemeKey;
-  kicker: string;
+  kicker?: string;
   title: string;
   description: string;
   accentClassName?: string;
@@ -105,8 +105,8 @@ export default function ThemeHeroCarousel({
 
       <div className="relative mx-auto grid min-h-[560px] max-w-7xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_0.72fr] lg:items-end lg:px-8">
         <div className="max-w-3xl self-center py-6">
-          <p className={`text-xs font-semibold uppercase tracking-[0.22em] ${accentClassName}`}>{kicker}</p>
-          <h1 className="mt-4 font-serif text-5xl font-bold leading-tight sm:text-6xl">{title}</h1>
+          {kicker && <p className={`text-xs font-semibold uppercase tracking-[0.22em] ${accentClassName}`}>{kicker}</p>}
+          <h1 className={`${kicker ? 'mt-4' : ''} font-serif text-5xl font-bold leading-tight sm:text-6xl`}>{title}</h1>
           <p className="mt-5 max-w-2xl text-base leading-8 text-[#2C1F10]/72">{description}</p>
 
           <div className="mt-8 rounded-3xl border border-white/70 bg-white/78 p-5 shadow-xl backdrop-blur-md sm:p-6">

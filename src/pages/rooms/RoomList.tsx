@@ -97,7 +97,6 @@ export default function RoomList() {
       'Nestopia は民宿、客室、予約体験に特化し、都市、予算、人数から最適な宿泊先を探せます。',
       'Nestopia는 숙소, 객실, 예약 경험에 집중하며 도시, 예산, 인원에 맞는 숙소를 찾도록 돕습니다.',
     ),
-    heroKicker: t4('住宿主題首頁', 'Stay Theme Home', '宿泊テーマホーム', '숙박 테마 홈'),
     heroTitle: t4('Nestopia', 'Nestopia', 'Nestopia', 'Nestopia'),
     heroDesc: t4(
       '把住宿從商品與文章中分離出來，專心探索民宿、房型、入住人數與旅程停留。',
@@ -236,7 +235,6 @@ export default function RoomList() {
 
       <ThemeHeroCarousel
         themeKey="nestopia"
-        kicker={labels.heroKicker}
         title={labels.heroTitle}
         description={labels.heroDesc}
       >
