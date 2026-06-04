@@ -54,14 +54,14 @@ export default function Footer() {
   } as const;
 
   const serviceLinks = [
-    { to: '/stores', label: pick(locale, '門市據點', 'Store Locator', '店舗一覧', '매장 위치'), icon: MapPin },
-    { to: '/rooms', label: pick(locale, '精選住宿', 'Stays', '宿泊', '숙소'), icon: Hotel },
-    { to: '/shop', label: pick(locale, '旅遊選物', 'Shop', 'ショップ', '쇼핑'), icon: ShoppingBag },
+    { to: '/stores', label: pick(locale, '根本在旅行門市', 'Genbon Travel Stores', '根本在旅行の店舗', '근본재여행 매장'), icon: MapPin },
+    { to: '/rooms', label: pick(locale, 'Nestopia 住宿', 'Nestopia Stays', 'Nestopia 宿泊', 'Nestopia 숙소'), icon: Hotel },
+    { to: '/shop', label: pick(locale, '根本在旅行選物', 'Genbon Travel Shop', '根本在旅行の選物', '근본재여행 셀렉트샵'), icon: ShoppingBag },
     { to: '/ai/itinerary', label: pick(locale, 'AI 行程規劃', 'AI Planner', 'AI 旅程プランナー', 'AI 일정 플래너'), icon: Map },
     { to: '/ai/translator', label: pick(locale, 'AI 即時翻譯', 'AI Translate', 'AI 翻訳', 'AI 번역'), icon: Languages },
     { to: '/ai/chat', label: pick(locale, 'AI 客服中心', 'AI Support', 'AI サポート', 'AI 고객지원'), icon: MessageCircle },
-    { to: '/ai/passport', label: pick(locale, '旅人護照', 'Travel Passport', 'トラベルパスポート', '여행 패스포트'), icon: BookMarked },
-    { to: '/blog', label: pick(locale, '咖啡旅誌', 'Coffee Journal', 'コーヒージャーナル', '커피 저널'), icon: Coffee },
+    { to: '/ai/passport', label: pick(locale, '旅行護照', 'Travel Passport', 'トラベルパスポート', '여행 패스포트'), icon: BookMarked },
+    { to: '/blog', label: pick(locale, '咖啡旅行家文章', 'Coffee Traveler Articles', 'コーヒートラベラー記事', '커피 트래블러 글'), icon: Coffee },
     { to: '/faq', label: pick(locale, '常見問題', 'FAQ', 'よくある質問', '자주 묻는 질문'), icon: HelpCircle },
   ];
 
@@ -69,8 +69,8 @@ export default function Footer() {
     { to: '/auth/register', label: pick(locale, '加入會員', 'Join', '会員登録', '회원가입') },
     { to: '/auth/login', label: pick(locale, '會員登入', 'Login', 'ログイン', '로그인') },
     { to: '/member', label: pick(locale, '會員中心', 'Member Center', '会員センター', '회원 센터') },
-    { to: '/member/orders', label: pick(locale, '我的訂單', 'My Orders', '注文一覧', '내 주문') },
-    { to: '/member/points', label: pick(locale, '點數回饋', 'My Points', 'ポイント', '포인트') },
+    { to: '/member/orders', label: pick(locale, '根本在旅行訂單', 'Shop Orders', '根本在旅行の注文', '근본재여행 주문') },
+    { to: '/member/points', label: pick(locale, '我的點數', 'My Points', 'ポイント', '내 포인트') },
     { to: '/member/preferences', label: pick(locale, '偏好設定', 'Preferences', '設定', '환경설정') },
   ];
 

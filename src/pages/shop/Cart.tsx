@@ -143,7 +143,7 @@ export default function Cart() {
           unit_price: item.products.price,
           total_price: item.products.price * item.quantity,
           payment_method: 'credit_card',
-          status: 'completed',
+          status: 'pending',
         }))
       );
 
