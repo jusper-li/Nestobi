@@ -99,6 +99,7 @@ let translationLastError = '';
 const STORAGE_KEY = 'nestobi:content-translations-unavailable';
 const AI_COOLDOWN_KEY = 'nestobi:translation-ai-cooldown-until';
 const AI_COOLDOWN_MS = 2 * 60 * 1000;
+const TRANSLATION_UNAVAILABLE_TTL_MS = 60 * 1000;
 const TRANSLATION_CONCURRENCY = 3;
 
 function isMojibakeLike(text: string): boolean {
@@ -113,7 +114,9 @@ function isMojibakeLike(text: string): boolean {
 
 if (typeof window !== 'undefined') {
   try {
-    contentTranslationsTableUnavailable = window.sessionStorage.getItem(STORAGE_KEY) === '1';
+    const unavailableUntil = Number(window.sessionStorage.getItem(STORAGE_KEY) || '0');
+    contentTranslationsTableUnavailable = unavailableUntil > Date.now();
+    if (!contentTranslationsTableUnavailable) window.sessionStorage.removeItem(STORAGE_KEY);
   } catch {
     contentTranslationsTableUnavailable = false;
   }
@@ -123,7 +126,7 @@ function markTranslationsUnavailable() {
   contentTranslationsTableUnavailable = true;
   if (typeof window !== 'undefined') {
     try {
-      window.sessionStorage.setItem(STORAGE_KEY, '1');
+      window.sessionStorage.setItem(STORAGE_KEY, String(Date.now() + TRANSLATION_UNAVAILABLE_TTL_MS));
     } catch {
       // ignore storage errors
     }

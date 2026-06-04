@@ -190,7 +190,6 @@ const BlogList: React.FC = () => {
     let receivedFreshCategories = false;
     const cachedPosts = readCachedList<BlogPost>(BLOG_POSTS_CACHE_KEY);
     const cachedCategories = readCachedList<BlogCategory>(BLOG_CATEGORIES_CACHE_KEY);
-    const useSnapshotsOnly = typeof window !== 'undefined' && ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
 
     if (cachedCategories?.length) setBlogCategories(normalizeCategories(cachedCategories));
     if (cachedPosts?.length) {
@@ -210,11 +209,7 @@ const BlogList: React.FC = () => {
       setDisplayPosts(snapshotPosts);
       setLoading(false);
       setDataNotice(labels.dataNotice);
-    }).catch(() => {
-      if (!cancelled && useSnapshotsOnly) setLoading(false);
-    });
-
-    if (useSnapshotsOnly) return () => { cancelled = true; };
+    }).catch(() => {});
 
     withRetry(() => fetchPublicList<BlogCategory>('blog-categories', fetchBlogCategoriesFromSupabase)).then(freshCategories => {
       if (cancelled) return;
@@ -281,7 +276,7 @@ const BlogList: React.FC = () => {
     }
     setDisplayPosts(posts);
     const runtime = getTranslationRuntimeState();
-    setTranslationNotice(runtime.tableUnavailable || runtime.isLocalProxyMode ? labels.transCacheNotReady : labels.transSyncing);
+    setTranslationNotice(runtime.tableUnavailable ? labels.transCacheNotReady : labels.transSyncing);
 
     translateBlogPostsFromCacheOnly(posts, normalizedLang).then(translated => {
       if (!cancelled) setDisplayPosts(translated as BlogPost[]);
