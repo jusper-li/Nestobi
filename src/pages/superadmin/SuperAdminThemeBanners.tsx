@@ -29,7 +29,7 @@ interface ThemeBannerRecord {
 }
 
 const EMPTY_FORM: Omit<ThemeBannerRecord, 'id'> = {
-  theme_key: 'nestopia',
+  theme_key: 'home',
   title_zh: '',
   title_en: '',
   title_ja: '',
@@ -77,6 +77,7 @@ export default function SuperAdminThemeBanners() {
 
   const themeOptions = useMemo(
     () => [
+      { value: 'home' as const, label: t('首頁', 'Home', 'ホーム', '홈') },
       { value: 'nestopia' as const, label: t('Nestopia 住宿', 'Nestopia Stays', 'Nestopia 宿泊', 'Nestopia 숙소') },
       { value: 'genbon_travel' as const, label: t('根本在旅行', 'Genbon Travel', '根本在旅行', '근본재여행') },
       { value: 'coffee_traveler' as const, label: t('咖啡旅行家', 'Coffee Traveler', 'Coffee Traveler', 'Coffee Traveler') },
@@ -108,7 +109,7 @@ export default function SuperAdminThemeBanners() {
   const filteredItems = items.filter(item => themeFilter === 'all' || item.theme_key === themeFilter);
   const themeName = (themeKey: ThemeKey) => themeOptions.find(option => option.value === themeKey)?.label || themeKey;
 
-  const startCreate = (themeKey: ThemeKey = themeFilter === 'all' ? 'nestopia' : themeFilter) => {
+  const startCreate = (themeKey: ThemeKey = themeFilter === 'all' ? 'home' : themeFilter) => {
     setEditingId(null);
     setForm({ ...EMPTY_FORM, theme_key: themeKey });
     setMessage('');

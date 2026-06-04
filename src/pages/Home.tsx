@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { ArrowRight, Building2, Calendar, Coffee, Hotel, MapPin, MessageCircle, ShoppingBag, Sparkles, Users } from 'lucide-react';
 import FloatingButtons from '../components/FloatingButtons';
 import Footer from '../components/Footer';
@@ -23,11 +22,11 @@ import {
   BLOG_FALLBACK_IMAGE,
   PRODUCT_FALLBACK_IMAGE,
   ROOM_FALLBACK_IMAGE,
-  SCENIC_GALLERY_IMAGES,
   useFallbackImage,
 } from '../lib/images';
 import { fetchPublicList, fetchSnapshotList } from '../lib/listData';
 import { supabase } from '../lib/supabase';
+import { fetchThemeBanners, getFallbackThemeBanners, type ThemeBanner } from '../lib/themeBanners';
 import { formatCurrency } from '../lib/utils';
 import type { Room } from '../types';
 
@@ -50,8 +49,6 @@ interface BlogPost {
   published_at: string;
 }
 
-const fadeUp = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0 } };
-
 function stripHtml(value: string | null | undefined) {
   if (!value) return '';
   return value.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -59,6 +56,20 @@ function stripHtml(value: string | null | undefined) {
 
 function localizeCityName(text: string | null | undefined) {
   return (text || '').trim();
+}
+
+function pickBannerText(locale: string, banner: ThemeBanner, field: 'title' | 'subtitle' | 'link_label') {
+  return pickByLang(
+    locale,
+    banner[`${field}_zh`],
+    banner[`${field}_en`],
+    banner[`${field}_ja`],
+    banner[`${field}_ko`],
+  );
+}
+
+function isInternalLink(url: string) {
+  return url.startsWith('/');
 }
 export default function Home() {
   const { lang } = useLanguage();
@@ -110,17 +121,45 @@ export default function Home() {
   const [featuredPosts, setFeaturedPosts] = useState<BlogPost[]>([]);
   const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
   const [displayPosts, setDisplayPosts] = useState<BlogPost[]>([]);
-  const [heroImageIndex, setHeroImageIndex] = useState(() => Math.floor(Math.random() * SCENIC_GALLERY_IMAGES.length));
+  const [homeBanners, setHomeBanners] = useState<ThemeBanner[]>(() => getFallbackThemeBanners('home'));
+  const [homeBannerIndex, setHomeBannerIndex] = useState(0);
   const [translationNotice, setTranslationNotice] = useState('');
 
-  const heroImage = SCENIC_GALLERY_IMAGES[heroImageIndex] || ROOM_FALLBACK_IMAGE;
+  const activeHomeBanner = homeBanners[homeBannerIndex] || getFallbackThemeBanners('home')[0];
+  const homeBannerText = useMemo(
+    () => ({
+      title: pickBannerText(normalizedLang, activeHomeBanner, 'title'),
+      subtitle: pickBannerText(normalizedLang, activeHomeBanner, 'subtitle'),
+      linkLabel: pickBannerText(normalizedLang, activeHomeBanner, 'link_label'),
+    }),
+    [activeHomeBanner, normalizedLang],
+  );
+  const homeBannerLink = activeHomeBanner.link_url.trim();
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setHeroImageIndex(current => (current + 1) % SCENIC_GALLERY_IMAGES.length);
-    }, 12000);
-    return () => window.clearInterval(timer);
+    let cancelled = false;
+    setHomeBanners(getFallbackThemeBanners('home'));
+    setHomeBannerIndex(0);
+    fetchThemeBanners('home')
+      .then(rows => {
+        if (!cancelled && rows.length) {
+          setHomeBanners(rows);
+          setHomeBannerIndex(0);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  useEffect(() => {
+    if (homeBanners.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setHomeBannerIndex(current => (current + 1) % homeBanners.length);
+    }, 7000);
+    return () => window.clearInterval(timer);
+  }, [homeBanners.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -270,29 +309,70 @@ export default function Home() {
       <SEOHead title={t.pageTitle} description={t.pageDesc} keywords={`Nestobi, ${t.stays}, ${t.shop}`} pageType="home" ogType="website" />
       <Navigation />
 
-      <section className="relative overflow-hidden bg-[#FEF9EC]">
-        <div className="absolute inset-y-0 right-0 hidden w-1/2 bg-cover bg-center lg:block" style={{ backgroundImage: `url("${heroImage}")` }} />
-        <div className="absolute inset-y-0 right-0 hidden w-1/2 bg-gradient-to-r from-[#FEF9EC] via-[#FEF9EC]/45 to-transparent lg:block" />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:px-8 lg:py-24">
-          <motion.div initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.1 } } }} className="max-w-2xl">
-            <motion.h1 variants={fadeUp} className="text-4xl font-bold leading-tight text-[#2C1F10] md:text-6xl">
-              {t.heroTitle1}
-              <span className="block italic text-[#8B6840]">{t.heroTitle2}</span>
-            </motion.h1>
-            <motion.p variants={fadeUp} className="mt-6 max-w-xl text-base leading-8 text-[#2C1F10]/70 md:text-lg">{t.heroDesc}</motion.p>
-            <motion.div variants={fadeUp} className="mt-8 flex flex-wrap gap-3">
-              <Link to="/shop" className="btn-primary"><ShoppingBag size={18} />{t.shopNow}</Link>
+      <section className="relative isolate overflow-hidden bg-[#FFF8EA] text-[#2C1F10]">
+        <div className="absolute inset-0">
+          {homeBanners.map((banner, index) => (
+            <img
+              key={banner.id}
+              src={banner.image_url}
+              alt={pickBannerText(normalizedLang, banner, 'title')}
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+                index === homeBannerIndex ? 'opacity-80' : 'opacity-0'
+              }`}
+            />
+          ))}
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-r from-[#FFF8EA]/96 via-[#FFF8EA]/72 to-[#FFF8EA]/20" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white to-transparent" />
+
+        <div className="relative mx-auto grid min-h-[600px] max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[0.98fr_1.02fr] lg:px-8 lg:py-24">
+          <div className="max-w-2xl">
+            <h1 className="whitespace-pre-line text-4xl font-bold leading-tight text-[#2C1F10] md:text-6xl">
+              {homeBannerText.title}
+            </h1>
+            <p className="mt-6 max-w-xl text-base leading-8 text-[#2C1F10]/72 md:text-lg">{homeBannerText.subtitle}</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              {homeBannerLink && (
+                isInternalLink(homeBannerLink) ? (
+                  <Link to={homeBannerLink} className="btn-primary">
+                    <ShoppingBag size={18} />
+                    {homeBannerText.linkLabel}
+                  </Link>
+                ) : (
+                  <a href={homeBannerLink} target="_blank" rel="noreferrer" className="btn-primary">
+                    <ShoppingBag size={18} />
+                    {homeBannerText.linkLabel}
+                  </a>
+                )
+              )}
               <Link to="/rooms" className="btn-ghost"><Hotel size={18} />{t.exploreStays}</Link>
-            </motion.div>
-            <motion.div variants={fadeUp} className="mt-10 grid max-w-xl grid-cols-2 gap-4 md:grid-cols-4">
+            </div>
+
+            {homeBanners.length > 1 && (
+              <div className="mt-7 flex gap-2">
+                {homeBanners.map((banner, index) => (
+                  <button
+                    key={banner.id}
+                    type="button"
+                    onClick={() => setHomeBannerIndex(index)}
+                    className={`h-2.5 rounded-full transition-all ${index === homeBannerIndex ? 'w-8 bg-[#2C1F10]' : 'w-2.5 bg-[#2C1F10]/24 hover:bg-[#2C1F10]/45'}`}
+                    aria-label={`Home banner ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-3xl border border-white/70 bg-white/78 p-5 shadow-xl backdrop-blur-md sm:p-6">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-2">
               {stats.map(stat => (
-                <div key={stat.label} className="border-l border-[#C09A6A]/35 pl-3">
+                <div key={stat.label} className="rounded-2xl border border-[#C09A6A]/20 bg-white/75 p-4">
                   <p className="font-serif text-2xl font-bold text-[#2C1F10]">{stat.value}</p>
-                  <p className="mt-1 text-xs font-semibold leading-5 text-[#2C1F10]/55">{stat.label}</p>
+                  <p className="mt-1 text-xs font-semibold leading-5 text-[#2C1F10]/58">{stat.label}</p>
                 </div>
               ))}
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </div>
       </section>
 

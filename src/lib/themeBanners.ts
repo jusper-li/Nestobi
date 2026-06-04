@@ -1,7 +1,7 @@
-import { BLOG_FALLBACK_IMAGE, PRODUCT_FALLBACK_IMAGE, ROOM_FALLBACK_IMAGE, STORE_FALLBACK_IMAGE } from './images';
+import { BLOG_FALLBACK_IMAGE, PRODUCT_FALLBACK_IMAGE, ROOM_FALLBACK_IMAGE, SCENIC_GALLERY_IMAGES, STORE_FALLBACK_IMAGE } from './images';
 import { supabase } from './supabase';
 
-export type ThemeKey = 'nestopia' | 'genbon_travel' | 'coffee_traveler';
+export type ThemeKey = 'home' | 'nestopia' | 'genbon_travel' | 'coffee_traveler';
 
 export interface ThemeBanner {
   id: string;
@@ -24,6 +24,46 @@ export interface ThemeBanner {
 }
 
 const FALLBACK_BANNERS: Record<ThemeKey, ThemeBanner[]> = {
+  home: [
+    {
+      id: 'fallback-home-1',
+      theme_key: 'home',
+      title_zh: '三個主題\n各自清楚出發',
+      title_en: 'Three Themes\nClearly Separated',
+      title_ja: '3つのテーマ\nそれぞれ明確に',
+      title_ko: '세 가지 주제\n명확하게 나누어',
+      subtitle_zh: 'Nestopia 專注住宿；根本在旅行負責商品與門市；咖啡旅行家獨立整理文章內容，三個主題清楚分工，也能在會員中心彼此連動。',
+      subtitle_en: 'Nestopia focuses on stays, Genbon Travel handles products and stores, and Coffee Traveler organizes articles as its own theme.',
+      subtitle_ja: 'Nestopiaは宿泊、根本在旅行は商品と店舗、コーヒートラベラーは記事を独立テーマとして整理します。',
+      subtitle_ko: 'Nestopia는 숙박, 근본재여행은 상품과 매장, 커피 트래블러는 글 콘텐츠를 독립 주제로 정리합니다.',
+      image_url: SCENIC_GALLERY_IMAGES[0] || ROOM_FALLBACK_IMAGE,
+      link_url: '/shop',
+      link_label_zh: '逛根本在旅行',
+      link_label_en: 'Shop Genbon Travel',
+      link_label_ja: '根本在旅行を見る',
+      link_label_ko: '근본재여행 보기',
+      display_order: 10,
+    },
+    {
+      id: 'fallback-home-2',
+      theme_key: 'home',
+      title_zh: '從住宿、選物到文章\n分開管理也彼此連動',
+      title_en: 'Stays, Products, and Articles\nManaged Apart, Connected Together',
+      title_ja: '宿泊・商品・記事を\n分けて管理しながら連携',
+      title_ko: '숙박, 상품, 글을\n분리 관리하며 연결',
+      subtitle_zh: '首頁 banner 可在後台管理圖片、文案、排序與連結，讓三個主題保持清楚入口。',
+      subtitle_en: 'Manage homepage banner images, copy, order, and links from the admin panel.',
+      subtitle_ja: '首頁バナーの画像、文言、順序、リンクを管理画面から調整できます。',
+      subtitle_ko: '관리 화면에서 홈 배너 이미지, 문구, 순서, 링크를 조정할 수 있습니다.',
+      image_url: SCENIC_GALLERY_IMAGES[1] || PRODUCT_FALLBACK_IMAGE,
+      link_url: '/rooms',
+      link_label_zh: '前往 Nestopia',
+      link_label_en: 'Explore Nestopia',
+      link_label_ja: 'Nestopiaへ',
+      link_label_ko: 'Nestopia 보기',
+      display_order: 20,
+    },
+  ],
   nestopia: [
     {
       id: 'fallback-nestopia-1',
