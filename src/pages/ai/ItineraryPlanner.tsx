@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookMarked, Clock, MapPin, Sparkles, Trash2, Users } from 'lucide-react';
+import { AlertCircle, BookMarked, CheckCircle, Clock, Loader2, MapPin, Sparkles, Trash2, Users } from 'lucide-react';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
+import { callAI } from '../../lib/openai';
 import { supabase } from '../../lib/supabase';
 
 type Locale = 'zh-TW' | 'en' | 'ja' | 'ko';
@@ -14,6 +15,7 @@ type InterestKey = 'food' | 'culture' | 'shopping' | 'nature' | 'adventure' | 'f
 
 type Activity = { time: string; title: string; description: string };
 type DayPlan = { day: number; date: string; theme: string; activities: Activity[]; dining: string; tip: string };
+type AiItineraryResult = { intro?: string; days?: DayPlan[] };
 type SavedPlan = {
   id: string;
   title: string;
@@ -57,7 +59,7 @@ export default function ItineraryPlanner() {
   const { user } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang) as Locale;
-  const dateLocale = locale === 'zh-TW' ? 'zh-TW' : locale === 'en' ? 'en-US' : locale === 'ja' ? 'ja-JP' : 'ko-KR';
+  const dateLocale = pickByLang(locale, 'zh-TW', 'en-US', 'ja-JP', 'ko-KR');
   const t = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
 
   const [destination, setDestination] = useState('');
@@ -70,6 +72,8 @@ export default function ItineraryPlanner() {
   const [plans, setPlans] = useState<SavedPlan[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [useLocalFallback, setUseLocalFallback] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const days = useMemo(() => {
     if (!startDate || !endDate) return 0;
@@ -157,10 +161,53 @@ export default function ItineraryPlanner() {
     });
   };
 
-  const handleGenerate = (event: React.FormEvent) => {
+  const normalizeAIPlan = (result: AiItineraryResult): DayPlan[] => {
+    const aiDays = Array.isArray(result.days) ? result.days : [];
+    const fallbackDates = generatePlan();
+    if (!aiDays.length) throw new Error(t('AI 沒有回傳有效行程，請再試一次。', 'AI did not return a valid itinerary. Please try again.', 'AIが有効な旅程を返しませんでした。もう一度お試しください。', 'AI가 유효한 일정을 반환하지 않았습니다. 다시 시도해주세요.'));
+
+    return aiDays.slice(0, days || aiDays.length).map((day, index) => {
+      const fallback = fallbackDates[index] || fallbackDates[0];
+      const activities = Array.isArray(day.activities) && day.activities.length ? day.activities : fallback.activities;
+      return {
+        day: Number(day.day) || index + 1,
+        date: day.date || fallback.date,
+        theme: day.theme || fallback.theme,
+        activities: activities.slice(0, 5).map((activity, activityIndex) => ({
+          time: activity.time || `${9 + activityIndex * 2}:00`,
+          title: activity.title || fallback.activities[0]?.title || '',
+          description: activity.description || fallback.activities[0]?.description || '',
+        })),
+        dining: day.dining || fallback.dining,
+        tip: day.tip || fallback.tip,
+      };
+    });
+  };
+
+  const handleGenerate = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!startDate || !endDate) return;
-    setItinerary(generatePlan());
+    if (!startDate || !endDate || generating) return;
+    setGenerating(true);
+    setMessage(null);
+    try {
+      const result = await callAI<AiItineraryResult>('itinerary', {
+        destination,
+        startDate,
+        endDate,
+        days: days || 1,
+        groupSize,
+        budget,
+        interests,
+        language: locale,
+      });
+      setItinerary(normalizeAIPlan(result));
+      setMessage({ type: 'success', text: t('AI 已產生較完整的行程。', 'AI generated a stronger itinerary.', 'AIがより充実した旅程を作成しました。', 'AI가 더 완성도 높은 일정을 생성했습니다.') });
+    } catch (error) {
+      setItinerary(generatePlan());
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : t('AI 暫時無法產生行程，已先顯示基本草稿。', 'AI could not generate now, so a basic draft is shown.', 'AIが一時的に旅程を作成できないため、基本案を表示します。', 'AI가 일시적으로 일정을 생성하지 못해 기본 초안을 표시합니다.') });
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const handleSave = async () => {
@@ -242,6 +289,13 @@ export default function ItineraryPlanner() {
             )}
           </p>
         </div>
+
+        {message && (
+          <div className={`mb-5 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${message.type === 'success' ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+            {message.type === 'success' ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+            {message.text}
+          </div>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-5">
           <div className="lg:col-span-2">
@@ -336,9 +390,10 @@ export default function ItineraryPlanner() {
 
                 <button
                   type="submit"
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 py-3 font-semibold text-white"
+                  disabled={generating}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 py-3 font-semibold text-white disabled:opacity-60"
                 >
-                  <Sparkles className="h-5 w-5" />
+                  {generating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
                   {t('行程生成', 'Generate plan', '旅程生成', '일정 생성')}
                 </button>
               </form>

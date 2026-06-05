@@ -1,4 +1,4 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+﻿import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -45,6 +45,7 @@ async function getSecret(name: string): Promise<string> {
 
 async function chatCompletion(options: {
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
+  model?: string;
   max_tokens?: number;
   temperature?: number;
   response_format?: { type: "json_object" };
@@ -57,7 +58,7 @@ async function chatCompletion(options: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: options.model ?? "gpt-4o-mini",
       temperature: options.temperature ?? 0.4,
       max_tokens: options.max_tokens ?? 1200,
       messages: options.messages,
@@ -108,7 +109,7 @@ Deno.serve(async (req) => {
       const incoming = Array.isArray(body.messages) ? body.messages : [];
       const isZhTW = !body.language || body.language === "zh-TW";
       const system = isZhTW
-        ? "你是 Nestobi 旅遊平台的 AI 客服。用繁體中文、親切清楚地回答住宿預訂、取消規則、購物、點數、付款、AI 功能與客服流程問題。若不確定，請建議聯繫客服。"
+        ? "你是 Nestobi 旅遊平台的 AI 客服助理。請用繁體中文清楚回答，協助使用者處理訂房、購物、點數、會員與行程規劃問題。若需要人工處理，請明確告知下一步。"
         : "You are the AI customer service assistant for Nestobi, a travel platform. Answer clearly and helpfully.";
       const result = await chatCompletion({
         temperature: 0.6,
@@ -125,19 +126,37 @@ Deno.serve(async (req) => {
 
     if (action === "itinerary") {
       const resultText = await chatCompletion({
-        temperature: 0.7,
-        max_tokens: 3000,
+        model: "gpt-4o",
+        temperature: 0.65,
+        max_tokens: 4500,
         response_format: { type: "json_object" },
         messages: [
           {
             role: "system",
             content:
-              'You are an expert travel planner. Return valid JSON with this shape: {"intro":"string","days":[{"day":1,"theme":"string","activities":[{"time":"09:00","icon":"culture","title":"string","description":"string"}],"dining":"string","tip":"string"}]}. Icons: culture, food, shopping, nature, adventure.',
+              [
+                "You are a senior travel planner for Nestobi.",
+                "Build practical, place-aware, time-aware itineraries. Avoid generic filler.",
+                "Use the requested language only.",
+                "Every activity must include a real-feeling title, a concise reason why it fits, and enough detail to be useful.",
+                "Respect budget, group size, trip length, interests, and pacing. Include meals, transit/pacing notes, and booking tips.",
+                'Return valid JSON only with this shape: {"intro":"string","days":[{"day":1,"date":"string","theme":"string","activities":[{"time":"09:00","title":"string","description":"string"}],"dining":"string","tip":"string"}]}.',
+              ].join("\n"),
           },
           {
             role: "user",
             content:
-              `Create a ${body.days || 1}-day itinerary in ${body.language || "zh-TW"} for ${body.destination}. Start: ${body.startDate || "flexible"}. Interests: ${(body.interests || []).join(", ") || "general sightseeing"}. Budget: ${body.budget || "mid-range"}.`,
+              [
+                `Destination: ${body.destination || "unspecified"}`,
+                `Trip length: ${body.days || 1} day(s)`,
+                `Start date: ${body.startDate || "flexible"}`,
+                `End date: ${body.endDate || "flexible"}`,
+                `Group size: ${body.groupSize || 2}`,
+                `Budget: ${body.budget || "standard"}`,
+                `Interests: ${(body.interests || []).join(", ") || "general sightseeing"}`,
+                `Language: ${body.language || "zh-TW"}`,
+                "Make the plan immediately usable, not a placeholder template.",
+              ].join("\n"),
           },
         ],
       });
@@ -152,7 +171,7 @@ Deno.serve(async (req) => {
           {
             role: "system",
             content:
-              'Analyze a room search query. Return JSON: {"room_types":[],"min_capacity":null,"max_capacity":null,"max_price":null,"amenity_keywords":[],"location_keywords":[],"name_keywords":[],"summary":"繁體中文摘要"}. Room types: single,double,suite,deluxe,family,villa.',
+              'Analyze a room search query. Return JSON: {"room_types":[],"min_capacity":null,"max_capacity":null,"max_price":null,"amenity_keywords":[],"location_keywords":[],"name_keywords":[],"summary":"搜尋條件摘要"}. Room types: single,double,suite,deluxe,family,villa.',
           },
           { role: "user", content: String(body.query || "") },
         ],
@@ -168,7 +187,7 @@ Deno.serve(async (req) => {
           {
             role: "system",
             content:
-              'Analyze a shop search query. Return JSON: {"category_slugs":[],"max_price":null,"origin_keywords":[],"flavor_keywords":[],"processing_keywords":[],"roast_keywords":[],"name_keywords":[],"summary":"繁體中文摘要"}. Category slugs include coffee-beans, local-food, travel-accessories, souvenirs, outdoor-gear, cultural-art.',
+              'Analyze a shop search query. Return JSON: {"category_slugs":[],"max_price":null,"origin_keywords":[],"flavor_keywords":[],"processing_keywords":[],"roast_keywords":[],"name_keywords":[],"summary":"搜尋條件摘要"}. Category slugs include coffee-beans, local-food, travel-accessories, souvenirs, outdoor-gear, cultural-art.',
           },
           { role: "user", content: String(body.query || "") },
         ],
@@ -184,7 +203,7 @@ Deno.serve(async (req) => {
           {
             role: "system",
             content:
-              'Analyze a coffee/travel blog search query. Return JSON: {"categories":[],"keywords":[],"summary":"繁體中文摘要"}. Use concise Traditional Chinese keywords.',
+              'Analyze a coffee/travel blog search query. Return JSON: {"categories":[],"keywords":[],"summary":"搜尋條件摘要"}. Use concise Traditional Chinese keywords.',
           },
           { role: "user", content: String(body.query || "") },
         ],
