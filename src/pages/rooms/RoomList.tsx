@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Building2, MapPin, Search, Users } from 'lucide-react';
 import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
@@ -75,6 +75,7 @@ function localizeCityName(text: string | null | undefined) {
 }
 
 export default function RoomList() {
+  const [searchParams] = useSearchParams();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang);
   const shouldTranslate = pickByLang(locale, '0', '1', '1', '1') === '1';
@@ -86,7 +87,7 @@ export default function RoomList() {
   const [roomType, setRoomType] = useState('all');
   const [maxPrice, setMaxPrice] = useState(30000);
   const [sortMode, setSortMode] = useState<SortMode>('recommended');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => searchParams.get('search') || '');
   const [translationNotice, setTranslationNotice] = useState('');
 
   const labels = {

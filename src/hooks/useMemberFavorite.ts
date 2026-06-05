@@ -50,6 +50,8 @@ export function useMemberFavorite(userId: string | undefined, targetType: Favori
         setIsFavorite(true);
       }
       return true;
+    } catch {
+      return false;
     } finally {
       setLoading(false);
     }

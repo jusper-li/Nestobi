@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BedDouble, BookMarked, ChevronRight, Edit2, ExternalLink, Heart, MapPin, Receipt, Save, Settings, ShoppingBag, Star, Ticket, Trash2, User, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -65,6 +65,7 @@ type ValueToolKey = 'favorites' | 'coupons' | 'reviews' | 'footprint';
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 
 export default function MemberDashboard() {
+  const [searchParams] = useSearchParams();
   const { user, profile } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang) as UiLang;
@@ -131,6 +132,10 @@ export default function MemberDashboard() {
   const [busyItemId, setBusyItemId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState('');
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (searchParams.get('tool') === 'favorites') setExpandedTool('favorites');
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchData = async () => {

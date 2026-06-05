@@ -105,11 +105,13 @@ export default function Cart() {
   const pointsEarned = Math.floor(payableSubtotal / 100) * 5;
 
   const handleRemoveUnavailableItems = async () => {
+    if (checkoutLoading) return;
     await Promise.all(unavailableCartItems.map((item) => removeItem(item.id)));
     setCartItems((prev) => prev.filter(hasProduct));
   };
 
   const handleCheckout = async () => {
+    if (checkoutLoading) return;
     if (validCartItems.length === 0) return;
     if (!user) {
       navigate(`/auth/login?redirect=${encodeURIComponent('/cart')}`);
@@ -308,18 +310,18 @@ export default function Cart() {
                     <p className="mt-1 font-bold text-[#C09A6A]">{formatCurrency(item.products.price)}</p>
                     <div className="mt-3 flex flex-wrap items-center gap-3">
                       <div className="flex items-center overflow-hidden rounded-lg border border-gray-200">
-                        <button type="button" onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-2 text-gray-500 transition hover:bg-gray-50">
+                        <button type="button" onClick={() => updateQuantity(item.id, item.quantity - 1)} disabled={checkoutLoading} className="p-2 text-gray-500 transition hover:bg-gray-50 disabled:opacity-50">
                           <Minus className="h-3.5 w-3.5" />
                         </button>
                         <span className="w-10 text-center text-sm font-bold">{item.quantity}</span>
-                        <button type="button" onClick={() => updateQuantity(item.id, Math.min(item.products.stock_quantity, item.quantity + 1))} className="p-2 text-gray-500 transition hover:bg-gray-50">
+                        <button type="button" onClick={() => updateQuantity(item.id, Math.min(item.products.stock_quantity, item.quantity + 1))} disabled={checkoutLoading} className="p-2 text-gray-500 transition hover:bg-gray-50 disabled:opacity-50">
                           <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
                       <span className="text-sm font-semibold text-gray-600">{formatCurrency(item.products.price * item.quantity)}</span>
                     </div>
                   </div>
-                  <button type="button" onClick={() => removeItem(item.id)} className="self-start p-1 text-red-400 transition hover:text-red-600">
+                  <button type="button" onClick={() => removeItem(item.id)} disabled={checkoutLoading} className="self-start p-1 text-red-400 transition hover:text-red-600 disabled:opacity-50">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </motion.div>

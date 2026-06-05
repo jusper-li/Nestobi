@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, Building2, Calendar, Coffee, Hotel, MapPin, MessageCircle, ShoppingBag, Sparkles, Users } from 'lucide-react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Building2, Calendar, Coffee, Heart, Home as HomeIcon, Hotel, MapPin, MessageCircle, Search, ShoppingBag, Sparkles, User, Users } from 'lucide-react';
 import FloatingButtons from '../components/FloatingButtons';
 import Footer from '../components/Footer';
 import Navigation from '../components/Navigation';
@@ -72,6 +72,7 @@ function isInternalLink(url: string) {
   return url.startsWith('/');
 }
 export default function Home() {
+  const navigate = useNavigate();
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
   const shouldTranslate = pickByLang(normalizedLang, '0', '1', '1', '1') === '1';
@@ -124,6 +125,8 @@ export default function Home() {
   const [homeBanners, setHomeBanners] = useState<ThemeBanner[]>(() => getFallbackThemeBanners('home'));
   const [homeBannerIndex, setHomeBannerIndex] = useState(0);
   const [translationNotice, setTranslationNotice] = useState('');
+  const [homeSearch, setHomeSearch] = useState('');
+  const [homeSearchTarget, setHomeSearchTarget] = useState<'shop' | 'rooms'>('shop');
 
   const activeHomeBanner = homeBanners[homeBannerIndex] || getFallbackThemeBanners('home')[0];
   const homeBannerText = useMemo(
@@ -135,6 +138,28 @@ export default function Home() {
     [activeHomeBanner, normalizedLang],
   );
   const homeBannerLink = activeHomeBanner.link_url.trim();
+  const searchLabels = {
+    title: t4('今天想找什麼？', 'What are you looking for today?', '今日は何を探しますか？', '오늘 무엇을 찾으시나요?'),
+    subtitle: t4('先搜尋商品、住宿或咖啡文章，再慢慢篩選。', 'Search products, stays, or coffee stories first, then refine.', '商品、宿泊、コーヒー記事をまず検索してから絞り込めます。', '상품, 숙소, 커피 글을 먼저 검색한 뒤 좁혀보세요.'),
+    placeholder: t4('輸入咖啡、茶包、宜蘭住宿、沖繩文章...', 'Search coffee, tea bags, Yilan stays, Okinawa articles...', 'コーヒー、ティーバッグ、宜蘭の宿、沖縄記事...', '커피, 티백, 이란 숙소, 오키나와 글...'),
+    shop: t4('商品', 'Products', '商品', '상품'),
+    rooms: t4('住宿', 'Stays', '宿泊', '숙소'),
+    submit: t4('搜尋', 'Search', '検索', '검색'),
+    vendorTitle: t4('商家入口', 'Vendor Entrance', '事業者入口', '판매자 입구'),
+    vendorDesc: t4('管理房源、商品、訂單與門市資料。', 'Manage stays, products, orders, and store data.', '宿泊、商品、注文、店舗情報を管理します。', '숙소, 상품, 주문, 매장 정보를 관리합니다.'),
+    vendorCta: t4('進入商家後台', 'Open Vendor Portal', '事業者管理へ', '판매자 관리 열기'),
+    home: t4('首頁', 'Home', 'ホーム', '홈'),
+    favorites: t4('收藏', 'Favorites', 'お気に入り', '찜'),
+    orders: t4('訂單', 'Orders', '注文', '주문'),
+    mine: t4('我的', 'My', 'マイ', '내 정보'),
+  };
+
+  const submitHomeSearch = (event: FormEvent) => {
+    event.preventDefault();
+    const query = homeSearch.trim();
+    const base = homeSearchTarget === 'rooms' ? '/rooms' : '/shop';
+    navigate(query ? `${base}?search=${encodeURIComponent(query)}` : base);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -325,7 +350,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-r from-[#FFF8EA]/96 via-[#FFF8EA]/72 to-[#FFF8EA]/20" />
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white to-transparent" />
 
-        <div className="relative mx-auto grid min-h-[600px] max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[0.98fr_1.02fr] lg:px-8 lg:py-24">
+        <div className="relative mx-auto grid min-h-[640px] max-w-7xl items-center gap-8 px-4 pb-20 pt-8 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8 lg:py-24">
           <div className="max-w-2xl">
             <h1 className="whitespace-pre-line text-4xl font-bold leading-tight text-[#2C1F10] md:text-6xl">
               {homeBannerText.title}
@@ -363,6 +388,37 @@ export default function Home() {
             )}
           </div>
 
+          <div className="space-y-4">
+          <form onSubmit={submitHomeSearch} className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-xl backdrop-blur-md sm:p-6 lg:p-8">
+            <p className="text-sm font-bold text-[#8B6840]">{searchLabels.title}</p>
+            <h2 className="mt-2 text-2xl font-bold text-[#2C1F10] lg:text-4xl">{searchLabels.submit}</h2>
+            <p className="mt-3 text-sm leading-6 text-[#2C1F10]/65">{searchLabels.subtitle}</p>
+            <div className="mt-5 flex rounded-2xl bg-[#F7F1E8] p-1">
+              {(['shop', 'rooms'] as const).map(target => (
+                <button
+                  key={target}
+                  type="button"
+                  onClick={() => setHomeSearchTarget(target)}
+                  className={`flex-1 rounded-xl px-3 py-2 text-sm font-bold transition ${homeSearchTarget === target ? 'bg-white text-[#2C1F10] shadow-sm' : 'text-[#2C1F10]/55'}`}
+                >
+                  {target === 'shop' ? searchLabels.shop : searchLabels.rooms}
+                </button>
+              ))}
+            </div>
+            <div className="mt-4 flex items-center gap-2 rounded-2xl border border-[#C09A6A]/25 bg-white px-4 py-2">
+              <Search className="h-5 w-5 flex-shrink-0 text-[#C09A6A]" />
+              <input
+                value={homeSearch}
+                onChange={event => setHomeSearch(event.target.value)}
+                placeholder={searchLabels.placeholder}
+                className="min-w-0 flex-1 bg-transparent py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none"
+              />
+              <button type="submit" className="rounded-xl bg-[#2C1F10] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#5A3E1B]">
+                {searchLabels.submit}
+              </button>
+            </div>
+          </form>
+
           <div className="rounded-3xl border border-white/70 bg-white/78 p-5 shadow-xl backdrop-blur-md sm:p-6">
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-2">
               {stats.map(stat => (
@@ -372,6 +428,18 @@ export default function Home() {
                 </div>
               ))}
             </div>
+          </div>
+
+          <Link to="/vendor" className="flex items-center justify-between gap-4 rounded-3xl border border-[#2C1F10]/10 bg-white/85 p-5 shadow-lg backdrop-blur-md transition hover:-translate-y-0.5 hover:shadow-xl">
+            <div>
+              <p className="text-sm font-bold text-[#8B6840]">{searchLabels.vendorTitle}</p>
+              <p className="mt-1 text-sm leading-6 text-[#2C1F10]/65">{searchLabels.vendorDesc}</p>
+            </div>
+            <span className="inline-flex items-center gap-1 rounded-xl bg-[#F0E4C8] px-3 py-2 text-sm font-bold text-[#2C1F10]">
+              {searchLabels.vendorCta}
+              <ArrowRight className="h-4 w-4" />
+            </span>
+          </Link>
           </div>
         </div>
       </section>
@@ -492,7 +560,30 @@ export default function Home() {
 
       <Footer />
       <FloatingButtons />
+      <MobileHomeNav labels={searchLabels} />
     </div>
+  );
+}
+
+function MobileHomeNav({ labels }: { labels: { home: string; submit: string; favorites: string; orders: string; mine: string } }) {
+  const items = [
+    { to: '/', icon: HomeIcon, label: labels.home },
+    { to: '/shop', icon: Search, label: labels.submit },
+    { to: '/member?tool=favorites', icon: Heart, label: labels.favorites },
+    { to: '/member/orders', icon: ShoppingBag, label: labels.orders },
+    { to: '/member', icon: User, label: labels.mine },
+  ];
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#2C1F10]/10 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 shadow-[0_-8px_24px_rgba(44,31,16,0.08)] backdrop-blur md:hidden">
+      <div className="grid grid-cols-5">
+        {items.map(({ to, icon: Icon, label }) => (
+          <Link key={to} to={to} className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-semibold text-gray-600 transition hover:bg-[#F7F1E8] hover:text-[#2C1F10]">
+            <Icon className="h-5 w-5" />
+            <span>{label}</span>
+          </Link>
+        ))}
+      </div>
+    </nav>
   );
 }
 

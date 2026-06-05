@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, ChevronRight, Eye, Loader2, Package, Search, ShoppingCart, SlidersHorizontal, Sparkles, Tag, X } from 'lucide-react';
 import Footer from '../../components/Footer';
@@ -79,6 +79,7 @@ function sortProducts(products: Product[], sortMode: SortMode) {
 }
 
 export default function ProductList() {
+  const [searchParams] = useSearchParams();
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
   const shouldTranslate = pickByLang(normalizedLang, '0', '1', '1', '1') === '1';
@@ -119,7 +120,7 @@ export default function ProductList() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortMode, setSortMode] = useState<SortMode>('recommended');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => searchParams.get('search') || '');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSummary, setAiSummary] = useState('');
   const [aiError, setAiError] = useState('');

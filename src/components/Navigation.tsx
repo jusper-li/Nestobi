@@ -204,7 +204,7 @@ export default function Navigation() {
                         className="flex w-full items-center justify-between px-4 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-50"
                       >
                         <span>{option.short} {option.label}</span>
-                        {locale === option.code && <Check size={14} className="text-[#C09A6A]" />}
+                        {currentLangOption.code === option.code && <Check size={14} className="text-[#C09A6A]" />}
                       </button>
                     ))}
                   </motion.div>
