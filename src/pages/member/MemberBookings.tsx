@@ -18,6 +18,9 @@ interface Booking {
   total_price: number;
   status: string;
   special_requests: string;
+  payment_method?: string;
+  payment_status?: string;
+  points_discount?: number;
   created_at: string;
   updated_at: string;
   tbl_rooms: {
@@ -165,6 +168,12 @@ export default function MemberBookings() {
     return step === 'ordered';
   };
 
+  const paymentMethodLabel = (method?: string) => {
+    if (method === 'points') return pick('點數支付', 'Points payment', 'ポイント支払い', '포인트 결제');
+    if (method === 'points_online') return pick('點數折抵 + 線上付款', 'Points discount + online payment', 'ポイント割引 + オンライン支払い', '포인트 할인 + 온라인 결제');
+    return t.onlinePayment;
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-16">
@@ -298,7 +307,7 @@ export default function MemberBookings() {
                             <Info label={t.discount} value={formatCurrency(0)} />
                             <Info label={t.coupon} value={t.noCoupon} />
                             <Info label={t.total} value={formatCurrency(booking.total_price)} strong />
-                            <Info label={t.paymentMethod} value={t.onlinePayment} />
+                            <Info label={t.paymentMethod} value={paymentMethodLabel(booking.payment_method)} />
                             <Info label={t.paymentTime} value={paid ? formatDateTime(booking.updated_at, dateLocale) : t.pendingPayment} />
                             <Info label={t.invoice} value={t.notIssued} />
                           </div>

@@ -102,6 +102,7 @@ export default function Cart() {
   const maxPointUse = Math.max(0, Math.min(availablePoints, subtotal));
   const pointDiscount = Math.max(0, Math.min(pointsToUse, maxPointUse));
   const payableSubtotal = Math.max(0, subtotal - pointDiscount);
+  const paymentMethod = pointDiscount >= subtotal && subtotal > 0 ? 'points' : pointDiscount > 0 ? 'points_credit_card' : 'credit_card';
   const pointsEarned = Math.floor(payableSubtotal / 100) * 5;
 
   const handleRemoveUnavailableItems = async () => {
@@ -126,8 +127,10 @@ export default function Cart() {
         .insert({
           user_id: user.id,
           total_amount: payableSubtotal,
+          subtotal_amount: subtotal,
+          points_discount: pointDiscount,
           status: 'pending',
-          payment_method: 'credit_card',
+          payment_method: paymentMethod,
           payment_status: 'paid',
           currency: 'TWD',
         })
@@ -144,7 +147,7 @@ export default function Cart() {
           quantity: item.quantity,
           unit_price: item.products.price,
           total_price: item.products.price * item.quantity,
-          payment_method: 'credit_card',
+          payment_method: paymentMethod,
           status: 'pending',
         }))
       );
@@ -346,6 +349,14 @@ export default function Cart() {
                   <span>{t.subtotal}</span>
                   <span className="text-[#C09A6A]">{formatCurrency(subtotal)}</span>
                 </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-semibold">
+                  <button type="button" onClick={() => setPointsToUse(0)} className={`rounded-lg border px-3 py-2 transition ${pointDiscount === 0 ? 'border-[#C09A6A] bg-[#FEF9EC] text-[#8B6840]' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                    {pick('信用卡', 'Credit card', 'クレジットカード', '신용카드')}
+                  </button>
+                  <button type="button" disabled={maxPointUse <= 0} onClick={() => setPointsToUse(maxPointUse)} className={`rounded-lg border px-3 py-2 transition disabled:opacity-50 ${pointDiscount > 0 ? 'border-[#C09A6A] bg-[#FEF9EC] text-[#8B6840]' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                    {maxPointUse >= subtotal ? pick('點數支付', 'Points payment', 'ポイント支払い', '포인트 결제') : pick('點數折抵', 'Points discount', 'ポイント割引', '포인트 할인')}
+                  </button>
+                </div>
                 <div className="mt-3 space-y-2">
                   <label className="flex items-center justify-between gap-3 text-sm text-gray-700">
                     <span>{pick('使用點數折抵', 'Use points', 'ポイント利用', '포인트 사용')}</span>
@@ -371,6 +382,9 @@ export default function Cart() {
                   <span className="text-[#C09A6A]">{formatCurrency(payableSubtotal)}</span>
                 </div>
                 <p className="mt-1 text-xs font-semibold text-[#8B6840]">{t.pointsDesc(pointsEarned)}</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {pick('付款方式', 'Payment method', '支払い方法', '결제 수단')}: {paymentMethod === 'points' ? pick('點數支付', 'Points payment', 'ポイント支払い', '포인트 결제') : paymentMethod === 'points_credit_card' ? pick('點數折抵 + 信用卡', 'Points discount + credit card', 'ポイント割引 + クレジットカード', '포인트 할인 + 신용카드') : pick('信用卡', 'Credit card', 'クレジットカード', '신용카드')}
+                </p>
               </div>
               {checkoutError && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-600">{checkoutError}</p>}
               {!user && <p className="mb-3 rounded-lg bg-[#FEF9EC] px-3 py-2 text-center text-sm font-semibold text-[#8B6840]">{t.loginBeforeCheckout}</p>}

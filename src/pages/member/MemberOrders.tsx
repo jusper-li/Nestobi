@@ -194,6 +194,13 @@ export default function MemberOrders() {
     return t.preparing;
   };
 
+  const paymentMethodLabel = (method: string) => {
+    if (method === 'points') return pick('點數支付', 'Points payment', 'ポイント支払い', '포인트 결제');
+    if (method === 'points_credit_card') return pick('點數折抵 + 信用卡', 'Points discount + credit card', 'ポイント割引 + クレジットカード', '포인트 할인 + 신용카드');
+    if (method === 'credit_card') return t.creditCard;
+    return method;
+  };
+
   const estimatedArrival = (createdAt: string) => {
     const date = new Date(createdAt);
     date.setDate(date.getDate() + 3);
@@ -405,7 +412,7 @@ export default function MemberOrders() {
                 <div className="grid grid-cols-2 gap-3 text-sm sm:hidden">
                   <Info label={t.orderDate} value={formatDate(order.created_at, dateLocale)} />
                   <Info label={t.summary} value={formatCurrency(order.total_amount, order.currency || 'TWD')} strong />
-                  <Info label={t.paymentMethod} value={order.payment_method === 'credit_card' ? t.creditCard : order.payment_method} />
+                  <Info label={t.paymentMethod} value={paymentMethodLabel(order.payment_method)} />
                   <Info label={t.logisticsStatus} value={deliveryLabel(order.status)} />
                 </div>
 
@@ -413,7 +420,7 @@ export default function MemberOrders() {
                   <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
                     <Info label={t.orderNo} value={`#${order.id.slice(-10).toUpperCase()}`} />
                     <Info label={t.orderDate} value={formatDate(order.created_at, dateLocale)} />
-                    <Info label={t.paymentMethod} value={order.payment_method === 'credit_card' ? t.creditCard : order.payment_method} />
+                    <Info label={t.paymentMethod} value={paymentMethodLabel(order.payment_method)} />
                     <Info label={t.paymentStatus} value={order.payment_status === 'paid' ? t.paid : t.unpaid} />
                     <Info label={t.logisticsStatus} value={deliveryLabel(order.status)} />
                     <Info label={t.invoiceStatus} value={t.invoicePending} />

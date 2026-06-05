@@ -110,6 +110,7 @@ const BookingForm: React.FC = () => {
   const maxPointUse = Math.max(0, Math.min(availablePoints, totalPrice));
   const pointDiscount = Math.max(0, Math.min(pointsToUse, maxPointUse));
   const payableTotal = Math.max(0, totalPrice - pointDiscount);
+  const paymentMethod = pointDiscount >= totalPrice && totalPrice > 0 ? 'points' : pointDiscount > 0 ? 'points_online' : 'online';
   const hasVariablePricing = Object.values(dayPrices).some(v => v > 0);
   const pointsEarned = Math.floor(payableTotal / 100) * 10;
 
@@ -142,6 +143,10 @@ const BookingForm: React.FC = () => {
           check_out_date: checkOut,
           guests,
           total_price: payableTotal,
+          subtotal_price: totalPrice,
+          points_discount: pointDiscount,
+          payment_method: paymentMethod,
+          payment_status: 'paid',
           status: 'confirmed',
           special_requests: specialRequests,
         })
