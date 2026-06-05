@@ -119,7 +119,7 @@ export default function Home() {
   const [homeBannerIndex, setHomeBannerIndex] = useState(0);
   const [translationNotice, setTranslationNotice] = useState('');
   const [homeSearch, setHomeSearch] = useState('');
-  const [homeSearchTarget, setHomeSearchTarget] = useState<'shop' | 'rooms'>('shop');
+  const [homeSearchTarget, setHomeSearchTarget] = useState<'rooms' | 'journal'>('rooms');
   const [activeRecommendationTab, setActiveRecommendationTab] = useState<'stays' | 'shop' | 'journal'>('stays');
 
   const activeHomeBanner = homeBanners[homeBannerIndex] || getFallbackThemeBanners('home')[0];
@@ -148,6 +148,15 @@ export default function Home() {
     mine: t4('我的', 'My', 'マイ', '내 정보'),
   };
 
+  const homeSearchLabels = {
+    title: t4('今天想去哪裡？', 'Where are you heading today?', '今日はどこへ行きますか？', '오늘 어디로 떠나나요?'),
+    subtitle: t4('先找住宿或行程靈感，再進一步篩選。', 'Search stays or trip ideas first, then refine.', 'まず宿泊や旅のアイデアを探してから絞り込みます。', '먼저 숙소나 여행 아이디어를 찾고, 그다음 좁혀보세요.'),
+    placeholder: t4('搜尋宜蘭住宿、沖繩行程、咖啡旅遊文章...', 'Search Yilan stays, Okinawa trip ideas, coffee travel articles...', '宜蘭の宿、沖縄の旅程、コーヒー旅記事を検索...', '이란 숙소, 오키나와 일정, 커피 여행 글 검색...'),
+    rooms: t4('住宿', 'Stays', '宿泊', '숙소'),
+    trips: t4('行程', 'Trips', '旅程', '여행'),
+    submit: t4('搜尋', 'Search', '検索', '검색'),
+  };
+
   const flowLabels = {
     quickTitle: t4('常用入口', 'Quick Actions', 'よく使う入口', '자주 쓰는 메뉴'),
     quickSubtitle: t4('把訂房、購物與會員功能集中在一起。', 'Bookings, shopping, and member tools stay together.', '予約・買い物・会員機能をまとめます。', '예약, 쇼핑, 회원 기능을 한곳에 모았습니다.'),
@@ -167,7 +176,7 @@ export default function Home() {
   const submitHomeSearch = (event: FormEvent) => {
     event.preventDefault();
     const query = homeSearch.trim();
-    const base = homeSearchTarget === 'rooms' ? '/rooms' : '/shop';
+    const base = homeSearchTarget === 'rooms' ? '/rooms' : '/blog';
     navigate(query ? `${base}?search=${encodeURIComponent(query)}` : base);
   };
 
@@ -400,18 +409,18 @@ export default function Home() {
 
           <div className="order-1 space-y-4 lg:order-2">
           <form onSubmit={submitHomeSearch} className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-xl backdrop-blur-md sm:p-6 lg:p-8">
-            <p className="text-sm font-bold text-[#8B6840]">{searchLabels.title}</p>
-            <h2 className="mt-2 text-2xl font-bold text-[#2C1F10] lg:text-4xl">{searchLabels.submit}</h2>
-            <p className="mt-3 text-sm leading-6 text-[#2C1F10]/65">{searchLabels.subtitle}</p>
+            <p className="text-sm font-bold text-[#8B6840]">{homeSearchLabels.title}</p>
+            <h2 className="mt-2 text-2xl font-bold text-[#2C1F10] lg:text-4xl">{homeSearchLabels.submit}</h2>
+            <p className="mt-3 text-sm leading-6 text-[#2C1F10]/65">{homeSearchLabels.subtitle}</p>
             <div className="mt-5 flex rounded-2xl bg-[#F7F1E8] p-1">
-              {(['shop', 'rooms'] as const).map(target => (
+              {(['rooms', 'journal'] as const).map(target => (
                 <button
                   key={target}
                   type="button"
                   onClick={() => setHomeSearchTarget(target)}
                   className={`flex-1 rounded-xl px-3 py-2 text-sm font-bold transition ${homeSearchTarget === target ? 'bg-white text-[#2C1F10] shadow-sm' : 'text-[#2C1F10]/55'}`}
                 >
-                  {target === 'shop' ? searchLabels.shop : searchLabels.rooms}
+                  {target === 'rooms' ? homeSearchLabels.rooms : homeSearchLabels.trips}
                 </button>
               ))}
             </div>
@@ -420,11 +429,11 @@ export default function Home() {
               <input
                 value={homeSearch}
                 onChange={event => setHomeSearch(event.target.value)}
-                placeholder={searchLabels.placeholder}
+                placeholder={homeSearchLabels.placeholder}
                 className="min-w-0 flex-1 bg-transparent py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none"
               />
               <button type="submit" className="rounded-xl bg-[#2C1F10] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#5A3E1B]">
-                {searchLabels.submit}
+                {homeSearchLabels.submit}
               </button>
             </div>
           </form>
@@ -448,7 +457,7 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <QuickAction to="/rooms" icon={Hotel} label={flowLabels.booking} />
             <QuickAction to="/shop" icon={ShoppingBag} label={searchLabels.shop} />
-            <QuickAction to="/member?tool=favorites" icon={Heart} label={searchLabels.favorites} />
+            <QuickAction to="/member" icon={User} label={searchLabels.mine} />
             <QuickAction to="/member/orders" icon={Calendar} label={searchLabels.orders} />
           </div>
         </div>

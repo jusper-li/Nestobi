@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   AlertCircle,
@@ -134,6 +134,7 @@ async function fetchBlogCategoriesFromSupabase() {
 }
 
 const BlogList: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
   const dateLocale = pickByLang(normalizedLang, 'zh-TW', 'en-US', 'ja-JP', 'ko-KR');
@@ -144,7 +145,7 @@ const BlogList: React.FC = () => {
   const [blogCategories, setBlogCategories] = useState<BlogCategory[]>(DEFAULT_BLOG_CATEGORIES);
   const [displayBlogCategories, setDisplayBlogCategories] = useState<BlogCategory[]>(DEFAULT_BLOG_CATEGORIES);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => searchParams.get('search') || '');
   const [categoryId, setCategoryId] = useState(ALL_CATEGORY_ID);
   const [aiFilters, setAiFilters] = useState<AIBlogFilters | null>(null);
   const [aiLoading, setAiLoading] = useState(false);

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookMarked, Calendar, Compass, MapPin, Plus, Trash2 } from 'lucide-react';
+import { AlertCircle, BookMarked, Calendar, CheckCircle, Compass, Loader2, MapPin, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -24,13 +24,16 @@ export default function TravelPassport() {
   const { user } = useAuth();
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
-  const locale = normalizedLang === 'zh-TW' ? 'zh-TW' : normalizedLang === 'en' ? 'en-US' : normalizedLang === 'ja' ? 'ja-JP' : 'ko-KR';
+  const locale = pickByLang(normalizedLang, 'zh-TW', 'en-US', 'ja-JP', 'ko-KR');
   const t = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
 
   const [stamps, setStamps] = useState<Stamp[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<(typeof CATEGORIES)[number]>('all');
   const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState('');
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [form, setForm] = useState({
     place_name: '',
     destination: '',
@@ -73,39 +76,60 @@ export default function TravelPassport() {
 
   const onAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !form.place_name || !form.destination) return;
+    if (!user || !form.place_name || !form.destination || saving) return;
 
-    await supabase.from('travel_passport').insert({
-      user_id: user.id,
-      place_name: form.place_name,
-      destination: form.destination,
-      visited_date: form.visited_date || null,
-      category: form.category,
-      notes: form.notes,
-      source: 'manual',
-    });
+    setSaving(true);
+    setMessage(null);
+    try {
+      const { error } = await supabase.from('travel_passport').insert({
+        user_id: user.id,
+        place_name: form.place_name,
+        destination: form.destination,
+        visited_date: form.visited_date || null,
+        category: form.category,
+        notes: form.notes,
+        source: 'manual',
+      });
+      if (error) throw error;
 
-    setForm({
-      place_name: '',
-      destination: '',
-      visited_date: '',
-      category: 'culture',
-      notes: '',
-    });
-    setShowForm(false);
+      setForm({
+        place_name: '',
+        destination: '',
+        visited_date: '',
+        category: 'culture',
+        notes: '',
+      });
+      setShowForm(false);
 
-    const { data } = await supabase
-      .from('travel_passport')
-      .select('id,place_name,destination,visited_date,category,notes')
-      .eq('user_id', user.id)
-      .order('visited_date', { ascending: false, nullsFirst: false });
+      const { data } = await supabase
+        .from('travel_passport')
+        .select('id,place_name,destination,visited_date,category,notes')
+        .eq('user_id', user.id)
+        .order('visited_date', { ascending: false, nullsFirst: false });
 
-    setStamps((data || []) as Stamp[]);
+      setStamps((data || []) as Stamp[]);
+      setMessage({ type: 'success', text: t('足跡已新增', 'Stamp added', 'スタンプを追加しました', '스탬프가 추가되었습니다') });
+    } catch (error) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : t('新增失敗，請稍後再試。', 'Failed to add. Please try again.', '追加に失敗しました。後でもう一度お試しください。', '추가에 실패했습니다. 잠시 후 다시 시도해주세요.') });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const onDelete = async (id: string) => {
-    await supabase.from('travel_passport').delete().eq('id', id);
-    setStamps((prev) => prev.filter((s) => s.id !== id));
+    if (deletingId) return;
+    setDeletingId(id);
+    setMessage(null);
+    try {
+      const { error } = await supabase.from('travel_passport').delete().eq('id', id);
+      if (error) throw error;
+      setStamps((prev) => prev.filter((s) => s.id !== id));
+      setMessage({ type: 'success', text: t('足跡已刪除', 'Stamp deleted', 'スタンプを削除しました', '스탬프가 삭제되었습니다') });
+    } catch (error) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : t('刪除失敗，請稍後再試。', 'Failed to delete. Please try again.', '削除に失敗しました。後でもう一度お試しください。', '삭제에 실패했습니다. 잠시 후 다시 시도해주세요.') });
+    } finally {
+      setDeletingId('');
+    }
   };
 
   return (
@@ -137,6 +161,12 @@ export default function TravelPassport() {
       </div>
 
       <div className="mx-auto max-w-5xl px-4 py-8">
+        {message && (
+          <div className={`mb-4 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${message.type === 'success' ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+            {message.type === 'success' ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+            {message.text}
+          </div>
+        )}
         <div className="mb-6 flex flex-wrap gap-2">
           {CATEGORIES.map((c) => (
             <button
@@ -175,8 +205,8 @@ export default function TravelPassport() {
                   </div>
                 )}
                 {stamp.notes && <p className="mt-2 text-xs leading-relaxed text-gray-500">{stamp.notes}</p>}
-                <button onClick={() => onDelete(stamp.id)} className="absolute bottom-3 right-3 rounded-lg p-1.5 text-gray-300 hover:text-red-500">
-                  <Trash2 className="h-3.5 w-3.5" />
+                <button onClick={() => onDelete(stamp.id)} disabled={deletingId === stamp.id} className="absolute bottom-3 right-3 rounded-lg p-1.5 text-gray-300 hover:text-red-500 disabled:opacity-50">
+                  {deletingId === stamp.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                 </button>
               </div>
             ))}
@@ -200,7 +230,8 @@ export default function TravelPassport() {
                 ))}
               </select>
               <textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder={t('備註', 'Notes', 'メモ', '메모')} rows={3} className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm" />
-              <button type="submit" className="w-full rounded-xl bg-[#C09A6A] py-3 font-semibold text-white hover:bg-[#8B6840]">
+              <button type="submit" disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C09A6A] py-3 font-semibold text-white hover:bg-[#8B6840] disabled:opacity-60">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 {t('儲存', 'Save', '保存', '저장')}
               </button>
             </form>

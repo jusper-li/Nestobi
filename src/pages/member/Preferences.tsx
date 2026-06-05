@@ -94,6 +94,7 @@ const Preferences: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
   const [prefId, setPrefId] = useState<string | null>(null);
 
   const [currentPw, setCurrentPw] = useState('');
@@ -169,16 +170,23 @@ const Preferences: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return;
     setSaving(true);
+    setError('');
+    setSuccess(false);
     try {
       if (prefId) {
-        await supabase.from('user_preferences').update(prefs).eq('id', prefId);
+        const { error: updateError } = await supabase.from('user_preferences').update(prefs).eq('id', prefId);
+        if (updateError) throw updateError;
       } else {
-        const { data } = await supabase.from('user_preferences').insert({ user_id: user!.id, ...prefs }).select().single();
+        const { data, error: insertError } = await supabase.from('user_preferences').insert({ user_id: user!.id, ...prefs }).select().single();
+        if (insertError) throw insertError;
         if (data) setPrefId(data.id);
       }
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
+    } catch (saveError) {
+      setError(getErrorMessage(saveError, text.genericError));
     } finally {
       setSaving(false);
     }
@@ -211,6 +219,8 @@ const Preferences: React.FC = () => {
           {text.saved}
         </motion.div>
       )}
+
+      {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
       <form onSubmit={handleSave} className="space-y-4">
         <div className="rounded-2xl bg-white p-6 shadow-sm">
