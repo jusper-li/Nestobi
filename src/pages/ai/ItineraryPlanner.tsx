@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertCircle, BookMarked, CheckCircle, Clock, ExternalLink, Loader2, MapPin, RefreshCw, Sparkles, Trash2, Users } from 'lucide-react';
+import { AlertCircle, BookMarked, CheckCircle, Clock, ExternalLink, Loader2, MapPin, Plus, RefreshCw, Sparkles, Trash2, Users } from 'lucide-react';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import { useAuth } from '../../contexts/AuthContext';
@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabase';
 type Locale = 'zh-TW' | 'en' | 'ja' | 'ko';
 type BudgetKey = 'budget' | 'standard' | 'luxury';
 type InterestKey = 'food' | 'culture' | 'shopping' | 'nature' | 'adventure' | 'family' | 'art' | 'nightlife';
+type PassportCategory = 'culture' | 'food' | 'nature' | 'shopping' | 'adventure' | 'nightlife';
 
 type Activity = { time: string; title: string; description: string };
 type DayPlan = { day: number; date: string; theme: string; activities: Activity[]; dining: string; tip: string };
@@ -79,6 +80,8 @@ export default function ItineraryPlanner() {
   const [useLocalFallback, setUseLocalFallback] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [passportSavingKey, setPassportSavingKey] = useState('');
+  const [passportAddedKeys, setPassportAddedKeys] = useState<string[]>([]);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const days = useMemo(() => {
@@ -347,6 +350,54 @@ export default function ItineraryPlanner() {
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
   };
 
+  const activityKey = (day: DayPlan, activity: Activity, index: number) => `${day.day}-${day.date}-${activity.time}-${activity.title}-${index}`;
+
+  const passportCategory = (): PassportCategory => {
+    const category = interests.find((item): item is PassportCategory =>
+      ['culture', 'food', 'nature', 'shopping', 'adventure', 'nightlife'].includes(item),
+    );
+    return category || 'culture';
+  };
+
+  const passportDate = (day: DayPlan) => {
+    if (!startDate) return null;
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + Math.max(0, day.day - 1));
+    return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
+  };
+
+  const addActivityToPassport = async (day: DayPlan, activity: Activity, index: number) => {
+    if (!user || passportSavingKey) return;
+    const key = activityKey(day, activity, index);
+    if (passportAddedKeys.includes(key)) return;
+
+    setPassportSavingKey(key);
+    setMessage(null);
+    try {
+      const { error } = await supabase.from('travel_passport').insert({
+        user_id: user.id,
+        place_name: activity.title,
+        destination: destination || day.theme,
+        visited_date: passportDate(day),
+        category: passportCategory(),
+        notes: `${activity.time} ${activity.description}`.trim(),
+        source: 'itinerary',
+      });
+      if (error) throw error;
+      setPassportAddedKeys(prev => [...prev, key]);
+      setMessage({ type: 'success', text: t('已加入旅遊護照。', 'Added to Travel Passport.', '旅のパスポートに追加しました。', '여행 패스포트에 추가했습니다.') });
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error
+          ? error.message
+          : t('加入旅遊護照失敗，請稍後再試。', 'Failed to add to Travel Passport. Please try again.', '旅のパスポートへの追加に失敗しました。後でもう一度お試しください。', '여행 패스포트 추가에 실패했습니다. 잠시 후 다시 시도해 주세요.'),
+      });
+    } finally {
+      setPassportSavingKey('');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <SEOHead
@@ -549,15 +600,28 @@ export default function ItineraryPlanner() {
                                 <Clock className="h-3.5 w-3.5" />
                                 {activity.time}
                               </div>
-                              <a
-                                href={mapSearchUrl(activity)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex flex-shrink-0 items-center gap-1 rounded-lg border border-sky-100 bg-white px-2 py-1 text-xs font-medium text-sky-700 transition hover:border-sky-200 hover:bg-sky-50"
-                              >
-                                <ExternalLink className="h-3.5 w-3.5" />
-                                {t('前往', 'Go', '行く', '이동')}
-                              </a>
+                              <div className="flex flex-shrink-0 items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => addActivityToPassport(day, activity, index)}
+                                  disabled={passportSavingKey === activityKey(day, activity, index) || passportAddedKeys.includes(activityKey(day, activity, index))}
+                                  className="inline-flex items-center gap-1 rounded-lg border border-amber-100 bg-white px-2 py-1 text-xs font-medium text-amber-700 transition hover:border-amber-200 hover:bg-amber-50 disabled:opacity-60"
+                                >
+                                  {passportSavingKey === activityKey(day, activity, index) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                                  {passportAddedKeys.includes(activityKey(day, activity, index))
+                                    ? t('已加入', 'Added', '追加済み', '추가됨')
+                                    : t('加入護照', 'Add', '追加', '추가')}
+                                </button>
+                                <a
+                                  href={mapSearchUrl(activity)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-lg border border-sky-100 bg-white px-2 py-1 text-xs font-medium text-sky-700 transition hover:border-sky-200 hover:bg-sky-50"
+                                >
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                  {t('前往', 'Go', '行く', '이동')}
+                                </a>
+                              </div>
                             </div>
                             <div className="mt-1 font-medium text-gray-900">{activity.title}</div>
                             <p className="mt-1 text-sm text-gray-600">{activity.description}</p>
