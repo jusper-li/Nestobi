@@ -146,8 +146,18 @@ function privateAccountAnswer() {
   ].join("\n");
 }
 
+function normalizeInternalLinks(content: string) {
+  return content
+    .replace(
+      /https?:\/\/(?:www\.)?(?:nestobi\.com|nestobi\.netlify\.app|example\.com|dlalshop\.com)(\/(?:rooms|booking|shop|blog|hotels)\/[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]+)/gi,
+      "$1",
+    )
+    .replace(/\]\(((?:rooms|booking|shop|blog|hotels)\/)/gi, "](/$1")
+    .replace(/(^|[\s，。:：])((?:rooms|booking|shop|blog|hotels)\/[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]+)/g, "$1/$2");
+}
+
 async function buildCustomerServiceContext(question: string) {
-  const [settings, faqs, pages, rooms, hotels, products, stores] = await Promise.all([
+  const [settings, faqs, pages, rooms, hotels, products, articles, stores] = await Promise.all([
     fetchPublicRows<Record<string, unknown>>(
       "site_settings?is_active=eq.true&select=site_name,site_slogan,site_description,contact_phone,contact_email,ai_site_summary&limit=1",
     ),
@@ -158,13 +168,16 @@ async function buildCustomerServiceContext(question: string) {
       "static_pages?select=slug,title,meta_description,content,updated_at&order=updated_at.desc&limit=8",
     ),
     fetchPublicRows<Record<string, unknown>>(
-      "tbl_rooms?is_available=eq.true&select=name,description,room_type,capacity,price_per_night,location,amenities&order=created_at.desc&limit=16",
+      "tbl_rooms?is_available=eq.true&select=id,name,description,room_type,capacity,price_per_night,location,amenities&order=created_at.desc&limit=16",
     ),
     fetchPublicRows<Record<string, unknown>>(
-      "hotels?is_active=eq.true&select=name,description,address,city,star_rating,phone,email&order=created_at.desc&limit=12",
+      "hotels?is_active=eq.true&select=id,name,description,address,city,star_rating,phone,email&order=created_at.desc&limit=12",
     ),
     fetchPublicRows<Record<string, unknown>>(
-      "products?is_active=eq.true&select=name,description,price,stock_quantity,sku&order=created_at.desc&limit=16",
+      "products?is_active=eq.true&select=id,name,description,price,stock_quantity,sku&order=created_at.desc&limit=16",
+    ),
+    fetchPublicRows<Record<string, unknown>>(
+      "blog_posts?status=eq.published&select=title,slug,excerpt,content,category,tags,published_at&order=published_at.desc&limit=16",
     ),
     fetchPublicRows<Record<string, unknown>>(
       "store_locations?is_active=eq.true&select=name,name_en,city,district,address,phone,hours,sort_order&order=sort_order.asc&limit=16",
@@ -208,6 +221,8 @@ async function buildCustomerServiceContext(question: string) {
         `人數/Capacity: ${cleanText(row.capacity, 20)}`,
         `每晚價格/Price per night: ${cleanText(row.price_per_night, 40)}`,
         `位置/Location: ${cleanText(row.location, 120)}`,
+        row.id ? `詳情/Details: /rooms/${cleanText(row.id, 80)}` : "房型列表/Room list: /rooms",
+        row.id ? `訂房/Book: /booking/${cleanText(row.id, 80)}` : "",
         cleanText(row.description, 280),
       ].filter(Boolean).join(" | "),
     ),
@@ -220,17 +235,31 @@ async function buildCustomerServiceContext(question: string) {
         `地址/Address: ${cleanText(row.address, 180)}`,
         row.phone ? `電話/Phone: ${cleanText(row.phone, 80)}` : "",
         row.email ? `Email: ${cleanText(row.email, 120)}` : "",
+        row.id ? `飯店頁/Hotel page: /hotels/${cleanText(row.id, 80)}` : "",
         cleanText(row.description, 280),
       ].filter(Boolean).join(" | "),
     ),
     ...products.map((row) =>
       [
-        "[Product][商品][購物]",
+        "[Product][商品][購物][訂購]",
         cleanText(row.name, 140),
         `價格/Price: ${cleanText(row.price, 40)}`,
         `庫存/Stock: ${cleanText(row.stock_quantity, 40)}`,
         row.sku ? `SKU: ${cleanText(row.sku, 80)}` : "",
+        row.id ? `商品頁/Product page: /shop/${cleanText(row.id, 80)}` : "商品列表/Product list: /shop",
         cleanText(row.description, 300),
+      ].filter(Boolean).join(" | "),
+    ),
+    ...articles.map((row) =>
+      [
+        "[Article][文章][咖啡旅行家][找文章]",
+        cleanText(row.title, 160),
+        row.category ? `分類/Category: ${cleanText(row.category, 100)}` : "",
+        row.tags ? `標籤/Tags: ${cleanText(JSON.stringify(row.tags), 180)}` : "",
+        row.published_at ? `發布/Published: ${cleanText(row.published_at, 40)}` : "",
+        row.slug ? `文章/Article: /blog/${cleanText(row.slug, 120)}` : "文章列表/Articles: /blog",
+        cleanText(row.excerpt, 260),
+        cleanText(row.content, 360),
       ].filter(Boolean).join(" | "),
     ),
     ...stores.map((row) =>
@@ -327,7 +356,10 @@ Deno.serve(async (req) => {
         "You are Nestobi's AI customer service assistant.",
         "Use the requested UI language when possible, and default to Traditional Chinese for Nestobi users.",
         "Answer the LATEST_USER_QUESTION. DATABASE_CONTEXT is reference material only; never answer an unrelated context item.",
-        "Answer primarily from DATABASE_CONTEXT, which is public data from Supabase.",
+        "Answer primarily from DATABASE_CONTEXT, which is public data from Supabase: products, rooms, hotels, articles, FAQs, pages, stores, and site settings.",
+        "When the user wants to book a room, buy a product, or find an article, recommend the best matching public items and include their provided page links.",
+        "Use the relative site paths from DATABASE_CONTEXT exactly as shown, such as /booking/{id}, /rooms/{id}, /shop/{id}, and /blog/{slug}. Do not add a domain, do not use example.com, and do not replace internal article paths with external source links.",
+        "Do not create bookings, carts, orders, payments, or member actions directly. Guide users to the provided booking, product, article, room, or shop links so the existing login, inventory, payment, and permission checks run.",
         "Do not invent prices, stock, addresses, policies, point balances, booking status, order status, or member profile details that are not in DATABASE_CONTEXT.",
         "This public function must not expose private member data. For account-specific bookings, orders, points, favorites, profile, refunds, or after-sales questions, explain that the user should use the member center pages or contact support after signing in.",
         "If the database context is insufficient, say what is missing and give the safest next step.",
@@ -352,7 +384,7 @@ Deno.serve(async (req) => {
           { role: "user", content: supportPrompt },
         ],
       });
-      return json({ result });
+      return json({ result: normalizeInternalLinks(result) });
     }
 
     if (action === "itinerary") {
