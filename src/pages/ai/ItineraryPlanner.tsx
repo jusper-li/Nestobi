@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertCircle, BookMarked, CheckCircle, Clock, Loader2, MapPin, RefreshCw, Sparkles, Trash2, Users } from 'lucide-react';
+import { AlertCircle, BookMarked, CheckCircle, Clock, ExternalLink, Loader2, MapPin, RefreshCw, Sparkles, Trash2, Users } from 'lucide-react';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import { useAuth } from '../../contexts/AuthContext';
@@ -342,6 +342,11 @@ export default function ItineraryPlanner() {
     ? requiredPlaces.join(' / ')
     : t('未指定', 'Not specified', '未指定', '지정 안 함');
 
+  const mapSearchUrl = (activity: Activity) => {
+    const query = [destination, activity.title].filter(Boolean).join(' ');
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <SEOHead
@@ -539,9 +544,20 @@ export default function ItineraryPlanner() {
                       <div className="mt-3 space-y-3">
                         {day.activities.map((activity, index) => (
                           <div key={`${day.day}-${activity.time}-${index}`} className="rounded-lg bg-slate-50 p-3">
-                            <div className="flex items-center gap-2 text-xs text-sky-600">
-                              <Clock className="h-3.5 w-3.5" />
-                              {activity.time}
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-center gap-2 text-xs text-sky-600">
+                                <Clock className="h-3.5 w-3.5" />
+                                {activity.time}
+                              </div>
+                              <a
+                                href={mapSearchUrl(activity)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex flex-shrink-0 items-center gap-1 rounded-lg border border-sky-100 bg-white px-2 py-1 text-xs font-medium text-sky-700 transition hover:border-sky-200 hover:bg-sky-50"
+                              >
+                                <ExternalLink className="h-3.5 w-3.5" />
+                                {t('前往', 'Go', '行く', '이동')}
+                              </a>
                             </div>
                             <div className="mt-1 font-medium text-gray-900">{activity.title}</div>
                             <p className="mt-1 text-sm text-gray-600">{activity.description}</p>
