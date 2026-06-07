@@ -6,7 +6,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+const VECTOR_EMBEDDING_MODEL = "text-embedding-3-small";
+const VECTOR_SYNC_INTERVAL_MS = 10 * 60 * 1000;
+const VECTOR_UNAVAILABLE_RETRY_MS = 5 * 60 * 1000;
 const secretCache = new Map<string, string>();
+let lastVectorSyncAt = 0;
+let vectorUnavailableUntil = 0;
+let vectorSyncPromise: Promise<void> | null = null;
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -64,6 +70,23 @@ async function fetchPublicRows<T>(pathAndQuery: string): Promise<T[]> {
     return [];
   }
 
+  return await res.json();
+}
+
+async function callSupabaseRpc<T>(functionName: string, body: Record<string, unknown>): Promise<T> {
+  const { supabaseUrl, serviceRoleKey } = getSupabaseConfig();
+  const res = await fetch(`${supabaseUrl}/rest/v1/rpc/${functionName}`, {
+    method: "POST",
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) throw new Error(`RPC ${functionName} failed: ${await res.text()}`);
+  if (res.status === 204) return undefined as T;
   return await res.json();
 }
 
@@ -149,14 +172,116 @@ function privateAccountAnswer() {
 function normalizeInternalLinks(content: string) {
   return content
     .replace(
-      /https?:\/\/(?:www\.)?(?:nestobi\.com|nestobi\.netlify\.app|example\.com|dlalshop\.com)(\/(?:rooms|booking|shop|blog|hotels)\/[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]+)/gi,
+      /https?:\/\/(?:www\.)?(?:nestobi\.com|nestobi\.netlify\.app|example\.com|dlalshop\.com)(\/(?:rooms|booking|shop|blog|hotels|stores|faq)(?:\/[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]*)?)/gi,
       "$1",
     )
     .replace(/\]\(((?:rooms|booking|shop|blog|hotels)\/)/gi, "](/$1")
-    .replace(/(^|[\s，。:：])((?:rooms|booking|shop|blog|hotels)\/[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]+)/g, "$1/$2");
+    .replace(/\]\(((?:stores|faq)([#?][^)]+)?)\)/gi, "](/$1)")
+    .replace(/(^|[\s，。:：])((?:rooms|booking|shop|blog|hotels|stores|faq)(?:\/[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]*)?)/g, "$1/$2");
 }
 
-async function buildCustomerServiceContext(question: string) {
+function vectorLiteral(values: number[]) {
+  return `[${values.map((value) => Number.isFinite(value) ? value.toFixed(8) : "0").join(",")}]`;
+}
+
+async function createEmbeddings(inputs: string[]): Promise<number[][]> {
+  if (inputs.length === 0) return [];
+  const apiKey = await getSecret("OPENAI_API_KEY");
+  const res = await fetch("https://api.openai.com/v1/embeddings", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: VECTOR_EMBEDDING_MODEL,
+      input: inputs.map((input) => cleanText(input, 7200)),
+      encoding_format: "float",
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message || "OpenAI embeddings request failed");
+  return (data.data || [])
+    .sort((a: { index: number }, b: { index: number }) => a.index - b.index)
+    .map((item: { embedding: number[] }) => item.embedding);
+}
+
+async function syncAndEmbedSupportDocuments() {
+  if (Date.now() < vectorUnavailableUntil) return;
+  if (Date.now() - lastVectorSyncAt < VECTOR_SYNC_INTERVAL_MS) return;
+  if (vectorSyncPromise) return await vectorSyncPromise;
+
+  vectorSyncPromise = (async () => {
+    try {
+      await callSupabaseRpc<number>("refresh_ai_support_documents", {});
+      const missingRows = await fetchPublicRows<{ id: string; content: string }>(
+        "ai_support_documents?is_active=eq.true&embedding=is.null&select=id,content&limit=48",
+      );
+      if (missingRows.length > 0) {
+        const embeddings = await createEmbeddings(missingRows.map((row) => row.content));
+        await Promise.all(
+          missingRows.map((row, index) =>
+            callSupabaseRpc<void>("update_ai_support_document_embedding", {
+              document_id: row.id,
+              doc_embedding: vectorLiteral(embeddings[index] || []),
+              model_name: VECTOR_EMBEDDING_MODEL,
+            }),
+          ),
+        );
+      }
+      lastVectorSyncAt = Date.now();
+    } catch (err) {
+      vectorUnavailableUntil = Date.now() + VECTOR_UNAVAILABLE_RETRY_MS;
+      console.error("AI support vector sync failed", err);
+    } finally {
+      vectorSyncPromise = null;
+    }
+  })();
+
+  await vectorSyncPromise;
+}
+
+async function buildVectorCustomerServiceContext(question: string) {
+  try {
+    if (Date.now() < vectorUnavailableUntil) return "";
+    await syncAndEmbedSupportDocuments();
+    if (Date.now() < vectorUnavailableUntil) return "";
+    const [queryEmbedding] = await createEmbeddings([question]);
+    if (!queryEmbedding?.length) return "";
+    const rows = await callSupabaseRpc<Array<{
+      source_type: string;
+      title: string;
+      content: string;
+      url_path: string;
+      metadata: Record<string, unknown> | null;
+      similarity: number;
+    }>>("match_ai_support_documents", {
+      query_embedding: vectorLiteral(queryEmbedding),
+      match_count: 18,
+      min_similarity: 0.16,
+    });
+
+    if (!rows?.length) return "";
+    return rows.map((row) => {
+      const bookingUrl = typeof row.metadata?.booking_url === "string" ? row.metadata.booking_url : "";
+      const mapUrl = typeof row.metadata?.map_url === "string" ? row.metadata.map_url : "";
+      return [
+        `[Vector:${row.source_type}] ${cleanText(row.title, 160)}`,
+        `Similarity: ${Number(row.similarity || 0).toFixed(3)}`,
+        row.url_path ? `站內連結/Site link: ${row.url_path}` : "",
+        bookingUrl ? `訂房連結/Booking link: ${bookingUrl}` : "",
+        mapUrl ? `地圖/Map: ${mapUrl}` : "",
+        cleanText(row.content, 1100),
+      ].filter(Boolean).join(" | ");
+    }).join("\n");
+  } catch (err) {
+    console.error("AI support vector search failed", err);
+    return "";
+  }
+}
+
+async function buildKeywordCustomerServiceContext(question: string) {
   const [settings, faqs, pages, rooms, hotels, products, articles, stores] = await Promise.all([
     fetchPublicRows<Record<string, unknown>>(
       "site_settings?is_active=eq.true&select=site_name,site_slogan,site_description,contact_phone,contact_email,ai_site_summary&limit=1",
@@ -280,6 +405,12 @@ async function buildCustomerServiceContext(question: string) {
   return selected.join("\n");
 }
 
+async function buildCustomerServiceContext(question: string) {
+  const vectorContext = await buildVectorCustomerServiceContext(question);
+  if (vectorContext) return vectorContext;
+  return await buildKeywordCustomerServiceContext(question);
+}
+
 async function chatCompletion(options: {
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
   model?: string;
@@ -356,8 +487,9 @@ Deno.serve(async (req) => {
         "You are Nestobi's AI customer service assistant.",
         "Use the requested UI language when possible, and default to Traditional Chinese for Nestobi users.",
         "Answer the LATEST_USER_QUESTION. DATABASE_CONTEXT is reference material only; never answer an unrelated context item.",
-        "Answer primarily from DATABASE_CONTEXT, which is public data from Supabase: products, rooms, hotels, articles, FAQs, pages, stores, and site settings.",
-        "When the user wants to book a room, buy a product, or find an article, recommend the best matching public items and include their provided page links.",
+        "Answer primarily from DATABASE_CONTEXT, which is public data from Supabase: products, rooms, hotels, articles, FAQs, pages, stores, and site settings. Vector results are ordered by semantic relevance.",
+        "When the user wants to book a room, buy a product, find a store, read an FAQ, or find an article, recommend the best matching public items from DATABASE_CONTEXT and include their provided site links.",
+        "Use Markdown links for recommended site paths, for example [item name](/rooms/id), [book this room](/booking/id), [product name](/shop/id), [article title](/blog/slug), [stores](/stores), or [FAQ](/faq).",
         "Use the relative site paths from DATABASE_CONTEXT exactly as shown, such as /booking/{id}, /rooms/{id}, /shop/{id}, and /blog/{slug}. Do not add a domain, do not use example.com, and do not replace internal article paths with external source links.",
         "Do not create bookings, carts, orders, payments, or member actions directly. Guide users to the provided booking, product, article, room, or shop links so the existing login, inventory, payment, and permission checks run.",
         "Do not invent prices, stock, addresses, policies, point balances, booking status, order status, or member profile details that are not in DATABASE_CONTEXT.",
