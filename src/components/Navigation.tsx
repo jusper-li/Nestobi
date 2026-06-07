@@ -50,7 +50,7 @@ export default function Navigation() {
     home: pick('首頁', 'Home', 'ホーム', '홈'),
     cart: pick('購物車', 'Cart', 'カート', '장바구니'),
     stores: pick('門市', 'Stores', '店舗', '매장'),
-    rooms: pick('nestobi', 'nestobi', 'nestobi', 'nestobi'),
+    rooms: pick('Nestobi', 'Nestobi', 'Nestobi', 'Nestobi'),
     shop: pick('根本在旅行', 'Genbon Travel Shop', '根本在旅行', '근본재여행'),
     blog: pick('咖啡旅行家', 'Coffee Traveler', 'コーヒートラベラー', '커피 트래블러'),
     aiItinerary: pick('AI 行程規劃', 'AI Planner', 'AI 旅程プランナー', 'AI 일정 플래너'),
@@ -124,6 +124,7 @@ export default function Navigation() {
     { to: '/ai/coffee-quiz', label: labels.aiCoffeeQuiz, icon: Coffee, requiresAuth: true },
     { to: '/ai/passport', label: labels.travelPassport, icon: BookMarked, requiresAuth: true },
   ];
+  const primaryNavLinks = navLinks.slice(0, 4);
 
   const memberLinks = [
     { to: '/member', label: labels.memberCenter, icon: LayoutDashboard },
@@ -155,19 +156,19 @@ export default function Navigation() {
           </Link>
 
           <div className="hidden items-center gap-1 md:flex">
-            {navLinks.map(({ to, label, icon: Icon, requiresAuth }) => {
-              if (requiresAuth && !user) return null;
+            {primaryNavLinks.map(({ to, label, icon: Icon }) => {
               return (
                 <Link
                   key={to}
                   to={to}
                   aria-label={label}
                   title={label}
-                  className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold transition ${
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
                     isActive(to) ? 'bg-[#F0E4C8] text-[#2C1F10]' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
-                  <Icon size={18} />
+                  <Icon size={16} />
+                  <span>{label}</span>
                 </Link>
               );
             })}
