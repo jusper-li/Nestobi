@@ -161,12 +161,13 @@ export default function Navigation() {
                 <Link
                   key={to}
                   to={to}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                  aria-label={label}
+                  title={label}
+                  className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-semibold transition ${
                     isActive(to) ? 'bg-[#F0E4C8] text-[#2C1F10]' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
-                  <Icon size={15} />
-                  <span>{label}</span>
+                  <Icon size={18} />
                 </Link>
               );
             })}
@@ -285,7 +286,7 @@ export default function Navigation() {
               </div>
             )}
 
-            <button type="button" onClick={() => setMenuOpen(open => !open)} className="rounded-lg p-2 text-gray-600 transition hover:bg-gray-100 md:hidden">
+            <button type="button" onClick={() => setMenuOpen(open => !open)} className="rounded-lg p-2 text-gray-600 transition hover:bg-gray-100">
               {menuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
@@ -294,8 +295,8 @@ export default function Navigation() {
 
       <AnimatePresence>
         {menuOpen && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-t border-gray-200 bg-white md:hidden">
-            <div className="space-y-1 px-4 py-3">
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-t border-gray-200 bg-white">
+            <div className="mx-auto max-w-7xl space-y-1 px-4 py-3 sm:px-6 lg:px-8">
               <Link to="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100">
                 <Home size={16} />
                 <span>{labels.home}</span>
