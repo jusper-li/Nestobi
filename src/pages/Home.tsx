@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Building2, Calendar, Coffee, Heart, Home as HomeIcon, Hotel, MapPin, MessageCircle, Search, ShoppingBag, Sparkles, User, Users } from 'lucide-react';
+import { ArrowRight, Building2, Calendar, Coffee, Heart, Home as HomeIcon, Hotel, MapPin, Search, ShoppingBag, User, Users } from 'lucide-react';
 import FloatingButtons from '../components/FloatingButtons';
 import Footer from '../components/Footer';
 import Navigation from '../components/Navigation';
@@ -448,13 +448,9 @@ export default function Home() {
         </div>
       )}
 
-      <section className="bg-white py-10 md:py-14">
+      <section className="bg-white py-6 md:py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-5">
-            <p className="section-label">{flowLabels.quickTitle}</p>
-            <h2 className="text-2xl font-bold text-[#2C1F10] md:text-3xl">{flowLabels.quickSubtitle}</h2>
-          </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="flex justify-center gap-4 md:gap-6">
             <QuickAction to="/rooms" icon={Hotel} label={flowLabels.booking} />
             <QuickAction to="/shop" icon={ShoppingBag} label={searchLabels.shop} />
             <QuickAction to="/member" icon={User} label={searchLabels.mine} />
@@ -464,13 +460,12 @@ export default function Home() {
       </section>
 
       {hasRecommendations && (
-        <section className="bg-[#F5F5F3] py-14 md:py-20">
+        <section className="bg-white py-12 md:py-16">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-end">
               <div>
                 <p className="section-label">{flowLabels.recommendations}</p>
                 <h2 className="section-title text-3xl">{activeRecommendation.title}</h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-500">{flowLabels.recommendationsDesc}</p>
                 <span className="gold-bar" />
               </div>
               <Link to={activeRecommendation.to} className="inline-flex items-center gap-1 self-start border-b border-[#2C1F10]/25 pb-1 text-sm font-bold text-[#2C1F10] transition hover:border-[#2C1F10] md:self-auto">
@@ -479,13 +474,13 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="mb-6 flex rounded-2xl bg-white p-1 shadow-sm">
+            <div className="mb-6 flex border-b border-gray-100">
               {recommendationTabs.map(tab => (
                 <button
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveRecommendationTab(tab.id)}
-                  className={`flex-1 rounded-xl px-3 py-3 text-sm font-bold transition ${activeRecommendationTab === tab.id ? 'bg-[#2C1F10] text-white shadow-sm' : 'text-[#2C1F10]/60 hover:bg-[#F7F1E8]'}`}
+                  className={`flex-1 border-b-2 px-3 py-3 text-sm font-bold transition ${activeRecommendationTab === tab.id ? 'border-[#2C1F10] text-[#2C1F10]' : 'border-transparent text-[#2C1F10]/55 hover:text-[#2C1F10]'}`}
                 >
                   {tab.label}
                 </button>
@@ -566,32 +561,6 @@ export default function Home() {
         </section>
       )}
 
-      <section className="bg-[#1F160B] py-20 text-[#FFF7EA]">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 md:grid-cols-[0.9fr_1.1fr] lg:px-8">
-          <div>
-            <Sparkles className="mb-5 text-[#C09A6A]" size={28} />
-            <h2 className="font-serif text-3xl font-bold text-[#FFF7EA] md:text-4xl">{t.closeTitle}</h2>
-            <Link to="/vendor" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#F0E4C8] px-4 py-3 text-sm font-bold text-[#2C1F10] transition hover:bg-white">
-              {searchLabels.vendorCta}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {[
-              { icon: Building2, title: t.trustStaysTitle, desc: t.trustStaysDesc },
-              { icon: ShoppingBag, title: t.trustShopTitle, desc: t.trustShopDesc },
-              { icon: MessageCircle, title: t.trustAiTitle, desc: t.trustAiDesc },
-            ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="rounded-2xl border border-white/15 bg-white/[0.08] p-5">
-                <Icon size={22} className="text-[#C09A6A]" />
-                <h3 className="mt-4 font-bold text-[#FFF7EA]">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-[#F5E7D4]/80">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <Footer />
       <FloatingButtons />
       <MobileHomeNav labels={searchLabels} />
@@ -601,9 +570,13 @@ export default function Home() {
 
 function QuickAction({ to, icon: Icon, label }: { to: string; icon: typeof Hotel; label: string }) {
   return (
-    <Link to={to} className="flex min-h-[96px] flex-col justify-between rounded-2xl border border-gray-100 bg-[#FFF8EA] p-4 shadow-elegant transition hover:-translate-y-0.5 hover:shadow-card-hover">
-      <Icon className="h-6 w-6 text-[#C09A6A]" />
-      <span className="text-base font-bold text-[#2C1F10]">{label}</span>
+    <Link
+      to={to}
+      aria-label={label}
+      title={label}
+      className="flex h-12 w-12 items-center justify-center rounded-full text-[#2C1F10] transition hover:bg-[#F7F1E8] hover:text-[#8B6840]"
+    >
+      <Icon className="h-6 w-6" />
     </Link>
   );
 }
