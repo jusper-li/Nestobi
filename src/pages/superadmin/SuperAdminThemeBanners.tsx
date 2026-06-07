@@ -78,7 +78,7 @@ export default function SuperAdminThemeBanners() {
   const themeOptions = useMemo(
     () => [
       { value: 'home' as const, label: t('首頁', 'Home', 'ホーム', '홈') },
-      { value: 'nestopia' as const, label: t('nestopi 住宿', 'nestopi Stays', 'nestopi 宿泊', 'nestopi 숙소') },
+      { value: 'nestopia' as const, label: t('nestobi 住宿', 'nestobi Stays', 'nestobi 宿泊', 'nestobi 숙소') },
       { value: 'genbon_travel' as const, label: t('根本在旅行', 'Genbon Travel', '根本在旅行', '근본재여행') },
       { value: 'coffee_traveler' as const, label: t('咖啡旅行家', 'Coffee Traveler', 'Coffee Traveler', 'Coffee Traveler') },
     ],

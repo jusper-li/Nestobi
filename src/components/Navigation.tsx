@@ -50,7 +50,7 @@ export default function Navigation() {
     home: pick('首頁', 'Home', 'ホーム', '홈'),
     cart: pick('購物車', 'Cart', 'カート', '장바구니'),
     stores: pick('門市', 'Stores', '店舗', '매장'),
-    rooms: pick('nestopi', 'nestopi', 'nestopi', 'nestopi'),
+    rooms: pick('nestobi', 'nestobi', 'nestobi', 'nestobi'),
     shop: pick('根本在旅行', 'Genbon Travel Shop', '根本在旅行', '근본재여행'),
     blog: pick('咖啡旅行家', 'Coffee Traveler', 'コーヒートラベラー', '커피 트래블러'),
     aiItinerary: pick('AI 行程規劃', 'AI Planner', 'AI 旅程プランナー', 'AI 일정 플래너'),
@@ -61,7 +61,7 @@ export default function Navigation() {
     register: pick('註冊', 'Sign up', '登録', '가입'),
     member: pick('會員', 'Member', '会員', '회원'),
     memberCenter: pick('會員中心', 'Member Center', '会員センター', '회원 센터'),
-    myBookings: pick('nestopi 訂房', 'nestopi Bookings', 'nestopi 予約', 'nestopi 예약'),
+    myBookings: pick('nestobi 訂房', 'nestobi Bookings', 'nestobi 予約', 'nestobi 예약'),
     myOrders: pick('根本在旅行訂單', 'Shop Orders', '根本在旅行の注文', '근본재여행 주문'),
     myPurchases: pick('消費紀錄', 'Consumption Records', '利用履歴', '소비 내역'),
     myPoints: pick('我的點數', 'My Points', 'ポイント', '내 포인트'),
@@ -106,7 +106,7 @@ export default function Navigation() {
     }
     return {
       to: '/rooms',
-      alt: pick('nestopi', 'nestopi', 'nestopi', 'nestopi'),
+      alt: pick('nestobi', 'nestobi', 'nestobi', 'nestobi'),
       image: '/20260407_nestobi_logo.svg',
       className: 'h-10 w-auto md:h-12',
     };

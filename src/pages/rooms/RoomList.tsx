@@ -91,14 +91,14 @@ export default function RoomList() {
   const [translationNotice, setTranslationNotice] = useState('');
 
   const labels = {
-    seoTitle: t4('nestopi 住宿', 'nestopi Stays', 'nestopi 宿泊', 'nestopi 숙소'),
+    seoTitle: t4('nestobi 住宿', 'nestobi Stays', 'nestobi 宿泊', 'nestobi 숙소'),
     seoDesc: t4(
-      'nestopi 專注民宿、房型與訂房體驗，依城市、預算與人數找到適合的住宿。',
-      'nestopi focuses on stays, rooms, and booking experiences, helping you find the right place by city, budget, and group size.',
-      'nestopi は民宿、客室、予約体験に特化し、都市、予算、人数から最適な宿泊先を探せます。',
-      'nestopi는 숙소, 객실, 예약 경험에 집중하며 도시, 예산, 인원에 맞는 숙소를 찾도록 돕습니다.',
+      'nestobi 專注民宿、房型與訂房體驗，依城市、預算與人數找到適合的住宿。',
+      'nestobi focuses on stays, rooms, and booking experiences, helping you find the right place by city, budget, and group size.',
+      'nestobi は民宿、客室、予約体験に特化し、都市、予算、人数から最適な宿泊先を探せます。',
+      'nestobi는 숙소, 객실, 예약 경험에 집중하며 도시, 예산, 인원에 맞는 숙소를 찾도록 돕습니다.',
     ),
-    heroTitle: t4('nestopi', 'nestopi', 'nestopi', 'nestopi'),
+    heroTitle: t4('nestobi', 'nestobi', 'nestobi', 'nestobi'),
     heroDesc: t4(
       '把住宿從商品與文章中分離出來，專心探索民宿、房型、入住人數與旅程停留。',
       'A dedicated home for stays, separated from products and articles, focused on rooms, hosts, guests, and overnight journeys.',
@@ -111,7 +111,7 @@ export default function RoomList() {
       '例：ダブルルーム、駅近、浴槽あり、NT$10,000以内',
       '예: 더블룸, 역 근처, 욕조, NT$10,000 이하',
     ),
-    featuredCount: t4('間 nestopi 住宿', 'nestopi stays', '件の nestopi 宿泊', '개의 nestopi 숙소'),
+    featuredCount: t4('間 nestobi 住宿', 'nestobi stays', '件の nestobi 宿泊', '개의 nestobi 숙소'),
     maxPrice: t4('最高', 'Max', '上限', '최대'),
     recommended: t4('推薦排序', 'Recommended', 'おすすめ順', '추천순'),
     priceAsc: t4('價格由低到高', 'Price: Low to High', '価格の安い順', '가격 낮은순'),

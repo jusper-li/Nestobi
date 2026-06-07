@@ -55,7 +55,7 @@ export default function Footer() {
 
   const serviceLinks = [
     { to: '/stores', label: pick(locale, '根本在旅行門市', 'Genbon Travel Stores', '根本在旅行の店舗', '근본재여행 매장'), icon: MapPin },
-    { to: '/rooms', label: pick(locale, 'nestopi 住宿', 'nestopi Stays', 'nestopi 宿泊', 'nestopi 숙소'), icon: Hotel },
+    { to: '/rooms', label: pick(locale, 'nestobi 住宿', 'nestobi Stays', 'nestobi 宿泊', 'nestobi 숙소'), icon: Hotel },
     { to: '/shop', label: pick(locale, '根本在旅行選物', 'Genbon Travel Shop', '根本在旅行の選物', '근본재여행 셀렉트샵'), icon: ShoppingBag },
     { to: '/ai/itinerary', label: pick(locale, 'AI 行程規劃', 'AI Planner', 'AI 旅程プランナー', 'AI 일정 플래너'), icon: Map },
     { to: '/ai/translator', label: pick(locale, 'AI 即時翻譯', 'AI Translate', 'AI 翻訳', 'AI 번역'), icon: Languages },

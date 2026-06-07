@@ -110,7 +110,7 @@ function App() {
           <ScrollToTop />
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/nestopi" element={<Navigate to="/rooms" replace />} />
+            <Route path="/nestobi" element={<Navigate to="/rooms" replace />} />
             <Route path="/nestopia" element={<Navigate to="/rooms" replace />} />
             <Route path="/genbon-travel" element={<Navigate to="/shop" replace />} />
             <Route path="/coffee-traveler" element={<Navigate to="/blog" replace />} />
