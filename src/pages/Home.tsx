@@ -448,7 +448,7 @@ export default function Home() {
         </div>
       )}
 
-      <section className="bg-white py-6 md:py-8">
+      <section className="hidden bg-white py-6 md:block md:py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex justify-center gap-4 md:gap-6">
             <QuickAction to="/rooms" icon={Hotel} label={flowLabels.booking} />
