@@ -86,10 +86,10 @@ export default function ProductList() {
   const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
   const labels = {
     seoTitle: t4('根本在旅行', 'Genbon Travel Shop', '根本在旅行', '근본재여행'),
-    seoDesc: t4('根本在旅行整合旅行選物、咖啡茶品、門市體驗與購物訂單，讓旅途中的味道可以帶回日常。', 'Genbon Travel Shop brings together travel goods, coffee and tea, store experiences, shopping, and orders for travel-inspired daily goods.', '根本在旅行は旅の選物、コーヒーやお茶、店舗体験、買い物と注文をまとめ、旅先の味を日常へ持ち帰ります。', '근본재여행은 여행 셀렉트 상품, 커피와 차, 매장 경험, 쇼핑과 주문을 모아 여행의 맛을 일상으로 가져옵니다.'),
+    seoDesc: t4('根本在旅行整理咖啡、茶點、旅行小物與門市商品，適合出發前準備、旅後補貨或挑選伴手禮。', 'Genbon Travel Shop curates coffee, tea snacks, travel goods, and store items for trip prep, restocking, and gifts.', '根本在旅行はコーヒー、お茶菓子、旅の小物、店舗商品を整理し、出発前の準備や旅後の補充、ギフト選びに役立ちます。', '근본재여행은 커피, 차 간식, 여행 소품, 매장 상품을 정리해 출발 전 준비, 여행 후 보충, 선물 고르기에 도움을 줍니다.'),
     heroTitle: t4('根本在旅行', 'Genbon Travel Shop', '根本在旅行', '근본재여행'),
-    heroDesc: t4('從產地咖啡、茶點到旅行器物，把旅程中的味道和日常用品一起帶回家。', 'From origin coffee and tea snacks to travel tools, bring the taste of the journey and daily essentials home together.', '産地のコーヒー、お茶菓子、旅の道具まで、旅の味と日用品を一緒に持ち帰れます。', '산지 커피와 차 간식부터 여행 도구까지, 여행의 맛과 생활용품을 함께 가져가세요.'),
-    heroPlaceholder: t4('試試：果香咖啡、送禮茶包、沖繩旅行紀念品', 'Try: fruity coffee, gift tea bags, Okinawa souvenirs', '例：果実感のあるコーヒー、ギフト茶包、沖縄旅行のお土産', '예: 과일향 커피, 선물용 티백, 오키나와 여행 기념품'),
+    heroDesc: t4('找出旅途中想帶走的咖啡、茶點、器物與伴手禮；先在線上篩選，再決定購買或到門市看實品。', 'Find coffee, snacks, tools, and gifts from your trip. Filter online first, then buy or visit a store.', '旅先で持ち帰りたいコーヒー、お茶菓子、道具、ギフトを探し、オンラインで絞り込んでから購入や来店を選べます。', '여행에서 가져가고 싶은 커피, 간식, 도구, 선물을 찾고 온라인에서 먼저 고른 뒤 구매하거나 매장을 방문하세요.'),
+    heroPlaceholder: t4('搜尋：咖啡豆、茶包、旅行杯、沖繩伴手禮', 'Search: coffee beans, tea bags, travel cups, Okinawa gifts', '検索：コーヒー豆、ティーバッグ、旅用カップ、沖縄ギフト', '검색: 커피 원두, 티백, 여행 컵, 오키나와 선물'),
     search: t4('搜尋', 'Search', '検索', '검색'),
     clearHint: t4('清除提示', 'Clear hint', 'ヒントを消す', '힌트 지우기'),
     allProducts: t4('全部商品', 'All Products', 'すべての商品', '전체 상품'),
@@ -97,7 +97,7 @@ export default function ProductList() {
     shownCount: t4('已顯示', 'Showing', '表示中', '표시 중'),
     foundProducts: t4('件商品', 'products found', '件の商品', '개 상품'),
     purchasable: t4('件可購買', 'purchasable', '件購入可', '개 구매 가능'),
-    quickFilterHint: t4('商品可依庫存、價格與分類快速篩選。', 'Filter Genbon Travel products by stock, price, category, and keywords.', '在庫、価格、カテゴリ、キーワードで根本在旅行の商品を絞り込めます。', '재고, 가격, 카테고리, 키워드로 근본재여행 상품을 빠르게 필터링하세요.'),
+    quickFilterHint: t4('先用關鍵字找咖啡、茶點、器物或伴手禮，再依分類、價格、庫存縮小範圍。', 'Search coffee, snacks, tools, or gifts first, then narrow by category, price, and stock.', 'まずコーヒー、お茶菓子、道具、ギフトを検索し、カテゴリ、価格、在庫で絞り込めます。', '먼저 커피, 간식, 도구, 선물을 검색한 뒤 카테고리, 가격, 재고로 좁혀보세요.'),
     recommended: t4('推薦排序', 'Recommended', 'おすすめ順', '추천순'),
     priceAsc: t4('價格由低到高', 'Price: Low to High', '価格の安い順', '가격 낮은순'),
     priceDesc: t4('價格由高到低', 'Price: High to Low', '価格の高い順', '가격 높은순'),
@@ -111,7 +111,7 @@ export default function ProductList() {
     clearFilters: t4('清除篩選', 'Clear filters', '条件をクリア', '필터 지우기'),
     aiUnavailable: t4('AI 搜尋暫時無法使用', 'AI search is temporarily unavailable', 'AI検索は一時的に利用できません', 'AI 검색을 일시적으로 사용할 수 없습니다'),
     aiSummary: t4('已依照你的描述整理商品。', 'Results organized based on your description.', '説明に合わせて商品を整理しました。', '입력한 설명을 바탕으로 상품을 정리했습니다.'),
-    seoKeywords: t4('根本在旅行, 商品, 門市, 咖啡選物, 旅行商店', 'Genbon Travel, products, stores, coffee goods, travel shop', '根本在旅行, 商品, 店舗, コーヒー選物, 旅行ショップ', '근본재여행, 상품, 매장, 커피 상품, 여행 상점'),
+    seoKeywords: t4('根本在旅行, 咖啡, 茶點, 旅行小物, 伴手禮, 門市', 'Genbon Travel, coffee, tea snacks, travel goods, gifts, stores', '根本在旅行, コーヒー, お茶菓子, 旅の小物, ギフト, 店舗', '근본재여행, 커피, 차 간식, 여행 소품, 선물, 매장'),
   };
   const [products, setProducts] = useState<Product[]>([]);
   const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
