@@ -21,9 +21,9 @@ const VendorLayout: React.FC = () => {
   const navLinks = [
     { to: '/vendor/engagement', icon: <MessageSquare className="w-5 h-5" />, label: pick('連動管理', 'Engagement', '連携管理', '연동 관리') },
     { to: '/vendor', icon: <LayoutDashboard className="w-5 h-5" />, label: pick('總覽', 'Dashboard', 'ダッシュボード', '대시보드'), end: true },
-    { to: '/vendor/hotels', icon: <Hotel className="w-5 h-5" />, label: pick('Nestopia 民宿', 'Nestopia Hotels', 'Nestopia 民宿', 'Nestopia 숙소') },
-    { to: '/vendor/rooms', icon: <BedDouble className="w-5 h-5" />, label: pick('Nestopia 房型', 'Nestopia Rooms', 'Nestopia 部屋', 'Nestopia 객실') },
-    { to: '/vendor/housekeeping', icon: <ClipboardList className="w-5 h-5" />, label: pick('Nestopia 房務', 'Nestopia Housekeeping', 'Nestopia 清掃管理', 'Nestopia 객실 관리') },
+    { to: '/vendor/hotels', icon: <Hotel className="w-5 h-5" />, label: pick('nestopi 民宿', 'nestopi Hotels', 'nestopi 民宿', 'nestopi 숙소') },
+    { to: '/vendor/rooms', icon: <BedDouble className="w-5 h-5" />, label: pick('nestopi 房型', 'nestopi Rooms', 'nestopi 部屋', 'nestopi 객실') },
+    { to: '/vendor/housekeeping', icon: <ClipboardList className="w-5 h-5" />, label: pick('nestopi 房務', 'nestopi Housekeeping', 'nestopi 清掃管理', 'nestopi 객실 관리') },
     { to: '/vendor/staff', icon: <Users className="w-5 h-5" />, label: pick('團隊成員', 'Staff', 'スタッフ', '직원') },
     { to: '/vendor/products', icon: <Package className="w-5 h-5" />, label: pick('根本在旅行商品', 'Genbon Products', '根本在旅行の商品', '근본재여행 상품') },
     { to: '/vendor/orders', icon: <ShoppingBag className="w-5 h-5" />, label: pick('商品訂單與訂房', 'Orders & Bookings', '注文と予約', '주문 및 예약') },
