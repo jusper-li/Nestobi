@@ -448,17 +448,6 @@ export default function Home() {
         </div>
       )}
 
-      <section className="hidden bg-white py-6 md:block md:py-8">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-center gap-4 md:gap-6">
-            <QuickAction to="/rooms" icon={Hotel} label={flowLabels.booking} />
-            <QuickAction to="/shop" icon={ShoppingBag} label={searchLabels.shop} />
-            <QuickAction to="/member" icon={User} label={searchLabels.mine} />
-            <QuickAction to="/member/orders" icon={Calendar} label={searchLabels.orders} />
-          </div>
-        </div>
-      </section>
-
       {hasRecommendations && (
         <section className="bg-white py-12 md:py-16">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -565,19 +554,6 @@ export default function Home() {
       <FloatingButtons />
       <MobileHomeNav labels={searchLabels} />
     </div>
-  );
-}
-
-function QuickAction({ to, icon: Icon, label }: { to: string; icon: typeof Hotel; label: string }) {
-  return (
-    <Link
-      to={to}
-      aria-label={label}
-      title={label}
-      className="flex h-12 w-12 items-center justify-center rounded-full text-[#2C1F10] transition hover:bg-[#F7F1E8] hover:text-[#8B6840]"
-    >
-      <Icon className="h-6 w-6" />
-    </Link>
   );
 }
 
