@@ -134,7 +134,7 @@ const BookingForm: React.FC = () => {
     setError('');
 
     try {
-      const { data: booking, error: bookingErr } = await supabase
+      const { error: bookingErr } = await supabase
         .from('tbl_bookings')
         .insert({
           user_id: user.id,
@@ -149,37 +149,13 @@ const BookingForm: React.FC = () => {
           payment_status: 'paid',
           status: 'confirmed',
           special_requests: specialRequests,
-        })
-        .select()
-        .single();
+        });
 
       if (bookingErr) throw bookingErr;
 
-      if (pointsEarned > 0) {
-        await supabase.from('points').insert({
-          user_id: user.id,
-          amount: pointsEarned,
-          transaction_type: 'earn',
-          reference_id: booking.id,
-          source_type: 'booking',
-          source_id: booking.id,
-          vendor_id: room.vendor_id,
-          description: t(`訂房回饋點數 - ${room.name}`, `Booking reward points - ${room.name}`, `宿泊予約ポイント還元 - ${room.name}`, `예약 보상 포인트 - ${room.name}`),
-        });
-      }
-
-      if (pointDiscount > 0) {
-        await supabase.from('points').insert({
-          user_id: user.id,
-          amount: -pointDiscount,
-          transaction_type: 'spent',
-          reference_id: booking.id,
-          source_type: 'booking',
-          source_id: booking.id,
-          vendor_id: room.vendor_id,
-          description: t('使用點數折抵', 'Points redemption', 'ポイント利用', '포인트 사용'),
-        });
-      }
+      const { data: updatedBalance } = await supabase.from('member_point_balances').select('current_points').eq('user_id', user.id).maybeSingle();
+      setAvailablePoints(Number(updatedBalance?.current_points || 0));
+      setPointsToUse(0);
 
       const {
         data: { session },
@@ -212,8 +188,10 @@ const BookingForm: React.FC = () => {
       }
 
       setSuccess(true);
-    } catch {
-      setError(t('預訂失敗，請稍後再試。', 'Booking failed. Please try again later.', '予約に失敗しました。しばらくして再試行してください。', '예약에 실패했습니다. 잠시 후 다시 시도해 주세요.'));
+    } catch (err) {
+      const fallback = t('預訂失敗，請稍後再試。', 'Booking failed. Please try again later.', '予約に失敗しました。しばらくして再試行してください。', '예약에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      const detail = err && typeof err === 'object' && 'message' in err ? String(err.message) : '';
+      setError(detail ? `${fallback} ${detail}` : fallback);
     } finally {
       setLoading(false);
     }
