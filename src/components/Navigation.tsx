@@ -56,6 +56,7 @@ export default function Navigation() {
     aiItinerary: pick('AI 行程規劃', 'AI Planner', 'AI 旅程プランナー', 'AI 일정 플래너'),
     aiTranslator: pick('AI 翻譯', 'AI Translate', 'AI 翻訳', 'AI 번역'),
     aiChat: pick('AI 客服', 'AI Support', 'AI サポート', 'AI 고객지원'),
+    aiCoffeeQuiz: pick('AI 咖啡測驗', 'AI Coffee Quiz', 'AIコーヒー診断', 'AI 커피 퀴즈'),
     travelPassport: pick('旅行護照', 'Travel Passport', '旅のパスポート', '여행 패스포트'),
     login: pick('登入', 'Login', 'ログイン', '로그인'),
     register: pick('註冊', 'Sign up', '登録', '가입'),
@@ -120,6 +121,7 @@ export default function Navigation() {
     { to: '/ai/itinerary', label: labels.aiItinerary, icon: Map, requiresAuth: true },
     { to: '/ai/translator', label: labels.aiTranslator, icon: Languages, requiresAuth: true },
     { to: '/ai/chat', label: labels.aiChat, icon: MessageCircle, requiresAuth: true },
+    { to: '/ai/coffee-quiz', label: labels.aiCoffeeQuiz, icon: Coffee, requiresAuth: true },
     { to: '/ai/passport', label: labels.travelPassport, icon: BookMarked, requiresAuth: true },
   ];
 

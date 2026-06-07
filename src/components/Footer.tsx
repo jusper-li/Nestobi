@@ -60,6 +60,7 @@ export default function Footer() {
     { to: '/ai/itinerary', label: pick(locale, 'AI 行程規劃', 'AI Planner', 'AI 旅程プランナー', 'AI 일정 플래너'), icon: Map },
     { to: '/ai/translator', label: pick(locale, 'AI 即時翻譯', 'AI Translate', 'AI 翻訳', 'AI 번역'), icon: Languages },
     { to: '/ai/chat', label: pick(locale, 'AI 客服中心', 'AI Support', 'AI サポート', 'AI 고객지원'), icon: MessageCircle },
+    { to: '/ai/coffee-quiz', label: pick(locale, 'AI 咖啡測驗', 'AI Coffee Quiz', 'AIコーヒー診断', 'AI 커피 퀴즈'), icon: Coffee },
     { to: '/ai/passport', label: pick(locale, '旅行護照', 'Travel Passport', 'トラベルパスポート', '여행 패스포트'), icon: BookMarked },
     { to: '/blog', label: pick(locale, '咖啡旅行家文章', 'Coffee Traveler Articles', 'コーヒートラベラー記事', '커피 트래블러 글'), icon: Coffee },
     { to: '/faq', label: pick(locale, '常見問題', 'FAQ', 'よくある質問', '자주 묻는 질문'), icon: HelpCircle },
