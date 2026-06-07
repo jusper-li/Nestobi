@@ -82,9 +82,9 @@ export default function Home() {
   const t = {
     pageTitle: t4('nestobi・根本在旅行・咖啡旅行家', 'nestobi, Genbon Travel Shop, and Coffee Traveler', 'nestobi・根本在旅行・コーヒートラベラー', 'nestobi, 근본재여행, 커피 트래블러'),
     pageDesc: t4('住宿交給 nestobi，商品與門市交給根本在旅行，文章由咖啡旅行家獨立展開。', 'nestobi is for stays, Genbon Travel Shop is for products and stores, and Coffee Traveler is the independent article theme.', '宿泊はnestobi、商品と店舗は根本在旅行、記事はコーヒートラベラーとして独立展開します。', '숙박은 nestobi, 상품과 매장은 근본재여행, 글은 커피 트래블러가 독립적으로 다룹니다.'),
-    heroTitle1: t4('三個主題', 'Three Themes', '3つのテーマ', '세 가지 주제'),
-    heroTitle2: t4('各自清楚出發', 'Clearly Separated', 'それぞれ明確に', '명확하게 나누어'),
-    heroDesc: t4('nestobi 專注住宿；根本在旅行負責商品與門市；咖啡旅行家獨立整理文章內容，三個主題清楚分工，也能在會員中心彼此連動。', 'nestobi focuses on stays, Genbon Travel handles products and stores, and Coffee Traveler organizes articles as its own theme.', 'nestobiは宿泊、根本在旅行は商品と店舗、コーヒートラベラーは記事を独立テーマとして整理します。', 'nestobi는 숙박, 근본재여행은 상품과 매장, 커피 트래블러는 글 콘텐츠를 독립 주제로 정리합니다.'),
+    heroTitle1: t4('智慧旅遊', 'Smarter Travel', 'スマートな旅', '더 스마트한 여행'),
+    heroTitle2: t4('新體驗', 'Starts Here', 'ここから', '여기서 시작'),
+    heroDesc: t4('從住宿搜尋、旅遊選物到咖啡文章與 AI 工具，出發前需要的資訊集中在同一個清楚入口。', 'Find stays, travel goods, coffee stories, and AI tools from one clear starting point.', '宿泊検索、旅の買い物、コーヒー記事、AIツールまで、出発前に必要な情報を一つの入口にまとめます。', '숙소 검색, 여행 상품, 커피 콘텐츠, AI 도구까지 출발 전 필요한 정보를 한곳에서 찾을 수 있습니다.'),
     shopNow: t4('逛根本在旅行', 'Shop Genbon Travel', '根本在旅行を見る', '근본재여행 보기'),
     exploreStays: t4('前往 nestobi', 'Explore nestobi', 'nestobiへ', 'nestobi 보기'),
     stays: t4('nestobi', 'nestobi', 'nestobi', 'nestobi'),
