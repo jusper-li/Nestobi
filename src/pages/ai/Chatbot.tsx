@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { Bot, MessageCircle, Send, User } from 'lucide-react';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
@@ -35,6 +36,64 @@ function isUuid(value: string | null) {
 
 function formatMessageTime(value?: string) {
   return new Date(value || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+const INTERNAL_PATH_PATTERN = /^\/(?:rooms|booking|shop|blog|hotels|stores|faq)(?:\/[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]*)?$/;
+const INTERNAL_PATH_SPLIT_PATTERN = /(\/(?:rooms|booking|shop|blog|hotels|stores|faq)(?:\/[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]*)?)/g;
+const MARKDOWN_LINK_PATTERN = /\[([^\]]+)\]\((\/(?:rooms|booking|shop|blog|hotels|stores|faq)(?:\/[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]*)?)\)/g;
+
+function linkClass(role: MessageItem['role']) {
+  return role === 'user'
+    ? 'font-semibold underline decoration-white/60 underline-offset-2'
+    : 'font-semibold text-sky-700 underline decoration-sky-300 underline-offset-2 hover:text-sky-900';
+}
+
+function renderPlainLinks(text: string, role: MessageItem['role'], keyPrefix: string) {
+  return text.split(INTERNAL_PATH_SPLIT_PATTERN).map((part, index) => {
+    if (INTERNAL_PATH_PATTERN.test(part)) {
+      return (
+        <Link key={`${keyPrefix}-path-${index}`} to={part} className={linkClass(role)}>
+          {part}
+        </Link>
+      );
+    }
+    return <span key={`${keyPrefix}-text-${index}`}>{part}</span>;
+  });
+}
+
+function renderLinkedLine(line: string, role: MessageItem['role'], keyPrefix: string) {
+  const nodes: ReactNode[] = [];
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+  MARKDOWN_LINK_PATTERN.lastIndex = 0;
+
+  while ((match = MARKDOWN_LINK_PATTERN.exec(line)) !== null) {
+    if (match.index > cursor) {
+      nodes.push(...renderPlainLinks(line.slice(cursor, match.index), role, `${keyPrefix}-${nodes.length}`));
+    }
+    nodes.push(
+      <Link key={`${keyPrefix}-md-${nodes.length}`} to={match[2]} className={linkClass(role)}>
+        {match[1]}
+      </Link>,
+    );
+    cursor = match.index + match[0].length;
+  }
+
+  if (cursor < line.length) {
+    nodes.push(...renderPlainLinks(line.slice(cursor), role, `${keyPrefix}-${nodes.length}`));
+  }
+
+  return nodes.length ? nodes : line;
+}
+
+function renderMessageContent(content: string, role: MessageItem['role']) {
+  const lines = content.split(/\n/);
+  return lines.map((line, index) => (
+    <span key={`line-${index}`}>
+      {renderLinkedLine(line, role, `line-${index}`)}
+      {index < lines.length - 1 && <br />}
+    </span>
+  ));
 }
 
 export default function Chatbot() {
@@ -240,12 +299,12 @@ export default function Chatbot() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-slate-50">
       <SEOHead title={pageTitle} description={pageDesc} />
       <Navigation />
 
-      <div className="mx-auto max-w-5xl px-4 py-8">
-        <div className="mb-6 text-center">
+      <main className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col overflow-hidden bg-white md:my-4 md:rounded-2xl md:border md:border-slate-100 md:shadow-sm">
+        <div className="hidden">
           <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-blue-700 shadow-lg">
             <MessageCircle className="h-7 w-7 text-white" />
           </div>
@@ -253,7 +312,7 @@ export default function Chatbot() {
           <p className="mt-1 text-gray-500">{pageDesc}</p>
         </div>
 
-        <div className="flex h-[68vh] flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100">
               <Bot className="h-4 w-4 text-slate-500" />
@@ -269,7 +328,7 @@ export default function Chatbot() {
             </button>
           </div>
 
-          <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 md:px-5">
             {historyLoading && (
               <div className="text-sm text-gray-400">
                 {pick(locale, '載入歷史對話...', 'Loading chat history...', '会話履歴を読み込み中...', '대화 기록을 불러오는 중...')}
@@ -282,8 +341,8 @@ export default function Chatbot() {
                   {msg.role === 'user' ? <User className="h-4 w-4 text-white" /> : <Bot className="h-4 w-4 text-slate-500" />}
                 </div>
                 <div className={`flex max-w-[80%] flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                  <div className={`whitespace-pre-line rounded-2xl px-4 py-3 text-sm leading-relaxed ${msg.role === 'user' ? 'rounded-tr-none bg-sky-600 text-white' : 'rounded-tl-none bg-slate-100 text-gray-800'}`}>
-                    {msg.content}
+                  <div className={`break-words rounded-2xl px-4 py-3 text-sm leading-relaxed ${msg.role === 'user' ? 'rounded-tr-none bg-sky-600 text-white' : 'rounded-tl-none bg-slate-100 text-gray-800'}`}>
+                    {renderMessageContent(msg.content, msg.role)}
                   </div>
                   <span className="mt-1 text-xs text-gray-400">{msg.time}</span>
                 </div>
@@ -293,7 +352,7 @@ export default function Chatbot() {
             <div ref={bottomRef} />
           </div>
 
-          <div className="border-t border-slate-100 p-4">
+          <div className="shrink-0 border-t border-slate-100 bg-white p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:p-4">
             <form onSubmit={sendMessage} className="flex gap-2">
               <input
                 value={input}
@@ -310,7 +369,7 @@ export default function Chatbot() {
             </p>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
