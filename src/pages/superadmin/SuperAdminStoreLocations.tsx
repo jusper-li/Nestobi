@@ -133,21 +133,31 @@ export default function SuperAdminStoreLocations() {
     setUploading(false);
   };
 
-  const applyDraft = () => {
+  const applyDraft = async () => {
     if (!draft || !draft.name.trim() || !draft.slug.trim()) {
-      setStatus({ type: 'error', message: '門市名稱與 slug 必填。' });
+      setStatus({ type: 'error', message: 'Store name and slug are required.' });
       return;
     }
 
     const normalized = normalizeStoreLocation(draft, editingIndex ?? locations.length);
-    setLocations(prev => {
-      const next = [...prev];
-      if (editingIndex === null) next.push(normalized);
-      else next[editingIndex] = normalized;
-      return next.map((row, index) => ({ ...row, sort_order: index }));
-    });
-    setStatus({ type: 'info', message: '已更新草稿，請按「儲存全部」寫入正式資料。' });
-    closeEditor();
+    const next = [...locations];
+    if (editingIndex === null) next.push(normalized);
+    else next[editingIndex] = normalized;
+    const ordered = next.map((row, index) => ({ ...row, sort_order: index }));
+
+    setSaving(true);
+    setStatus(null);
+    try {
+      await saveStoreLocations(ordered);
+      setLocations(ordered);
+      setStatus({ type: 'success', message: 'Store settings saved.' });
+      closeEditor();
+      await loadLocations();
+    } catch (error) {
+      setStatus({ type: 'error', message: error instanceof Error ? error.message : 'Failed to save store settings.' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = (index: number) => {
@@ -459,9 +469,9 @@ export default function SuperAdminStoreLocations() {
 
               <div className="sticky bottom-0 flex justify-end gap-2 border-t border-gray-100 bg-white px-6 py-4">
                 <button onClick={closeEditor} className="rounded-xl px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-100">取消</button>
-                <button onClick={applyDraft} className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700">
-                  <Save className="h-4 w-4" />
-                  套用草稿
+                <button onClick={applyDraft} disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:opacity-60">
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Save store
                 </button>
               </div>
             </motion.div>
