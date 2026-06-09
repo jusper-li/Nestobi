@@ -5,7 +5,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import { SiteSettingsProvider } from './contexts/SiteSettingsContext';
 import CookieConsent from './components/CookieConsent';
 import ScrollToTop from './components/ScrollToTop';
-import { UserRoute, AdminRoute, SuperAdminRoute, VendorRoute, GuestRoute, PermissionRoute } from './components/ProtectedRoute';
+import { UserRoute, AdminRoute, SuperAdminRoute, VendorRoute, GuestRoute, PermissionRoute, StoreManagerRoute } from './components/ProtectedRoute';
 
 import Home from './pages/Home';
 import Login from './pages/auth/Login';
@@ -41,6 +41,7 @@ import MemberOrders from './pages/member/MemberOrders';
 import PurchaseHistory from './pages/member/PurchaseHistory';
 import Points from './pages/member/Points';
 import Preferences from './pages/member/Preferences';
+import StoreAdminDashboard from './pages/storeadmin/StoreAdminDashboard';
 
 import ItineraryPlanner from './pages/ai/ItineraryPlanner';
 import Translator from './pages/ai/Translator';
@@ -156,10 +157,12 @@ function App() {
               <Route path="purchases" element={<PurchaseHistory />} />
               <Route path="points" element={<Points />} />
               <Route path="preferences" element={<Preferences />} />
+              <Route path="store-admin" element={<StoreManagerRoute><StoreAdminDashboard /></StoreManagerRoute>} />
             </Route>
 
             <Route path="/vendor" element={<VendorRoute><VendorLayout /></VendorRoute>}>
               <Route index element={<VendorDashboard />} />
+              <Route path="store-admin" element={<StoreManagerRoute><StoreAdminDashboard /></StoreManagerRoute>} />
               <Route path="hotels" element={<VendorHotels />} />
               <Route path="rooms" element={<VendorRooms />} />
               <Route path="housekeeping" element={<VendorHousekeeping />} />
@@ -227,6 +230,7 @@ function App() {
 
             <Route path="/admin/login" element={<Navigate to="/auth/login" replace />} />
             <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
+            <Route path="/store-admin" element={<Navigate to="/member/store-admin" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <CookieConsent />

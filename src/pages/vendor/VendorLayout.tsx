@@ -6,7 +6,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 
 const VendorLayout: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, role, storeAssignments } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang);
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
@@ -27,9 +27,14 @@ const VendorLayout: React.FC = () => {
     { to: '/vendor/staff', icon: <Users className="w-5 h-5" />, label: pick('團隊成員', 'Staff', 'スタッフ', '직원') },
     { to: '/vendor/products', icon: <Package className="w-5 h-5" />, label: pick('根本在旅行商品', 'Genbon Products', '根本在旅行の商品', '근본재여행 상품') },
     { to: '/vendor/orders', icon: <ShoppingBag className="w-5 h-5" />, label: pick('商品訂單與訂房', 'Orders & Bookings', '注文と予約', '주문 및 예약') },
+    { to: '/vendor/store-admin', icon: <Store className="w-5 h-5" />, label: pick('門市管理', 'Store Admin', '店舗管理', '매장 관리') },
     { to: '/vendor/blog', icon: <FileText className="w-5 h-5" />, label: pick('咖啡旅行家文章', 'Coffee Traveler Articles', 'コーヒートラベラー記事', '커피 트래블러 글') },
     { to: '/vendor/profile', icon: <User className="w-5 h-5" />, label: pick('廠商資料', 'Vendor Profile', 'ベンダー情報', '업체 정보') },
   ];
+  const visibleNavLinks = navLinks.filter(link => {
+    if (link.to === '/vendor/store-admin') return role === 'admin' || role === 'superadmin' || storeAssignments.length > 0;
+    return true;
+  });
 
   const handleSignOut = async () => { await signOut(); navigate('/auth/login'); };
 
@@ -47,7 +52,7 @@ const VendorLayout: React.FC = () => {
         </div>
       </div>
       <nav className="flex-1 p-3 space-y-1">
-        {navLinks.map(link => (
+        {visibleNavLinks.map(link => (
           <NavLink key={link.to} to={link.to} end={link.end} onClick={() => setSidebarOpen(false)}
             className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${isActive ? 'bg-emerald-500 text-white' : 'text-emerald-200 hover:text-white hover:bg-emerald-700'}`}>
             {link.icon}{link.label}

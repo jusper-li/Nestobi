@@ -1,6 +1,6 @@
 ﻿import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { BedDouble, Home, LogOut, Menu, Receipt, Settings, ShoppingBag, Star, User, X } from 'lucide-react';
+import { BedDouble, Home, LogOut, Menu, Receipt, Settings, ShoppingBag, Star, Store, User, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
@@ -9,7 +9,7 @@ import Navigation from '../../components/Navigation';
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 
 export default function MemberLayout() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, storeAssignments } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang) as UiLang;
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
@@ -35,6 +35,9 @@ export default function MemberLayout() {
     { to: '/member/orders', icon: <ShoppingBag className="h-5 w-5" />, label: t.orders },
     { to: '/member/purchases', icon: <Receipt className="h-5 w-5" />, label: t.purchases },
     { to: '/member/points', icon: <Star className="h-5 w-5" />, label: t.points },
+    ...(storeAssignments.length > 0
+      ? [{ to: '/member/store-admin', icon: <Store className="h-5 w-5" />, label: pick('門市管理', 'Store Admin', '店舗管理', '매장 관리') }]
+      : []),
     { to: '/member/preferences', icon: <Settings className="h-5 w-5" />, label: t.preferences },
   ];
 

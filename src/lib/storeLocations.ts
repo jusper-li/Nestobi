@@ -25,6 +25,7 @@ export interface StoreLocation {
   is_active: boolean;
   source_url: string;
   source_image_url?: string;
+  manager_notes?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -208,6 +209,7 @@ export function normalizeStoreLocation(value: Partial<StoreLocation>, index = 0)
     is_active: value.is_active !== false,
     source_url: value.source_url || STORE_LOCATIONS_SOURCE_URL,
     source_image_url: value.source_image_url || '',
+    manager_notes: value.manager_notes || '',
     id: value.id || slug,
     created_at: value.created_at,
     updated_at: value.updated_at,
@@ -276,6 +278,7 @@ function toTablePayload(locations: StoreLocation[]) {
     is_active: location.is_active,
     source_url: location.source_url.trim() || STORE_LOCATIONS_SOURCE_URL,
     source_image_url: location.source_image_url?.trim() || '',
+    manager_notes: location.manager_notes?.trim() || '',
     updated_at: new Date().toISOString(),
   }));
 }
@@ -371,6 +374,8 @@ export function createEmptyStoreLocation(order: number): StoreLocation {
     sort_order: order,
     is_active: true,
     source_url: STORE_LOCATIONS_SOURCE_URL,
+    source_image_url: '',
+    manager_notes: '',
   };
 }
 

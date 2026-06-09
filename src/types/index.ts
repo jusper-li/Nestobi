@@ -117,6 +117,7 @@ export interface Product {
   id: string;
   category_id: string | null;
   vendor_id: string | null;
+  store_location_id?: string | null;
   name: string;
   description: string;
   price: number;
@@ -186,10 +187,64 @@ export interface Point {
   id: string;
   user_id: string;
   amount: number;
-  transaction_type: 'earned' | 'spent' | 'expired';
+  transaction_type: 'earned' | 'spent' | 'expired' | 'manual' | 'redemption' | 'store_redemption';
   reference_id: string | null;
+  source_type?: 'booking' | 'order' | 'manual' | 'redemption' | 'store_redemption' | null;
+  source_id?: string | null;
+  vendor_id?: string | null;
+  store_location_id?: string | null;
   description: string;
   created_at: string;
+}
+
+export interface StoreLocationManager {
+  id: string;
+  store_location_id: string;
+  user_id: string;
+  role: 'manager' | 'assistant' | 'supervisor';
+  can_manage_store_info: boolean;
+  can_manage_products: boolean;
+  can_manage_inventory: boolean;
+  can_manage_points: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  store_locations?: StoreLocation;
+  members?: { display_name?: string | null } | null;
+}
+
+export interface StoreInventoryMovement {
+  id: string;
+  store_location_id: string;
+  product_id: string;
+  movement_type: 'purchase' | 'sale' | 'adjustment_in' | 'adjustment_out' | 'transfer_in' | 'transfer_out' | 'writeoff';
+  quantity: number;
+  unit_cost: number;
+  supplier_name: string;
+  invoice_no: string;
+  purchase_date: string;
+  note: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  products?: Product | null;
+  store_locations?: StoreLocation | null;
+}
+
+export interface StorePointRedemption {
+  id: string;
+  store_location_id: string;
+  user_id: string;
+  points_used: number;
+  discount_amount: number;
+  reference_type: string;
+  reference_id: string | null;
+  note: string;
+  used_at: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  store_locations?: StoreLocation | null;
 }
 
 export interface ItineraryPlan {
@@ -284,6 +339,7 @@ export interface StoreLocation {
   is_active: boolean;
   source_url: string;
   source_image_url: string;
+  manager_notes?: string;
   created_at: string;
   updated_at: string;
 }

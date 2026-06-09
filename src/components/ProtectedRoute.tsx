@@ -73,6 +73,15 @@ export function VendorRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+export function StoreManagerRoute({ children }: { children: ReactNode }) {
+  const { user, role, storeAssignments, loading } = useAuth();
+  const location = useLocation();
+  if (loading) return <LoadingScreen />;
+  if (!user || (!canAccessAdmin(role) && !storeAssignments.length))
+    return <Navigate to={`/auth/login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
+  return <>{children}</>;
+}
+
 export function PermissionRoute({ children, permission }: { children: ReactNode; permission: string }) {
   const { role, hasPermission, loading } = useAuth();
   const { lang } = useLanguage();

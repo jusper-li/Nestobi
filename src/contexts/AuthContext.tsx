@@ -3,16 +3,19 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { GENERIC_AUTH_ERROR_MESSAGE } from '../lib/security';
 import type { MemberProfile, UserAuth } from '../types';
+import type { StoreLocationManager } from '../types';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: MemberProfile | null;
   userAuth: UserAuth | null;
+  storeAssignments: StoreLocationManager[];
   role: 'user' | 'admin' | 'superadmin' | 'vendor';
   permissions: Record<string, boolean>;
   loading: boolean;
   hasPermission: (key: string) => boolean;
+  hasStorePermission: (storeId: string, permission?: 'any' | 'info' | 'products' | 'inventory' | 'points') => boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -33,15 +36,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [userAuth, setUserAuth] = useState<UserAuth | null>(null);
+  const [storeAssignments, setStoreAssignments] = useState<StoreLocationManager[]>([]);
   const [role, setRole] = useState<'user' | 'admin' | 'superadmin' | 'vendor'>('user');
   const [permissions, setPermissions] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
   const fetchUserData = async (userId: string) => {
     try {
-      const [profileRes, authRes] = await Promise.all([
+      const [profileRes, authRes, assignmentRes] = await Promise.all([
         withTimeout(supabase.from('tbl_mn5wgzh0').select('*').eq('user_id', userId).maybeSingle(), 8000),
         withTimeout(supabase.from('tbl_user_auth').select('*').eq('user_id', userId).maybeSingle(), 8000),
+        withTimeout(
+          supabase
+            .from('store_location_managers')
+            .select('id,store_location_id,user_id,role,can_manage_store_info,can_manage_products,can_manage_inventory,can_manage_points,is_active,created_at,updated_at')
+            .eq('user_id', userId)
+            .eq('is_active', true),
+          8000,
+        ),
       ]);
       if (profileRes.data) setProfile(profileRes.data as MemberProfile);
       if (authRes.data) {
@@ -61,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setPermissions({});
         }
       }
+      setStoreAssignments((assignmentRes.data || []) as StoreLocationManager[]);
     } catch (err) {
       console.error('Error fetching user data:', err);
     }
@@ -87,11 +100,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') setLoading(false);
         })();
       } else {
-        setProfile(null);
-        setUserAuth(null);
-        setRole('user');
-        setPermissions({});
-        setLoading(false);
+      setProfile(null);
+      setUserAuth(null);
+      setStoreAssignments([]);
+      setRole('user');
+      setPermissions({});
+      setLoading(false);
       }
     });
 
@@ -147,6 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setProfile(null);
     setUserAuth(null);
+    setStoreAssignments([]);
     setRole('user');
     setPermissions({});
   };
@@ -195,10 +210,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPermissions(permMap);
   };
 
+  const hasStorePermission = useCallback((
+    storeId: string,
+    permission: 'any' | 'info' | 'products' | 'inventory' | 'points' = 'any',
+  ): boolean => {
+    if (role === 'superadmin' || role === 'admin') return true;
+    return storeAssignments.some(assignment => (
+      assignment.store_location_id === storeId
+      && assignment.is_active
+      && (
+        permission === 'any'
+        || (permission === 'info' && assignment.can_manage_store_info)
+        || (permission === 'products' && assignment.can_manage_products)
+        || (permission === 'inventory' && assignment.can_manage_inventory)
+        || (permission === 'points' && assignment.can_manage_points)
+      )
+    ));
+  }, [role, storeAssignments]);
+
   return (
     <AuthContext.Provider value={{
-      user, session, profile, userAuth, role, permissions, loading,
-      hasPermission, signIn, signUp, signOut, resetPassword, updateProfile, refreshProfile, refreshPermissions
+      user, session, profile, userAuth, storeAssignments, role, permissions, loading,
+      hasPermission, hasStorePermission, signIn, signUp, signOut, resetPassword, updateProfile, refreshProfile, refreshPermissions
     }}>
       {children}
     </AuthContext.Provider>
