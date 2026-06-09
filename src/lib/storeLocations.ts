@@ -305,48 +305,6 @@ async function saveToStoreTable(locations: StoreLocation[]) {
   }
 }
 
-async function saveToSystemPost(locations: StoreLocation[]) {
-  const cleanLocations = locations.map((location, index) =>
-    normalizeStoreLocation(
-      {
-        ...location,
-        sort_order: index,
-      },
-      index,
-    ),
-  );
-  const now = new Date().toISOString();
-  const content = JSON.stringify(
-    {
-      source_url: STORE_LOCATIONS_SOURCE_URL,
-      synced_at: now,
-      locations: cleanLocations,
-    },
-    null,
-    2,
-  );
-
-  const { error } = await supabase.from('blog_posts').upsert(
-    {
-      slug: STORE_LOCATIONS_SYSTEM_SLUG,
-      title: 'System Store Locations',
-      excerpt: 'Nestobi store locator structured data.',
-      content,
-      cover_image_url: cleanLocations[0]?.image_url || '',
-      author_name: 'Nestobi',
-      tags: ['system', 'store-locations'],
-      category: 'System',
-      status: 'published',
-      meta_description: 'Nestobi store locator structured data.',
-      published_at: now,
-      updated_at: now,
-    },
-    { onConflict: 'slug' },
-  );
-
-  if (error) throw error;
-}
-
 export async function saveStoreLocations(
   locations: StoreLocation[],
 ): Promise<'store_locations' | 'system_post'> {

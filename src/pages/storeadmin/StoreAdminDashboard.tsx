@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Loader2, Store, Users, Package, Warehouse, Coins, Save, Search, Plus, AlertCircle, CheckCircle2, Shield, CalendarDays } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Loader2, Store, Users, Package, Warehouse, Coins, Save, Search, Plus, AlertCircle, CheckCircle2, Shield, CalendarDays, Camera, QrCode, ScanLine, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
+import { parseMemberQrPayload } from '../../lib/memberQr';
 import { supabase } from '../../lib/supabase';
 import { normalizeStoreLocation, type StoreLocation } from '../../lib/storeLocations';
 import type { Product, StoreInventoryMovement, StoreLocationManager, StorePointRedemption } from '../../types';
@@ -141,6 +142,11 @@ export default function StoreAdminDashboard() {
   const [managerResults, setManagerResults] = useState<SearchResult[]>([]);
   const [memberQuery, setMemberQuery] = useState('');
   const [memberResults, setMemberResults] = useState<SearchResult[]>([]);
+  const [selectedMember, setSelectedMember] = useState<SearchResult | null>(null);
+  const [qrScannerOpen, setQrScannerOpen] = useState(false);
+  const [qrScannerLoading, setQrScannerLoading] = useState(false);
+  const [qrScannerError, setQrScannerError] = useState<string | null>(null);
+  const [qrScannerHint, setQrScannerHint] = useState('');
   const [managers, setManagers] = useState<StoreLocationManager[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [movements, setMovements] = useState<StoreInventoryMovement[]>([]);
@@ -148,6 +154,11 @@ export default function StoreAdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+  const qrVideoRef = useRef<HTMLVideoElement | null>(null);
+  const qrStreamRef = useRef<MediaStream | null>(null);
+  const qrTimerRef = useRef<number | null>(null);
+  const qrDetectorRef = useRef<BarcodeDetector | null>(null);
+  const qrProcessingRef = useRef(false);
 
   const isElevated = role === 'admin' || role === 'superadmin';
   const assignedStoreIds = useMemo(() => storeAssignments.map(item => item.store_location_id), [storeAssignments]);
@@ -220,7 +231,7 @@ export default function StoreAdminDashboard() {
     if (movementError) throw movementError;
     if (redemptionError) throw redemptionError;
     setProducts((productRows || []) as Product[]);
-    setMovements((movementRows || []) as StoreInventoryMovement[]);
+    setMovements((movementRows || []) as unknown as StoreInventoryMovement[]);
     setRedemptions((redemptionRows || []) as StorePointRedemption[]);
   };
 
@@ -302,6 +313,10 @@ export default function StoreAdminDashboard() {
     setMemberQuery('');
     setManagerResults([]);
     setMemberResults([]);
+    setSelectedMember(null);
+    setQrScannerHint('');
+    setQrScannerError(null);
+    closeQrScanner();
     void Promise.all([loadStoreData(selectedStoreId), loadManagers(selectedStoreId)])
       .catch(error => setMessage({
         type: 'error',
@@ -342,6 +357,149 @@ export default function StoreAdminDashboard() {
     return () => window.clearTimeout(timer);
   }, [memberQuery]);
 
+  useEffect(() => {
+    return () => {
+      if (qrTimerRef.current) {
+        window.clearInterval(qrTimerRef.current);
+        qrTimerRef.current = null;
+      }
+      qrStreamRef.current?.getTracks().forEach(track => track.stop());
+      qrStreamRef.current = null;
+      if (qrVideoRef.current) {
+        qrVideoRef.current.srcObject = null;
+      }
+    };
+  }, []);
+
+  const closeQrScanner = () => {
+    setQrScannerOpen(false);
+    setQrScannerLoading(false);
+    setQrScannerError(null);
+    setQrScannerHint('');
+    if (qrTimerRef.current) {
+      window.clearInterval(qrTimerRef.current);
+      qrTimerRef.current = null;
+    }
+    qrStreamRef.current?.getTracks().forEach(track => track.stop());
+    qrStreamRef.current = null;
+    if (qrVideoRef.current) {
+      qrVideoRef.current.srcObject = null;
+    }
+  };
+
+  const applyMemberSelection = async (member: SearchResult) => {
+    setSelectedMember(member);
+    setRedemptionForm(prev => ({ ...prev, user_id: member.user_id }));
+    setMemberQuery('');
+    setMemberResults([]);
+    setMessage({
+      type: 'info',
+      text: `Selected member: ${member.display_name || member.user_id}`,
+    });
+  };
+
+  const resolveMemberByUserId = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('tbl_mn5wgzh0')
+      .select('user_id,display_name')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error) throw error;
+    await applyMemberSelection({
+      user_id: userId,
+      display_name: (data?.display_name || userId).trim(),
+    });
+  };
+
+  const handleQrPayload = async (payload: string) => {
+    const userId = parseMemberQrPayload(payload);
+    if (!userId) {
+      setQrScannerError('無法辨識這個 QR 內容，請改掃會員碼或直接輸入 User ID。');
+      return;
+    }
+    setQrScannerError(null);
+    setQrScannerHint('正在帶入會員資料…');
+    await resolveMemberByUserId(userId);
+    setQrScannerHint('已完成掃描，可直接輸入點數並送出。');
+  };
+
+  const startQrScanner = async () => {
+    if (!selectedStoreId || !canEditPoints) return;
+    setQrScannerOpen(true);
+    setQrScannerLoading(true);
+    setQrScannerError(null);
+    setQrScannerHint('請將會員 QR 放入畫面中央。');
+    try {
+      if (!('BarcodeDetector' in window)) {
+        setQrScannerError('這個瀏覽器不支援即時 QR 掃描，請改用圖片掃描或手動輸入。');
+        setQrScannerLoading(false);
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: 'environment' },
+        },
+        audio: false,
+      });
+      qrStreamRef.current = stream;
+      const video = qrVideoRef.current;
+      if (!video) throw new Error('Scanner video is not ready.');
+      video.srcObject = stream;
+      await video.play();
+      qrDetectorRef.current ||= new BarcodeDetector({ formats: ['qr_code'] });
+      setQrScannerLoading(false);
+      if (qrTimerRef.current) window.clearInterval(qrTimerRef.current);
+      qrTimerRef.current = window.setInterval(async () => {
+        if (qrProcessingRef.current || !qrVideoRef.current || qrVideoRef.current.readyState < 2) return;
+        const detector = qrDetectorRef.current;
+        if (!detector) return;
+        qrProcessingRef.current = true;
+        try {
+          const codes = await detector.detect(qrVideoRef.current);
+          const rawValue = codes[0]?.rawValue?.trim();
+          if (rawValue) {
+            await handleQrPayload(rawValue);
+            closeQrScanner();
+          }
+        } catch {
+          setQrScannerError('掃描失敗，請再試一次。');
+        } finally {
+          qrProcessingRef.current = false;
+        }
+      }, 600);
+    } catch (error) {
+      setQrScannerLoading(false);
+      setQrScannerError(error instanceof Error ? error.message : '無法啟動相機，請檢查權限或改用手動輸入。');
+    }
+  };
+
+  const scanQrFromImage = async (file: File) => {
+    if (!('BarcodeDetector' in window)) {
+      setQrScannerError('這個瀏覽器不支援圖片 QR 掃描。');
+      setQrScannerLoading(false);
+      return;
+    }
+    try {
+      setQrScannerLoading(true);
+      setQrScannerError(null);
+      const detector = qrDetectorRef.current ||= new BarcodeDetector({ formats: ['qr_code'] });
+      const bitmap = await createImageBitmap(file);
+      const codes = await detector.detect(bitmap);
+      bitmap.close();
+      const rawValue = codes[0]?.rawValue?.trim();
+      if (!rawValue) {
+        setQrScannerError('圖片中沒有找到 QR Code。');
+        return;
+      }
+      await handleQrPayload(rawValue);
+      closeQrScanner();
+    } catch (error) {
+      setQrScannerLoading(false);
+      setQrScannerError(error instanceof Error ? error.message : '圖片掃描失敗。');
+    } finally {
+      setQrScannerLoading(false);
+    }
+  };
   const saveStore = async () => {
     if (!selectedStoreId) return;
     if (!canEditStoreInfo) {
@@ -492,6 +650,7 @@ export default function StoreAdminDashboard() {
       setRedemptionForm(emptyRedemptionForm);
       setMemberQuery('');
       setMemberResults([]);
+      setSelectedMember(null);
       setMessage({ type: 'success', text: pick('點數折抵已新增', 'Point redemption logged', 'ポイント利用履歴を追加しました。', '포인트 차감 기록이 추가되었습니다.') });
       await loadStoreData(selectedStoreId);
     } catch (error) {
@@ -741,6 +900,37 @@ export default function StoreAdminDashboard() {
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             <div className="md:col-span-2">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void startQrScanner()}
+                  disabled={busy || !canEditPoints}
+                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 disabled:opacity-60"
+                >
+                  <QrCode className="h-4 w-4" />
+                  {pick('掃描會員 QR', 'Scan member QR', '会員 QR をスキャン', '회원 QR 스캔')}
+                </button>
+                {selectedMember && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedMember(null);
+                      setRedemptionForm(prev => ({ ...prev, user_id: '' }));
+                    }}
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600"
+                  >
+                    <X className="h-4 w-4" />
+                    {pick('清除會員', 'Clear member', '会員を解除', '회원 해제')}
+                  </button>
+                )}
+              </div>
+              {selectedMember && (
+                <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                  <span className="font-semibold">{pick('目前會員：', 'Current member: ', '現在の会員：', '현재 회원: ')}</span>
+                  {selectedMember.display_name}
+                  <span className="ml-2 font-mono text-xs text-emerald-700">{selectedMember.user_id}</span>
+                </div>
+              )}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input value={memberQuery} onChange={e => setMemberQuery(e.target.value)} className="w-full rounded-xl border border-slate-200 py-2.5 pl-9 pr-3 text-sm" placeholder={pick('搜尋會員', 'Search member', '会員を検索', '회원 검색')} />
@@ -748,14 +938,14 @@ export default function StoreAdminDashboard() {
               {memberResults.length > 0 && (
                 <div className="mt-2 space-y-2">
                   {memberResults.map(result => (
-                    <button key={result.user_id} type="button" onClick={() => setRedemptionForm(prev => ({ ...prev, user_id: result.user_id }))} className="flex w-full items-center justify-between rounded-xl border border-slate-200 px-3 py-2 text-left text-sm hover:border-emerald-300 hover:bg-emerald-50">
+                    <button key={result.user_id} type="button" onClick={() => void applyMemberSelection(result)} className="flex w-full items-center justify-between rounded-xl border border-slate-200 px-3 py-2 text-left text-sm hover:border-emerald-300 hover:bg-emerald-50">
                       <span>{result.display_name}</span>
                       <Plus className="h-4 w-4 text-emerald-600" />
                     </button>
                   ))}
                 </div>
               )}
-            </div>
+              </div>
             <input type="number" min="1" value={redemptionForm.points_used} onChange={e => setRedemptionForm(prev => ({ ...prev, points_used: e.target.value }))} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder={pick('使用點數', 'Points used', '使用ポイント', '사용 포인트')} />
             <input type="number" min="0" value={redemptionForm.discount_amount} onChange={e => setRedemptionForm(prev => ({ ...prev, discount_amount: e.target.value }))} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder={pick('折抵金額', 'Discount amount', '割引金額', '할인 금액')} />
             <input type="datetime-local" value={redemptionForm.used_at.slice(0, 16)} onChange={e => setRedemptionForm(prev => ({ ...prev, used_at: new Date(e.target.value).toISOString() }))} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm" />
@@ -831,6 +1021,74 @@ export default function StoreAdminDashboard() {
           </div>
         </section>
       </div>
+
+      {qrScannerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
+          <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">{pick('掃描會員 QR', 'Scan member QR', '会員 QR をスキャン', '회원 QR 스캔')}</h3>
+                <p className="text-sm text-slate-500">{pick('請把會員 QR 放在鏡頭前，或上傳 QR 圖片。', 'Hold the member QR in front of the camera, or upload an image.', '会員 QR をカメラ前にかざすか、画像をアップロードしてください。', '회원 QR을 카메라 앞에 두거나 이미지를 업로드해 주세요.')}</p>
+              </div>
+              <button type="button" onClick={closeQrScanner} className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.9fr)]">
+              <div className="space-y-3">
+                <div className="overflow-hidden rounded-2xl bg-slate-950">
+                  <video ref={qrVideoRef} autoPlay muted playsInline className="aspect-[4/3] h-full w-full object-cover" />
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void startQrScanner()}
+                    disabled={qrScannerLoading}
+                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                  >
+                    {qrScannerLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                    {pick('重新啟動相機', 'Restart camera', 'カメラを再起動', '카메라 다시 시작')}
+                  </button>
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700">
+                    <ScanLine className="h-4 w-4" />
+                    {pick('掃描圖片', 'Scan image', '画像を読み取る', '이미지 스캔')}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={event => {
+                        const file = event.target.files?.[0];
+                        if (file) void scanQrFromImage(file);
+                        event.target.value = '';
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {qrScannerError ? (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{qrScannerError}</div>
+                ) : null}
+                {qrScannerHint ? (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{qrScannerHint}</div>
+                ) : null}
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-sm font-semibold text-slate-900">{pick('可掃描的內容格式', 'Supported QR formats', '対応する QR フォーマット', '지원되는 QR 형식')}</p>
+                  <ul className="mt-2 space-y-2 text-sm text-slate-600">
+                    <li>• {pick('nestobi:member:&lt;user_id&gt;', 'nestobi:member:&lt;user_id&gt;', 'nestobi:member:&lt;user_id&gt;', 'nestobi:member:&lt;user_id&gt;')}</li>
+                    <li>• {pick('含有 user_id / member_id 的網址或 JSON', 'A URL or JSON containing user_id / member_id', 'user_id / member_id を含む URL または JSON', 'user_id / member_id가 포함된 URL 또는 JSON')}</li>
+                    <li>• {pick('若 QR 掃不到，也可用下方搜尋會員', 'If scan fails, use the member search below.', '読み取れない場合は下の会員検索を使えます。', '스캔이 실패하면 아래 회원 검색을 사용하세요.')}</li>
+                  </ul>
+                </div>
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
+                  {pick('掃描後會自動帶入會員與 User ID，然後可直接輸入點數進行折抵。', 'After scanning, the member and User ID will be filled in automatically so you can enter points right away.', '読み取り後は会員と User ID が自動入力され、すぐにポイントを入力して利用できます。', '스캔 후 회원과 User ID가 자동 입력되어 바로 포인트를 입력해 차감할 수 있습니다.')}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

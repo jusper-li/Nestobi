@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { BedDouble, Coins, ShoppingBag, Sparkles, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { BedDouble, Coins, QrCode, ShoppingBag, Sparkles, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import QRCode from 'qrcode';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
+import { buildMemberQrPayload } from '../../lib/memberQr';
 import { supabase } from '../../lib/supabase';
 import { formatDate } from '../../lib/utils';
 
@@ -55,6 +57,7 @@ export default function Points() {
 
   const [balance, setBalance] = useState<PointBalance>(emptyBalance);
   const [transactions, setTransactions] = useState<PointTx[]>([]);
+  const [memberQr, setMemberQr] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
@@ -90,6 +93,34 @@ export default function Points() {
     };
 
     void fetchPoints();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setMemberQr('');
+      return;
+    }
+
+    let active = true;
+    void QRCode.toDataURL(buildMemberQrPayload(user.id), {
+      width: 240,
+      margin: 1,
+      errorCorrectionLevel: 'M',
+      color: {
+        dark: '#111827',
+        light: '#FFFFFF',
+      },
+    })
+      .then(url => {
+        if (active) setMemberQr(url);
+      })
+      .catch(() => {
+        if (active) setMemberQr('');
+      });
+
+    return () => {
+      active = false;
+    };
   }, [user]);
 
   const cards = [
@@ -131,6 +162,36 @@ export default function Points() {
           <p className="text-sm font-medium">{text.shoppingUse}</p>
         </div>
       </section>
+
+      {user && (
+        <section className="rounded-2xl bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-2">
+            <QrCode className="h-5 w-5 text-slate-700" />
+            <h3 className="text-lg font-bold text-gray-900">{pick('門市掃碼付款碼', 'Store scan code', '店舗スキャン用コード', '매장 스캔 코드')}</h3>
+          </div>
+          <p className="mt-1 text-sm text-gray-500">
+            {pick('付款時出示此 QR Code，門市掃描後即可帶入你的會員資料與點數折抵。', 'Show this QR code at checkout so the store can scan your member profile and apply points.', '会計時にこの QR コードを提示すると、店舗で会員情報を読み取りポイントを適用できます。', '결제 시 이 QR 코드를 제시하면 매장에서 회원 정보와 포인트 차감을 바로 처리할 수 있습니다.')}
+          </p>
+          <div className="mt-4 flex flex-col items-center gap-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center md:flex-row md:items-start md:text-left">
+            <div className="rounded-2xl bg-white p-3 shadow-sm">
+              {memberQr ? (
+                <img src={memberQr} alt={pick('會員 QR Code', 'Member QR code', '会員 QR コード', '회원 QR 코드')} className="h-40 w-40" />
+              ) : (
+                <div className="flex h-40 w-40 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-sm text-slate-400">
+                  {pick('無法產生 QR', 'QR unavailable', 'QR を生成できません', 'QR을 만들 수 없습니다')}
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-gray-900">{pick('出示給門市掃描', 'Present this to store staff', '店舗スタッフに提示してください', '매장 직원에게 보여 주세요')}</p>
+              <p className="mt-1 text-sm text-gray-500">{pick('QR 內容已綁定你的會員帳號，門市掃描後可直接執行點數折抵。', 'The QR payload is tied to your member account so the store can redeem points directly after scanning.', 'QR の内容は会員アカウントに紐づいており、店舗で読み取ると直接ポイント利用できます。', 'QR 내용은 회원 계정에 연결되어 있어 매장에서 스캔 후 바로 포인트 차감이 가능합니다.')}</p>
+              <p className="mt-3 break-all rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-500">
+                {buildMemberQrPayload(user.id)}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="rounded-2xl bg-white p-5 shadow-sm">
         <h3 className="mb-4 text-lg font-bold text-gray-900">{text.detail}</h3>
