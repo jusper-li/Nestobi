@@ -350,14 +350,8 @@ async function saveToSystemPost(locations: StoreLocation[]) {
 export async function saveStoreLocations(
   locations: StoreLocation[],
 ): Promise<'store_locations' | 'system_post'> {
-  try {
-    await saveToStoreTable(locations);
-    await saveToSystemPost(locations);
-    return 'store_locations';
-  } catch {
-    await saveToSystemPost(locations);
-    return 'system_post';
-  }
+  await saveToStoreTable(locations);
+  return 'store_locations';
 }
 
 export function createEmptyStoreLocation(order: number): StoreLocation {
