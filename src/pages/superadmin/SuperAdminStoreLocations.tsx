@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import {
   AlertCircle,
   ArrowDown,
@@ -196,6 +197,13 @@ export default function SuperAdminStoreLocations() {
           <p className="mt-1 text-sm text-gray-500">維護前台門市據點、營業時間、電話、地圖與照片。</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link
+            to="/vendor/store-admin"
+            className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100"
+          >
+            <Users className="h-4 w-4" />
+            門市管理員
+          </Link>
           <button
             onClick={restoreDefaults}
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300"

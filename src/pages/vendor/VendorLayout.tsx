@@ -32,7 +32,7 @@ const VendorLayout: React.FC = () => {
     { to: '/vendor/profile', icon: <User className="w-5 h-5" />, label: pick('廠商資料', 'Vendor Profile', 'ベンダー情報', '업체 정보') },
   ];
   const visibleNavLinks = navLinks.filter(link => {
-    if (link.to === '/vendor/store-admin') return role === 'admin' || role === 'superadmin' || storeAssignments.length > 0;
+    if (link.to === '/vendor/store-admin') return role === 'vendor' || role === 'admin' || role === 'superadmin' || storeAssignments.length > 0;
     return true;
   });
 
