@@ -45,6 +45,13 @@ export default function MobileBottomNav() {
   const location = useLocation();
   const locale = normalizeLang(lang);
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
+  const pathname = location.pathname;
+  const isBackendRoute =
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/superadmin') ||
+    pathname.startsWith('/vendor') ||
+    pathname.startsWith('/member/store-admin') ||
+    pathname.startsWith('/store-admin');
 
   const items = useMemo<NavItem[]>(
     () => [
@@ -56,6 +63,10 @@ export default function MobileBottomNav() {
     ],
     [pick, user],
   );
+
+  if (isBackendRoute) {
+    return null;
+  }
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#2C1F10]/10 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 shadow-[0_-8px_24px_rgba(44,31,16,0.08)] backdrop-blur md:hidden">
