@@ -57,6 +57,34 @@ function getSupabaseConfig() {
   return { supabaseUrl, serviceRoleKey };
 }
 
+async function isAuthenticatedRequest(req: Request) {
+  const apiKey = req.headers.get("apikey") || req.headers.get("Apikey") || "";
+  const authHeader = req.headers.get("Authorization") || "";
+  const bearerToken = authHeader.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || "";
+  const configuredPublicKeys = [
+    Deno.env.get("SUPABASE_ANON_KEY"),
+    Deno.env.get("SUPABASE_PUBLISHABLE_KEY"),
+  ].filter(Boolean);
+
+  if (apiKey && configuredPublicKeys.includes(apiKey)) return true;
+  if (apiKey.startsWith("sb_publishable_")) return true;
+
+  if (!bearerToken) return false;
+  try {
+    const { supabaseUrl, serviceRoleKey } = getSupabaseConfig();
+    const res = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${bearerToken}`,
+      },
+    });
+    return res.ok;
+  } catch (error) {
+    console.error("Auth check failed", error);
+    return false;
+  }
+}
+
 async function fetchPublicRows<T>(pathAndQuery: string): Promise<T[]> {
   const { supabaseUrl, serviceRoleKey } = getSupabaseConfig();
   const res = await fetch(`${supabaseUrl}/rest/v1/${pathAndQuery}`, {
@@ -243,6 +271,18 @@ async function syncAndEmbedSupportDocuments() {
   await vectorSyncPromise;
 }
 
+function inferSupportSourceTypes(question: string) {
+  const sourceTypes = new Set<string>();
+  if (/房|住宿|旅宿|訂房|入住|床|villa|hotel|room|booking/i.test(question)) sourceTypes.add("room");
+  if (/商品|購買|下單|咖啡|咖啡豆|濾掛|豆|烘焙|風味|配方|購物|庫存|價格|shop|product|coffee/i.test(question)) sourceTypes.add("product");
+  if (/文章|閱讀|知識|教學|旅行|景點|攻略|blog|article/i.test(question)) sourceTypes.add("article");
+  if (/門市|地址|營業|電話|店|據點|store|location/i.test(question)) sourceTypes.add("store");
+  if (/常見問題|客服|聯繫|密碼|退貨|退款|faq/i.test(question)) sourceTypes.add("faq");
+  if (sourceTypes.has("product")) sourceTypes.add("article");
+  if (sourceTypes.has("article") && /咖啡|商品|購買|風味|豆|濾掛/i.test(question)) sourceTypes.add("product");
+  return Array.from(sourceTypes);
+}
+
 async function buildVectorCustomerServiceContext(question: string) {
   try {
     if (Date.now() < vectorUnavailableUntil) return "";
@@ -250,7 +290,23 @@ async function buildVectorCustomerServiceContext(question: string) {
     if (Date.now() < vectorUnavailableUntil) return "";
     const [queryEmbedding] = await createEmbeddings([question]);
     if (!queryEmbedding?.length) return "";
-    const rows = await callSupabaseRpc<Array<{
+
+    const preferredTypes = inferSupportSourceTypes(question);
+    const rows = preferredTypes.length > 0
+      ? await callSupabaseRpc<Array<{
+        source_type: string;
+        title: string;
+        content: string;
+        url_path: string;
+        metadata: Record<string, unknown> | null;
+        similarity: number;
+      }>>("match_ai_support_documents_by_type", {
+        query_embedding: vectorLiteral(queryEmbedding),
+        source_types: preferredTypes,
+        match_count: 18,
+        min_similarity: 0.12,
+      })
+      : await callSupabaseRpc<Array<{
       source_type: string;
       title: string;
       content: string;
@@ -309,6 +365,35 @@ async function searchVectorDocuments(question: string, sourceTypes: string[], ma
     console.error("Semantic search failed", err);
     return [];
   }
+}
+
+async function buildDirectRecommendationAnswer(question: string) {
+  if (!/推薦|找|尋找|有沒有|有什麼|想要|購買|買|訂房|住宿|門市|文章|連結|coffee|product|room|article|store/i.test(question)) return "";
+  const sourceTypes = inferSupportSourceTypes(question).filter((sourceType) => sourceType !== "faq");
+  if (sourceTypes.length === 0) return "";
+  const matches = await searchVectorDocuments(question, sourceTypes, 6);
+  if (!matches.length) return "";
+
+  const typeName: Record<string, string> = {
+    product: "商品",
+    room: "住宿",
+    article: "文章",
+    store: "門市",
+  };
+  const lines = matches.slice(0, 5).map((match, index) => {
+    const bookingUrl = typeof match.metadata?.booking_url === "string" ? match.metadata.booking_url : "";
+    const detailLink = `[查看${typeName[match.source_type] || "資料"}](${match.url_path})`;
+    const actionLink = bookingUrl ? `、[訂房](${bookingUrl})` : "";
+    return `${index + 1}. **${cleanText(match.title, 120)}**：${detailLink}${actionLink}`;
+  });
+
+  return [
+    "可以，依照你的需求，我先幫你從站內資料找到這些結果：",
+    "",
+    ...lines,
+    "",
+    "你可以點連結查看詳細內容；商品下單、訂房與付款仍會回到站內流程完成。",
+  ].join("\n");
 }
 
 async function buildKeywordCustomerServiceContext(question: string) {
@@ -484,6 +569,8 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
+    if (!(await isAuthenticatedRequest(req))) return json({ error: "Unauthorized" }, 401);
+
     const body = await req.json();
     const action = body.action;
 
@@ -511,6 +598,8 @@ Deno.serve(async (req) => {
         .map((m: { role: "user" | "assistant"; content: string }) => ({ role: m.role, content: cleanText(m.content, 900) }));
       const question = latestUserMessage(recentMessages);
       if (isPrivateAccountQuestion(question)) return json({ result: privateAccountAnswer() });
+      const directRecommendation = await buildDirectRecommendationAnswer(question);
+      if (directRecommendation) return json({ result: directRecommendation });
 
       const databaseContext = await buildCustomerServiceContext(question);
       const system = [

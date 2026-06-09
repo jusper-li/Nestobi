@@ -5,14 +5,16 @@ const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export async function callAI<T = unknown>(action: string, params: Record<string, unknown>): Promise<T> {
   const { data: sessionData } = await supabase.auth.getSession();
-  const bearerToken = sessionData.session?.access_token || ANON_KEY;
+  const headers: Record<string, string> = {
+    apikey: ANON_KEY,
+    'Content-Type': 'application/json',
+  };
+  if (sessionData.session?.access_token) {
+    headers.Authorization = `Bearer ${sessionData.session.access_token}`;
+  }
   const res = await fetch(BASE_URL, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${bearerToken}`,
-      apikey: ANON_KEY,
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({ action, ...params }),
   });
   if (!res.ok) {
