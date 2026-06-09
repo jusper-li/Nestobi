@@ -73,9 +73,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setPermissions({});
         }
       }
-      setStoreAssignments((assignmentRes.data || []) as StoreLocationManager[]);
+      if (assignmentRes.error) {
+        const assignmentError = assignmentRes.error as { message?: string; code?: string; details?: string } | null;
+        const missingTable = assignmentError && (
+          assignmentError.code === '42P01'
+          || /store_location_managers/i.test(assignmentError.message || '')
+          || /store_location_managers/i.test(assignmentError.details || '')
+        );
+        if (missingTable) {
+          setStoreAssignments([]);
+        } else {
+          throw assignmentRes.error;
+        }
+      } else {
+        setStoreAssignments((assignmentRes.data || []) as StoreLocationManager[]);
+      }
     } catch (err) {
       console.error('Error fetching user data:', err);
+      setStoreAssignments([]);
     }
   };
 

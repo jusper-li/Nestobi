@@ -17,6 +17,7 @@ import {
   Search,
   Trash2,
   Upload,
+  Users,
   X,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
