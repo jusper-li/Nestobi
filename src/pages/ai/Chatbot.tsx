@@ -299,13 +299,13 @@ export default function Chatbot() {
   );
 
   return (
-    <div className="relative flex h-[calc(100dvh-5.75rem-env(safe-area-inset-bottom))] flex-col overflow-hidden bg-slate-50 md:h-[100dvh]">
+    <div className="relative min-h-[100dvh] bg-slate-50 md:h-[100dvh]">
       <SEOHead title={pageTitle} description={pageDesc} />
       <Navigation />
 
-      <main className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col overflow-hidden bg-white md:my-4 md:rounded-2xl md:border md:border-slate-100 md:shadow-sm">
+      <main className="fixed inset-x-0 top-16 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] mx-auto flex min-h-0 w-full max-w-5xl flex-col overflow-hidden bg-white md:relative md:inset-auto md:my-4 md:rounded-2xl md:border md:border-slate-100 md:shadow-sm">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden pb-[calc(5.75rem+env(safe-area-inset-bottom)+0.75rem)] md:pb-0">
-          <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
+          <div className="sticky top-0 z-30 flex items-center gap-2 border-b border-slate-100 bg-white/95 px-5 py-3 backdrop-blur">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100">
               <Bot className="h-4 w-4 text-slate-500" />
             </div>
