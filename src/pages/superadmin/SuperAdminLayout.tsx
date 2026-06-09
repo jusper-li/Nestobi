@@ -51,7 +51,7 @@ const SuperAdminLayout: React.FC = () => {
     { to: '/superadmin/room-translations', icon: <Languages className="h-5 w-5" />, label: pick('nestobi 翻譯', 'nestobi Translations', 'nestobi 翻訳', 'nestobi 번역') },
     { to: '/superadmin/store-locations', icon: <MapPin className="h-5 w-5" />, label: pick('根本在旅行門市', 'Genbon Stores', '根本在旅行の店舗', '근본재여행 매장') },
     { to: '/superadmin/blog', icon: <Coffee className="h-5 w-5" />, label: pick('咖啡旅行家文章', 'Coffee Traveler Articles', 'コーヒートラベラー記事', '커피 트래블러 글') },
-    { to: '/superadmin/coffee-quiz', icon: <Coffee className="h-5 w-5" />, label: pick('咖啡測驗', 'Coffee Quiz', 'コーヒークイズ', '커피 퀴즈') },
+    { to: '/superadmin/coffee-quiz', icon: <Coffee className="h-5 w-5" />, label: pick('AI咖啡尋豆師', 'Coffee Finder', 'コーヒー豆診断', '커피 바리스타') },
     { to: '/superadmin/blog-categories', icon: <FolderOpen className="h-5 w-5" />, label: pick('文章分類', 'Article Categories', '記事カテゴリ', '글 카테고리') },
     { to: '/superadmin/users', icon: <Users className="h-5 w-5" />, label: pick('會員管理', 'Members', '会員管理', '회원 관리') },
     { to: '/superadmin/revenue', icon: <BarChart2 className="h-5 w-5" />, label: pick('營收分析', 'Revenue', '売上分析', '매출 분석') },

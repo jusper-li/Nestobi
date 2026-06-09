@@ -101,7 +101,7 @@ export default function CoffeeQuiz() {
 
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
-      <SEOHead title={t('AI 咖啡測驗', 'AI Coffee Quiz', 'AIコーヒー診断', 'AI 커피 퀴즈')} description={t('用 12 題找出你的咖啡偏好。', 'Find your coffee profile in 12 questions.', '12問であなたのコーヒータイプを診断。', '12문항으로 커피 취향을 확인하세요.')} />
+      <SEOHead title={t('AI咖啡尋豆師', 'AI Coffee Finder', 'AIコーヒー豆診断', 'AI 커피 바리스타')} description={t('用 12 題找出你的咖啡偏好。', 'Find your coffee profile in 12 questions.', '12問であなたのコーヒータイプを診断。', '12문항으로 커피 취향을 확인하세요.')} />
       <Navigation />
       <main className="mx-auto max-w-3xl px-4 py-6">
         <div className="mb-4 flex items-center justify-between text-sm text-[#9c6b2f]">
@@ -120,7 +120,7 @@ export default function CoffeeQuiz() {
           ) : !done && current ? (
             <>
               <div className="mb-4 inline-flex items-center rounded-full bg-[#f6ead7] px-3 py-1 text-sm font-semibold text-[#8a5a22]">
-                {t('AI 咖啡測驗', 'AI Coffee Quiz', 'AIコーヒー診断', 'AI 커피 퀴즈')}
+                {t('AI咖啡尋豆師', 'AI Coffee Finder', 'AIコーヒー豆診断', 'AI 커피 바리스타')}
               </div>
               {current.image_url && (
                 <div className="mb-5 overflow-hidden rounded-2xl bg-[#f3f3f3]">

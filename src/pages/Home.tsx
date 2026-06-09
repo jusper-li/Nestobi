@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Building2, Calendar, Coffee, Heart, Home as HomeIcon, Hotel, MapPin, Search, ShoppingBag, User, Users } from 'lucide-react';
-import FloatingButtons from '../components/FloatingButtons';
+import { ArrowRight, Building2, Calendar, Coffee, Hotel, MapPin, Search, ShoppingBag, Users } from 'lucide-react';
 import Footer from '../components/Footer';
 import Navigation from '../components/Navigation';
 import SEOHead from '../components/SEOHead';
@@ -132,22 +131,6 @@ export default function Home() {
     [activeHomeBanner, normalizedLang],
   );
   const homeBannerLink = activeHomeBanner.link_url.trim();
-  const searchLabels = {
-    title: t4('今天想找什麼？', 'What are you looking for today?', '今日は何を探しますか？', '오늘 무엇을 찾으시나요?'),
-    subtitle: t4('先搜尋商品、住宿或咖啡文章，再慢慢篩選。', 'Search products, stays, or coffee stories first, then refine.', '商品、宿泊、コーヒー記事をまず検索してから絞り込めます。', '상품, 숙소, 커피 글을 먼저 검색한 뒤 좁혀보세요.'),
-    placeholder: t4('輸入咖啡、茶包、宜蘭住宿、沖繩文章...', 'Search coffee, tea bags, Yilan stays, Okinawa articles...', 'コーヒー、ティーバッグ、宜蘭の宿、沖縄記事...', '커피, 티백, 이란 숙소, 오키나와 글...'),
-    shop: t4('商品', 'Products', '商品', '상품'),
-    rooms: t4('住宿', 'Stays', '宿泊', '숙소'),
-    submit: t4('搜尋', 'Search', '検索', '검색'),
-    vendorTitle: t4('商家入口', 'Vendor Entrance', '事業者入口', '판매자 입구'),
-    vendorDesc: t4('管理房源、商品、訂單與門市資料。', 'Manage stays, products, orders, and store data.', '宿泊、商品、注文、店舗情報を管理します。', '숙소, 상품, 주문, 매장 정보를 관리합니다.'),
-    vendorCta: t4('進入商家後台', 'Open Vendor Portal', '事業者管理へ', '판매자 관리 열기'),
-    home: t4('首頁', 'Home', 'ホーム', '홈'),
-    favorites: t4('收藏', 'Favorites', 'お気に入り', '찜'),
-    orders: t4('訂單', 'Orders', '注文', '주문'),
-    mine: t4('我的', 'My', 'マイ', '내 정보'),
-  };
-
   const homeSearchLabels = {
     title: t4('今天想去哪裡？', 'Where are you heading today?', '今日はどこへ行きますか？', '오늘 어디로 떠나나요?'),
     subtitle: t4('先找住宿或行程靈感，再進一步篩選。', 'Search stays or trip ideas first, then refine.', 'まず宿泊や旅のアイデアを探してから絞り込みます。', '먼저 숙소나 여행 아이디어를 찾고, 그다음 좁혀보세요.'),
@@ -551,30 +534,6 @@ export default function Home() {
       )}
 
       <Footer />
-      <FloatingButtons />
-      <MobileHomeNav labels={searchLabels} />
     </div>
-  );
-}
-
-function MobileHomeNav({ labels }: { labels: { home: string; submit: string; favorites: string; orders: string; mine: string } }) {
-  const items = [
-    { to: '/', icon: HomeIcon, label: labels.home },
-    { to: '/shop', icon: Search, label: labels.submit },
-    { to: '/member?tool=favorites', icon: Heart, label: labels.favorites },
-    { to: '/member/orders', icon: ShoppingBag, label: labels.orders },
-    { to: '/member', icon: User, label: labels.mine },
-  ];
-  return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#2C1F10]/10 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 shadow-[0_-8px_24px_rgba(44,31,16,0.08)] backdrop-blur md:hidden">
-      <div className="grid grid-cols-5">
-        {items.map(({ to, icon: Icon, label }) => (
-          <Link key={to} to={to} className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-semibold text-gray-600 transition hover:bg-[#F7F1E8] hover:text-[#2C1F10]">
-            <Icon className="h-5 w-5" />
-            <span>{label}</span>
-          </Link>
-        ))}
-      </div>
-    </nav>
   );
 }

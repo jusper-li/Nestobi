@@ -6,12 +6,14 @@ import {
   Hotel,
   LayoutDashboard,
   Package,
-  Search,
+  MessageCircle,
   ShoppingBag,
   Star,
   Store,
   User,
   Users,
+  Coffee,
+  Map,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -96,17 +98,13 @@ export default function MobileBottomNav() {
     }
 
     return [
-      { to: '/', label: pick('Home', 'Home', 'Home', 'Home'), icon: Home, activePaths: ['/'] },
-      { to: '/rooms', label: pick('Search', 'Search', 'Search', 'Search'), icon: Search },
-      { to: '/member?tool=favorites', label: pick('Saved', 'Saved', 'Saved', 'Saved'), icon: Star, activePaths: ['/member'] },
-      { to: '/member/orders', label: pick('Orders', 'Orders', 'Orders', 'Orders'), icon: ShoppingBag },
-      { to: user ? '/member' : '/auth/login', label: pick('Me', 'Me', 'Me', 'Me'), icon: User, activePaths: ['/member'] },
+      { to: '/', label: pick('首頁', 'Home', 'ホーム', '홈'), icon: Home, activePaths: ['/'] },
+      { to: '/ai/chat', label: pick('AI客服', 'AI Support', 'AIサポート', 'AI 고객지원'), icon: MessageCircle, activePaths: ['/ai/chat'] },
+      { to: '/ai/itinerary', label: pick('AI導遊', 'AI Guide', 'AIガイド', 'AI 가이드'), icon: Map, activePaths: ['/ai/itinerary'] },
+      { to: '/ai/coffee-quiz', label: pick('AI尋豆師', 'AI Coffee Finder', 'AIコーヒー豆診断', 'AI 커피 바리스타'), icon: Coffee, activePaths: ['/ai/coffee-quiz'] },
+      { to: user ? '/member' : '/auth/login', label: pick('我的', 'My', 'マイ', '내 정보'), icon: User, activePaths: ['/member'] },
     ];
   }, [location.pathname, locale, pick, user]);
-
-  if (location.pathname === '/') {
-    return null;
-  }
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#2C1F10]/10 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 shadow-[0_-8px_24px_rgba(44,31,16,0.08)] backdrop-blur md:hidden">

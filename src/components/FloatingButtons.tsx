@@ -33,7 +33,7 @@ export default function FloatingButtons() {
     {
       id: 'coffee-quiz',
       icon: Coffee,
-      label: pick('AI 咖啡測驗', 'AI Coffee Quiz', 'AIコーヒー診断', 'AI 커피 퀴즈'),
+      label: pick('AI咖啡尋豆師', 'AI Coffee Finder', 'AIコーヒー豆診断', 'AI 커피 바리스타'),
       sublabel: pick('風味偏好分析', 'Flavor Profile', '好み分析', '취향 분석'),
       path: '/ai/coffee-quiz',
     },

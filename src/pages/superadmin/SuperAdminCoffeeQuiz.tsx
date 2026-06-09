@@ -147,7 +147,7 @@ export default function SuperAdminCoffeeQuiz() {
       <div className="flex items-center gap-3">
         <div className="rounded-xl bg-amber-100 p-2 text-amber-700"><Coffee className="h-6 w-6" /></div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">咖啡測驗管理</h1>
+          <h1 className="text-2xl font-bold text-gray-900">AI咖啡尋豆師管理</h1>
           <p className="text-sm text-gray-500">題目編輯、分數設定、圖片上傳、測驗結果統計</p>
         </div>
       </div>

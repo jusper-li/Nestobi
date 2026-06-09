@@ -56,7 +56,7 @@ export default function Navigation() {
     aiItinerary: pick('AI 行程規劃', 'AI Planner', 'AI 旅程プランナー', 'AI 일정 플래너'),
     aiTranslator: pick('AI 翻譯', 'AI Translate', 'AI 翻訳', 'AI 번역'),
     aiChat: pick('AI 客服', 'AI Support', 'AI サポート', 'AI 고객지원'),
-    aiCoffeeQuiz: pick('AI 咖啡測驗', 'AI Coffee Quiz', 'AIコーヒー診断', 'AI 커피 퀴즈'),
+    aiCoffeeQuiz: pick('AI咖啡尋豆師', 'AI Coffee Finder', 'AIコーヒー豆診断', 'AI 커피 바리스타'),
     travelPassport: pick('旅行護照', 'Travel Passport', '旅のパスポート', '여행 패스포트'),
     login: pick('登入', 'Login', 'ログイン', '로그인'),
     register: pick('註冊', 'Sign up', '登録', '가입'),
