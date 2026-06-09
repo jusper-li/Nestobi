@@ -11,6 +11,7 @@ export interface StoreLocationHours {
 
 export interface StoreLocation {
   id: string;
+  vendor_id: string | null;
   name: string;
   name_en: string;
   slug: string;
@@ -195,6 +196,7 @@ function normalizeHours(value: unknown): StoreLocationHours {
 export function normalizeStoreLocation(value: Partial<StoreLocation>, index = 0): StoreLocation {
   const slug = value.slug || `store-${index + 1}`;
   return {
+    vendor_id: value.vendor_id ?? null,
     name: value.name || '',
     name_en: value.name_en || '',
     slug,
@@ -264,6 +266,7 @@ export async function fetchStoreLocations(includeInactive = false): Promise<Stor
 
 function toTablePayload(locations: StoreLocation[]) {
   return locations.map((location, index) => ({
+    vendor_id: location.vendor_id || null,
     name: location.name.trim(),
     name_en: location.name_en.trim(),
     slug: location.slug.trim(),
@@ -361,6 +364,7 @@ export function createEmptyStoreLocation(order: number): StoreLocation {
   const slug = `store-${Date.now()}`;
   return {
     id: slug,
+    vendor_id: null,
     name: '',
     name_en: '',
     slug,

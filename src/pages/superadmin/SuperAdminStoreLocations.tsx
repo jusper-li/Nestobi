@@ -44,6 +44,7 @@ function slugify(value: string) {
 
 export default function SuperAdminStoreLocations() {
   const [locations, setLocations] = useState<StoreLocation[]>([]);
+  const [vendors, setVendors] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -64,7 +65,17 @@ export default function SuperAdminStoreLocations() {
     }
   };
 
-  useEffect(() => { loadLocations(); }, []);
+  const loadVendors = async () => {
+    const { data, error } = await supabase
+      .from('vendors')
+      .select('id,name')
+      .order('name', { ascending: true });
+    if (!error) setVendors((data || []) as Array<{ id: string; name: string }>);
+  };
+
+  useEffect(() => {
+    void Promise.all([loadLocations(), loadVendors()]);
+  }, []);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -278,6 +289,11 @@ export default function SuperAdminStoreLocations() {
                     <p className="text-xs font-semibold text-amber-700">{location.city} / {location.district}</p>
                     <h2 className="mt-1 font-bold text-gray-900">{location.name || '未命名門市'}</h2>
                     <p className="mt-0.5 text-xs text-gray-500">{location.name_en}</p>
+                    {location.vendor_id && (
+                      <p className="mt-1 text-[11px] font-semibold text-emerald-700">
+                        {vendors.find(vendor => vendor.id === location.vendor_id)?.name || location.vendor_id}
+                      </p>
+                    )}
                   </div>
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                     location.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'
@@ -352,6 +368,19 @@ export default function SuperAdminStoreLocations() {
                     onBlur={() => updateDraft('slug', slugify(draft.slug || draft.name_en || draft.name))}
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20"
                   />
+                </label>
+                <label className="block md:col-span-2">
+                  <span className="mb-1.5 block text-sm font-medium text-gray-700">廠商歸屬</span>
+                  <select
+                    value={draft.vendor_id || ''}
+                    onChange={event => updateDraft('vendor_id', event.target.value || null)}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20"
+                  >
+                    <option value="">尚未指定廠商</option>
+                    {vendors.map(vendor => (
+                      <option key={vendor.id} value={vendor.id}>{vendor.name}</option>
+                    ))}
+                  </select>
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <label className="block">

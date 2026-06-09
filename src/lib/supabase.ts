@@ -1,8 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 function getSupabaseUrl() {
-  if (typeof window === 'undefined') return import.meta.env.VITE_SUPABASE_URL;
-  return `${window.location.origin}/supabase`;
+  return import.meta.env.VITE_SUPABASE_URL || (typeof window === 'undefined' ? '' : `${window.location.origin}/supabase`);
 }
 
 const supabaseUrl = getSupabaseUrl();

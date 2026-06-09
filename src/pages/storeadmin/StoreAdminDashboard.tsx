@@ -129,6 +129,7 @@ export default function StoreAdminDashboard() {
   const locale = normalizeLang(lang);
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
 
+  const [vendorId, setVendorId] = useState<string | null>(null);
   const [stores, setStores] = useState<StoreLocation[]>([]);
   const [selectedStoreId, setSelectedStoreId] = useState('');
   const [storeForm, setStoreForm] = useState<StoreForm>(emptyStoreForm);
@@ -151,30 +152,38 @@ export default function StoreAdminDashboard() {
   const isElevated = role === 'admin' || role === 'superadmin';
   const assignedStoreIds = useMemo(() => storeAssignments.map(item => item.store_location_id), [storeAssignments]);
   const visibleStores = useMemo(
-    () => (isElevated ? stores : stores.filter(store => assignedStoreIds.includes(store.id))),
-    [assignedStoreIds, isElevated, stores],
+    () => (isElevated ? stores : stores.filter(store => (vendorId && store.vendor_id === vendorId) || assignedStoreIds.includes(store.id))),
+    [assignedStoreIds, isElevated, stores, vendorId],
   );
   const selectedStore = useMemo(() => stores.find(store => store.id === selectedStoreId) || null, [selectedStoreId, stores]);
-  const canEditStoreInfo = !!selectedStoreId && hasStorePermission(selectedStoreId, 'info');
-  const canEditProducts = !!selectedStoreId && hasStorePermission(selectedStoreId, 'products');
-  const canEditInventory = !!selectedStoreId && hasStorePermission(selectedStoreId, 'inventory');
-  const canEditPoints = !!selectedStoreId && hasStorePermission(selectedStoreId, 'points');
+  const canManageStore = (storeId: string, permission: 'any' | 'info' | 'products' | 'inventory' | 'points' = 'any') => {
+    const store = stores.find(item => item.id === storeId);
+    const isVendorOwner = !!store && !!vendorId && store.vendor_id === vendorId;
+    return isElevated || isVendorOwner || hasStorePermission(storeId, permission);
+  };
+  const canEditStoreInfo = !!selectedStoreId && canManageStore(selectedStoreId, 'info');
+  const canEditProducts = !!selectedStoreId && canManageStore(selectedStoreId, 'products');
+  const canEditInventory = !!selectedStoreId && canManageStore(selectedStoreId, 'inventory');
+  const canEditPoints = !!selectedStoreId && canManageStore(selectedStoreId, 'points');
 
-  const loadStores = async () => {
-    const query = supabase
+  const loadStores = async (currentVendorId: string | null) => {
+    let query = supabase
       .from('store_locations')
-      .select('id,name,name_en,slug,city,district,address,phone,hours,image_url,map_url,sort_order,is_active,source_url,source_image_url,manager_notes,created_at,updated_at')
+      .select('id,vendor_id,name,name_en,slug,city,district,address,phone,hours,image_url,map_url,sort_order,is_active,source_url,source_image_url,manager_notes,created_at,updated_at')
       .order('sort_order', { ascending: true });
-    const filtered = isElevated
-      ? query
-      : query.in('id', assignedStoreIds.length ? assignedStoreIds : ['00000000-0000-0000-0000-000000000000']);
+    if (!isElevated) {
+      query = currentVendorId
+        ? query.eq('vendor_id', currentVendorId)
+        : query.in('id', assignedStoreIds.length ? assignedStoreIds : ['00000000-0000-0000-0000-000000000000']);
+    }
+    const filtered = query;
     const { data, error } = await filtered;
     if (error) throw error;
     return ((data || []) as StoreLocation[]).map((row, index) => normalizeStoreLocation(row, index));
   };
 
   const loadManagers = async (storeId: string) => {
-    if (!hasStorePermission(storeId, 'info')) {
+    if (!canManageStore(storeId, 'info')) {
       setManagers([]);
       return;
     }
@@ -220,9 +229,19 @@ export default function StoreAdminDashboard() {
     setLoading(true);
     setMessage(null);
     try {
-      const storeRows = await loadStores();
+      const { data: vendorRow } = await supabase
+        .from('vendors')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const currentVendorId = vendorRow?.id || null;
+      setVendorId(currentVendorId);
+
+      const storeRows = await loadStores(currentVendorId);
       setStores(storeRows);
-      const nextStoreId = selectedStoreId || storeRows[0]?.id || '';
+      const nextStoreId = storeRows.some(store => store.id === selectedStoreId)
+        ? selectedStoreId
+        : storeRows[0]?.id || '';
       setSelectedStoreId(nextStoreId);
       if (nextStoreId) {
         const current = storeRows.find(store => store.id === nextStoreId);

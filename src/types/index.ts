@@ -325,6 +325,7 @@ export interface StoreLocationHours {
 
 export interface StoreLocation {
   id: string;
+  vendor_id: string | null;
   name: string;
   name_en: string;
   slug: string;
