@@ -250,15 +250,15 @@ async function fetchFromSystemPost(includeInactive: boolean) {
 }
 
 export async function fetchStoreLocations(includeInactive = false): Promise<StoreLocation[]> {
-  const systemRows = await fetchFromSystemPost(includeInactive);
-  if (systemRows.length > 0) return systemRows.sort((a, b) => a.sort_order - b.sort_order);
-
   try {
     const rows = await fetchFromStoreTable(includeInactive);
     if (rows.length > 0) return rows;
   } catch {
-    // fall through to defaults
+    // fall through to the legacy system post and defaults
   }
+
+  const systemRows = await fetchFromSystemPost(includeInactive);
+  if (systemRows.length > 0) return systemRows.sort((a, b) => a.sort_order - b.sort_order);
 
   const defaults = DEFAULT_STORE_LOCATIONS.map((row, index) => normalizeStoreLocation(row, index));
   return includeInactive ? defaults : defaults.filter(row => row.is_active);
