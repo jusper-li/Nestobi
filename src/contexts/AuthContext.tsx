@@ -41,6 +41,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [permissions, setPermissions] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
+  const clearAuthenticatedState = useCallback(() => {
+    setSession(null);
+    setUser(null);
+    setProfile(null);
+    setUserAuth(null);
+    setStoreAssignments([]);
+    setRole('user');
+    setPermissions({});
+    setLoading(false);
+  }, []);
+
   const fetchUserData = async (userId: string) => {
     try {
       const [profileRes, authRes, assignmentRes] = await Promise.all([
@@ -115,12 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') setLoading(false);
         })();
       } else {
-      setProfile(null);
-      setUserAuth(null);
-      setStoreAssignments([]);
-      setRole('user');
-      setPermissions({});
-      setLoading(false);
+        clearAuthenticatedState();
       }
     });
 
@@ -170,15 +176,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut({ scope: 'local' });
-    } catch {
-      // ignore — local session will be cleared by the removal attempt above
+      const authClient = supabase.auth as any;
+
+      if (typeof authClient._removeSession === 'function') {
+        await authClient._removeSession();
+      } else if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('supabase.auth.token');
+        window.localStorage.removeItem('supabase.auth.token-code-verifier');
+        window.localStorage.removeItem('supabase.auth.token-user');
+      }
+    } catch (err) {
+      console.warn('Local sign out fallback failed:', err);
+    } finally {
+      clearAuthenticatedState();
     }
-    setProfile(null);
-    setUserAuth(null);
-    setStoreAssignments([]);
-    setRole('user');
-    setPermissions({});
   };
 
   const resetPassword = async (email: string) => {
