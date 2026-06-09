@@ -299,7 +299,7 @@ export default function Chatbot() {
   );
 
   return (
-    <div className="flex h-[calc(100dvh-5.75rem-env(safe-area-inset-bottom))] flex-col overflow-hidden bg-slate-50 md:h-[100dvh]">
+    <div className="relative flex h-[calc(100dvh-5.75rem-env(safe-area-inset-bottom))] flex-col overflow-hidden bg-slate-50 md:h-[100dvh]">
       <SEOHead title={pageTitle} description={pageDesc} />
       <Navigation />
 
@@ -320,7 +320,7 @@ export default function Chatbot() {
             </button>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 md:px-5">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 pb-[calc(12rem+env(safe-area-inset-bottom))] md:px-5 md:pb-6">
             {historyLoading && (
               <div className="text-sm text-gray-400">
                 {pick(locale, '載入歷史對話...', 'Loading chat history...', '会話履歴を読み込み中...', '대화 기록을 불러오는 중...')}
@@ -344,24 +344,27 @@ export default function Chatbot() {
             <div ref={bottomRef} />
           </div>
 
-          <div className="shrink-0 border-t border-slate-100 bg-white p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:p-4">
-            <form onSubmit={sendMessage} className="flex gap-2">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={pick(locale, '請輸入問題，例如：我想找雙人房或咖啡商品', 'Ask anything, e.g. I want a double room or coffee products', '質問を入力してください。例：二人部屋やコーヒー商品を探したい', '질문을 입력하세요. 예: 2인실이나 커피 상품을 찾고 싶어요')}
-                className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-              />
-              <button type="submit" disabled={!input.trim() || loading || historyLoading} className="rounded-xl bg-sky-600 p-2.5 text-white hover:bg-sky-700 disabled:opacity-40">
-                <Send className="h-5 w-5" />
-              </button>
-            </form>
-            <p className="mt-2 text-center text-xs text-gray-400">
-              {pick(locale, 'AI 會依公開資料回答，會員訂單、點數與個資仍需登入會員中心查看。', 'AI answers from public data. Orders, points, and profile details still require the member center.', 'AIは公開データに基づいて回答します。注文、ポイント、個人情報は会員センターで確認してください。', 'AI는 공개 자료를 기반으로 답변합니다. 주문, 포인트, 개인정보는 회원센터에서 확인해 주세요.')}
-            </p>
-          </div>
         </div>
       </main>
+
+      <div className="fixed inset-x-0 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-40 px-3 md:bottom-4 md:px-6">
+        <div className="mx-auto max-w-5xl rounded-2xl border border-slate-100 bg-white p-3 shadow-xl md:p-4">
+          <form onSubmit={sendMessage} className="flex gap-2">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={pick(locale, '請輸入問題，例如：我想找雙人房或咖啡商品', 'Ask anything, e.g. I want a double room or coffee products', '質問を入力してください。例：二人部屋やコーヒー商品を探したい', '질문을 입력하세요. 예: 2인실이나 커피 상품을 찾고 싶어요')}
+              className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+            />
+            <button type="submit" disabled={!input.trim() || loading || historyLoading} className="rounded-xl bg-sky-600 p-2.5 text-white hover:bg-sky-700 disabled:opacity-40">
+              <Send className="h-5 w-5" />
+            </button>
+          </form>
+          <p className="mt-2 text-center text-xs text-gray-400">
+            {pick(locale, 'AI 會依公開資料回答，會員訂單、點數與個資仍需登入會員中心查看。', 'AI answers from public data. Orders, points, and profile details still require the member center.', 'AIは公開データに基づいて回答します。注文、ポイント、個人情報は会員センターで確認してください。', 'AI는 공개 자료를 기반으로 답변합니다. 주문, 포인트, 개인정보는 회원센터에서 확인해 주세요.')}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
