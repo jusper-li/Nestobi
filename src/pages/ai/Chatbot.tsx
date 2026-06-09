@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Bot, MessageCircle, Send, User } from 'lucide-react';
+import { Bot, Send, User } from 'lucide-react';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import { useAuth } from '../../contexts/AuthContext';
@@ -299,20 +299,12 @@ export default function Chatbot() {
   );
 
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden bg-slate-50">
+    <div className="flex h-[calc(100dvh-5.75rem-env(safe-area-inset-bottom))] flex-col overflow-hidden bg-slate-50 md:h-[100dvh]">
       <SEOHead title={pageTitle} description={pageDesc} />
       <Navigation />
 
       <main className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col overflow-hidden bg-white md:my-4 md:rounded-2xl md:border md:border-slate-100 md:shadow-sm">
-        <div className="hidden">
-          <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-blue-700 shadow-lg">
-            <MessageCircle className="h-7 w-7 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">{pageTitle}</h1>
-          <p className="mt-1 text-gray-500">{pageDesc}</p>
-        </div>
-
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden pb-[calc(5.75rem+env(safe-area-inset-bottom)+0.75rem)] md:pb-0">
           <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100">
               <Bot className="h-4 w-4 text-slate-500" />
