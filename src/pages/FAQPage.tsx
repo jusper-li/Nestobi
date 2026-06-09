@@ -8,6 +8,7 @@ import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../lib/i18n';
 import { localizeFaqRows } from '../lib/faqTranslations';
+import { buildFaqSchema } from '../lib/seoSchemas';
 import { supabase } from '../lib/supabase';
 
 interface FAQ {
@@ -118,9 +119,20 @@ export default function FAQPage() {
     return map;
   }, [filtered]);
 
+  const faqJsonLd = useMemo(
+    () =>
+      buildFaqSchema(
+        translatedFaqs.slice(0, 24).map(faq => ({
+          name: faq.question,
+          description: faq.answer,
+        })),
+      ),
+    [translatedFaqs],
+  );
+
   return (
     <div className="min-h-screen bg-white">
-      <SEOHead title={t.title} description={t.subtitle} keywords={t.seoKeywords} pageType="faq" />
+      <SEOHead title={t.title} description={t.subtitle} keywords={t.seoKeywords} pageType="faq" jsonLd={faqJsonLd} />
       <Navigation />
 
       <section className="bg-gradient-to-b from-[#F0E4C8]/50 to-white py-16 md:py-24">

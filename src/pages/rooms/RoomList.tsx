@@ -10,6 +10,7 @@ import { getTranslationRuntimeState, translateRoomsFromCacheOnly, translateRooms
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { ROOM_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
 import { fetchPublicList, fetchSnapshotList, readCachedList, withRetry, writeCachedList } from '../../lib/listData';
+import { buildItemListSchema } from '../../lib/seoSchemas';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
 
@@ -226,11 +227,25 @@ export default function RoomList() {
     return sortRooms(list, sortMode);
   }, [displayRooms, roomType, maxPrice, search, sortMode]);
 
+  const roomJsonLd = useMemo(
+    () =>
+      buildItemListSchema(
+        labels.seoTitle,
+        filtered.slice(0, 20).map(room => ({
+          name: room.name,
+          url: `/rooms/${room.id}`,
+          description: room.description || room.location || '',
+        })),
+      ),
+    [filtered, labels.seoTitle],
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
       <SEOHead
         title={labels.seoTitle}
         description={labels.seoDesc}
+        jsonLd={roomJsonLd}
       />
       <Navigation />
 

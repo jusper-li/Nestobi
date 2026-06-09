@@ -21,6 +21,7 @@ import { supabase } from '../../lib/supabase';
 import { PRODUCT_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
 import { fetchPublicList, fetchSnapshotList, readCachedList, withRetry, writeCachedList } from '../../lib/listData';
 import { getCategoryDepth, getDescendantCategoryIds, getProductCategoryIds, sortCategoriesForTree } from '../../lib/categoryTree';
+import { buildItemListSchema } from '../../lib/seoSchemas';
 import { formatCurrency } from '../../lib/utils';
 
 interface Product {
@@ -316,6 +317,19 @@ export default function ProductList() {
 
     return sortProducts(matches, sortMode);
   }, [displayProducts, displayCategories, search, selectedCategory, sortMode]);
+  const productJsonLd = useMemo(
+    () =>
+      buildItemListSchema(
+        labels.seoTitle,
+        filtered.slice(0, 20).map(product => ({
+          name: product.name,
+          url: `/shop/${product.id}`,
+          description: stripHtml(product.description) || '',
+          image: product.image_url || undefined,
+        })),
+      ),
+    [filtered, labels.seoTitle],
+  );
   const orderedCategories = useMemo(() => sortCategoriesForTree(displayCategories), [displayCategories]);
   const categoryById = useMemo(() => new Map(displayCategories.map(category => [category.id, category])), [displayCategories]);
   const activeCategory = selectedCategory === 'all' ? null : categoryById.get(selectedCategory) || null;
@@ -395,6 +409,7 @@ export default function ProductList() {
         keywords={labels.seoKeywords}
         ogType="website"
         pageType="list"
+        jsonLd={productJsonLd}
       />
       <Navigation />
 

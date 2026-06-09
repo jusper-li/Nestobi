@@ -30,6 +30,7 @@ import {
 import { BLOG_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
 import { fetchPublicList, fetchSnapshotList, readCachedList, withRetry, writeCachedList } from '../../lib/listData';
 import { supabase } from '../../lib/supabase';
+import { buildItemListSchema } from '../../lib/seoSchemas';
 import {
   getBlogPostCategoryIds,
   getCategoryDepth,
@@ -392,6 +393,19 @@ const BlogList: React.FC = () => {
     initialCount: 12,
     increment: 12,
   });
+  const blogJsonLd = useMemo(
+    () =>
+      buildItemListSchema(
+        labels.pageTitle,
+        filtered.slice(0, 20).map(post => ({
+          name: post.title,
+          url: `/blog/${post.slug}`,
+          description: post.excerpt || '',
+          image: post.cover_image_url || undefined,
+        })),
+      ),
+    [filtered, labels.pageTitle],
+  );
 
   return (
     <div className="min-h-screen bg-[#F5F5F3]">
@@ -400,6 +414,7 @@ const BlogList: React.FC = () => {
         description={labels.pageDesc}
         keywords={labels.seoKeywords}
         ogType="blog"
+        jsonLd={blogJsonLd}
       />
       <Navigation />
 
