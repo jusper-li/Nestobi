@@ -9,6 +9,7 @@ const corsHeaders = {
 const VECTOR_EMBEDDING_MODEL = "text-embedding-3-small";
 const VECTOR_SYNC_INTERVAL_MS = 10 * 60 * 1000;
 const VECTOR_UNAVAILABLE_RETRY_MS = 5 * 60 * 1000;
+const VECTOR_SYNC_BATCH_SIZE = 96;
 const secretCache = new Map<string, string>();
 let lastVectorSyncAt = 0;
 let vectorUnavailableUntil = 0;
@@ -216,7 +217,7 @@ async function syncAndEmbedSupportDocuments() {
     try {
       await callSupabaseRpc<number>("refresh_ai_support_documents", {});
       const missingRows = await fetchPublicRows<{ id: string; content: string }>(
-        "ai_support_documents?is_active=eq.true&embedding=is.null&select=id,content&limit=48",
+        `ai_support_documents?is_active=eq.true&embedding=is.null&select=id,content&limit=${VECTOR_SYNC_BATCH_SIZE}`,
       );
       if (missingRows.length > 0) {
         const embeddings = await createEmbeddings(missingRows.map((row) => row.content));
@@ -278,6 +279,35 @@ async function buildVectorCustomerServiceContext(question: string) {
   } catch (err) {
     console.error("AI support vector search failed", err);
     return "";
+  }
+}
+
+async function searchVectorDocuments(question: string, sourceTypes: string[], matchCount = 24) {
+  try {
+    if (Date.now() < vectorUnavailableUntil) return [];
+    await syncAndEmbedSupportDocuments();
+    if (Date.now() < vectorUnavailableUntil) return [];
+    const [queryEmbedding] = await createEmbeddings([question]);
+    if (!queryEmbedding?.length) return [];
+
+    return await callSupabaseRpc<Array<{
+      id: string;
+      source_type: string;
+      source_id: string;
+      title: string;
+      content: string;
+      url_path: string;
+      metadata: Record<string, unknown> | null;
+      similarity: number;
+    }>>("match_ai_support_documents_by_type", {
+      query_embedding: vectorLiteral(queryEmbedding),
+      source_types: sourceTypes,
+      match_count: matchCount,
+      min_similarity: 0.12,
+    });
+  } catch (err) {
+    console.error("Semantic search failed", err);
+    return [];
   }
 }
 
@@ -561,6 +591,33 @@ Deno.serve(async (req) => {
         ],
       });
       return json({ result: parseJson(resultText) });
+    }
+
+    if (action === "semantic-search") {
+      const sourceTypeMap: Record<string, string[]> = {
+        rooms: ["room"],
+        products: ["product"],
+        articles: ["article"],
+        all: ["room", "product", "article", "store", "faq"],
+      };
+      const scope = typeof body.scope === "string" ? body.scope : "all";
+      const sourceTypes = sourceTypeMap[scope] || sourceTypeMap.all;
+      const query = cleanText(body.query, 600);
+      if (!query) return json({ result: { matches: [], summary: "" } });
+
+      const matches = await searchVectorDocuments(query, sourceTypes, Number(body.matchCount || 24));
+      return json({
+        result: {
+          summary: matches.length > 0 ? "已依語意相關度排序搜尋結果。" : "目前沒有找到足夠相關的向量結果。",
+          matches: matches.map((row) => ({
+            source_type: row.source_type,
+            source_id: row.source_id,
+            title: row.title,
+            url_path: row.url_path,
+            similarity: Number(row.similarity || 0),
+          })),
+        },
+      });
     }
 
     if (action === "room-search") {

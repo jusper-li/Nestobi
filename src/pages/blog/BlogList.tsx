@@ -31,6 +31,7 @@ import { BLOG_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
 import { fetchPublicList, fetchSnapshotList, readCachedList, withRetry, writeCachedList } from '../../lib/listData';
 import { supabase } from '../../lib/supabase';
 import { buildItemListSchema } from '../../lib/seoSchemas';
+import { SemanticSearchMatch, semanticSearch, sortBySemanticMatches } from '../../lib/semanticSearch';
 import {
   getBlogPostCategoryIds,
   getCategoryDepth,
@@ -149,6 +150,7 @@ const BlogList: React.FC = () => {
   const [search, setSearch] = useState(() => searchParams.get('search') || '');
   const [categoryId, setCategoryId] = useState(ALL_CATEGORY_ID);
   const [aiFilters, setAiFilters] = useState<AIBlogFilters | null>(null);
+  const [semanticMatches, setSemanticMatches] = useState<SemanticSearchMatch[] | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
   const [dataNotice, setDataNotice] = useState('');
@@ -339,10 +341,12 @@ const BlogList: React.FC = () => {
   const handleCategoryChange = (nextCategoryId: string) => {
     setCategoryId(nextCategoryId);
     setAiFilters(null);
+    setSemanticMatches(null);
     setSearch('');
   };
   const clearAI = () => {
     setAiFilters(null);
+    setSemanticMatches(null);
     setAiError('');
     setSearch('');
     inputRef.current?.focus();
@@ -353,17 +357,9 @@ const BlogList: React.FC = () => {
     setAiLoading(true);
     setAiError('');
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-proxy`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action: 'blog-search', query: search }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || labels.aiSearchFailed);
-      setAiFilters(json.result);
+      const result = await semanticSearch('articles', search, 36);
+      setSemanticMatches(result.matches || []);
+      setAiFilters({ categories: [], keywords: [], summary: result.summary || search });
       setCategoryId(ALL_CATEGORY_ID);
     } catch (error: unknown) {
       setAiError(error instanceof Error ? error.message : labels.aiSearchRetry);
@@ -373,6 +369,7 @@ const BlogList: React.FC = () => {
   };
 
   const filtered = useMemo(() => {
+    if (semanticMatches?.length) return sortBySemanticMatches(displayPosts.filter(post => !SYSTEM_BLOG_SLUGS.has(post.slug)), semanticMatches);
     if (aiFilters) return applyAIFilters(displayPosts, aiFilters);
     const selectedIds = categoryId === ALL_CATEGORY_ID ? null : getDescendantCategoryIds(displayBlogCategories, categoryId);
     return displayPosts.filter(post => {
@@ -383,7 +380,7 @@ const BlogList: React.FC = () => {
       for (const id of postCategoryIds) if (selectedIds.has(id)) return true;
       return false;
     });
-  }, [aiFilters, displayBlogCategories, categoryId, categoryIdsByName, displayPosts]);
+  }, [aiFilters, displayBlogCategories, categoryId, categoryIdsByName, displayPosts, semanticMatches]);
 
   const formatDate = (iso: string) =>
     iso ? new Date(iso).toLocaleDateString(dateLocale, { year: 'numeric', month: 'long', day: 'numeric' }) : '';
@@ -431,7 +428,11 @@ const BlogList: React.FC = () => {
                 <input
                   ref={inputRef}
                   value={search}
-                  onChange={event => setSearch(event.target.value)}
+                  onChange={event => {
+                    setSearch(event.target.value);
+                    setSemanticMatches(null);
+                    setAiFilters(null);
+                  }}
                   onKeyDown={event => event.key === 'Enter' && handleSearch()}
                   placeholder={labels.searchPlaceholder}
                   className="w-full rounded-xl bg-white py-3.5 pl-11 pr-10 text-sm text-gray-800 shadow-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50"

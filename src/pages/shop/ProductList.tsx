@@ -22,6 +22,7 @@ import { PRODUCT_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
 import { fetchPublicList, fetchSnapshotList, readCachedList, withRetry, writeCachedList } from '../../lib/listData';
 import { getCategoryDepth, getDescendantCategoryIds, getProductCategoryIds, sortCategoriesForTree } from '../../lib/categoryTree';
 import { buildItemListSchema } from '../../lib/seoSchemas';
+import { SemanticSearchMatch, semanticSearch, sortBySemanticMatches } from '../../lib/semanticSearch';
 import { formatCurrency } from '../../lib/utils';
 
 interface Product {
@@ -125,6 +126,7 @@ export default function ProductList() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSummary, setAiSummary] = useState('');
   const [aiError, setAiError] = useState('');
+  const [semanticMatches, setSemanticMatches] = useState<SemanticSearchMatch[] | null>(null);
   const [addingId, setAddingId] = useState<string | null>(null);
   const [dataNotice, setDataNotice] = useState('');
   const [translationNotice, setTranslationNotice] = useState('');
@@ -310,13 +312,16 @@ export default function ProductList() {
     const matches = displayProducts.filter(product => {
       const categoryMatches = !selectedCategoryIds
         || Array.from(getProductCategoryIds(product)).some(categoryId => selectedCategoryIds.has(categoryId));
-      const queryMatches = !query || productSearchText(product).includes(query);
+      const queryMatches = semanticMatches?.length
+        ? semanticMatches.some(match => match.source_id === product.id)
+        : !query || productSearchText(product).includes(query);
 
       return categoryMatches && queryMatches;
     });
 
+    if (semanticMatches?.length && sortMode === 'recommended') return sortBySemanticMatches(matches, semanticMatches);
     return sortProducts(matches, sortMode);
-  }, [displayProducts, displayCategories, search, selectedCategory, sortMode]);
+  }, [displayProducts, displayCategories, search, selectedCategory, sortMode, semanticMatches]);
   const productJsonLd = useMemo(
     () =>
       buildItemListSchema(
@@ -361,6 +366,7 @@ export default function ProductList() {
     setSearch('');
     setAiSummary('');
     setAiError('');
+    setSemanticMatches(null);
   };
   const { visibleItems: visibleProducts, visibleCount, hasMore, sentinelRef, loadMore } = useProgressiveList(filtered, { initialCount: 12, increment: 12 });
 
@@ -380,20 +386,12 @@ export default function ProductList() {
     setAiLoading(true);
     setAiError('');
     setAiSummary('');
+    setSemanticMatches(null);
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-proxy`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action: 'product-search', query: search }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || labels.aiUnavailable);
-
-      setAiSummary(json.result?.summary || labels.aiSummary);
+      const result = await semanticSearch('products', search, 36);
+      setSemanticMatches(result.matches || []);
+      setAiSummary(result.summary || labels.aiSummary);
     } catch (error) {
       setAiError(error instanceof Error ? error.message : labels.aiUnavailable);
     } finally {
@@ -421,8 +419,8 @@ export default function ProductList() {
         <div className="rounded-3xl border border-white/12 bg-white/90 p-4 shadow-2xl backdrop-blur">
             <div className={`flex max-w-2xl items-center rounded-2xl bg-white shadow-card transition ${aiLoading ? 'ring-2 ring-[#C09A6A]/40' : 'focus-within:ring-2 focus-within:ring-[#C09A6A]/30'}`}>
               <div className="pl-4 text-[#C09A6A]">{aiLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}</div>
-              <input value={search} onChange={event => setSearch(event.target.value)} onKeyDown={event => event.key === 'Enter' && handleAISearch()} placeholder={labels.heroPlaceholder} className="min-w-0 flex-1 bg-transparent px-3 py-4 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none" />
-              {search && <button type="button" onClick={() => { setSearch(''); setAiSummary(''); setAiError(''); }} className="p-2 text-gray-400 transition hover:text-gray-600"><X className="h-4 w-4" /></button>}
+              <input value={search} onChange={event => { setSearch(event.target.value); setSemanticMatches(null); setAiSummary(''); }} onKeyDown={event => event.key === 'Enter' && handleAISearch()} placeholder={labels.heroPlaceholder} className="min-w-0 flex-1 bg-transparent px-3 py-4 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none" />
+              {search && <button type="button" onClick={() => { setSearch(''); setAiSummary(''); setAiError(''); setSemanticMatches(null); }} className="p-2 text-gray-400 transition hover:text-gray-600"><X className="h-4 w-4" /></button>}
               <button type="button" onClick={handleAISearch} disabled={aiLoading || !search.trim()} className="m-1.5 inline-flex items-center gap-1.5 rounded-xl bg-[#C09A6A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#8B6840] disabled:opacity-50">
                 <Search className="h-4 w-4" />
                 {labels.search}

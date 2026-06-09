@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Building2, MapPin, Search, Users } from 'lucide-react';
+import { AlertCircle, Building2, Loader2, MapPin, Search, Users, X } from 'lucide-react';
 import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
@@ -11,6 +11,7 @@ import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { ROOM_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
 import { fetchPublicList, fetchSnapshotList, readCachedList, withRetry, writeCachedList } from '../../lib/listData';
 import { buildItemListSchema } from '../../lib/seoSchemas';
+import { SemanticSearchMatch, semanticSearch, sortBySemanticMatches } from '../../lib/semanticSearch';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
 
@@ -89,6 +90,10 @@ export default function RoomList() {
   const [maxPrice, setMaxPrice] = useState(30000);
   const [sortMode, setSortMode] = useState<SortMode>('recommended');
   const [search, setSearch] = useState(() => searchParams.get('search') || '');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSummary, setAiSummary] = useState('');
+  const [aiError, setAiError] = useState('');
+  const [semanticMatches, setSemanticMatches] = useState<SemanticSearchMatch[] | null>(null);
   const [translationNotice, setTranslationNotice] = useState('');
 
   const labels = {
@@ -124,6 +129,8 @@ export default function RoomList() {
     weekend: t4('週末', 'Weekend', '週末', '주말'),
     details: t4('查看住宿', 'View Stay', '宿泊を見る', '숙소 보기'),
     empty: t4('找不到符合條件的住宿。', 'No matching stays found.', '条件に合う宿泊が見つかりません。', '조건에 맞는 숙소를 찾을 수 없습니다.'),
+    aiUnavailable: t4('AI 搜尋暫時無法使用', 'AI search is temporarily unavailable', 'AI検索は一時的に利用できません', 'AI 검색을 일시적으로 사용할 수 없습니다'),
+    aiSummary: t4('已依語意相關度排序住宿。', 'Stays sorted by semantic relevance.', '意味的な関連度で宿泊を並べ替えました。', '의미 관련도에 따라 숙소를 정렬했습니다.'),
   };
   const typeLabels: Record<string, string> = {
     all: t4('全部房型', 'All Rooms', 'すべての客室', '전체 객실'),
@@ -221,11 +228,14 @@ export default function RoomList() {
     const list = displayRooms.filter(room => {
       const typeOk = roomType === 'all' || room.room_type === roomType;
       const priceOk = room.price_per_night <= maxPrice;
-      const queryOk = !query || roomSearchText(room).includes(query);
+      const queryOk = semanticMatches?.length
+        ? semanticMatches.some(match => match.source_id === room.id)
+        : !query || roomSearchText(room).includes(query);
       return typeOk && priceOk && queryOk;
     });
+    if (semanticMatches?.length && sortMode === 'recommended') return sortBySemanticMatches(list, semanticMatches);
     return sortRooms(list, sortMode);
-  }, [displayRooms, roomType, maxPrice, search, sortMode]);
+  }, [displayRooms, roomType, maxPrice, search, sortMode, semanticMatches]);
 
   const roomJsonLd = useMemo(
     () =>
@@ -239,6 +249,28 @@ export default function RoomList() {
       ),
     [filtered, labels.seoTitle],
   );
+
+  const handleAISearch = async () => {
+    if (!search.trim()) {
+      setSemanticMatches(null);
+      setAiSummary('');
+      setAiError('');
+      return;
+    }
+    setAiLoading(true);
+    setAiError('');
+    setAiSummary('');
+    setSemanticMatches(null);
+    try {
+      const result = await semanticSearch('rooms', search, 24);
+      setSemanticMatches(result.matches || []);
+      setAiSummary(result.summary || labels.aiSummary);
+    } catch (error) {
+      setAiError(error instanceof Error ? error.message : labels.aiUnavailable);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -258,12 +290,22 @@ export default function RoomList() {
           <div className="flex items-center gap-2 rounded-2xl bg-white p-2 shadow-sm">
             <input
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => {
+                setSearch(e.target.value);
+                setSemanticMatches(null);
+                setAiSummary('');
+              }}
+              onKeyDown={event => event.key === 'Enter' && handleAISearch()}
               placeholder={labels.searchPlaceholder}
               className="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none"
             />
-            <button type="button" className="rounded-xl bg-[#C09A6A] px-4 py-3 text-white transition hover:bg-[#8B6840]">
-              <Search className="h-4 w-4" />
+            {search && (
+              <button type="button" onClick={() => { setSearch(''); setSemanticMatches(null); setAiSummary(''); setAiError(''); }} className="p-2 text-gray-400 transition hover:text-gray-600">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+            <button type="button" onClick={handleAISearch} disabled={aiLoading || !search.trim()} className="rounded-xl bg-[#C09A6A] px-4 py-3 text-white transition hover:bg-[#8B6840] disabled:opacity-50">
+              {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
             </button>
           </div>
           <p className="mt-3 text-sm font-semibold text-[#2C1F10]/70">{filtered.length} {labels.featuredCount}</p>
@@ -271,6 +313,15 @@ export default function RoomList() {
       </ThemeHeroCarousel>
 
       <main className="mx-auto max-w-6xl px-4 py-8">
+        {aiError && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            {aiError}
+          </div>
+        )}
+        {aiSummary && (
+          <div className="mb-4 rounded-xl border border-[#C09A6A]/25 bg-white px-4 py-3 text-sm font-semibold text-[#2C1F10]">{aiSummary}</div>
+        )}
         {translationNotice && (
           <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">{translationNotice}</div>
         )}
