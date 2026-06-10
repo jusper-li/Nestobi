@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import {
-  BookMarked,
   Facebook,
   FileText,
   Hotel,
@@ -13,7 +12,6 @@ import {
   MessageCircle,
   Music2,
   Phone,
-  Settings,
   ShieldCheck,
   ShoppingBag,
   Twitter,
@@ -72,9 +70,6 @@ export default function Footer() {
     terms: pick(locale, '服務條款', 'Terms of Service', '利用規約', '이용약관'),
     antiFraud: pick(locale, '防詐騙專區', 'Anti-Fraud', '詐欺防止', '사기 방지'),
     cookieSettings: pick(locale, 'Cookie 設定', 'Cookie Settings', 'Cookie 設定', '쿠키 설정'),
-    vendorPortal: pick(locale, '廠商後台', 'Vendor Portal', '出店者管理', '공급사 포털'),
-    superAdmin: pick(locale, '超級管理員', 'Super Admin', 'スーパー管理者', '최고 관리자'),
-    social: pick(locale, '社群', 'Social', 'SNS', '소셜'),
   } as const;
 
   const socialLinks = [
@@ -90,17 +85,6 @@ export default function Footer() {
     settings.social_tiktok && { href: settings.social_tiktok, label: 'TikTok', icon: Music2 },
   ].filter(Boolean) as Array<{ href: string; label: string; icon: LucideIcon }>;
 
-  const contactItems = [
-    { icon: Phone, label: pick(locale, '客服電話', 'Support Phone', '電話', '전화'), value: settings.contact_phone || '02-27565663', sub: t.workday },
-    { icon: Mail, label: pick(locale, '客服信箱', 'Email', 'メール', '이메일'), value: settings.contact_email || 'service@dlalshop.com', sub: t.aiHours },
-    {
-      icon: MapPin,
-      label: t.companyInfo,
-      value: settings.company_name || '若水金禾餐飲股份有限公司',
-      sub: `${t.taxId}：${settings.company_no || '83122492'} / ${t.headquarters}：${settings.headquarters_address || '台北市信義區忠孝東路四段553巷22弄4-1號'}`,
-    },
-  ] as const;
-
   const policyLinks = [
     { to: '/about', label: t.about },
     { to: '/privacy-policy', label: t.privacy },
@@ -110,14 +94,14 @@ export default function Footer() {
   ] as const;
 
   const adminLinks = [
-    { to: '/vendor', label: t.vendorPortal, icon: LayoutDashboard },
-    { to: '/superadmin', label: t.superAdmin, icon: ShieldCheck },
+    { to: '/vendor', label: 'Vendor Portal', icon: LayoutDashboard },
+    { to: '/superadmin', label: 'Super Admin', icon: ShieldCheck },
   ] as const;
 
   return (
     <footer className="bg-[#F0E4C8] text-[#2C1F10]">
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-12">
-        <div className="mb-10 grid grid-cols-1 gap-10 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
           <div>
             <img src="/20260407_nestobi_logo.svg" alt="Nestobi" className="mb-5 h-14 w-auto" />
             <p className="mb-5 max-w-2xl text-sm leading-7 text-[#2C1F10]/70">{t.intro}</p>
@@ -142,37 +126,46 @@ export default function Footer() {
             <div>
               <h4 className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-[#2C1F10]/50">{t.contact}</h4>
               <div className="space-y-3 text-sm">
-                {contactItems.map(({ icon: Icon, label, value, sub }) => (
-                  <div key={`${label}-${value}`} className="text-[#2C1F10]/70">
-                    <div className="mb-1 flex items-center gap-2">
-                      <Icon size={14} />
-                      <span className="text-xs font-semibold uppercase tracking-[0.15em] text-[#2C1F10]/50">{label}</span>
-                    </div>
-                    <div className="font-medium text-[#2C1F10]">{value}</div>
-                    <div className="mt-0.5 text-xs leading-5 text-[#2C1F10]/60">{sub}</div>
+                <div className="text-[#2C1F10]/70">
+                  <div className="mb-1 flex items-center gap-2">
+                    <Phone size={14} />
+                    <span className="text-xs font-semibold uppercase tracking-[0.15em] text-[#2C1F10]/50">客服電話</span>
                   </div>
-                ))}
+                  <div className="font-medium text-[#2C1F10]">{settings.contact_phone || '02-27565663'}</div>
+                  <div className="mt-0.5 text-xs leading-5 text-[#2C1F10]/60">{t.workday}</div>
+                </div>
+
+                <div className="text-[#2C1F10]/70">
+                  <div className="mb-1 flex items-center gap-2">
+                    <Mail size={14} />
+                    <span className="text-xs font-semibold uppercase tracking-[0.15em] text-[#2C1F10]/50">客服信箱</span>
+                  </div>
+                  <div className="font-medium text-[#2C1F10]">{settings.contact_email || 'service@dlalshop.com'}</div>
+                  <div className="mt-0.5 text-xs leading-5 text-[#2C1F10]/60">{t.aiHours}</div>
+                </div>
+
+                <div className="text-[#2C1F10]/70">
+                  <div className="mb-1 flex items-center gap-2">
+                    <MapPin size={14} />
+                    <span className="text-xs font-semibold uppercase tracking-[0.15em] text-[#2C1F10]/50">{t.companyInfo}</span>
+                  </div>
+                  <div className="font-medium text-[#2C1F10]">{settings.company_name || '若水金禾餐飲股份有限公司'}</div>
+                  <div className="mt-0.5 text-xs leading-5 text-[#2C1F10]/60">
+                    {t.taxId}：{settings.company_no || '83122492'} / {t.headquarters}：{settings.headquarters_address || '台北市信義區忠孝東路四段553巷22弄4-1號'}
+                  </div>
+                </div>
+
                 <Link to="/contact" className="inline-flex items-center gap-2 text-[#2C1F10]/70 transition hover:text-[#2C1F10]">
                   <FileText size={14} />
                   <span>{t.contactForm}</span>
                 </Link>
               </div>
             </div>
-
-            <div>
-              <h4 className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-[#2C1F10]/50">{t.supportHours}</h4>
-              <div className="space-y-1 text-sm text-[#2C1F10]/70">
-                <p>{t.workday}</p>
-                <p>{t.aiHours}</p>
-                <p>02-27565663</p>
-                <p>service@dlalshop.com</p>
-              </div>
-            </div>
           </div>
         </div>
 
-        <div className="border-t border-[#2C1F10]/10 pt-8">
-          <div className="flex flex-col gap-6">
+        <div className="mt-10 border-t border-[#2C1F10]/10 pt-8">
+          <div className="flex flex-col gap-5">
             <div className="flex flex-wrap gap-x-5 gap-y-3 text-sm text-[#2C1F10]/75">
               {policyLinks.map(({ to, label }) => (
                 <Link key={to} to={to} className="transition hover:text-[#2C1F10]">
@@ -181,25 +174,24 @@ export default function Footer() {
               ))}
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              {adminLinks.map(({ to, label, icon: Icon }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  aria-label={label}
-                  title={label}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-[#2C1F10]/10 bg-white/60 text-[#2C1F10]/70 transition hover:bg-white hover:text-[#2C1F10]"
-                >
-                  <Icon size={16} />
-                </Link>
-              ))}
+            <div className="flex items-center gap-4 text-xs text-[#2C1F10]/55">
+              <p>© {new Date().getFullYear()} Nestobi / 根本在旅行</p>
+              <div className="flex items-center gap-2">
+                {adminLinks.map(({ to, label, icon: Icon }) => (
+                  <Link
+                    key={to}
+                    to={to}
+                    aria-label={label}
+                    title={label}
+                    className="flex h-6 w-6 items-center justify-center text-[#2C1F10]/55 transition hover:text-[#2C1F10]"
+                  >
+                    <Icon size={14} />
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="border-t border-[#2C1F10]/10 bg-[#E7D9B5] px-6 py-4 text-center text-xs text-[#2C1F10]/55">
-        <p>© {new Date().getFullYear()} Nestobi / 根本在旅行</p>
       </div>
     </footer>
   );
