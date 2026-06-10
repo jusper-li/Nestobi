@@ -9,6 +9,7 @@ import { translateProductsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
+import { useSiteSettings } from '../../contexts/SiteSettingsContext';
 
 interface PurchaseRecord {
   id: string;
@@ -35,6 +36,7 @@ type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 export default function MemberOrders() {
   const { user } = useAuth();
   const { addItem } = useCart();
+  const { settings } = useSiteSettings();
   const { lang } = useLanguage();
   const navigate = useNavigate();
   const locale = normalizeLang(lang) as UiLang;
@@ -358,7 +360,8 @@ export default function MemberOrders() {
     const shortId = orderId.slice(-10).toUpperCase();
     const subject = `${t.contactSubject} #${shortId}`;
     const body = `${t.contactBody} #${shortId}`;
-    return `mailto:service@nestobi.com.tw?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const email = settings.contact_email || 'service@dlalshop.com';
+    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   if (loading) {

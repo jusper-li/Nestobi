@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS site_settings (
   site_icon_url     text NOT NULL DEFAULT '/20260407_nestobi_logo.svg',
   og_image_url      text NOT NULL DEFAULT '/LOGO.png',
   meta_keywords     text NOT NULL DEFAULT '旅遊平台, 訂房, AI旅遊, 行程規劃, 台灣旅遊, 住宿訂房, 旅遊購物, 旅遊翻譯, Nestobi',
-  contact_phone     text NOT NULL DEFAULT '0800-123-456',
+  contact_phone     text NOT NULL DEFAULT '02-27565663',
   contact_email     text NOT NULL DEFAULT '',
   social_facebook   text NOT NULL DEFAULT 'https://www.facebook.com/nestobi',
   social_instagram  text NOT NULL DEFAULT 'https://www.instagram.com/nestobi',

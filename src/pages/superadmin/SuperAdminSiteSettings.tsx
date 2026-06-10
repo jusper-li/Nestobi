@@ -47,17 +47,24 @@ const FIELD_GROUPS = [
     title: '聯絡資訊',
     icon: Phone,
     fields: [
-      { key: 'contact_phone', label: '客服電話', placeholder: '0800-123-456', type: 'text' },
-      { key: 'contact_email', label: '客服信箱', placeholder: 'service@nestobi.com.tw', type: 'text' },
+            { key: 'contact_phone', label: '客服電話', placeholder: '02-27565663', type: 'text' },
+      { key: 'contact_email', label: '客服信箱', placeholder: 'service@dlalshop.com', type: 'text' },
+      { key: 'company_no', label: '統一編號', placeholder: '83122492', type: 'text' },
+      { key: 'company_name', label: '營業人名稱', placeholder: '若水金禾餐飲股份有限公司', type: 'text' },
+      { key: 'headquarters_address', label: '總部地址', placeholder: '台北市信義區忠孝東路四段553巷22弄4-1號', type: 'text' },
     ],
   },
   {
     title: '社群連結',
     icon: Share2,
     fields: [
-      { key: 'social_facebook', label: 'Facebook', placeholder: 'https://www.facebook.com/...', type: 'text' },
+            { key: 'social_facebook', label: 'Facebook', placeholder: 'https://www.facebook.com/...', type: 'text' },
       { key: 'social_instagram', label: 'Instagram', placeholder: 'https://www.instagram.com/...', type: 'text' },
+      { key: 'social_line', label: 'LINE', placeholder: 'https://line.me/R/ti/p/@992kypjr', type: 'text' },
+      { key: 'social_youtube', label: 'YouTube', placeholder: 'https://www.youtube.com/@dlal_travel', type: 'text' },
+      { key: 'social_x', label: 'X', placeholder: 'https://x.com/DLALTaiwan', type: 'text' },
       { key: 'social_twitter', label: 'Twitter / X', placeholder: '@nestobi', type: 'text' },
+      { key: 'social_tiktok', label: 'TikTok', placeholder: 'https://www.tiktok.com/@dlal.tw', type: 'text' },
     ],
   },
 ];
@@ -317,9 +324,12 @@ const SuperAdminSiteSettings: React.FC = () => {
               { ok: !!form.site_icon_url, label: '網站圖示 (Favicon) 已設定' },
               { ok: !!form.og_image_url, label: 'OG 社群分享圖片已設定' },
               { ok: form.meta_keywords.split(',').filter(Boolean).length >= 3, label: '至少 3 個 Meta Keywords' },
-              { ok: !!form.contact_phone || !!form.contact_email, label: '至少一種聯絡方式' },
+                            { ok: !!form.contact_phone || !!form.contact_email, label: '至少一種聯絡方式' },
+              { ok: !!form.company_no, label: '統一編號已填寫' },
+              { ok: !!form.company_name, label: '營業人名稱已填寫' },
+              { ok: !!form.headquarters_address, label: '總部地址已填寫' },
               { ok: !!form.ai_site_summary, label: 'AI 搜尋摘要已填寫' },
-              { ok: !!form.social_facebook || !!form.social_instagram, label: '至少一個社群連結' },
+                            { ok: !!form.social_facebook || !!form.social_instagram || !!form.social_line || !!form.social_youtube || !!form.social_x || !!form.social_tiktok, label: '至少一種社群連結' },
               { ok: /^#[0-9A-Fa-f]{6}$/.test(form.theme_color), label: '有效的主題色彩 (hex)' },
             ].map(({ ok, label }) => (
               <div key={label} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>

@@ -121,8 +121,9 @@ const SEOHead: React.FC<SEOHeadProps> = ({
     upsertMeta('name', 'twitter:title', resolvedOgTitle);
     upsertMeta('name', 'twitter:description', resolvedOgDesc);
     upsertMeta('name', 'twitter:image', resolvedImage);
-    if (settings.social_twitter) {
-      upsertMeta('name', 'twitter:site', settings.social_twitter);
+    const socialX = settings.social_x || settings.social_twitter;
+    if (socialX) {
+      upsertMeta('name', 'twitter:site', socialX);
     }
 
     // Canonical

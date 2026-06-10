@@ -399,7 +399,7 @@ async function buildDirectRecommendationAnswer(question: string) {
 async function buildKeywordCustomerServiceContext(question: string) {
   const [settings, faqs, pages, rooms, hotels, products, articles, stores] = await Promise.all([
     fetchPublicRows<Record<string, unknown>>(
-      "site_settings?is_active=eq.true&select=site_name,site_slogan,site_description,contact_phone,contact_email,ai_site_summary&limit=1",
+      "site_settings?is_active=eq.true&select=site_name,site_slogan,site_description,contact_phone,contact_email,company_no,company_name,headquarters_address,social_facebook,social_instagram,social_line,social_youtube,social_x,social_twitter,social_tiktok,ai_site_summary&limit=1",
     ),
     fetchPublicRows<Record<string, unknown>>(
       "faqs?is_published=eq.true&select=question,answer,category,sort_order&order=sort_order.asc&limit=24",
@@ -434,6 +434,15 @@ async function buildKeywordCustomerServiceContext(question: string) {
         cleanText(row.ai_site_summary, 360),
         row.contact_phone ? `Phone: ${cleanText(row.contact_phone, 80)}` : "",
         row.contact_email ? `Email: ${cleanText(row.contact_email, 120)}` : "",
+        row.company_no ? `Company No: ${cleanText(row.company_no, 40)}` : "",
+        row.company_name ? `Company Name: ${cleanText(row.company_name, 120)}` : "",
+        row.headquarters_address ? `Headquarters: ${cleanText(row.headquarters_address, 160)}` : "",
+        row.social_facebook ? `Facebook: ${cleanText(row.social_facebook, 160)}` : "",
+        row.social_instagram ? `Instagram: ${cleanText(row.social_instagram, 160)}` : "",
+        row.social_line ? `LINE: ${cleanText(row.social_line, 160)}` : "",
+        row.social_youtube ? `YouTube: ${cleanText(row.social_youtube, 160)}` : "",
+        row.social_x ? `X: ${cleanText(row.social_x, 160)}` : row.social_twitter ? `X: ${cleanText(row.social_twitter, 160)}` : "",
+        row.social_tiktok ? `TikTok: ${cleanText(row.social_tiktok, 160)}` : "",
       ].filter(Boolean).join(" | "),
     ),
     ...faqs.map((row) =>

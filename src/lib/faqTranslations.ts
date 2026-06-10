@@ -235,10 +235,10 @@ const FAQ_TRANSLATIONS: Record<string, FaqTranslationEntry> = {
       ko: '고객지원은 어떻게 연락하나요?',
     },
     answer: {
-      zh: '您可以透過以下方式聯繫我們：AI 客服（24小時）、客服電話 0800-123-456（週一至週五 09:00-18:00）、線上聯絡表單，或寄信至 service@nestobi.com.tw。',
-      en: 'You can contact us through AI support (24/7), phone at 0800-123-456 (Monday to Friday, 09:00–18:00), the online contact form, or by email at service@nestobi.com.tw.',
-      ja: 'AIサポート（24時間）、電話 0800-123-456（月〜金 09:00〜18:00）、オンラインお問い合わせフォーム、または service@nestobi.com.tw までメールでご連絡ください。',
-      ko: 'AI 고객지원(24시간), 고객센터 0800-123-456(월~금 09:00~18:00), 온라인 문의 양식 또는 service@nestobi.com.tw로 이메일을 보내 연락하실 수 있습니다.',
+      zh: '您可以透過以下方式聯繫我們：AI 客服（24小時）、客服電話 02-27565663（週一至週五 09:00-18:00）、線上聯絡表單，或寄信至 service@dlalshop.com。',
+      en: 'You can contact us through AI support (24/7), phone at 02-27565663 (Monday to Friday, 09:00–18:00), the online contact form, or by email at service@dlalshop.com.',
+      ja: 'AIサポート（24時間）、電話 02-27565663（月〜金 09:00〜18:00）、オンラインお問い合わせフォーム、または service@dlalshop.com までメールでご連絡ください。',
+      ko: 'AI 고객지원(24시간), 고객센터 02-27565663(월~금 09:00~18:00), 온라인 문의 양식 또는 service@dlalshop.com로 이메일을 보내 연락하실 수 있습니다.',
     },
   },
   '45233766-48d7-4ebe-90f2-3b06deaaddb9': {
