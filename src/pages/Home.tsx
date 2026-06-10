@@ -6,6 +6,7 @@ import Navigation from '../components/Navigation';
 import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../lib/i18n';
+import { fetchSiteContentBlocks, getBlockText, indexBlocks, type SiteContentBlock } from '../lib/siteContent';
 import {
   getTranslationRuntimeState,
   translateBlogPostsFromCacheOnly,
@@ -120,6 +121,23 @@ export default function Home() {
   const [homeSearch, setHomeSearch] = useState('');
   const [homeSearchTarget, setHomeSearchTarget] = useState<'rooms' | 'journal'>('rooms');
   const [activeRecommendationTab, setActiveRecommendationTab] = useState<'stays' | 'shop' | 'journal'>('stays');
+  const [homeBlocks, setHomeBlocks] = useState<SiteContentBlock[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchSiteContentBlocks('home')
+      .then(blocks => {
+        if (!cancelled) setHomeBlocks(blocks);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const homeMap = useMemo(() => indexBlocks(homeBlocks), [homeBlocks]);
+  const homeText = (key: string, field: 'title' | 'subtitle' | 'body' | 'cta_label', fallback: string) =>
+    getBlockText(homeMap[key], normalizedLang, field) || fallback;
 
   const activeHomeBanner = homeBanners[homeBannerIndex] || getFallbackThemeBanners('home')[0];
   const homeBannerText = useMemo(
@@ -132,9 +150,9 @@ export default function Home() {
   );
   const homeBannerLink = activeHomeBanner.link_url.trim();
   const homeSearchLabels = {
-    title: t4('今天想去哪裡？', 'Where are you heading today?', '今日はどこへ行きますか？', '오늘 어디로 떠나나요?'),
-    subtitle: t4('先找住宿或行程靈感，再進一步篩選。', 'Search stays or trip ideas first, then refine.', 'まず宿泊や旅のアイデアを探してから絞り込みます。', '먼저 숙소나 여행 아이디어를 찾고, 그다음 좁혀보세요.'),
-    placeholder: t4('搜尋宜蘭住宿、沖繩行程、咖啡旅遊文章...', 'Search Yilan stays, Okinawa trip ideas, coffee travel articles...', '宜蘭の宿、沖縄の旅程、コーヒー旅記事を検索...', '이란 숙소, 오키나와 일정, 커피 여행 글 검색...'),
+    title: homeText('home-search-title', 'subtitle', t4('今天想去哪裡', 'Where are you heading today?', '今日はどこへ行きますか', '오늘 어디로 가시나요')),
+    subtitle: t4('先找住宿或行程靈感，再慢慢篩選。', 'Search stays or trip ideas first, then refine.', 'まずは宿泊や旅のアイデアを探してから絞り込みます。', '먼저 숙소나 여행 아이디어를 찾고 나서 좁혀보세요.'),
+    placeholder: homeText('home-search-placeholder', 'body', t4('搜尋宜蘭住宿、沖繩行程、咖啡旅行文章...', 'Search Yilan stays, Okinawa trip ideas, coffee travel articles...', '宜蘭の宿、沖縄の旅アイデア、コーヒー旅行記事を検索...', '이란 숙소, 오키나와 여행 아이디어, 커피 여행 글을 검색...')),
     rooms: t4('住宿', 'Stays', '宿泊', '숙소'),
     trips: t4('行程', 'Trips', '旅程', '여행'),
     submit: t4('搜尋', 'Search', '検索', '검색'),
@@ -142,16 +160,41 @@ export default function Home() {
 
   const flowLabels = {
     quickTitle: t4('常用入口', 'Quick Actions', 'よく使う入口', '자주 쓰는 메뉴'),
-    quickSubtitle: t4('把訂房、購物與會員功能集中在一起。', 'Bookings, shopping, and member tools stay together.', '予約・買い物・会員機能をまとめます。', '예약, 쇼핑, 회원 기능을 한곳에 모았습니다.'),
+    quickSubtitle: t4('訂房、購物與會員工具都集中在這裡。', 'Bookings, shopping, and member tools stay together.', '予約、買い物、会員ツールをまとめています。', '예약, 쇼핑, 회원 도구를 한곳에 모았습니다.'),
     booking: t4('訂房', 'Book', '予約', '예약'),
-    recommendations: t4('為你推薦', 'Recommended', 'おすすめ', '추천'),
-    recommendationsDesc: t4('切換分類查看，不用一路滑到底。', 'Switch categories instead of scrolling through everything.', '分類を切り替えて、長くスクロールせずに見られます。', '끝까지 스크롤하지 않고 분류를 전환해 볼 수 있습니다.'),
+    recommendations: homeText('home-recommendations-title', 'title', t4('推薦內容', 'Recommended', 'おすすめ', '추천')),
+    recommendationsDesc: homeText(
+      'home-recommendations-title',
+      'subtitle',
+      t4('不用一直往下滑，直接切換分類。', 'Switch categories instead of scrolling through everything.', '全部をスクロールする代わりに、分類を切り替えてください。', '끝까지 스크롤하지 말고 카테고리를 바로 전환하세요.'),
+    ),
   };
 
   const recommendationTabs = [
-    { id: 'stays' as const, label: t.stays, title: t.featuredStays, to: '/rooms', action: t.viewAllStays, count: displayRooms.length },
-    { id: 'shop' as const, label: t.shop, title: t.featuredShop, to: '/shop', action: t.viewAllShop, count: displayProducts.length },
-    { id: 'journal' as const, label: t.journal, title: t.featuredJournal, to: '/blog', action: t.viewAllJournal, count: displayPosts.length },
+    {
+      id: 'stays' as const,
+      label: t.stays,
+      title: homeText('home-featured-stays-title', 'title', t.featuredStays),
+      to: '/rooms',
+      action: t.viewAllStays,
+      count: displayRooms.length,
+    },
+    {
+      id: 'shop' as const,
+      label: t.shop,
+      title: homeText('home-featured-shop-title', 'title', t.featuredShop),
+      to: '/shop',
+      action: t.viewAllShop,
+      count: displayProducts.length,
+    },
+    {
+      id: 'journal' as const,
+      label: t.journal,
+      title: homeText('home-featured-journal-title', 'title', t.featuredJournal),
+      to: '/blog',
+      action: t.viewAllJournal,
+      count: displayPosts.length,
+    },
   ];
   const activeRecommendation = recommendationTabs.find(tab => tab.id === activeRecommendationTab) || recommendationTabs[0];
   const hasRecommendations = recommendationTabs.some(tab => tab.count > 0);

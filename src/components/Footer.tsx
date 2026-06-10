@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -28,6 +29,7 @@ import {
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
 import { normalizeLang, pickByLang } from '../lib/i18n';
+import { fetchSiteContentBlocks, getBlockText, indexBlocks, type SiteContentBlock } from '../lib/siteContent';
 
 type Locale = 'zh-TW' | 'en' | 'ja' | 'ko';
 
@@ -38,46 +40,63 @@ export default function Footer() {
   const { lang } = useLanguage();
   const { settings } = useSiteSettings();
   const locale = normalizeLang(lang) as Locale;
+  const [footerBlocks, setFooterBlocks] = useState<SiteContentBlock[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchSiteContentBlocks('footer')
+      .then(blocks => {
+        if (!cancelled) setFooterBlocks(blocks);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const footerMap = useMemo(() => indexBlocks(footerBlocks), [footerBlocks]);
+  const footerText = (key: string, field: 'title' | 'subtitle' | 'body' | 'cta_label', fallback: string) =>
+    getBlockText(footerMap[key], locale, field) || fallback;
 
   const t = {
     intro: pick(
       locale,
-      'Nestobi 負責把旅遊資訊整理好，根本在旅行則把品牌體驗落地。兩個品牌分工不同，卻共同指向同一件事：讓旅程更容易開始，也更值得記住。',
+      'Nestobi ????????????????????????????????????????????????????????',
       'Nestobi organizes the information, and Genbon Travel turns it into an experience. Different roles, one shared goal: making every journey easier to start and easier to remember.',
-      'Nestobi は情報を整理し、根本在旅行はその体験を現実にします。役割は違っても、旅をもっと始めやすく、もっと記憶に残るものにするという目的は同じです。',
-      'Nestobi는 정보를 정리하고, 根本在旅行은 그 경험을 현실로 만듭니다. 역할은 다르지만 여행을 더 쉽게 시작하고 더 오래 기억되게 한다는 목표는 같습니다.',
+      'Nestobi ????????????????????????????????????????????????????????????',
+      'Nestobi? ??? ????, ?????? ??? ??? ????. ??? ???? ??? ? ?? ???? ? ?? ???? ???? ?? ????.',
     ),
-    services: pick(locale, '服務', 'Services', 'サービス', '서비스'),
-    members: pick(locale, '會員', 'Members', '会員', '회원'),
-    contact: pick(locale, '聯絡我們', 'Contact', 'お問い合わせ', '문의하기'),
-    contactForm: pick(locale, '聯絡表單', 'Contact Form', 'お問い合わせフォーム', '문의 양식'),
-    supportHours: pick(locale, '客服時間', 'Support Hours', 'サポート時間', '고객지원 시간'),
-    workday: pick(locale, '週一至週五 09:00-18:00', 'Mon-Fri 09:00-18:00', '月〜金 09:00〜18:00', '월~금 09:00~18:00'),
-    aiHours: pick(locale, 'AI 客服 24 小時', 'AI support 24/7', 'AI サポート 24 時間', 'AI 고객지원 24시간'),
-    phone: pick(locale, '客服電話', 'Support Phone', 'サポート電話', '고객센터 전화'),
-    email: pick(locale, '客服信箱', 'Email', 'メール', '이메일'),
-    about: pick(locale, '關於我們', 'About', '私たちについて', '회사 소개'),
-    privacy: pick(locale, '隱私權政策', 'Privacy', 'プライバシー', '개인정보처리방침'),
-    terms: pick(locale, '服務條款', 'Terms', '利用規約', '이용약관'),
-    cookies: pick(locale, 'Cookie 政策', 'Cookie Policy', 'Cookie ポリシー', '쿠키 정책'),
-    antiFraud: pick(locale, '防詐騙宣導', 'Anti-Fraud', '詐欺防止', '사기 방지'),
-    cookieSettings: pick(locale, 'Cookie 設定', 'Cookie Settings', 'Cookie 設定', '쿠키 설정'),
-    vendorPortal: pick(locale, '廠商管理', 'Vendor Portal', '出店者管理', '공급사 관리'),
-    superAdmin: pick(locale, '超級管理員', 'Super Admin', 'スーパー管理者', '슈퍼 관리자'),
-    social: pick(locale, '社群', 'Social', 'SNS', '소셜'),
+    services: footerText('footer-services-heading', 'title', pick(locale, '??', 'Services', '????', '???')),
+    members: pick(locale, '??', 'Members', '????', '??'),
+    contact: pick(locale, '????', 'Contact', '??????', '????'),
+    contactForm: pick(locale, '????', 'Contact Form', '??????????', '?? ??'),
+    supportHours: pick(locale, '????', 'Support Hours', '??????', '?? ?? ??'),
+    workday: pick(locale, '????? 09:00-18:00', 'Mon-Fri 09:00-18:00', '??? 09:00-18:00', '?~? 09:00-18:00'),
+    aiHours: pick(locale, 'AI ?? 24 ??', 'AI support 24/7', 'AI ???? 24??', 'AI ???? 24??'),
+    phone: pick(locale, '????', 'Support Phone', '??????', '???? ??'),
+    email: pick(locale, '????', 'Email', '???', '???'),
+    about: pick(locale, '????', 'About', '????', '?? ??'),
+    privacy: pick(locale, '????', 'Privacy', '??????', '????????'),
+    terms: pick(locale, '????', 'Terms', '????', '????'),
+    cookies: pick(locale, 'Cookie ??', 'Cookie Policy', 'Cookie ????', '?? ??'),
+    antiFraud: pick(locale, '?????', 'Anti-Fraud', '??????', '?? ?? ??'),
+    cookieSettings: pick(locale, 'Cookie ??', 'Cookie Settings', 'Cookie ??', '?? ??'),
+    vendorPortal: pick(locale, '????', 'Vendor Portal', '???????', '??? ??'),
+    superAdmin: pick(locale, '?????', 'Super Admin', '???????', '?? ???'),
+    social: pick(locale, '??', 'Social', 'SNS', '??'),
   } as const;
 
   const serviceLinks = [
-    { to: '/rooms', label: pick(locale, '住宿', 'Stays', '宿泊', '숙박'), icon: Hotel },
-    { to: '/shop', label: pick(locale, '商品', 'Shop', '商品', '상품'), icon: ShoppingBag },
-    { to: '/stores', label: pick(locale, '門市', 'Stores', '店舗', '매장'), icon: MapPin },
-    { to: '/blog', label: pick(locale, '文章', 'Articles', '記事', '아티클'), icon: FileText },
-    { to: '/faq', label: pick(locale, '常見問題', 'FAQ', 'FAQ', '자주 묻는 질문'), icon: HelpCircle },
-    { to: '/ai/chat', label: pick(locale, 'AI 客服', 'AI Support', 'AI サポート', 'AI 고객지원'), icon: MessageCircle },
-    { to: '/ai/itinerary', label: pick(locale, 'AI 導遊', 'AI Planner', 'AI Planner', 'AI 여행 플래너'), icon: Map },
-    { to: '/ai/coffee-quiz', label: pick(locale, 'AI 尋豆師', 'AI Coffee Finder', 'AI Coffee Finder', 'AI 커피 찾기'), icon: Coffee },
-    { to: '/ai/translator', label: pick(locale, 'AI 翻譯', 'AI Translate', 'AI 翻訳', 'AI 번역'), icon: Languages },
-    { to: '/ai/passport', label: pick(locale, '旅遊護照', 'Travel Passport', '旅のパスポート', '여행 패스포트'), icon: BookMarked },
+    { to: '/rooms', label: footerText('footer-services-rooms', 'title', pick(locale, 'Nestobi ??', 'Nestobi Stays', 'Nestobi ??', 'Nestobi ??')), icon: Hotel },
+    { to: '/shop', label: footerText('footer-services-shop', 'title', pick(locale, '???????', 'Genbon Travel Shop', '?????????', '????? ?')), icon: ShoppingBag },
+    { to: '/stores', label: footerText('footer-services-stores', 'title', pick(locale, '????????', 'Genbon Travel Cafes', '????????', '????? ??')), icon: MapPin },
+    { to: '/blog', label: footerText('footer-services-blog', 'title', pick(locale, '?????', 'Coffee Traveler', '?????????', '?? ????')), icon: FileText },
+    { to: '/faq', label: pick(locale, '????', 'FAQ', 'FAQ', '?? ?? ??'), icon: HelpCircle },
+    { to: '/ai/chat', label: pick(locale, 'AI ??', 'AI Support', 'AI ????', 'AI ????'), icon: MessageCircle },
+    { to: '/ai/itinerary', label: pick(locale, 'AI ??', 'AI Planner', 'AI Planner', 'AI ???'), icon: Map },
+    { to: '/ai/coffee-quiz', label: pick(locale, 'AI ???', 'AI Coffee Finder', 'AI Coffee Finder', 'AI ?? ??'), icon: Coffee },
+    { to: '/ai/translator', label: pick(locale, 'AI ??', 'AI Translate', 'AI ??', 'AI ??'), icon: Languages },
+    { to: '/ai/passport', label: pick(locale, '????', 'Travel Passport', '???????', '?? ????'), icon: BookMarked },
   ] as const;
 
   const memberLinks = [

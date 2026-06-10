@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -30,6 +30,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../lib/i18n';
+import { fetchSiteContentBlocks, getBlockText, indexBlocks, type SiteContentBlock } from '../lib/siteContent';
 
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 
@@ -42,38 +43,53 @@ export default function Navigation() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [navigationBlocks, setNavigationBlocks] = useState<SiteContentBlock[]>([]);
 
   const locale = normalizeLang(lang) as UiLang;
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetchSiteContentBlocks('navigation')
+      .then(blocks => {
+        if (!cancelled) setNavigationBlocks(blocks);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const navigationMap = useMemo(() => indexBlocks(navigationBlocks), [navigationBlocks]);
+
   const labels = useMemo(() => ({
-    home: pick('首頁', 'Home', 'ホーム', '홈'),
-    cart: pick('購物車', 'Cart', 'カート', '장바구니'),
-    stores: pick('門市', 'Stores', '店舗', '매장'),
-    rooms: pick('Nestobi', 'Nestobi', 'Nestobi', 'Nestobi'),
-    shop: pick('根本在旅行', 'Genbon Travel Shop', '根本在旅行', '근본재여행'),
-    blog: pick('咖啡旅行家', 'Coffee Traveler', 'コーヒートラベラー', '커피 트래블러'),
-    aiItinerary: pick('AI 行程規劃', 'AI Planner', 'AI 旅程プランナー', 'AI 일정 플래너'),
-    aiTranslator: pick('AI 翻譯', 'AI Translate', 'AI 翻訳', 'AI 번역'),
-    aiChat: pick('AI 客服', 'AI Support', 'AI サポート', 'AI 고객지원'),
-    aiCoffeeQuiz: pick('AI咖啡尋豆師', 'AI Coffee Finder', 'AIコーヒー豆診断', 'AI 커피 바리스타'),
-    travelPassport: pick('旅行護照', 'Travel Passport', '旅のパスポート', '여행 패스포트'),
-    login: pick('登入', 'Login', 'ログイン', '로그인'),
-    register: pick('註冊', 'Sign up', '登録', '가입'),
-    member: pick('會員', 'Member', '会員', '회원'),
-    memberCenter: pick('會員中心', 'Member Center', '会員センター', '회원 센터'),
-    myBookings: pick('nestobi 訂房', 'nestobi Bookings', 'nestobi 予約', 'nestobi 예약'),
-    myOrders: pick('根本在旅行訂單', 'Shop Orders', '根本在旅行の注文', '근본재여행 주문'),
-    myPurchases: pick('消費紀錄', 'Consumption Records', '利用履歴', '소비 내역'),
-    myPoints: pick('我的點數', 'My Points', 'ポイント', '내 포인트'),
-    profile: pick('個人資料', 'Profile', 'プロフィール', '프로필'),
-    preferences: pick('偏好設定', 'Preferences', '設定', '환경설정'),
-    adminPanel: pick('後台管理', 'Admin', '管理画面', '관리자'),
-    superAdmin: pick('超級管理員', 'Super Admin', 'スーパー管理者', '슈퍼 관리자'),
-    logout: pick('登出', 'Logout', 'ログアウト', '로그아웃'),
-    closeMenu: pick('關閉選單', 'Close menu', 'メニューを閉じる', '메뉴 닫기'),
-    language: pick('語言', 'Language', '言語', '언어'),
-  }), [locale]);
+    home: pick('??', 'Home', '???', '?'),
+    cart: pick('???', 'Cart', '???', '????'),
+    stores: getBlockText(navigationMap['navigation-header-stores'], locale, 'title') || pick('??', 'Stores', '??', '??'),
+    rooms: getBlockText(navigationMap['navigation-header-rooms'], locale, 'title') || pick('Nestobi ??', 'Nestobi Stays', 'Nestobi ??', 'Nestobi ??'),
+    shop: getBlockText(navigationMap['navigation-header-shop'], locale, 'title') || pick('???????', 'Genbon Travel Shop', '?????????', '????? ?'),
+    blog: getBlockText(navigationMap['navigation-header-blog'], locale, 'title') || pick('?????', 'Coffee Traveler', '?????????', '?? ????'),
+    aiItinerary: pick('AI ??', 'AI Planner', 'AI ?????', 'AI ???'),
+    aiTranslator: pick('AI ??', 'AI Translate', 'AI ??', 'AI ??'),
+    aiChat: pick('AI ??', 'AI Support', 'AI ????', 'AI ????'),
+    aiCoffeeQuiz: pick('AI ???', 'AI Coffee Finder', 'AI ???????', 'AI ?? ??'),
+    travelPassport: pick('????', 'Travel Passport', '???????', '?? ????'),
+    login: pick('??', 'Login', '????', '???'),
+    register: pick('??', 'Sign up', '??', '????'),
+    member: pick('??', 'Member', '????', '??'),
+    memberCenter: pick('????', 'Member Center', '??????', '????'),
+    myBookings: pick('????', 'My Bookings', '????', '? ??'),
+    myOrders: pick('????', 'My Orders', '????', '? ??'),
+    myPurchases: pick('????', 'Purchase Records', '????', '?? ??'),
+    myPoints: pick('????', 'My Points', '????', '???'),
+    profile: pick('????', 'Profile', '??????', '???'),
+    preferences: pick('????', 'Preferences', '??', '??'),
+    adminPanel: pick('????', 'Admin', '????', '???'),
+    superAdmin: pick('?????', 'Super Admin', '???????', '?? ???'),
+    logout: pick('??', 'Logout', '?????', '????'),
+    closeMenu: pick('????', 'Close menu', '????????', '?? ??'),
+    language: pick('??', 'Language', '??', '??'),
+  }), [locale, navigationMap]);
 
   const languageOptions = useMemo(
     () => [

@@ -1,4 +1,4 @@
-import { useMemo, type ComponentType } from 'react';
+import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Home,
@@ -10,6 +10,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../lib/i18n';
+import { fetchSiteContentBlocks, getBlockText, indexBlocks, type SiteContentBlock } from '../lib/siteContent';
 
 type NavItem = {
   to: string;
@@ -46,6 +47,7 @@ export default function MobileBottomNav() {
   const locale = normalizeLang(lang);
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
   const pathname = location.pathname;
+  const [navigationBlocks, setNavigationBlocks] = useState<SiteContentBlock[]>([]);
   const isBackendRoute =
     pathname.startsWith('/admin') ||
     pathname.startsWith('/superadmin') ||
@@ -53,15 +55,29 @@ export default function MobileBottomNav() {
     pathname.startsWith('/member/store-admin') ||
     pathname.startsWith('/store-admin');
 
+  useEffect(() => {
+    let cancelled = false;
+    fetchSiteContentBlocks('navigation')
+      .then(blocks => {
+        if (!cancelled) setNavigationBlocks(blocks);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const navigationMap = useMemo(() => indexBlocks(navigationBlocks), [navigationBlocks]);
+
   const items = useMemo<NavItem[]>(
     () => [
-      { to: '/', label: pick('首頁', 'Home', 'ホーム', '홈'), icon: Home, activePaths: ['/'] },
-      { to: '/ai/chat', label: pick('AI客服', 'AI Support', 'AIサポート', 'AI 고객지원'), icon: MessageCircle, activePaths: ['/ai/chat'] },
-      { to: '/ai/itinerary', label: pick('AI導遊', 'AI Guide', 'AIガイド', 'AI 가이드'), icon: Map, activePaths: ['/ai/itinerary'] },
-      { to: '/ai/coffee-quiz', label: pick('AI尋豆師', 'AI Coffee Finder', 'AIコーヒー豆診断', 'AI 커피 바리스타'), icon: Coffee, activePaths: ['/ai/coffee-quiz'] },
-      { to: user ? '/member' : '/auth/login', label: pick('我的', 'My', 'マイ', '내 정보'), icon: User, activePaths: ['/member'] },
+      { to: '/', label: getBlockText(navigationMap['navigation-mobile-home'], locale, 'title') || pick('首頁', 'Home', 'ホーム', '홈'), icon: Home, activePaths: ['/'] },
+      { to: '/ai/chat', label: getBlockText(navigationMap['navigation-mobile-ai-chat'], locale, 'title') || pick('AI客服', 'AI Support', 'AIサポート', 'AI 고객지원'), icon: MessageCircle, activePaths: ['/ai/chat'] },
+      { to: '/ai/itinerary', label: getBlockText(navigationMap['navigation-mobile-ai-itinerary'], locale, 'title') || pick('AI導遊', 'AI Guide', 'AIガイド', 'AI 가이드'), icon: Map, activePaths: ['/ai/itinerary'] },
+      { to: '/ai/coffee-quiz', label: getBlockText(navigationMap['navigation-mobile-ai-coffee-quiz'], locale, 'title') || pick('AI尋豆師', 'AI Coffee Finder', 'AIコーヒー豆診断', 'AI 커피 바리스타'), icon: Coffee, activePaths: ['/ai/coffee-quiz'] },
+      { to: user ? '/member' : '/auth/login', label: getBlockText(navigationMap['navigation-mobile-member'], locale, 'title') || pick('我的', 'My', 'マイ', '내 정보'), icon: User, activePaths: ['/member'] },
     ],
-    [pick, user],
+    [navigationMap, locale, pick, user],
   );
 
   if (isBackendRoute) {
