@@ -155,12 +155,18 @@ const AdminStaticPages: React.FC = () => {
 
   const insertImage = useCallback((url: string) => {
     const editor = editorRef.current?.getEditor();
-    if (!editor) return;
+    if (!editor) {
+      setSaveStatus('error');
+      setImageUploading(false);
+      return;
+    }
 
+    editor.focus();
     const range = editor.getSelection(true);
     const index = range ? range.index : editor.getLength();
     editor.insertEmbed(index, 'image', url, 'user');
     editor.setSelection(index + 1, 0, 'silent');
+    setEditContent(editor.root.innerHTML);
   }, []);
 
   const handleImageButtonClick = useCallback(() => {
