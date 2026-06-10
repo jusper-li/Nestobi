@@ -86,7 +86,7 @@ export default function Home() {
     heroTitle2: t4('新體驗', 'Starts Here', 'ここから', '여기서 시작'),
     heroDesc: t4('從住宿搜尋、旅遊選物到咖啡文章與 AI 工具，出發前需要的資訊集中在同一個清楚入口。', 'Find stays, travel goods, coffee stories, and AI tools from one clear starting point.', '宿泊検索、旅の買い物、コーヒー記事、AIツールまで、出発前に必要な情報を一つの入口にまとめます。', '숙소 검색, 여행 상품, 커피 콘텐츠, AI 도구까지 출발 전 필요한 정보를 한곳에서 찾을 수 있습니다.'),
     shopNow: t4('逛根本在旅行', 'Shop Genbon Travel', '根本在旅行を見る', '근본재여행 보기'),
-    exploreStays: t4('前往 nestobi', 'Explore nestobi', 'nestobiへ', 'nestobi 보기'),
+    exploreStays: t4('查看住宿', 'Explore stays', '宿泊を見る', '숙소 보기'),
     stays: t4('nestobi', 'nestobi', 'nestobi', 'nestobi'),
     shop: t4('根本在旅行', 'Genbon Travel Shop', '根本在旅行', '근본재여행'),
     journal: t4('咖啡旅行家', 'Coffee Traveler', 'コーヒートラベラー', '커피 트래블러'),
