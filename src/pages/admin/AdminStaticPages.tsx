@@ -47,7 +47,6 @@ const editorFormats = [
   'underline',
   'strike',
   'list',
-  'bullet',
   'align',
   'blockquote',
   'link',
