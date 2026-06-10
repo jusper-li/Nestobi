@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import ReactQuill from 'react-quill';
+import Quill from 'quill';
 import 'react-quill/dist/quill.snow.css';
 import {
   AlertCircle,
@@ -61,11 +62,50 @@ const editorFormats = [
   'align',
   'blockquote',
   'link',
+  'image',
 ];
 
 const editorTheme = {
   whiteSpace: 'normal',
 };
+
+const BlockEmbed = Quill.import('blots/block/embed');
+
+class StyledImageBlot extends BlockEmbed {
+  static blotName = 'image';
+  static tagName = 'img';
+
+  static create(value: { src?: string; alt?: string; width?: string; height?: string } | string) {
+    const node = super.create() as HTMLImageElement;
+    const data = typeof value === 'string' ? { src: value } : value;
+    if (data.src) node.setAttribute('src', data.src);
+    if (data.alt) node.setAttribute('alt', data.alt);
+    if (data.width) node.style.width = data.width;
+    if (data.height) node.style.height = data.height;
+    node.style.maxWidth = '100%';
+    node.style.display = 'block';
+    return node;
+  }
+
+  static value(node: HTMLImageElement) {
+    return {
+      src: node.getAttribute('src') || '',
+      alt: node.getAttribute('alt') || '',
+      width: node.style.width || '',
+      height: node.style.height || '',
+    };
+  }
+}
+
+const quillRegistry = Quill as unknown as {
+  register: (blot: unknown, suppressWarning?: boolean) => void;
+  __nestobiImageBlotRegistered?: boolean;
+};
+
+if (!quillRegistry.__nestobiImageBlotRegistered) {
+  quillRegistry.register(StyledImageBlot, true);
+  quillRegistry.__nestobiImageBlotRegistered = true;
+}
 
 const AdminStaticPages: React.FC = () => {
   const { user } = useAuth();
@@ -79,8 +119,14 @@ const AdminStaticPages: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [previewMode, setPreviewMode] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [imageDialogUrl, setImageDialogUrl] = useState('');
+  const [imageDialogAlt, setImageDialogAlt] = useState('');
+  const [imageDialogWidth, setImageDialogWidth] = useState('100%');
+  const [imageDialogHeight, setImageDialogHeight] = useState('');
   const editorRef = useRef<ReactQuill | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const imageSelectionRef = useRef<{ index: number; length: number } | null>(null);
 
   const fetchPages = useCallback(async () => {
     setLoading(true);
@@ -153,7 +199,15 @@ const AdminStaticPages: React.FC = () => {
       minute: '2-digit',
     });
 
-  const insertImage = useCallback((url: string) => {
+  const normalizeDimension = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    if (trimmed === 'auto') return 'auto';
+    if (/^\d+(\.\d+)?$/.test(trimmed)) return `${trimmed}px`;
+    return trimmed;
+  };
+
+  const insertImage = useCallback((payload: { src: string; alt?: string; width?: string; height?: string }) => {
     const editor = editorRef.current?.getEditor();
     if (!editor) {
       setSaveStatus('error');
@@ -162,14 +216,17 @@ const AdminStaticPages: React.FC = () => {
     }
 
     editor.focus();
-    const range = editor.getSelection(true);
+    const range = imageSelectionRef.current || editor.getSelection(true);
     const index = range ? range.index : editor.getLength();
-    editor.insertEmbed(index, 'image', url, 'user');
+    editor.insertEmbed(index, 'image', payload, 'user');
     editor.setSelection(index + 1, 0, 'silent');
     setEditContent(editor.root.innerHTML);
+    setImageDialogOpen(false);
   }, []);
 
   const handleImageButtonClick = useCallback(() => {
+    const editor = editorRef.current?.getEditor();
+    imageSelectionRef.current = editor?.getSelection(true) || null;
     imageInputRef.current?.click();
   }, []);
 
@@ -207,12 +264,26 @@ const AdminStaticPages: React.FC = () => {
       }
 
       const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
-      insertImage(data.publicUrl);
+      setImageDialogUrl(data.publicUrl);
+      setImageDialogAlt(safeName.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim());
+      setImageDialogWidth('100%');
+      setImageDialogHeight('');
+      setImageDialogOpen(true);
       setImageUploading(false);
     };
 
     void uploadImage();
-  }, [editingSlug, insertImage]);
+  }, [editingSlug]);
+
+  const confirmImageInsert = useCallback(() => {
+    if (!imageDialogUrl) return;
+    insertImage({
+      src: imageDialogUrl,
+      alt: imageDialogAlt.trim(),
+      width: normalizeDimension(imageDialogWidth),
+      height: normalizeDimension(imageDialogHeight),
+    });
+  }, [imageDialogAlt, imageDialogHeight, imageDialogUrl, imageDialogWidth, insertImage]);
 
   if (loading) {
     return (
@@ -287,7 +358,7 @@ const AdminStaticPages: React.FC = () => {
         {saveStatus === 'error' && (
           <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             <AlertCircle className="h-4 w-4" />
-            儲存失敗，請稍後再試
+            儲存或上傳失敗，請稍後再試
           </div>
         )}
 
@@ -316,7 +387,7 @@ const AdminStaticPages: React.FC = () => {
         <div>
           <div className="mb-1 flex items-center justify-between gap-3">
             <label className="block text-sm font-medium text-gray-700">頁面內容</label>
-            <span className="text-xs text-gray-400">內容會以 HTML 儲存，預覽時會自動套用安全清理</span>
+            <span className="text-xs text-gray-400">可直接插入圖片，並在插入前設定尺寸</span>
           </div>
 
           <AnimatePresence mode="wait">
@@ -364,7 +435,7 @@ const AdminStaticPages: React.FC = () => {
                 />
                 {imageUploading && (
                   <div className="border-t border-gray-100 bg-gray-50 px-4 py-2 text-xs text-gray-500">
-                    圖片上傳中，完成後會自動插入到內容裡...
+                    圖片上傳中，完成後會自動跳出尺寸設定視窗...
                   </div>
                 )}
               </motion.div>
@@ -372,8 +443,85 @@ const AdminStaticPages: React.FC = () => {
           </AnimatePresence>
         </div>
 
+        {imageDialogOpen && (
+          <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">設定圖片尺寸</h3>
+                  <p className="text-sm text-gray-500">確認網址後，設定寬高再插入內容。</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setImageDialogOpen(false)}
+                  className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="mb-4 space-y-3">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">圖片網址</label>
+                  <input
+                    value={imageDialogUrl}
+                    readOnly
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-600"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">替代文字</label>
+                  <input
+                    value={imageDialogAlt}
+                    onChange={e => setImageDialogAlt(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
+                    placeholder="輸入圖片說明"
+                  />
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">寬度</label>
+                    <input
+                      value={imageDialogWidth}
+                      onChange={e => setImageDialogWidth(e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
+                      placeholder="100% / 600px"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">高度</label>
+                    <input
+                      value={imageDialogHeight}
+                      onChange={e => setImageDialogHeight(e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
+                      placeholder="auto / 300px"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setImageDialogOpen(false)}
+                  className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmImageInsert}
+                  className="rounded-xl bg-[#C09A6A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#8B6840]"
+                >
+                  插入圖片
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          <strong>提醒：</strong>編輯器支援標題、粗體、斜體、清單、引用與連結。若要插入圖片，請直接用圖片網址建立連結標籤。
+          <strong>提醒：</strong>編輯器支援標題、粗體、斜體、清單、引用、連結與圖片。圖片會先上傳到 Supabase Storage，再以正式網址插入內容。
         </div>
       </motion.div>
     );
