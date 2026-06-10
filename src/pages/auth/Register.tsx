@@ -62,9 +62,6 @@ export default function Register() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: session?.access_token
-            ? `Bearer ${session.access_token}`
-            : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({ type: 'verification', to: email, data: { otp, displayName, lang: normalizedLang } }),
       });

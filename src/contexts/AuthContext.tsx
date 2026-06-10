@@ -165,14 +165,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, displayName: string) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) throw error;
-    if (data.user) {
-      await Promise.allSettled([
-        supabase.from('tbl_mn5wgzh0').upsert({ user_id: data.user.id, display_name: displayName }),
-        supabase.from('tbl_user_auth').upsert({ user_id: data.user.id, role: 'user' }),
-      ]);
-    }
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-register-user`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, displayName }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.error || GENERIC_AUTH_ERROR_MESSAGE);
+    await signIn(email, password);
   };
 
   const signOut = async () => {
@@ -202,7 +202,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({ type: 'reset-password', to: email, data: { siteUrl, lang } }),
       }
