@@ -78,6 +78,7 @@ const AdminStaticPages: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [previewMode, setPreviewMode] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
   const editorRef = useRef<ReactQuill | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -176,15 +177,36 @@ const AdminStaticPages: React.FC = () => {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result === 'string') {
-        insertImage(result);
+    const uploadImage = async () => {
+      setImageUploading(true);
+      setSaveStatus('idle');
+
+      const safeName = file.name
+        .trim()
+        .replace(/[^\w.\-]+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '') || 'image';
+      const folder = editingSlug ? `static-pages/${editingSlug}` : 'static-pages/general';
+      const ext = safeName.includes('.') ? safeName.split('.').pop() : file.type.split('/').pop() || 'png';
+      const fileName = `${folder}/${Date.now()}-${safeName.replace(/\.[^.]+$/, '')}.${ext}`;
+
+      const { error } = await supabase.storage
+        .from('site-assets')
+        .upload(fileName, file, { upsert: true, contentType: file.type });
+
+      if (error) {
+        setSaveStatus('error');
+        setImageUploading(false);
+        return;
       }
+
+      const { data } = supabase.storage.from('site-assets').getPublicUrl(fileName);
+      insertImage(data.publicUrl);
+      setImageUploading(false);
     };
-    reader.readAsDataURL(file);
-  }, [insertImage]);
+
+    void uploadImage();
+  }, [editingSlug, insertImage]);
 
   if (loading) {
     return (
@@ -334,6 +356,11 @@ const AdminStaticPages: React.FC = () => {
                   className="hidden"
                   onChange={handleImageUpload}
                 />
+                {imageUploading && (
+                  <div className="border-t border-gray-100 bg-gray-50 px-4 py-2 text-xs text-gray-500">
+                    圖片上傳中，完成後會自動插入到內容裡...
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
