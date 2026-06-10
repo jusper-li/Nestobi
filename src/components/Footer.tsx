@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import type { LucideIcon } from 'lucide-react';
 import {
   BookMarked,
   Coffee,
@@ -8,19 +9,22 @@ import {
   Hotel,
   Instagram,
   Languages,
+  History,
   Mail,
   Map,
   MapPin,
   MessageCircle,
   Music2,
+  LayoutDashboard,
   Phone,
+  Receipt,
   Settings,
   ShieldCheck,
   ShoppingBag,
   Twitter,
+  User,
   Youtube,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
 import { normalizeLang, pickByLang } from '../lib/i18n';
@@ -64,25 +68,26 @@ export default function Footer() {
   } as const;
 
   const serviceLinks = [
-    { to: '/stores', label: pick(locale, '門市地圖', 'Stores', '店舗一覧', '매장 안내'), icon: MapPin },
     { to: '/rooms', label: pick(locale, '住宿', 'Stays', '宿泊', '숙박'), icon: Hotel },
     { to: '/shop', label: pick(locale, '商品', 'Shop', '商品', '상품'), icon: ShoppingBag },
-    { to: '/ai/itinerary', label: pick(locale, 'AI 導遊', 'AI Planner', 'AI Planner', 'AI 여행 플래너'), icon: Map },
-    { to: '/ai/translator', label: pick(locale, 'AI 翻譯', 'AI Translate', 'AI 翻訳', 'AI 번역'), icon: Languages },
-    { to: '/ai/chat', label: pick(locale, 'AI 客服', 'AI Support', 'AI サポート', 'AI 고객지원'), icon: MessageCircle },
-    { to: '/ai/coffee-quiz', label: pick(locale, 'AI 尋豆師', 'AI Coffee Finder', 'AI Coffee Finder', 'AI 커피 찾기'), icon: Coffee },
-    { to: '/ai/passport', label: pick(locale, '旅遊護照', 'Travel Passport', '旅のパスポート', '여행 패스포트'), icon: BookMarked },
+    { to: '/stores', label: pick(locale, '門市', 'Stores', '店舗', '매장'), icon: MapPin },
     { to: '/blog', label: pick(locale, '文章', 'Articles', '記事', '아티클'), icon: FileText },
     { to: '/faq', label: pick(locale, '常見問題', 'FAQ', 'FAQ', '자주 묻는 질문'), icon: HelpCircle },
+    { to: '/ai/chat', label: pick(locale, 'AI 客服', 'AI Support', 'AI サポート', 'AI 고객지원'), icon: MessageCircle },
+    { to: '/ai/itinerary', label: pick(locale, 'AI 導遊', 'AI Planner', 'AI Planner', 'AI 여행 플래너'), icon: Map },
+    { to: '/ai/coffee-quiz', label: pick(locale, 'AI 尋豆師', 'AI Coffee Finder', 'AI Coffee Finder', 'AI 커피 찾기'), icon: Coffee },
+    { to: '/ai/translator', label: pick(locale, 'AI 翻譯', 'AI Translate', 'AI 翻訳', 'AI 번역'), icon: Languages },
+    { to: '/ai/passport', label: pick(locale, '旅遊護照', 'Travel Passport', '旅のパスポート', '여행 패스포트'), icon: BookMarked },
   ] as const;
 
   const memberLinks = [
-    { to: '/auth/register', label: pick(locale, '註冊', 'Register', '登録', '회원가입') },
-    { to: '/auth/login', label: pick(locale, '登入', 'Login', 'ログイン', '로그인') },
-    { to: '/member', label: pick(locale, '會員中心', 'Member Center', '会員センター', '회원센터') },
-    { to: '/member/orders', label: pick(locale, '我的訂單', 'My Orders', '注文履歴', '내 주문') },
-    { to: '/member/points', label: pick(locale, '我的點數', 'My Points', 'ポイント', '포인트') },
-    { to: '/member/preferences', label: pick(locale, '偏好設定', 'Preferences', '設定', '설정') },
+    { to: '/member', label: pick(locale, '會員中心', 'Member Center', '会員センター', '회원센터'), icon: LayoutDashboard },
+    { to: '/member/bookings', label: pick(locale, '我的訂房', 'My Bookings', '予約履歴', '내 숙박'), icon: Hotel },
+    { to: '/member/orders', label: pick(locale, '我的訂單', 'My Orders', '注文履歴', '내 주문'), icon: History },
+    { to: '/member/purchases', label: pick(locale, '消費紀錄', 'Purchase Records', '購入履歴', '소비 내역'), icon: Receipt },
+    { to: '/member/points', label: pick(locale, '我的點數', 'My Points', 'ポイント', '포인트'), icon: Map },
+    { to: '/member/profile', label: pick(locale, '個人資料', 'Profile', 'プロフィール', '프로필'), icon: User },
+    { to: '/member/preferences', label: pick(locale, '偏好設定', 'Preferences', '設定', '설정'), icon: Settings },
   ] as const;
 
   const socialLinks = [
@@ -164,10 +169,11 @@ export default function Footer() {
           <div>
             <h4 className="mb-5 text-xs font-bold uppercase tracking-[0.15em] text-[#2C1F10]/50">{t.members}</h4>
             <ul className="space-y-2.5 text-sm">
-              {memberLinks.map(({ to, label }) => (
+              {memberLinks.map(({ to, label, icon: Icon }) => (
                 <li key={to}>
-                  <Link to={to} className="text-[#2C1F10]/70 transition hover:text-[#2C1F10]">
-                    {label}
+                  <Link to={to} className="flex items-center gap-2 text-[#2C1F10]/70 transition hover:text-[#2C1F10]">
+                    <Icon size={14} />
+                    <span>{label}</span>
                   </Link>
                 </li>
               ))}
@@ -226,11 +232,11 @@ export default function Footer() {
               <Link to="/terms" className="transition hover:text-[#2C1F10]">
                 {t.terms}
               </Link>
-              <Link to="/cookies" className="transition hover:text-[#2C1F10]">
-                {t.cookies}
-              </Link>
               <Link to="/anti-fraud" className="transition hover:text-[#2C1F10]">
                 {t.antiFraud}
+              </Link>
+              <Link to="/cookies" className="transition hover:text-[#2C1F10]">
+                {t.cookies}
               </Link>
               <button type="button" onClick={openCookieSettings} className="transition hover:text-[#2C1F10]">
                 {t.cookieSettings}

@@ -116,12 +116,12 @@ export default function Navigation() {
   const navLinks = [
     { to: '/rooms', label: labels.rooms, icon: Hotel },
     { to: '/shop', label: labels.shop, icon: Package },
-    { to: '/blog', label: labels.blog, icon: Coffee },
     { to: '/stores', label: labels.stores, icon: MapPin },
-    { to: '/ai/itinerary', label: labels.aiItinerary, icon: Map, requiresAuth: true },
-    { to: '/ai/translator', label: labels.aiTranslator, icon: Languages, requiresAuth: true },
     { to: '/ai/chat', label: labels.aiChat, icon: MessageCircle, requiresAuth: true },
+    { to: '/blog', label: labels.blog, icon: Coffee },
+    { to: '/ai/itinerary', label: labels.aiItinerary, icon: Map, requiresAuth: true },
     { to: '/ai/coffee-quiz', label: labels.aiCoffeeQuiz, icon: Coffee, requiresAuth: true },
+    { to: '/ai/translator', label: labels.aiTranslator, icon: Languages, requiresAuth: true },
     { to: '/ai/passport', label: labels.travelPassport, icon: BookMarked, requiresAuth: true },
   ];
   const primaryNavLinks = navLinks.slice(0, 4);
@@ -132,9 +132,9 @@ export default function Navigation() {
     { to: '/member/orders', label: labels.myOrders, icon: History },
     { to: '/member/purchases', label: labels.myPurchases, icon: Receipt },
     { to: '/member/points', label: labels.myPoints, icon: Star },
-    { to: '/ai/passport', label: labels.travelPassport, icon: BookMarked },
     { to: '/member/profile', label: labels.profile, icon: User },
     { to: '/member/preferences', label: labels.preferences, icon: Settings },
+    { to: '/ai/passport', label: labels.travelPassport, icon: BookMarked },
   ];
 
   const handleSignOut = async () => {
