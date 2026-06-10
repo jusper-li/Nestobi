@@ -1,14 +1,28 @@
-﻿import React, { useState, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShieldCheck, AlertCircle, Plane, RefreshCw, ArrowLeft, Home } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
+import { generateOTP } from '../../lib/utils';
+
+const EDGE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`;
+const RESEND_COOLDOWN_MS = 60 * 1000;
+const RESEND_COOLDOWN_KEY = 'verification_resend_until';
 
 const VerifyEmail: React.FC = () => {
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendUntil, setResendUntil] = useState<number>(() => {
+    try {
+      return Number(localStorage.getItem(RESEND_COOLDOWN_KEY) || 0);
+    } catch {
+      return 0;
+    }
+  });
+  const [now, setNow] = useState(Date.now());
   const [error, setError] = useState('');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [searchParams] = useSearchParams();
@@ -18,6 +32,9 @@ const VerifyEmail: React.FC = () => {
   const normalizedLang = normalizeLang(lang);
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
   const email = searchParams.get('email') || '';
+  const secondsLeft = Math.max(0, Math.ceil((resendUntil - now) / 1000));
+  const canResend = secondsLeft === 0 && !resendLoading;
+
   const t = {
     codeRequired: pick('請輸入完整的 6 碼驗證碼', 'Please enter the full 6-digit code.', '6桁の認証コードを入力してください。', '6자리 인증 코드를 입력하세요.'),
     sessionExpired: pick('驗證資料已過期，請重新註冊', 'Verification data expired. Please register again.', '認証情報の有効期限が切れました。再登録してください。', '인증 정보가 만료되었습니다. 다시 가입해주세요.'),
@@ -33,7 +50,9 @@ const VerifyEmail: React.FC = () => {
     subtitleSuffix: pick('的驗證碼', '', 'の認証コード', '인증 코드'),
     hint: pick('請輸入上一頁顯示的 6 碼驗證碼，有效期限 10 分鐘', 'Enter the 6-digit code shown in the previous step. Valid for 10 minutes.', '前ページに表示された6桁コードを入力してください。有効期限は10分です。', '이전 페이지의 6자리 코드를 입력하세요. 유효시간은 10분입니다.'),
     confirm: pick('確認驗證', 'Confirm Verification', '認証する', '인증 확인'),
-    requestAgain: pick('重新取得驗證碼', 'Request code again', 'コードを再取得', '코드 다시 요청'),
+    requestAgain: pick('重新發送驗證信', 'Resend verification email', '認証メールを再送信', '인증 메일 다시 보내기'),
+    resendWait: pick('請稍候', 'Please wait', 'しばらくお待ちください', '잠시만 기다려 주세요'),
+    resendCountdown: pick('秒後可重發', 'seconds until resend', '秒後に再送信できます', '초 후 다시 보낼 수 있습니다'),
     note: pick(
       '已切換為正式站寄信流程。若仍未收到，請先檢查垃圾郵件匣或促銷郵件匣。',
       'The production email flow is enabled. If you still do not see it, please check your spam or promotions folder.',
@@ -41,6 +60,28 @@ const VerifyEmail: React.FC = () => {
       '운영용 메일 발송이 활성화되어 있습니다. 그래도 보이지 않으면 스팸함이나 프로모션함을 확인해주세요.',
     ),
   };
+
+  useEffect(() => {
+    if (!resendUntil) return;
+
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+      if (Date.now() >= resendUntil) {
+        setResendUntil(0);
+        try {
+          localStorage.removeItem(RESEND_COOLDOWN_KEY);
+        } catch {}
+      }
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [resendUntil]);
+
+  const resendLabel = useMemo(() => {
+    const remaining = Math.max(0, Math.ceil((resendUntil - now) / 1000));
+    if (remaining > 0) return `${remaining} ${t.resendCountdown}`;
+    return t.requestAgain;
+  }, [now, resendUntil, t.requestAgain, t.resendCountdown]);
 
   const handleChange = (idx: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
@@ -94,6 +135,60 @@ const VerifyEmail: React.FC = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!canResend) return;
+    setResendLoading(true);
+    setError('');
+    try {
+      const raw = sessionStorage.getItem('pending_verification');
+      if (!raw) { setError(t.sessionExpired); return; }
+      const pending = JSON.parse(raw) as {
+        email: string;
+        otp: string;
+        expiresAt: number;
+        password: string;
+        displayName: string;
+      };
+
+      if (pending.email !== email) { setError(t.emailMismatch); return; }
+
+      const nextOtp = pending.otp || generateOTP();
+      const nextExpiresAt = Date.now() + 10 * 60 * 1000;
+
+      const res = await fetch(EDGE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'verification',
+          to: email,
+          data: {
+            otp: nextOtp,
+            displayName: pending.displayName,
+            lang: normalizedLang,
+          },
+        }),
+      });
+
+      if (!res.ok) throw new Error('send failed');
+
+      sessionStorage.setItem('pending_verification', JSON.stringify({
+        ...pending,
+        otp: nextOtp,
+        expiresAt: nextExpiresAt,
+      }));
+
+      const until = Date.now() + RESEND_COOLDOWN_MS;
+      setResendUntil(until);
+      try {
+        localStorage.setItem(RESEND_COOLDOWN_KEY, String(until));
+      } catch {}
+    } catch {
+      setError(t.failed);
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -170,11 +265,12 @@ const VerifyEmail: React.FC = () => {
           </button>
 
           <button
-            onClick={() => navigate('/auth/register')}
-            className="w-full mt-3 flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-[#2C1F10] transition-colors py-2"
+            onClick={handleResend}
+            disabled={!canResend}
+            className="w-full mt-3 flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-[#2C1F10] transition-colors py-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <RefreshCw className="w-4 h-4" />
-            {t.requestAgain}
+            <RefreshCw className={`w-4 h-4 ${resendLoading ? 'animate-spin' : ''}`} />
+            {resendLoading ? t.resendWait : resendLabel}
           </button>
 
           <div className="mt-5 p-3 bg-[#F0E4C8] rounded-lg border border-[#D5CDB8]">
@@ -192,5 +288,3 @@ const VerifyEmail: React.FC = () => {
 };
 
 export default VerifyEmail;
-
-
