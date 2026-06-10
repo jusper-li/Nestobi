@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -46,7 +46,7 @@ const editorModules = {
     ['bold', 'italic', 'underline', 'strike'],
     [{ list: 'ordered' }, { list: 'bullet' }],
     [{ align: [] }],
-    ['blockquote', 'link', 'clean'],
+    ['blockquote', 'link', 'image', 'clean'],
   ],
 };
 
@@ -78,6 +78,8 @@ const AdminStaticPages: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [previewMode, setPreviewMode] = useState(false);
+  const editorRef = useRef<ReactQuill | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
 
   const fetchPages = useCallback(async () => {
     setLoading(true);
@@ -149,6 +151,40 @@ const AdminStaticPages: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit',
     });
+
+  const insertImage = useCallback((url: string) => {
+    const editor = editorRef.current?.getEditor();
+    if (!editor) return;
+
+    const range = editor.getSelection(true);
+    const index = range ? range.index : editor.getLength();
+    editor.insertEmbed(index, 'image', url, 'user');
+    editor.setSelection(index + 1, 0, 'silent');
+  }, []);
+
+  const handleImageButtonClick = useCallback(() => {
+    imageInputRef.current?.click();
+  }, []);
+
+  const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setSaveStatus('error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === 'string') {
+        insertImage(result);
+      }
+    };
+    reader.readAsDataURL(file);
+  }, [insertImage]);
 
   if (loading) {
     return (
@@ -274,13 +310,29 @@ const AdminStaticPages: React.FC = () => {
                 className="overflow-hidden rounded-xl border border-gray-200 bg-white"
               >
                 <ReactQuill
+                  ref={editorRef}
                   theme="snow"
                   value={editContent}
                   onChange={setEditContent}
-                  modules={editorModules}
+                  modules={{
+                    ...editorModules,
+                    toolbar: {
+                      container: editorModules.toolbar,
+                      handlers: {
+                        image: handleImageButtonClick,
+                      },
+                    },
+                  }}
                   formats={editorFormats}
                   placeholder="輸入頁面內容..."
                   style={editorTheme}
+                />
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
                 />
               </motion.div>
             )}
