@@ -7,6 +7,7 @@ import {
   Check,
   ChevronDown,
   Coffee,
+  FileText,
   Globe,
   History,
   Home,
@@ -25,6 +26,7 @@ import {
   Star,
   User,
   X,
+  HelpCircle,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
@@ -62,34 +64,38 @@ export default function Navigation() {
 
   const navigationMap = useMemo(() => indexBlocks(navigationBlocks), [navigationBlocks]);
 
-  const labels = useMemo(() => ({
-    home: pick('首頁', 'Home', 'ホーム', '홈'),
-    cart: pick('購物車', 'Cart', 'カート', '장바구니'),
-    stores: getBlockText(navigationMap['navigation-header-stores'], locale, 'title') || pick('根本在旅行咖啡廳', 'Cafes', '店舗', '매장'),
-    rooms: getBlockText(navigationMap['navigation-header-rooms'], locale, 'title') || pick('Nestobi 住宿', 'Nestobi Stays', 'Nestobi 宿泊', 'Nestobi 숙소'),
-    shop: getBlockText(navigationMap['navigation-header-shop'], locale, 'title') || pick('根本在旅行商城', 'Genbon Travel Shop', '根本在旅行ショップ', '근본에서 여행 스토어'),
-    blog: getBlockText(navigationMap['navigation-header-blog'], locale, 'title') || pick('咖啡旅行家', 'Coffee Traveler', 'コーヒートラベラー', '커피 여행가'),
-    aiItinerary: pick('AI 導遊', 'AI Planner', 'AI 旅程', 'AI 여행'),
-    aiTranslator: pick('AI 翻譯', 'AI Translate', 'AI 翻訳', 'AI 번역'),
-    aiChat: pick('AI 客服', 'AI Support', 'AI サポート', 'AI 상담'),
-    aiCoffeeQuiz: pick('AI 尋豆師', 'AI Coffee Finder', 'AI コーヒーファインダー', 'AI 원두 찾기'),
-    travelPassport: pick('旅遊護照', 'Travel Passport', 'トラベルパスポート', '여행 패스포트'),
-    login: pick('登入', 'Login', 'ログイン', '로그인'),
-    register: pick('註冊', 'Sign up', '登録', '회원가입'),
-    member: pick('我的', 'Member', 'マイ', '마이'),
-    memberCenter: pick('會員中心', 'Member Center', '会員中心', '회원센터'),
-    myBookings: pick('我的訂房', 'My Bookings', '予約一覧', '내 예약'),
-    myOrders: pick('我的訂單', 'My Orders', '注文一覧', '내 주문'),
-    myPurchases: pick('消費紀錄', 'Purchase Records', '購入履歴', '구매 내역'),
-    myPoints: pick('我的點數', 'My Points', 'ポイント', '내 포인트'),
-    profile: pick('個人資料', 'Profile', 'プロフィール', '프로필'),
-    preferences: pick('偏好設定', 'Preferences', '設定', '환경설정'),
-    adminPanel: pick('管理後台', 'Admin', '管理画面', '관리'),
-    superAdmin: pick('超級管理員', 'Super Admin', 'スーパー管理者', '최고 관리자'),
-    logout: pick('登出', 'Logout', 'ログアウト', '로그아웃'),
-    closeMenu: pick('關閉選單', 'Close menu', 'メニューを閉じる', '메뉴 닫기'),
-    language: pick('語言', 'Language', '言語', '언어'),
-  }), [locale, navigationMap]);
+  const labels = useMemo(
+    () => ({
+      home: pick('首頁', 'Home', 'ホーム', '홈'),
+      cart: pick('購物車', 'Cart', 'カート', '장바구니'),
+      rooms: getBlockText(navigationMap['navigation-header-rooms'], locale, 'title') || pick('Nestobi 住宿', 'Nestobi Stays', 'Nestobi 宿泊', 'Nestobi 숙소'),
+      shop: getBlockText(navigationMap['navigation-header-shop'], locale, 'title') || pick('根本在旅行商城', 'Genbon Travel Shop', '根本在旅行ショップ', '근본에서 여행 스토어'),
+      stores: getBlockText(navigationMap['navigation-header-stores'], locale, 'title') || pick('根本在旅行咖啡廳', 'Genbon Travel Cafes', '根本在旅行カフェ', '근본에서 여행 카페'),
+      blog: getBlockText(navigationMap['navigation-header-blog'], locale, 'title') || pick('咖啡旅行家', 'Coffee Traveler', 'コーヒートラベラー', '커피 여행가'),
+      aiChat: pick('AI 客服', 'AI Support', 'AI サポート', 'AI 상담'),
+      aiItinerary: pick('AI 導遊', 'AI Planner', 'AI 旅程', 'AI 여행'),
+      aiCoffeeQuiz: pick('AI 尋豆師', 'AI Coffee Finder', 'AI コーヒーファインダー', 'AI 원두 찾기'),
+      aiTranslator: pick('AI 翻譯', 'AI Translate', 'AI 翻訳', 'AI 번역'),
+      travelPassport: pick('旅遊護照', 'Travel Passport', 'トラベルパスポート', '여행 패스포트'),
+      faq: pick('常見問題', 'FAQ', 'FAQ', 'FAQ'),
+      contactForm: pick('聯絡表單', 'Contact Form', 'お問い合わせフォーム', '문의 양식'),
+      login: pick('登入', 'Login', 'ログイン', '로그인'),
+      register: pick('註冊', 'Sign up', '登録', '회원가입'),
+      memberCenter: pick('會員中心', 'Member Center', '会員中心', '회원센터'),
+      myBookings: pick('我的訂房', 'My Bookings', '予約一覧', '내 예약'),
+      myOrders: pick('我的訂單', 'My Orders', '注文一覧', '내 주문'),
+      myPurchases: pick('消費紀錄', 'Purchase Records', '購入履歴', '구매 내역'),
+      myPoints: pick('我的點數', 'My Points', 'ポイント', '내 포인트'),
+      profile: pick('個人資料', 'Profile', 'プロフィール', '프로필'),
+      preferences: pick('偏好設定', 'Preferences', '設定', '환경설정'),
+      adminPanel: pick('管理後台', 'Admin', '管理画面', '관리'),
+      superAdmin: pick('超級管理員', 'Super Admin', 'スーパー管理者', '최고 관리자'),
+      logout: pick('登出', 'Logout', 'ログアウト', '로그아웃'),
+      closeMenu: pick('關閉選單', 'Close menu', 'メニューを閉じる', '메뉴 닫기'),
+      language: pick('語言', 'Language', '言語', '언어'),
+    }),
+    [locale, navigationMap],
+  );
 
   const languageOptions = useMemo(
     () => [
@@ -102,6 +108,8 @@ export default function Navigation() {
   );
 
   const currentLangOption = languageOptions.find(option => option.code === locale) || languageOptions[0];
+  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
+
   const brand = useMemo(() => {
     const path = location.pathname;
     if (path.startsWith('/shop') || path.startsWith('/stores') || path.startsWith('/genbon-travel')) {
@@ -122,22 +130,25 @@ export default function Navigation() {
     }
     return {
       to: '/rooms',
-      alt: pick('nestobi', 'nestobi', 'nestobi', 'nestobi'),
+      alt: 'nestobi',
       image: '/20260407_nestobi_logo.svg',
       className: 'h-10 w-auto md:h-12',
     };
   }, [location.pathname, locale]);
+
   const navLinks = [
     { to: '/rooms', label: labels.rooms, icon: Hotel },
     { to: '/shop', label: labels.shop, icon: Package },
     { to: '/stores', label: labels.stores, icon: MapPin },
-    { to: '/ai/chat', label: labels.aiChat, icon: MessageCircle, requiresAuth: true },
     { to: '/blog', label: labels.blog, icon: Coffee },
+    { to: '/ai/chat', label: labels.aiChat, icon: MessageCircle, requiresAuth: true },
     { to: '/ai/itinerary', label: labels.aiItinerary, icon: Map, requiresAuth: true },
     { to: '/ai/coffee-quiz', label: labels.aiCoffeeQuiz, icon: Coffee, requiresAuth: true },
     { to: '/ai/translator', label: labels.aiTranslator, icon: Languages, requiresAuth: true },
     { to: '/ai/passport', label: labels.travelPassport, icon: BookMarked, requiresAuth: true },
-  ];
+    { to: '/faq', label: labels.faq, icon: HelpCircle },
+    { to: '/contact', label: labels.contactForm, icon: FileText },
+  ] as const;
   const primaryNavLinks = navLinks.slice(0, 4);
 
   const memberLinks = [
@@ -149,7 +160,13 @@ export default function Navigation() {
     { to: '/member/profile', label: labels.profile, icon: User },
     { to: '/member/preferences', label: labels.preferences, icon: Settings },
     { to: '/ai/passport', label: labels.travelPassport, icon: BookMarked },
-  ];
+  ] as const;
+
+  const menuLinks = [
+    { to: '/', label: labels.home, icon: Home },
+    { to: '/cart', label: labels.cart, icon: ShoppingCart },
+    ...navLinks,
+  ] as const;
 
   const handleSignOut = async () => {
     await signOut();
@@ -170,22 +187,20 @@ export default function Navigation() {
           </Link>
 
           <div className="hidden items-center gap-1 md:flex">
-            {primaryNavLinks.map(({ to, label, icon: Icon }) => {
-              return (
-                <Link
-                  key={to}
-                  to={to}
-                  aria-label={label}
-                  title={label}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                    isActive(to) ? 'bg-[#F0E4C8] text-[#2C1F10]' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
-                >
-                  <Icon size={16} />
-                  <span>{label}</span>
-                </Link>
-              );
-            })}
+            {primaryNavLinks.map(({ to, label, icon: Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                aria-label={label}
+                title={label}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                  isActive(to) ? 'bg-[#F0E4C8] text-[#2C1F10]' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+              >
+                <Icon size={16} />
+                <span>{label}</span>
+              </Link>
+            ))}
           </div>
 
           <div className="flex items-center gap-2">
@@ -271,15 +286,13 @@ export default function Navigation() {
                         </Link>
                       ))}
                       {(role === 'admin' || role === 'superadmin') && (
-                        <Link to="/admin" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2.5 border-t border-gray-100 px-4 py-2 text-sm font-semibold text-[#2C1F10] transition hover:bg-[#F0E4C8]">
-                          <LayoutDashboard size={15} />
-                          <span>{labels.adminPanel}</span>
+                        <Link to="/admin" onClick={() => setUserMenuOpen(false)} aria-label={labels.adminPanel} title={labels.adminPanel} className="flex items-center justify-center border-t border-gray-100 px-4 py-2 text-[#2C1F10] transition hover:bg-[#F0E4C8]">
+                          <LayoutDashboard size={16} />
                         </Link>
                       )}
                       {role === 'superadmin' && (
-                        <Link to="/superadmin" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-2.5 px-4 py-2 text-sm font-semibold text-[#2C1F10] transition hover:bg-[#F0E4C8]">
-                          <Globe size={15} />
-                          <span>{labels.superAdmin}</span>
+                        <Link to="/superadmin" onClick={() => setUserMenuOpen(false)} aria-label={labels.superAdmin} title={labels.superAdmin} className="flex items-center justify-center px-4 py-2 text-[#2C1F10] transition hover:bg-[#F0E4C8]">
+                          <Globe size={16} />
                         </Link>
                       )}
                       <button type="button" onClick={handleSignOut} className="flex w-full items-center gap-2.5 border-t border-gray-100 px-4 py-2 text-left text-sm text-danger transition hover:bg-red-50">
@@ -312,16 +325,7 @@ export default function Navigation() {
         {menuOpen && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-t border-gray-200 bg-white">
             <div className="mx-auto max-w-7xl space-y-1 px-4 py-3 sm:px-6 lg:px-8">
-              <Link to="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100">
-                <Home size={16} />
-                <span>{labels.home}</span>
-              </Link>
-              <Link to="/cart" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100">
-                <ShoppingCart size={16} />
-                <span>{labels.cart}</span>
-                {totalItems > 0 && <span className="ml-auto rounded-full bg-danger px-2 py-0.5 text-[11px] font-bold text-white">{totalItems > 9 ? '9+' : totalItems}</span>}
-              </Link>
-              {navLinks.map(({ to, label, icon: Icon, requiresAuth }) => {
+              {menuLinks.map(({ to, label, icon: Icon, requiresAuth }) => {
                 if (requiresAuth && !user) return null;
                 return (
                   <Link key={to} to={to} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100">
@@ -349,7 +353,7 @@ export default function Navigation() {
         <button
           type="button"
           aria-label={labels.closeMenu}
-          className="fixed inset-0 z-40 cursor-default"
+          className="fixed inset-0 z-40 cursor-default bg-transparent"
           onClick={() => {
             setUserMenuOpen(false);
             setLangMenuOpen(false);
