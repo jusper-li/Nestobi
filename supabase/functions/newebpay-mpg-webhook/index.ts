@@ -92,7 +92,13 @@ function parseNewebPayDate(value: unknown) {
   return new Date().toISOString();
 }
 
-async function sendOrderEmail(to: string, displayName: string, items: Array<{ name: string; quantity: number; price: number }>, totalAmount: number) {
+async function sendOrderEmail(
+  to: string,
+  displayName: string,
+  items: Array<{ name: string; quantity: number; price: number }>,
+  totalAmount: number,
+  lang: string,
+) {
   try {
     await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
       method: "POST",
@@ -108,6 +114,7 @@ async function sendOrderEmail(to: string, displayName: string, items: Array<{ na
             price: item.price,
           })),
           totalAmount,
+          lang,
         },
       }),
     });
@@ -207,7 +214,7 @@ Deno.serve(async (req: Request) => {
       }
 
       const [profileRes, itemsRes] = await Promise.all([
-        supabase.from("tbl_mn5wgzh0").select("display_name").eq("user_id", order.user_id).maybeSingle(),
+        supabase.from("tbl_mn5wgzh0").select("display_name, preferred_language").eq("user_id", order.user_id).maybeSingle(),
         supabase.from("purchase_records").select("quantity,unit_price,products(name)").eq("order_id", order.id),
       ]);
 
@@ -221,7 +228,13 @@ Deno.serve(async (req: Request) => {
       }));
 
       if (email) {
-        await sendOrderEmail(email, displayName, items, Number(order.total_amount || 0));
+        await sendOrderEmail(
+          email,
+          displayName,
+          items,
+          Number(order.total_amount || 0),
+          String(profileRes.data?.preferred_language || "zh-TW"),
+        );
       }
 
       return okResponse();

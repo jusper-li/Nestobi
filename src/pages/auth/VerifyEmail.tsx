@@ -34,7 +34,12 @@ const VerifyEmail: React.FC = () => {
     hint: pick('請輸入上一頁顯示的 6 碼驗證碼，有效期限 10 分鐘', 'Enter the 6-digit code shown in the previous step. Valid for 10 minutes.', '前ページに表示された6桁コードを入力してください。有効期限は10分です。', '이전 페이지의 6자리 코드를 입력하세요. 유효시간은 10분입니다.'),
     confirm: pick('確認驗證', 'Confirm Verification', '認証する', '인증 확인'),
     requestAgain: pick('重新取得驗證碼', 'Request code again', 'コードを再取得', '코드 다시 요청'),
-    note: pick('驗證碼會顯示在上一頁黃色提示區。正式環境會自動寄送驗證信。', 'The code appears in the yellow panel on the previous page. In production, a verification email is sent automatically.', 'コードは前ページの黄色パネルに表示されます。本番環境では認証メールが自動送信されます。', '코드는 이전 페이지의 노란 패널에 표시됩니다. 운영 환경에서는 인증 이메일이 자동 발송됩니다.'),
+    note: pick(
+      '已切換為正式站寄信流程。若仍未收到，請先檢查垃圾郵件匣或促銷郵件匣。',
+      'The production email flow is enabled. If you still do not see it, please check your spam or promotions folder.',
+      '本番のメール送信フローは有効です。届かない場合は迷惑メールやプロモーションを確認してください。',
+      '운영용 메일 발송이 활성화되어 있습니다. 그래도 보이지 않으면 스팸함이나 프로모션함을 확인해주세요.',
+    ),
   };
 
   const handleChange = (idx: number, value: string) => {

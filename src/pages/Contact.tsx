@@ -112,7 +112,7 @@ export default function Contact() {
         body: JSON.stringify({
           type: 'contact',
           to: settings.contact_email || 'service@dlalshop.com',
-          data: { name, email, subject, message },
+          data: { name, email, subject, message, lang: normalizedLang },
         }),
       });
       if (!res.ok) throw new Error('send failed');

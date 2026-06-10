@@ -58,7 +58,7 @@ export default function Register() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      await fetch(EDGE_URL, {
+      const res = await fetch(EDGE_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,8 +66,13 @@ export default function Register() {
             ? `Bearer ${session.access_token}`
             : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({ type: 'verification', to: email, data: { otp, displayName } }),
+        body: JSON.stringify({ type: 'verification', to: email, data: { otp, displayName, lang: normalizedLang } }),
       });
+
+      if (!res.ok) {
+        sessionStorage.removeItem('pending_verification');
+        throw new Error('send failed');
+      }
 
       navigate(`/auth/verify?email=${encodeURIComponent(email)}`);
     } catch {

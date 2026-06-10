@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { GENERIC_AUTH_ERROR_MESSAGE } from '../lib/security';
+import { normalizeLang } from '../lib/i18n';
 import type { MemberProfile, UserAuth } from '../types';
 import type { StoreLocationManager } from '../types';
 
@@ -194,6 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (email: string) => {
     const siteUrl = window.location.origin;
+    const lang = typeof window !== 'undefined' ? normalizeLang(window.localStorage.getItem('nestobi-lang')) : 'zh-TW';
     const res = await fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`,
       {
@@ -202,7 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({ type: 'reset-password', to: email, data: { siteUrl } }),
+        body: JSON.stringify({ type: 'reset-password', to: email, data: { siteUrl, lang } }),
       }
     );
     if (!res.ok) {

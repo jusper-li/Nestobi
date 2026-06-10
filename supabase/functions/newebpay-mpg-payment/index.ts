@@ -108,7 +108,13 @@ function getSiteUrl() {
     || "http://localhost:5174";
 }
 
-async function sendOrderEmail(to: string, displayName: string, items: Array<{ name: string; quantity: number; price: number }>, totalAmount: number) {
+async function sendOrderEmail(
+  to: string,
+  displayName: string,
+  items: Array<{ name: string; quantity: number; price: number }>,
+  totalAmount: number,
+  lang: string,
+) {
   try {
     await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
       method: "POST",
@@ -124,6 +130,7 @@ async function sendOrderEmail(to: string, displayName: string, items: Array<{ na
             price: item.price,
           })),
           totalAmount,
+          lang,
         },
       }),
     });
@@ -187,7 +194,7 @@ Deno.serve(async (req: Request) => {
     if (checkout.payment_status === "paid") {
       const { data: profile } = await createServiceClient()
         .from("tbl_mn5wgzh0")
-        .select("display_name")
+        .select("display_name, preferred_language")
         .eq("user_id", user.id)
         .maybeSingle();
       await sendOrderEmail(
@@ -199,6 +206,7 @@ Deno.serve(async (req: Request) => {
           price: Number(item.unit_price || 0),
         })),
         Number(checkout.total_amount || 0),
+        String(profile?.preferred_language || "zh-TW"),
       );
 
       return jsonResponse({

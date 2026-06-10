@@ -182,6 +182,7 @@ const BookingForm: React.FC = () => {
               totalPrice: payableTotal,
               nights,
               pointsEarned,
+              lang: locale,
             },
           }),
         });
