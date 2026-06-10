@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 import {
@@ -71,6 +71,17 @@ if (!quillRegistry.__nestobiImageBlotRegistered) {
   quillRegistry.__nestobiImageBlotRegistered = true;
 }
 
+function normalizeSelection(range: { index: number; length: number } | null, fallback: number) {
+  return range ? { index: range.index, length: range.length } : { index: fallback, length: 0 };
+}
+
+function insertHtmlSnippet(source: string, selection: { index: number; length: number }, html: string) {
+  const before = source.slice(0, selection.index);
+  const selected = source.slice(selection.index, selection.index + selection.length);
+  const after = source.slice(selection.index + selection.length);
+  return before + html.replace('__TEXT__', selected || 'text') + after;
+}
+
 const ToolbarButton: React.FC<{
   onClick: () => void;
   title: string;
@@ -90,21 +101,6 @@ const ToolbarButton: React.FC<{
 );
 
 const Divider = () => <div className="mx-0.5 h-5 w-px bg-gray-300" />;
-
-function normalizeSelection(range: { index: number; length: number } | null, fallback: number) {
-  return range ? { index: range.index, length: range.length } : { index: fallback, length: 0 };
-}
-
-function insertHtmlSnippet(
-  source: string,
-  selection: { index: number; length: number },
-  html: string,
-) {
-  const before = source.slice(0, selection.index);
-  const selected = source.slice(selection.index, selection.index + selection.length);
-  const after = source.slice(selection.index + selection.length);
-  return before + html.replace('__TEXT__', selected || 'text') + after;
-}
 
 const HtmlEditor: React.FC<HtmlEditorProps> = ({
   value,
@@ -141,6 +137,86 @@ const HtmlEditor: React.FC<HtmlEditorProps> = ({
     setDialogOpen(false);
     setDialogAction(null);
   }, []);
+
+  useEffect(() => {
+    if (!editorRootRef.current || quillRef.current) return;
+
+    const quill = new Quill(editorRootRef.current, {
+      theme: 'snow',
+      placeholder,
+      modules: {
+        toolbar: {
+          container: toolbarRef.current as HTMLDivElement,
+          handlers: {
+            link: () => {
+              visualSelectionRef.current = quill.getSelection(true);
+              openDialog('link');
+            },
+            image: () => {
+              visualSelectionRef.current = quill.getSelection(true);
+              openDialog('image');
+            },
+          },
+        },
+      },
+      formats: editorFormats,
+    });
+
+    quillRef.current = quill;
+
+    quill.on('text-change', () => {
+      if (suppressChangeRef.current) return;
+      onChange(quill.root.innerHTML);
+    });
+
+    quill.clipboard.dangerouslyPasteHTML(value || '', 'silent');
+
+    return () => {
+      quillRef.current = null;
+      if (editorRootRef.current) editorRootRef.current.innerHTML = '';
+    };
+  }, [onChange, openDialog, placeholder, value]);
+
+  useEffect(() => {
+    const quill = quillRef.current;
+    if (!quill) return;
+
+    if (quill.root.innerHTML !== value) {
+      suppressChangeRef.current = true;
+      const selection = quill.getSelection();
+      quill.clipboard.dangerouslyPasteHTML(value || '', 'silent');
+      if (selection) quill.setSelection(selection.index, selection.length, 'silent');
+      window.requestAnimationFrame(() => {
+        suppressChangeRef.current = false;
+      });
+    }
+  }, [value]);
+
+  const insertSourceMarkup = useCallback((markup: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const selection = {
+      index: textarea.selectionStart,
+      length: textarea.selectionEnd - textarea.selectionStart,
+    };
+    sourceSelectionRef.current = selection;
+    const nextValue = insertHtmlSnippet(value, selection, markup);
+    onChange(nextValue);
+    window.requestAnimationFrame(() => {
+      const cursor = selection.index + markup.replace('__TEXT__', value.slice(selection.index, selection.index + selection.length) || 'text').length;
+      textarea.focus();
+      textarea.setSelectionRange(cursor, cursor);
+    });
+  }, [onChange, value]);
+
+  const handleSourceSelection = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    sourceSelectionRef.current = {
+      index: textarea.selectionStart,
+      length: textarea.selectionEnd - textarea.selectionStart,
+    };
+  };
 
   const applyDialog = useCallback(() => {
     if (!dialogAction || !dialogUrl.trim()) return;
@@ -187,164 +263,11 @@ const HtmlEditor: React.FC<HtmlEditorProps> = ({
     closeDialog();
   }, [closeDialog, dialogAction, dialogAlt, dialogText, dialogUrl, mode, onChange, value]);
 
-  useEffect(() => {
-    if (!editorRootRef.current || quillRef.current) return;
-
-    const quill = new Quill(editorRootRef.current, {
-      theme: 'snow',
-      placeholder,
-      modules: {
-        toolbar: {
-          container: toolbarRef.current as HTMLDivElement,
-          handlers: {
-            link: () => {
-              visualSelectionRef.current = quill.getSelection(true);
-              openDialog('link');
-            },
-            image: () => {
-              visualSelectionRef.current = quill.getSelection(true);
-              openDialog('image');
-            },
-          },
-        },
-      },
-      formats: editorFormats,
-    });
-
-    quillRef.current = quill;
-
-    quill.on('text-change', () => {
-      if (suppressChangeRef.current) return;
-      onChange(quill.root.innerHTML);
-    });
-
-    quill.clipboard.dangerouslyPasteHTML(value || '', 'silent');
-
-    return () => {
-      quillRef.current = null;
-      if (editorRootRef.current) editorRootRef.current.innerHTML = '';
-    };
-  }, [onChange, openDialog, placeholder, value]);
-
-  useEffect(() => {
-    const quill = quillRef.current;
-    if (!quill) return;
-    if (quill.root.innerHTML !== value) {
-      suppressChangeRef.current = true;
-      const selection = quill.getSelection();
-      quill.clipboard.dangerouslyPasteHTML(value || '', 'silent');
-      if (selection) quill.setSelection(selection.index, selection.length, 'silent');
-      window.requestAnimationFrame(() => {
-        suppressChangeRef.current = false;
-      });
-    }
-  }, [value]);
-
-  const insertSourceMarkup = useCallback((markup: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    const selection = {
-      index: textarea.selectionStart,
-      length: textarea.selectionEnd - textarea.selectionStart,
-    };
-    sourceSelectionRef.current = selection;
-    const nextValue = insertHtmlSnippet(value, selection, markup);
-    onChange(nextValue);
-    window.requestAnimationFrame(() => {
-      const cursor = selection.index + markup.replace('__TEXT__', value.slice(selection.index, selection.index + selection.length) || 'text').length;
-      textarea.focus();
-      textarea.setSelectionRange(cursor, cursor);
-    });
-  }, [onChange, value]);
-
-  const handleSourceSelection = () => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    sourceSelectionRef.current = {
-      index: textarea.selectionStart,
-      length: textarea.selectionEnd - textarea.selectionStart,
-    };
-  };
-
   const iconSize = 'h-3.5 w-3.5';
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
       <div className="flex flex-wrap items-center gap-0.5 border-b border-gray-200 bg-gray-50 px-2 py-1.5">
-        {mode === 'source' ? (
-          <>
-            <ToolbarButton title="段落 <p>" onClick={() => insertSourceMarkup('<p>__TEXT__</p>')}>
-              <Type className={iconSize} />
-            </ToolbarButton>
-            <ToolbarButton title="H2" onClick={() => insertSourceMarkup('<h2>__TEXT__</h2>')}>
-              <Heading2 className={iconSize} />
-            </ToolbarButton>
-            <ToolbarButton title="H3" onClick={() => insertSourceMarkup('<h3>__TEXT__</h3>')}>
-              <Heading3 className={iconSize} />
-            </ToolbarButton>
-            <Divider />
-            <ToolbarButton title="粗體 <strong>" onClick={() => insertSourceMarkup('<strong>__TEXT__</strong>')}>
-              <Bold className={iconSize} />
-            </ToolbarButton>
-            <ToolbarButton title="斜體 <em>" onClick={() => insertSourceMarkup('<em>__TEXT__</em>')}>
-              <Italic className={iconSize} />
-            </ToolbarButton>
-            <ToolbarButton title="底線 <u>" onClick={() => insertSourceMarkup('<u>__TEXT__</u>')}>
-              <Underline className={iconSize} />
-            </ToolbarButton>
-            <ToolbarButton title="刪除線 <s>" onClick={() => insertSourceMarkup('<s>__TEXT__</s>')}>
-              <Strikethrough className={iconSize} />
-            </ToolbarButton>
-            <ToolbarButton title="程式碼 <code>" onClick={() => insertSourceMarkup('<code>__TEXT__</code>')}>
-              <Code className={iconSize} />
-            </ToolbarButton>
-            <Divider />
-            <ToolbarButton title="項目清單 <ul>" onClick={() => insertSourceMarkup('<ul>\n  <li>__TEXT__</li>\n</ul>')}>
-              <List className={iconSize} />
-            </ToolbarButton>
-            <ToolbarButton title="編號清單 <ol>" onClick={() => insertSourceMarkup('<ol>\n  <li>__TEXT__</li>\n</ol>')}>
-              <ListOrdered className={iconSize} />
-            </ToolbarButton>
-            <ToolbarButton title="引用 <blockquote>" onClick={() => insertSourceMarkup('<blockquote>__TEXT__</blockquote>')}>
-              <Quote className={iconSize} />
-            </ToolbarButton>
-            <Divider />
-            <ToolbarButton title="插入連結" onClick={() => openDialog('link')}>
-              <Link className={iconSize} />
-            </ToolbarButton>
-            <ToolbarButton title="插入圖片" onClick={() => openDialog('image')}>
-              <Image className={iconSize} />
-            </ToolbarButton>
-            <ToolbarButton title="水平線 <hr>" onClick={() => insertSourceMarkup('<hr />')}>
-              <Minus className={iconSize} />
-            </ToolbarButton>
-          </>
-        ) : (
-          <>
-            <span className="ql-formats">
-              <select className="ql-header" defaultValue="">
-                <option value="1">H1</option>
-                <option value="2">H2</option>
-                <option value="3">H3</option>
-                <option value="">Normal</option>
-              </select>
-              <button type="button" className="ql-bold" />
-              <button type="button" className="ql-italic" />
-              <button type="button" className="ql-underline" />
-              <button type="button" className="ql-strike" />
-            </span>
-            <span className="ql-formats">
-              <button type="button" className="ql-list" value="ordered" />
-              <button type="button" className="ql-list" value="bullet" />
-              <button type="button" className="ql-blockquote" />
-              <button type="button" className="ql-link" />
-              <button type="button" className="ql-image" />
-              <button type="button" className="ql-clean" />
-            </span>
-          </>
-        )}
-
-        <Divider />
         {onTogglePreview && (
           <ToolbarButton title={preview ? '切回編輯' : '預覽 HTML'} onClick={onTogglePreview} active={preview}>
             {preview ? <EyeOff className={iconSize} /> : <Eye className={iconSize} />}
@@ -358,6 +281,81 @@ const HtmlEditor: React.FC<HtmlEditorProps> = ({
           <Code2 className={iconSize} />
         </ToolbarButton>
       </div>
+
+      {!preview && mode === 'visual' && (
+        <div ref={toolbarRef} className="ql-toolbar ql-snow border-x-0 border-t-0">
+          <span className="ql-formats">
+            <select className="ql-header" defaultValue="">
+              <option value="1">H1</option>
+              <option value="2">H2</option>
+              <option value="3">H3</option>
+              <option value="">Normal</option>
+            </select>
+            <button type="button" className="ql-bold" />
+            <button type="button" className="ql-italic" />
+            <button type="button" className="ql-underline" />
+            <button type="button" className="ql-strike" />
+          </span>
+          <span className="ql-formats">
+            <button type="button" className="ql-list" value="ordered" />
+            <button type="button" className="ql-list" value="bullet" />
+            <button type="button" className="ql-blockquote" />
+            <button type="button" className="ql-link" />
+            <button type="button" className="ql-image" />
+            <button type="button" className="ql-clean" />
+          </span>
+        </div>
+      )}
+
+      {!preview && mode === 'source' && (
+        <div className="flex flex-wrap items-center gap-0.5 border-b border-gray-200 bg-gray-50 px-2 py-1.5">
+          <ToolbarButton title="段落 <p>" onClick={() => insertSourceMarkup('<p>__TEXT__</p>')}>
+            <Type className={iconSize} />
+          </ToolbarButton>
+          <ToolbarButton title="H2" onClick={() => insertSourceMarkup('<h2>__TEXT__</h2>')}>
+            <Heading2 className={iconSize} />
+          </ToolbarButton>
+          <ToolbarButton title="H3" onClick={() => insertSourceMarkup('<h3>__TEXT__</h3>')}>
+            <Heading3 className={iconSize} />
+          </ToolbarButton>
+          <Divider />
+          <ToolbarButton title="粗體 <strong>" onClick={() => insertSourceMarkup('<strong>__TEXT__</strong>')}>
+            <Bold className={iconSize} />
+          </ToolbarButton>
+          <ToolbarButton title="斜體 <em>" onClick={() => insertSourceMarkup('<em>__TEXT__</em>')}>
+            <Italic className={iconSize} />
+          </ToolbarButton>
+          <ToolbarButton title="底線 <u>" onClick={() => insertSourceMarkup('<u>__TEXT__</u>')}>
+            <Underline className={iconSize} />
+          </ToolbarButton>
+          <ToolbarButton title="刪除線 <s>" onClick={() => insertSourceMarkup('<s>__TEXT__</s>')}>
+            <Strikethrough className={iconSize} />
+          </ToolbarButton>
+          <ToolbarButton title="程式碼 <code>" onClick={() => insertSourceMarkup('<code>__TEXT__</code>')}>
+            <Code className={iconSize} />
+          </ToolbarButton>
+          <Divider />
+          <ToolbarButton title="項目清單 <ul>" onClick={() => insertSourceMarkup('<ul>\n  <li>__TEXT__</li>\n</ul>')}>
+            <List className={iconSize} />
+          </ToolbarButton>
+          <ToolbarButton title="編號清單 <ol>" onClick={() => insertSourceMarkup('<ol>\n  <li>__TEXT__</li>\n</ol>')}>
+            <ListOrdered className={iconSize} />
+          </ToolbarButton>
+          <ToolbarButton title="引用 <blockquote>" onClick={() => insertSourceMarkup('<blockquote>__TEXT__</blockquote>')}>
+            <Quote className={iconSize} />
+          </ToolbarButton>
+          <Divider />
+          <ToolbarButton title="插入連結" onClick={() => openDialog('link')}>
+            <Link className={iconSize} />
+          </ToolbarButton>
+          <ToolbarButton title="插入圖片" onClick={() => openDialog('image')}>
+            <Image className={iconSize} />
+          </ToolbarButton>
+          <ToolbarButton title="水平線 <hr>" onClick={() => insertSourceMarkup('<hr />')}>
+            <Minus className={iconSize} />
+          </ToolbarButton>
+        </div>
+      )}
 
       {preview ? (
         <div
