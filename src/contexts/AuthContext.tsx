@@ -55,18 +55,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserData = async (userId: string) => {
     try {
-      const [profileRes, authRes, assignmentRes] = await Promise.all([
+      const [profileRes, authRes] = await Promise.all([
         withTimeout(supabase.from('tbl_mn5wgzh0').select('*').eq('user_id', userId).maybeSingle(), 8000),
         withTimeout(supabase.from('tbl_user_auth').select('*').eq('user_id', userId).maybeSingle(), 8000),
-        withTimeout(
-          supabase
-            .from('store_location_managers')
-            .select('id,store_location_id,user_id,role,can_manage_store_info,can_manage_products,can_manage_inventory,can_manage_points,is_active,created_at,updated_at')
-            .eq('user_id', userId)
-            .eq('is_active', true),
-          8000,
-        ),
       ]);
+
       if (profileRes.data) setProfile(profileRes.data as MemberProfile);
       if (authRes.data) {
         setUserAuth(authRes.data as UserAuth);
@@ -85,23 +78,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setPermissions({});
         }
       }
-      if (assignmentRes.error) {
-        const assignmentError = assignmentRes.error as { message?: string; code?: string; details?: string } | null;
-        const missingTable = assignmentError && (
-          assignmentError.code === '42P01'
-          || /store_location_managers/i.test(assignmentError.message || '')
-          || /store_location_managers/i.test(assignmentError.details || '')
-        );
-        if (missingTable) {
-          setStoreAssignments([]);
-        } else {
-          throw assignmentRes.error;
-        }
-      } else {
-        setStoreAssignments((assignmentRes.data || []) as StoreLocationManager[]);
-      }
     } catch (err) {
       console.error('Error fetching user data:', err);
+    }
+
+    try {
+      const assignmentRes = await withTimeout(
+        supabase
+          .from('store_location_managers')
+          .select('id,store_location_id,user_id,role,can_manage_store_info,can_manage_products,can_manage_inventory,can_manage_points,is_active,created_at,updated_at')
+          .eq('user_id', userId)
+          .eq('is_active', true),
+        8000,
+      );
+      setStoreAssignments((assignmentRes.data || []) as StoreLocationManager[]);
+    } catch (err) {
+      const assignmentError = err as { message?: string; code?: string; details?: string } | null;
+      const missingTable = assignmentError && (
+        assignmentError.code === '42P01'
+        || /store_location_managers/i.test(assignmentError.message || '')
+        || /store_location_managers/i.test(assignmentError.details || '')
+      );
+      if (!missingTable) console.error('Error fetching store assignments:', err);
       setStoreAssignments([]);
     }
   };
