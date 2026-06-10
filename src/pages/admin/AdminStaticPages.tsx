@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import ReactQuill from 'react-quill';
 import Quill from 'quill';
-import 'react-quill/dist/quill.snow.css';
+import 'quill/dist/quill.snow.css';
 import {
   AlertCircle,
   CheckCircle2,
@@ -41,16 +40,6 @@ const PAGE_META: Record<string, { icon: React.ElementType; label: string; path: 
   'anti-fraud': { icon: ShieldAlert, label: '防詐騙專區', path: '/anti-fraud' },
 };
 
-const editorModules = {
-  toolbar: [
-    [{ header: [1, 2, 3, false] }],
-    ['bold', 'italic', 'underline', 'strike'],
-    [{ list: 'ordered' }, { list: 'bullet' }],
-    [{ align: [] }],
-    ['blockquote', 'link', 'image', 'clean'],
-  ],
-};
-
 const editorFormats = [
   'header',
   'bold',
@@ -64,10 +53,6 @@ const editorFormats = [
   'link',
   'image',
 ];
-
-const editorTheme = {
-  whiteSpace: 'normal',
-};
 
 const BlockEmbed = Quill.import('blots/block/embed');
 
@@ -107,6 +92,94 @@ if (!quillRegistry.__nestobiImageBlotRegistered) {
   quillRegistry.__nestobiImageBlotRegistered = true;
 }
 
+type QuillEditorProps = {
+  value: string;
+  onChange: (value: string) => void;
+  onImagePick: () => void;
+};
+
+function QuillEditor({ value, onChange, onImagePick }: QuillEditorProps) {
+  const editorRootRef = useRef<HTMLDivElement | null>(null);
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
+  const quillRef = useRef<Quill | null>(null);
+  const suppressChangeRef = useRef(false);
+
+  useEffect(() => {
+    if (!editorRootRef.current || quillRef.current) return;
+
+    const quill = new Quill(editorRootRef.current, {
+      theme: 'snow',
+      placeholder: '輸入頁面內容...',
+      modules: {
+        toolbar: {
+          container: toolbarRef.current as HTMLDivElement,
+          handlers: {
+            image: onImagePick,
+          },
+        },
+      },
+      formats: editorFormats,
+    });
+
+    quillRef.current = quill;
+
+    quill.on('text-change', () => {
+      if (suppressChangeRef.current) return;
+      onChange(quill.root.innerHTML);
+    });
+
+    quill.clipboard.dangerouslyPasteHTML(value || '', 'silent');
+
+    return () => {
+      quillRef.current = null;
+      if (editorRootRef.current) editorRootRef.current.innerHTML = '';
+    };
+  }, [onChange, onImagePick, value]);
+
+  useEffect(() => {
+    const quill = quillRef.current;
+    if (!quill) return;
+
+    if (quill.root.innerHTML !== value) {
+      suppressChangeRef.current = true;
+      const selection = quill.getSelection();
+      quill.clipboard.dangerouslyPasteHTML(value || '', 'silent');
+      if (selection) quill.setSelection(selection.index, selection.length, 'silent');
+      window.requestAnimationFrame(() => {
+        suppressChangeRef.current = false;
+      });
+    }
+  }, [value]);
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white">
+      <div ref={toolbarRef} className="ql-toolbar ql-snow">
+        <span className="ql-formats">
+          <select className="ql-header" defaultValue="">
+            <option value="1">H1</option>
+            <option value="2">H2</option>
+            <option value="3">H3</option>
+            <option value="">Normal</option>
+          </select>
+          <button type="button" className="ql-bold" />
+          <button type="button" className="ql-italic" />
+          <button type="button" className="ql-underline" />
+          <button type="button" className="ql-strike" />
+        </span>
+        <span className="ql-formats">
+          <button type="button" className="ql-list" value="ordered" />
+          <button type="button" className="ql-list" value="bullet" />
+          <button type="button" className="ql-blockquote" />
+          <button type="button" className="ql-link" />
+          <button type="button" className="ql-image" />
+          <button type="button" className="ql-clean" />
+        </span>
+      </div>
+      <div ref={editorRootRef} className="min-h-[540px] bg-white" />
+    </div>
+  );
+}
+
 const AdminStaticPages: React.FC = () => {
   const { user } = useAuth();
   const [pages, setPages] = useState<StaticPage[]>([]);
@@ -124,7 +197,7 @@ const AdminStaticPages: React.FC = () => {
   const [imageDialogAlt, setImageDialogAlt] = useState('');
   const [imageDialogWidth, setImageDialogWidth] = useState('100%');
   const [imageDialogHeight, setImageDialogHeight] = useState('');
-  const editorRef = useRef<ReactQuill | null>(null);
+  const editorRef = useRef<Quill | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const imageSelectionRef = useRef<{ index: number; length: number } | null>(null);
 
@@ -208,25 +281,25 @@ const AdminStaticPages: React.FC = () => {
   };
 
   const insertImage = useCallback((payload: { src: string; alt?: string; width?: string; height?: string }) => {
-    const editor = editorRef.current?.getEditor();
-    if (!editor) {
+    const quill = editorRef.current;
+    if (!quill) {
       setSaveStatus('error');
       setImageUploading(false);
       return;
     }
 
-    editor.focus();
-    const range = imageSelectionRef.current || editor.getSelection(true);
-    const index = range ? range.index : editor.getLength();
-    editor.insertEmbed(index, 'image', payload, 'user');
-    editor.setSelection(index + 1, 0, 'silent');
-    setEditContent(editor.root.innerHTML);
+    quill.focus();
+    const range = imageSelectionRef.current || quill.getSelection(true);
+    const index = range ? range.index : quill.getLength();
+    quill.insertEmbed(index, 'image', payload, 'user');
+    quill.setSelection(index + 1, 0, 'silent');
+    setEditContent(quill.root.innerHTML);
     setImageDialogOpen(false);
   }, []);
 
   const handleImageButtonClick = useCallback(() => {
-    const editor = editorRef.current?.getEditor();
-    imageSelectionRef.current = editor?.getSelection(true) || null;
+    const quill = editorRef.current;
+    imageSelectionRef.current = quill?.getSelection(true) || null;
     imageInputRef.current?.click();
   }, []);
 
@@ -406,25 +479,11 @@ const AdminStaticPages: React.FC = () => {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                className="overflow-hidden rounded-xl border border-gray-200 bg-white"
               >
-                <ReactQuill
-                  ref={editorRef}
-                  theme="snow"
+                <QuillEditor
                   value={editContent}
                   onChange={setEditContent}
-                  modules={{
-                    ...editorModules,
-                    toolbar: {
-                      container: editorModules.toolbar,
-                      handlers: {
-                        image: handleImageButtonClick,
-                      },
-                    },
-                  }}
-                  formats={editorFormats}
-                  placeholder="輸入頁面內容..."
-                  style={editorTheme}
+                  onImagePick={handleImageButtonClick}
                 />
                 <input
                   ref={imageInputRef}
