@@ -6,11 +6,11 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
+  Code2,
   Cookie,
   Edit3,
   ExternalLink,
   Eye,
-  EyeOff,
   FileCheck2,
   FileText,
   Save,
@@ -53,7 +53,7 @@ const editorFormats = [
   'image',
 ];
 
-const BlockEmbed = Quill.import('blots/block/embed');
+const BlockEmbed = Quill.import('blots/block/embed') as any;
 
 class StyledImageBlot extends BlockEmbed {
   static blotName = 'image';
@@ -95,9 +95,11 @@ type QuillEditorProps = {
   value: string;
   onChange: (value: string) => void;
   onImagePick: () => void;
+  canEdit: boolean;
+  editorRef: React.MutableRefObject<Quill | null>;
 };
 
-function QuillEditor({ value, onChange, onImagePick }: QuillEditorProps) {
+function QuillEditor({ value, onChange, onImagePick, canEdit, editorRef }: QuillEditorProps) {
   const editorRootRef = useRef<HTMLDivElement | null>(null);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
   const quillRef = useRef<Quill | null>(null);
@@ -108,12 +110,14 @@ function QuillEditor({ value, onChange, onImagePick }: QuillEditorProps) {
 
     const quill = new Quill(editorRootRef.current, {
       theme: 'snow',
-      placeholder: '輸入頁面內容...',
+      placeholder: '請輸入頁面內容...',
       modules: {
         toolbar: {
           container: toolbarRef.current as HTMLDivElement,
           handlers: {
-            image: onImagePick,
+            image: () => {
+              if (canEdit) onImagePick();
+            },
           },
         },
       },
@@ -121,6 +125,7 @@ function QuillEditor({ value, onChange, onImagePick }: QuillEditorProps) {
     });
 
     quillRef.current = quill;
+    editorRef.current = quill;
 
     quill.on('text-change', () => {
       if (suppressChangeRef.current) return;
@@ -131,9 +136,10 @@ function QuillEditor({ value, onChange, onImagePick }: QuillEditorProps) {
 
     return () => {
       quillRef.current = null;
+      editorRef.current = null;
       if (editorRootRef.current) editorRootRef.current.innerHTML = '';
     };
-  }, [onChange, onImagePick, value]);
+  }, [canEdit, editorRef, onChange, onImagePick, value]);
 
   useEffect(() => {
     const quill = quillRef.current;
@@ -151,7 +157,7 @@ function QuillEditor({ value, onChange, onImagePick }: QuillEditorProps) {
   }, [value]);
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white">
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
       <div ref={toolbarRef} className="ql-toolbar ql-snow">
         <span className="ql-formats">
           <select className="ql-header" defaultValue="">
@@ -170,7 +176,12 @@ function QuillEditor({ value, onChange, onImagePick }: QuillEditorProps) {
           <button type="button" className="ql-list" value="bullet" />
           <button type="button" className="ql-blockquote" />
           <button type="button" className="ql-link" />
-          <button type="button" className="ql-image" />
+          <button
+            type="button"
+            className="ql-image"
+            disabled={!canEdit}
+            title={canEdit ? '插入圖片' : '目前沒有上傳圖片權限'}
+          />
           <button type="button" className="ql-clean" />
         </span>
       </div>
@@ -180,7 +191,7 @@ function QuillEditor({ value, onChange, onImagePick }: QuillEditorProps) {
 }
 
 const AdminStaticPages: React.FC = () => {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [pages, setPages] = useState<StaticPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
@@ -189,7 +200,8 @@ const AdminStaticPages: React.FC = () => {
   const [editTitle, setEditTitle] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [previewMode, setPreviewMode] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
+  const [editorView, setEditorView] = useState<'visual' | 'preview' | 'source'>('visual');
   const [imageUploading, setImageUploading] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [imageDialogUrl, setImageDialogUrl] = useState('');
@@ -199,6 +211,7 @@ const AdminStaticPages: React.FC = () => {
   const editorRef = useRef<Quill | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const imageSelectionRef = useRef<{ index: number; length: number } | null>(null);
+  const canEditPages = role === 'admin' || role === 'superadmin';
 
   const fetchPages = useCallback(async () => {
     setLoading(true);
@@ -221,21 +234,30 @@ const AdminStaticPages: React.FC = () => {
     setEditContent(page.content || '');
     setEditMeta(page.meta_description || '');
     setEditTitle(page.title || '');
-    setPreviewMode(false);
+    setEditorView('visual');
     setSaveStatus('idle');
+    setSaveMessage('');
   };
 
   const cancelEdit = () => {
     setEditingSlug(null);
-    setPreviewMode(false);
+    setEditorView('visual');
     setSaveStatus('idle');
+    setSaveMessage('');
   };
 
   const handleSave = async () => {
     if (!editingSlug || !user || saving) return;
 
+    if (!canEditPages) {
+      setSaveStatus('error');
+      setSaveMessage(`目前登入角色是 ${role}，沒有靜態頁面編輯權限，請改用 admin / superadmin 帳號。`);
+      return;
+    }
+
     setSaving(true);
     setSaveStatus('idle');
+    setSaveMessage('');
 
     const { error } = await supabase
       .from('static_pages')
@@ -250,32 +272,26 @@ const AdminStaticPages: React.FC = () => {
 
     if (error) {
       setSaveStatus('error');
+      setSaveMessage(`儲存失敗：${error.message}`);
     } else {
       setSaveStatus('success');
+      setSaveMessage('已儲存更新');
       await fetchPages();
       window.setTimeout(() => {
         setEditingSlug(null);
         setSaveStatus('idle');
+        setSaveMessage('');
       }, 1200);
     }
 
     setSaving(false);
   };
 
-  const formatDate = (iso: string) =>
-    new Date(iso).toLocaleString('zh-TW', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-
-  const normalizeDimension = (value: string) => {
-    const trimmed = value.trim();
+  const normalizeDimension = (input: string) => {
+    const trimmed = input.trim();
     if (!trimmed) return '';
+    if (/^\d+(\.\d+)?(px|%)?$/.test(trimmed)) return trimmed.endsWith('%') || trimmed.endsWith('px') ? trimmed : `${trimmed}px`;
     if (trimmed === 'auto') return 'auto';
-    if (/^\d+(\.\d+)?$/.test(trimmed)) return `${trimmed}px`;
     return trimmed;
   };
 
@@ -283,13 +299,14 @@ const AdminStaticPages: React.FC = () => {
     const quill = editorRef.current;
     if (!quill) {
       setSaveStatus('error');
+      setSaveMessage('編輯器尚未就緒，無法插入圖片。');
       setImageUploading(false);
       return;
     }
 
     quill.focus();
     const range = imageSelectionRef.current || quill.getSelection(true);
-    const index = range ? range.index : quill.getLength();
+    const index = range?.index ?? quill.getLength();
     quill.insertEmbed(index, 'image', payload, 'user');
     quill.setSelection(index + 1, 0, 'silent');
     setEditContent(quill.root.innerHTML);
@@ -297,40 +314,53 @@ const AdminStaticPages: React.FC = () => {
   }, []);
 
   const handleImageButtonClick = useCallback(() => {
+    if (!canEditPages) {
+      setSaveStatus('error');
+      setSaveMessage('目前登入帳號沒有上傳圖片權限。');
+      return;
+    }
+
     const quill = editorRef.current;
     imageSelectionRef.current = quill?.getSelection(true) || null;
     imageInputRef.current?.click();
-  }, []);
+  }, [canEditPages]);
 
   const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
 
+    if (!canEditPages) {
+      setSaveStatus('error');
+      setSaveMessage('目前登入帳號沒有上傳圖片權限。');
+      return;
+    }
+
     if (!file.type.startsWith('image/')) {
       setSaveStatus('error');
+      setSaveMessage('請選擇圖片檔案。');
       return;
     }
 
     const uploadImage = async () => {
       setImageUploading(true);
       setSaveStatus('idle');
+      setSaveMessage('');
 
       const safeName = file.name
         .trim()
         .replace(/[^\w.\-]+/g, '_')
         .replace(/_+/g, '_')
         .replace(/^_+|_+$/g, '') || 'image';
-      const folder = editingSlug ? `static-pages/${editingSlug}` : 'static-pages/general';
-      const ext = safeName.includes('.') ? safeName.split('.').pop() : file.type.split('/').pop() || 'png';
-      const fileName = `${folder}/${Date.now()}-${safeName.replace(/\.[^.]+$/, '')}.${ext}`;
 
+      const fileName = `static-pages/${editingSlug || 'page'}/${Date.now()}-${safeName}`;
       const { error } = await supabase.storage
         .from('site-assets')
         .upload(fileName, file, { upsert: false, contentType: file.type });
 
       if (error) {
         setSaveStatus('error');
+        setSaveMessage(`圖片上傳失敗：${error.message}`);
         setImageUploading(false);
         return;
       }
@@ -345,10 +375,15 @@ const AdminStaticPages: React.FC = () => {
     };
 
     void uploadImage();
-  }, [editingSlug]);
+  }, [canEditPages, editingSlug]);
 
   const confirmImageInsert = useCallback(() => {
-    if (!imageDialogUrl) return;
+    if (!imageDialogUrl) {
+      setSaveStatus('error');
+      setSaveMessage('圖片網址不存在，無法插入。');
+      return;
+    }
+
     insertImage({
       src: imageDialogUrl,
       alt: imageDialogAlt.trim(),
@@ -365,49 +400,85 @@ const AdminStaticPages: React.FC = () => {
     );
   }
 
-  if (editingSlug && editingPage) {
-    const Icon = PAGE_META[editingSlug]?.icon || FileText;
-    const meta = PAGE_META[editingSlug];
-
+  if (editingPage) {
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={cancelEdit} className="rounded-lg p-2 transition hover:bg-gray-100" type="button">
-              <X className="h-5 w-5 text-gray-500" />
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-5"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <button
+              type="button"
+              onClick={cancelEdit}
+              className="mb-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-sm font-medium text-gray-500 shadow-sm ring-1 ring-gray-200 transition hover:text-gray-900"
+            >
+              <X className="h-4 w-4" />
+              關閉
             </button>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F0E4C8] text-[#2C1F10]">
-              <Icon className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">{meta?.label || editingPage.title}</h2>
-              <p className="text-sm text-gray-500">/{editingSlug}</p>
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F0E4C8] text-[#2C1F10]">
+                <FileText className="h-6 w-6" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="truncate text-2xl font-bold text-gray-900">{editingPage.title}</h1>
+                <p className="text-sm text-gray-500">/{editingPage.slug}</p>
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <a
-              href={meta?.path || '#'}
+              href={PAGE_META[editingPage.slug]?.path || '#'}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-gray-500 transition hover:bg-[#F0E4C8] hover:text-[#2C1F10]"
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:border-[#2C1F10] hover:text-[#2C1F10]"
             >
               <ExternalLink className="h-4 w-4" />
               開啟頁面
             </a>
-            <button
-              onClick={() => setPreviewMode(prev => !prev)}
-              type="button"
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition ${
-                previewMode ? 'bg-[#C09A6A] text-white' : 'text-gray-500 hover:bg-[#F0E4C8] hover:text-[#2C1F10]'
-              }`}
-            >
-              {previewMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              {previewMode ? '編輯' : '預覽'}
-            </button>
+            <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1">
+              <button
+                onClick={() => setEditorView('visual')}
+                type="button"
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition ${
+                  editorView === 'visual'
+                    ? 'bg-[#C09A6A] text-white'
+                    : 'text-gray-500 hover:bg-[#F0E4C8] hover:text-[#2C1F10]'
+                }`}
+              >
+                <Edit3 className="h-4 w-4" />
+                編輯
+              </button>
+              <button
+                onClick={() => setEditorView('preview')}
+                type="button"
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition ${
+                  editorView === 'preview'
+                    ? 'bg-[#C09A6A] text-white'
+                    : 'text-gray-500 hover:bg-[#F0E4C8] hover:text-[#2C1F10]'
+                }`}
+              >
+                <Eye className="h-4 w-4" />
+                預覽
+              </button>
+              <button
+                onClick={() => setEditorView('source')}
+                type="button"
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition ${
+                  editorView === 'source'
+                    ? 'bg-[#C09A6A] text-white'
+                    : 'text-gray-500 hover:bg-[#F0E4C8] hover:text-[#2C1F10]'
+                }`}
+              >
+                <Code2 className="h-4 w-4" />
+                原始碼
+              </button>
+            </div>
             <button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || !canEditPages}
               type="button"
               className="inline-flex items-center gap-2 rounded-xl bg-[#C09A6A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#8B6840] disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -424,13 +495,22 @@ const AdminStaticPages: React.FC = () => {
         {saveStatus === 'success' && (
           <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
             <CheckCircle2 className="h-4 w-4" />
-            已儲存更新
+            {saveMessage || '已儲存更新'}
           </div>
         )}
         {saveStatus === 'error' && (
           <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             <AlertCircle className="h-4 w-4" />
-            儲存或上傳失敗，請稍後再試
+            {saveMessage || '儲存或上傳失敗，請稍後再試'}
+          </div>
+        )}
+
+        {!canEditPages && (
+          <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+            <div>
+              目前登入角色是 <strong>{role}</strong>，這個頁面需要 <strong>admin / superadmin</strong> 權限才能儲存內容與上傳圖片。
+            </div>
           </div>
         )}
 
@@ -450,7 +530,7 @@ const AdminStaticPages: React.FC = () => {
               type="text"
               value={editMeta}
               onChange={e => setEditMeta(e.target.value)}
-              placeholder="頁面摘要，用於搜尋引擎與分享預覽"
+              placeholder="建議 120 字以內，用於搜尋引擎摘要"
               className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
             />
           </div>
@@ -459,19 +539,36 @@ const AdminStaticPages: React.FC = () => {
         <div>
           <div className="mb-1 flex items-center justify-between gap-3">
             <label className="block text-sm font-medium text-gray-700">頁面內容</label>
-            <span className="text-xs text-gray-400">可直接插入圖片，並在插入前設定尺寸</span>
+            <span className="text-xs text-gray-400">可切換編輯、預覽與原始碼檢視</span>
           </div>
 
           <AnimatePresence mode="wait">
-            {previewMode ? (
+            {editorView === 'preview' ? (
               <motion.div
                 key="preview"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                className="min-h-[540px] overflow-auto rounded-xl border border-gray-200 bg-white p-6 prose prose-slate max-w-none"
+                className="prose prose-slate min-h-[540px] max-w-none overflow-auto rounded-xl border border-gray-200 bg-white p-6"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(editContent) }}
               />
+            ) : editorView === 'source' ? (
+              <motion.div
+                key="source"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+              >
+                <textarea
+                  value={editContent}
+                  onChange={e => setEditContent(e.target.value)}
+                  spellCheck={false}
+                  className="min-h-[540px] w-full rounded-xl border border-gray-200 bg-slate-950 px-4 py-3 font-mono text-sm leading-6 text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  這裡可以直接檢視和編輯 HTML 原始碼。儲存時會自動做安全清理。
+                </p>
+              </motion.div>
             ) : (
               <motion.div
                 key="editor"
@@ -483,6 +580,8 @@ const AdminStaticPages: React.FC = () => {
                   value={editContent}
                   onChange={setEditContent}
                   onImagePick={handleImageButtonClick}
+                  canEdit={canEditPages}
+                  editorRef={editorRef}
                 />
                 <input
                   ref={imageInputRef}
@@ -579,7 +678,7 @@ const AdminStaticPages: React.FC = () => {
         )}
 
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          <strong>提醒：</strong>編輯器支援標題、粗體、斜體、清單、引用、連結與圖片。圖片會先上傳到 Supabase Storage，再以正式網址插入內容。
+          <strong>提醒：</strong>編輯內容、原始碼與圖片都會存進 Supabase。原始碼模式適合快速貼入 HTML，但仍會在儲存時做安全清理。
         </div>
       </motion.div>
     );
@@ -589,7 +688,7 @@ const AdminStaticPages: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">靜態頁面管理</h1>
-        <p className="mt-1 text-sm text-gray-500">集中編輯關於我們、隱私權政策、服務條款、Cookie 與防詐騙專區。</p>
+        <p className="mt-1 text-sm text-gray-500">可編輯關於我們、隱私權政策、服務條款、Cookie 設定與防詐騙專區。</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -631,8 +730,8 @@ const AdminStaticPages: React.FC = () => {
 
               <div className="mb-4 flex items-center gap-2 text-xs text-gray-400">
                 <Clock className="h-3.5 w-3.5" />
-                <span>更新於 {formatDate(page.updated_at)}</span>
-                {page.updated_by && <span className="text-gray-300">· {page.updated_by}</span>}
+                <span>更新：{formatDate(page.updated_at)}</span>
+                {page.updated_by && <span className="text-gray-300">｜ {page.updated_by}</span>}
               </div>
 
               <div className="flex items-center gap-2">
@@ -650,8 +749,8 @@ const AdminStaticPages: React.FC = () => {
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-500 transition hover:border-[#2C1F10] hover:text-[#2C1F10]"
                 >
-                  <FileText className="h-4 w-4" />
-                  查看
+                  <ExternalLink className="h-4 w-4" />
+                  開啟
                 </a>
               </div>
             </motion.div>
@@ -661,5 +760,17 @@ const AdminStaticPages: React.FC = () => {
     </div>
   );
 };
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('zh-TW', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
 
 export default AdminStaticPages;
