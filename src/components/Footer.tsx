@@ -87,7 +87,7 @@ export default function Footer() {
 
   const policyLinks = [
     { to: '/about', label: t.about },
-    { to: '/privacy-policy', label: t.privacy },
+    { to: '/privacy', label: t.privacy },
     { to: '/terms', label: t.terms },
     { to: '/anti-fraud', label: t.antiFraud },
     { to: '/cookies', label: t.cookieSettings },

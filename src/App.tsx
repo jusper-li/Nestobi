@@ -147,6 +147,7 @@ function AppShell() {
 
                 <Route path="/about" element={<StaticPage />} />
                 <Route path="/privacy" element={<StaticPage />} />
+                <Route path="/privacy-policy" element={<Navigate to="/privacy" replace />} />
                 <Route path="/terms" element={<StaticPage />} />
                 <Route path="/cookies" element={<StaticPage />} />
                 <Route path="/anti-fraud" element={<StaticPage />} />
