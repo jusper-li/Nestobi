@@ -198,7 +198,7 @@ const AdminStaticPages: React.FC = () => {
 
       const { error } = await supabase.storage
         .from('site-assets')
-        .upload(fileName, file, { upsert: true, contentType: file.type });
+        .upload(fileName, file, { upsert: false, contentType: file.type });
 
       if (error) {
         setSaveStatus('error');
