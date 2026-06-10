@@ -67,6 +67,18 @@ const SELECT_COLUMNS = [
 
 const cache = new Map<SiteContentArea, Promise<SiteContentBlock[]>>();
 
+function sanitizeLocalizedText(value: string | null | undefined) {
+  const text = (value || '').trim();
+  if (!text) return '';
+  const suspiciousQuestionMarks = text.match(/\?/g)?.length ?? 0;
+  const suspiciousReplacementChars = text.includes('\uFFFD') ? 1 : 0;
+  const totalLength = text.length;
+  const suspiciousRatio = (suspiciousQuestionMarks + suspiciousReplacementChars) / Math.max(totalLength, 1);
+  if (suspiciousQuestionMarks >= 2 && suspiciousRatio > 0.2) return '';
+  if (suspiciousReplacementChars) return '';
+  return text;
+}
+
 export function indexBlocks(blocks: SiteContentBlock[]) {
   return blocks.reduce<Record<string, SiteContentBlock>>((acc, block) => {
     acc[block.block_key] = block;
@@ -80,13 +92,21 @@ export function getBlockText(
   field: 'title' | 'subtitle' | 'body' | 'cta_label',
 ) {
   if (!block) return '';
-  return pickByLang(
+  const selected = pickByLang(
     locale,
     block[`${field}_zh` as const],
     block[`${field}_en` as const],
     block[`${field}_ja` as const],
     block[`${field}_ko` as const],
   );
+  if (sanitizeLocalizedText(selected)) return selected;
+  const fallbackCandidates = [
+    block[`${field}_zh` as const],
+    block[`${field}_en` as const],
+    block[`${field}_ja` as const],
+    block[`${field}_ko` as const],
+  ].map(sanitizeLocalizedText).filter(Boolean);
+  return fallbackCandidates[0] || '';
 }
 
 export async function fetchSiteContentBlocks(area: SiteContentArea) {
@@ -108,4 +128,3 @@ export async function fetchSiteContentBlocks(area: SiteContentArea) {
   }
   return cache.get(area)!;
 }
-

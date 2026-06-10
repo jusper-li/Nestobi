@@ -72,10 +72,10 @@ export default function MobileBottomNav() {
   const items = useMemo<NavItem[]>(
     () => [
       { to: '/', label: getBlockText(navigationMap['navigation-mobile-home'], locale, 'title') || pick('首頁', 'Home', 'ホーム', '홈'), icon: Home, activePaths: ['/'] },
-      { to: '/ai/chat', label: getBlockText(navigationMap['navigation-mobile-ai-chat'], locale, 'title') || pick('AI客服', 'AI Support', 'AIサポート', 'AI 고객지원'), icon: MessageCircle, activePaths: ['/ai/chat'] },
-      { to: '/ai/itinerary', label: getBlockText(navigationMap['navigation-mobile-ai-itinerary'], locale, 'title') || pick('AI導遊', 'AI Guide', 'AIガイド', 'AI 가이드'), icon: Map, activePaths: ['/ai/itinerary'] },
-      { to: '/ai/coffee-quiz', label: getBlockText(navigationMap['navigation-mobile-ai-coffee-quiz'], locale, 'title') || pick('AI尋豆師', 'AI Coffee Finder', 'AIコーヒー豆診断', 'AI 커피 바리스타'), icon: Coffee, activePaths: ['/ai/coffee-quiz'] },
-      { to: user ? '/member' : '/auth/login', label: getBlockText(navigationMap['navigation-mobile-member'], locale, 'title') || pick('我的', 'My', 'マイ', '내 정보'), icon: User, activePaths: ['/member'] },
+      { to: '/ai/chat', label: getBlockText(navigationMap['navigation-mobile-ai-chat'], locale, 'title') || pick('AI 客服', 'AI Support', 'AIサポート', 'AI 상담'), icon: MessageCircle, activePaths: ['/ai/chat'] },
+      { to: '/ai/itinerary', label: getBlockText(navigationMap['navigation-mobile-ai-itinerary'], locale, 'title') || pick('AI 導遊', 'AI Guide', 'AI 旅程', 'AI 여행'), icon: Map, activePaths: ['/ai/itinerary'] },
+      { to: '/ai/coffee-quiz', label: getBlockText(navigationMap['navigation-mobile-ai-coffee-quiz'], locale, 'title') || pick('AI 尋豆師', 'AI Coffee Finder', 'AI コーヒーファインダー', 'AI 원두 찾기'), icon: Coffee, activePaths: ['/ai/coffee-quiz'] },
+      { to: user ? '/member' : '/auth/login', label: getBlockText(navigationMap['navigation-mobile-member'], locale, 'title') || pick('我的', 'My', 'マイ', '마이'), icon: User, activePaths: ['/member'] },
     ],
     [navigationMap, locale, pick, user],
   );

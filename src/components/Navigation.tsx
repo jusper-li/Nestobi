@@ -63,37 +63,37 @@ export default function Navigation() {
   const navigationMap = useMemo(() => indexBlocks(navigationBlocks), [navigationBlocks]);
 
   const labels = useMemo(() => ({
-    home: pick('??', 'Home', '???', '?'),
-    cart: pick('???', 'Cart', '???', '????'),
-    stores: getBlockText(navigationMap['navigation-header-stores'], locale, 'title') || pick('??', 'Stores', '??', '??'),
-    rooms: getBlockText(navigationMap['navigation-header-rooms'], locale, 'title') || pick('Nestobi ??', 'Nestobi Stays', 'Nestobi ??', 'Nestobi ??'),
-    shop: getBlockText(navigationMap['navigation-header-shop'], locale, 'title') || pick('???????', 'Genbon Travel Shop', '?????????', '????? ?'),
-    blog: getBlockText(navigationMap['navigation-header-blog'], locale, 'title') || pick('?????', 'Coffee Traveler', '?????????', '?? ????'),
-    aiItinerary: pick('AI ??', 'AI Planner', 'AI ?????', 'AI ???'),
-    aiTranslator: pick('AI ??', 'AI Translate', 'AI ??', 'AI ??'),
-    aiChat: pick('AI ??', 'AI Support', 'AI ????', 'AI ????'),
-    aiCoffeeQuiz: pick('AI ???', 'AI Coffee Finder', 'AI ???????', 'AI ?? ??'),
-    travelPassport: pick('????', 'Travel Passport', '???????', '?? ????'),
-    login: pick('??', 'Login', '????', '???'),
-    register: pick('??', 'Sign up', '??', '????'),
-    member: pick('??', 'Member', '????', '??'),
-    memberCenter: pick('????', 'Member Center', '??????', '????'),
-    myBookings: pick('????', 'My Bookings', '????', '? ??'),
-    myOrders: pick('????', 'My Orders', '????', '? ??'),
-    myPurchases: pick('????', 'Purchase Records', '????', '?? ??'),
-    myPoints: pick('????', 'My Points', '????', '???'),
-    profile: pick('????', 'Profile', '??????', '???'),
-    preferences: pick('????', 'Preferences', '??', '??'),
-    adminPanel: pick('????', 'Admin', '????', '???'),
-    superAdmin: pick('?????', 'Super Admin', '???????', '?? ???'),
-    logout: pick('??', 'Logout', '?????', '????'),
-    closeMenu: pick('????', 'Close menu', '????????', '?? ??'),
-    language: pick('??', 'Language', '??', '??'),
+    home: pick('首頁', 'Home', 'ホーム', '홈'),
+    cart: pick('購物車', 'Cart', 'カート', '장바구니'),
+    stores: getBlockText(navigationMap['navigation-header-stores'], locale, 'title') || pick('根本在旅行咖啡廳', 'Cafes', '店舗', '매장'),
+    rooms: getBlockText(navigationMap['navigation-header-rooms'], locale, 'title') || pick('Nestobi 住宿', 'Nestobi Stays', 'Nestobi 宿泊', 'Nestobi 숙소'),
+    shop: getBlockText(navigationMap['navigation-header-shop'], locale, 'title') || pick('根本在旅行商城', 'Genbon Travel Shop', '根本在旅行ショップ', '근본에서 여행 스토어'),
+    blog: getBlockText(navigationMap['navigation-header-blog'], locale, 'title') || pick('咖啡旅行家', 'Coffee Traveler', 'コーヒートラベラー', '커피 여행가'),
+    aiItinerary: pick('AI 導遊', 'AI Planner', 'AI 旅程', 'AI 여행'),
+    aiTranslator: pick('AI 翻譯', 'AI Translate', 'AI 翻訳', 'AI 번역'),
+    aiChat: pick('AI 客服', 'AI Support', 'AI サポート', 'AI 상담'),
+    aiCoffeeQuiz: pick('AI 尋豆師', 'AI Coffee Finder', 'AI コーヒーファインダー', 'AI 원두 찾기'),
+    travelPassport: pick('旅遊護照', 'Travel Passport', 'トラベルパスポート', '여행 패스포트'),
+    login: pick('登入', 'Login', 'ログイン', '로그인'),
+    register: pick('註冊', 'Sign up', '登録', '회원가입'),
+    member: pick('我的', 'Member', 'マイ', '마이'),
+    memberCenter: pick('會員中心', 'Member Center', '会員中心', '회원센터'),
+    myBookings: pick('我的訂房', 'My Bookings', '予約一覧', '내 예약'),
+    myOrders: pick('我的訂單', 'My Orders', '注文一覧', '내 주문'),
+    myPurchases: pick('消費紀錄', 'Purchase Records', '購入履歴', '구매 내역'),
+    myPoints: pick('我的點數', 'My Points', 'ポイント', '내 포인트'),
+    profile: pick('個人資料', 'Profile', 'プロフィール', '프로필'),
+    preferences: pick('偏好設定', 'Preferences', '設定', '환경설정'),
+    adminPanel: pick('管理後台', 'Admin', '管理画面', '관리'),
+    superAdmin: pick('超級管理員', 'Super Admin', 'スーパー管理者', '최고 관리자'),
+    logout: pick('登出', 'Logout', 'ログアウト', '로그아웃'),
+    closeMenu: pick('關閉選單', 'Close menu', 'メニューを閉じる', '메뉴 닫기'),
+    language: pick('語言', 'Language', '言語', '언어'),
   }), [locale, navigationMap]);
 
   const languageOptions = useMemo(
     () => [
-      { code: 'zh-TW' as const, label: pick('繁體中文', 'Traditional Chinese', '繁体字中国語', '번체 중국어'), short: 'TW' },
+      { code: 'zh-TW' as const, label: pick('中文繁體', 'Traditional Chinese', '繁體中文', '중국어(번체)'), short: 'TW' },
       { code: 'en' as const, label: pick('英文', 'English', '英語', '영어'), short: 'EN' },
       { code: 'ja' as const, label: pick('日文', 'Japanese', '日本語', '일본어'), short: 'JP' },
       { code: 'ko' as const, label: pick('韓文', 'Korean', '韓国語', '한국어'), short: 'KR' },
@@ -102,13 +102,12 @@ export default function Navigation() {
   );
 
   const currentLangOption = languageOptions.find(option => option.code === locale) || languageOptions[0];
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
   const brand = useMemo(() => {
     const path = location.pathname;
     if (path.startsWith('/shop') || path.startsWith('/stores') || path.startsWith('/genbon-travel')) {
       return {
         to: '/shop',
-        alt: pick('根本在旅行', 'Genbon Travel', '根本在旅行', '근본재여행'),
+        alt: pick('根本在旅行商城', 'Genbon Travel', '根本在旅行ショップ', '근본에서 여행'),
         image: '/genbon-travel-logo.png',
         className: 'h-8 w-auto md:h-10',
       };
@@ -128,7 +127,6 @@ export default function Navigation() {
       className: 'h-10 w-auto md:h-12',
     };
   }, [location.pathname, locale]);
-
   const navLinks = [
     { to: '/rooms', label: labels.rooms, icon: Hotel },
     { to: '/shop', label: labels.shop, icon: Package },

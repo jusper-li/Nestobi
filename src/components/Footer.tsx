@@ -61,52 +61,52 @@ export default function Footer() {
   const t = {
     intro: pick(
       locale,
-      'Nestobi ????????????????????????????????????????????????????????',
+      'Nestobi 負責把資訊整理好，根本在旅行則把體驗落地。兩個品牌分工不同，卻共同指向同一件事：讓旅程更容易開始，也更值得記住。',
       'Nestobi organizes the information, and Genbon Travel turns it into an experience. Different roles, one shared goal: making every journey easier to start and easier to remember.',
-      'Nestobi ????????????????????????????????????????????????????????????',
-      'Nestobi? ??? ????, ?????? ??? ??? ????. ??? ???? ??? ? ?? ???? ? ?? ???? ???? ?? ????.',
+      'Nestobi が情報を整理し、根本在旅行が体験を形にします。役割は違っても、旅をもっと始めやすく、もっと記憶に残るものにするという目的は同じです。',
+      'Nestobi는 정보를 정리하고, 근본에서 여행은 그 경험을 현실로 만듭니다. 역할은 다르지만 여행을 더 쉽게 시작하고 더 오래 기억하게 한다는 목표는 같습니다.',
     ),
-    services: footerText('footer-services-heading', 'title', pick(locale, '??', 'Services', '????', '???')),
-    members: pick(locale, '??', 'Members', '????', '??'),
-    contact: pick(locale, '????', 'Contact', '??????', '????'),
-    contactForm: pick(locale, '????', 'Contact Form', '??????????', '?? ??'),
-    supportHours: pick(locale, '????', 'Support Hours', '??????', '?? ?? ??'),
-    workday: pick(locale, '????? 09:00-18:00', 'Mon-Fri 09:00-18:00', '??? 09:00-18:00', '?~? 09:00-18:00'),
-    aiHours: pick(locale, 'AI ?? 24 ??', 'AI support 24/7', 'AI ???? 24??', 'AI ???? 24??'),
-    phone: pick(locale, '????', 'Support Phone', '??????', '???? ??'),
-    email: pick(locale, '????', 'Email', '???', '???'),
-    about: pick(locale, '????', 'About', '????', '?? ??'),
-    privacy: pick(locale, '????', 'Privacy', '??????', '????????'),
-    terms: pick(locale, '????', 'Terms', '????', '????'),
-    cookies: pick(locale, 'Cookie ??', 'Cookie Policy', 'Cookie ????', '?? ??'),
-    antiFraud: pick(locale, '?????', 'Anti-Fraud', '??????', '?? ?? ??'),
-    cookieSettings: pick(locale, 'Cookie ??', 'Cookie Settings', 'Cookie ??', '?? ??'),
-    vendorPortal: pick(locale, '????', 'Vendor Portal', '???????', '??? ??'),
-    superAdmin: pick(locale, '?????', 'Super Admin', '???????', '?? ???'),
-    social: pick(locale, '??', 'Social', 'SNS', '??'),
+    services: footerText('footer-services-heading', 'title', pick(locale, '服務', 'Services', 'サービス', '서비스')),
+    members: pick(locale, '會員', 'Members', '会員', '회원'),
+    contact: pick(locale, '聯絡我們', 'Contact', 'お問い合わせ', '문의하기'),
+    contactForm: pick(locale, '聯絡表單', 'Contact Form', 'お問い合わせフォーム', '문의 양식'),
+    supportHours: pick(locale, '服務時間', 'Support Hours', 'サポート時間', '운영 시간'),
+    workday: pick(locale, '週一至週五 09:00-18:00', 'Mon-Fri 09:00-18:00', '月〜金 09:00-18:00', '월~금 09:00-18:00'),
+    aiHours: pick(locale, 'AI 客服 24 小時', 'AI support 24/7', 'AIサポート 24時間', 'AI 상담 24시간'),
+    phone: pick(locale, '客服電話', 'Support Phone', '電話', '전화'),
+    email: pick(locale, '客服信箱', 'Email', 'メール', '이메일'),
+    about: pick(locale, '關於我們', 'About', '私たちについて', '회사 소개'),
+    privacy: pick(locale, '隱私權政策', 'Privacy', 'プライバシー', '개인정보처리방침'),
+    terms: pick(locale, '服務條款', 'Terms', '利用規約', '이용약관'),
+    cookies: pick(locale, 'Cookie 政策', 'Cookie Policy', 'Cookie ポリシー', '쿠키 정책'),
+    antiFraud: pick(locale, '防詐騙專區', 'Anti-Fraud', '詐欺防止', '사기 방지'),
+    cookieSettings: pick(locale, 'Cookie 設定', 'Cookie Settings', 'Cookie 設定', '쿠키 설정'),
+    vendorPortal: pick(locale, '廠商後台', 'Vendor Portal', '出店者管理', '공급사 포털'),
+    superAdmin: pick(locale, '超級管理員', 'Super Admin', 'スーパー管理者', '최고 관리자'),
+    social: pick(locale, '社群', 'Social', 'SNS', '소셜'),
   } as const;
 
   const serviceLinks = [
-    { to: '/rooms', label: footerText('footer-services-rooms', 'title', pick(locale, 'Nestobi ??', 'Nestobi Stays', 'Nestobi ??', 'Nestobi ??')), icon: Hotel },
-    { to: '/shop', label: footerText('footer-services-shop', 'title', pick(locale, '???????', 'Genbon Travel Shop', '?????????', '????? ?')), icon: ShoppingBag },
-    { to: '/stores', label: footerText('footer-services-stores', 'title', pick(locale, '????????', 'Genbon Travel Cafes', '????????', '????? ??')), icon: MapPin },
-    { to: '/blog', label: footerText('footer-services-blog', 'title', pick(locale, '?????', 'Coffee Traveler', '?????????', '?? ????')), icon: FileText },
-    { to: '/faq', label: pick(locale, '????', 'FAQ', 'FAQ', '?? ?? ??'), icon: HelpCircle },
-    { to: '/ai/chat', label: pick(locale, 'AI ??', 'AI Support', 'AI ????', 'AI ????'), icon: MessageCircle },
-    { to: '/ai/itinerary', label: pick(locale, 'AI ??', 'AI Planner', 'AI Planner', 'AI ???'), icon: Map },
-    { to: '/ai/coffee-quiz', label: pick(locale, 'AI ???', 'AI Coffee Finder', 'AI Coffee Finder', 'AI ?? ??'), icon: Coffee },
-    { to: '/ai/translator', label: pick(locale, 'AI ??', 'AI Translate', 'AI ??', 'AI ??'), icon: Languages },
-    { to: '/ai/passport', label: pick(locale, '????', 'Travel Passport', '???????', '?? ????'), icon: BookMarked },
+    { to: '/rooms', label: footerText('footer-services-rooms', 'title', pick(locale, 'Nestobi 住宿', 'Nestobi Stays', 'Nestobi 宿泊', 'Nestobi 숙소')), icon: Hotel },
+    { to: '/shop', label: footerText('footer-services-shop', 'title', pick(locale, '根本在旅行商城', 'Genbon Travel Shop', '根本在旅行ショップ', '근본에서 여행 스토어')), icon: ShoppingBag },
+    { to: '/stores', label: footerText('footer-services-stores', 'title', pick(locale, '根本在旅行咖啡廳', 'Genbon Travel Cafes', '根本在旅行カフェ', '근본에서 여행 카페')), icon: MapPin },
+    { to: '/blog', label: footerText('footer-services-blog', 'title', pick(locale, '咖啡旅行家', 'Coffee Traveler', 'コーヒートラベラー', '커피 여행가')), icon: FileText },
+    { to: '/faq', label: pick(locale, '常見問題', 'FAQ', 'FAQ', '자주 묻는 질문'), icon: HelpCircle },
+    { to: '/ai/chat', label: pick(locale, 'AI 客服', 'AI Support', 'AIサポート', 'AI 상담'), icon: MessageCircle },
+    { to: '/ai/itinerary', label: pick(locale, 'AI 導遊', 'AI Planner', 'AI 旅程', 'AI 여행'), icon: Map },
+    { to: '/ai/coffee-quiz', label: pick(locale, 'AI 尋豆師', 'AI Coffee Finder', 'AI コーヒーファインダー', 'AI 원두 찾기'), icon: Coffee },
+    { to: '/ai/translator', label: pick(locale, 'AI 翻譯', 'AI Translate', 'AI 翻訳', 'AI 번역'), icon: Languages },
+    { to: '/ai/passport', label: pick(locale, '旅遊護照', 'Travel Passport', 'トラベルパスポート', '여행 패스포트'), icon: BookMarked },
   ] as const;
 
   const memberLinks = [
-    { to: '/member', label: pick(locale, '會員中心', 'Member Center', '会員センター', '회원센터'), icon: LayoutDashboard },
-    { to: '/member/bookings', label: pick(locale, '我的訂房', 'My Bookings', '予約履歴', '내 숙박'), icon: Hotel },
-    { to: '/member/orders', label: pick(locale, '我的訂單', 'My Orders', '注文履歴', '내 주문'), icon: History },
-    { to: '/member/purchases', label: pick(locale, '消費紀錄', 'Purchase Records', '購入履歴', '소비 내역'), icon: Receipt },
-    { to: '/member/points', label: pick(locale, '我的點數', 'My Points', 'ポイント', '포인트'), icon: Map },
+    { to: '/member', label: pick(locale, '會員中心', 'Member Center', '会員中心', '회원센터'), icon: LayoutDashboard },
+    { to: '/member/bookings', label: pick(locale, '我的訂房', 'My Bookings', '予約一覧', '내 예약'), icon: Hotel },
+    { to: '/member/orders', label: pick(locale, '我的訂單', 'My Orders', '注文一覧', '내 주문'), icon: History },
+    { to: '/member/purchases', label: pick(locale, '消費紀錄', 'Purchase Records', '購入履歴', '구매 내역'), icon: Receipt },
+    { to: '/member/points', label: pick(locale, '我的點數', 'My Points', 'ポイント', '내 포인트'), icon: Map },
     { to: '/member/profile', label: pick(locale, '個人資料', 'Profile', 'プロフィール', '프로필'), icon: User },
-    { to: '/member/preferences', label: pick(locale, '偏好設定', 'Preferences', '設定', '설정'), icon: Settings },
+    { to: '/member/preferences', label: pick(locale, '偏好設定', 'Preferences', '設定', '환경설정'), icon: Settings },
   ] as const;
 
   const socialLinks = [
@@ -123,18 +123,8 @@ export default function Footer() {
   ].filter(Boolean) as Array<{ href: string; label: string; icon: LucideIcon }>;
 
   const contactItems = [
-    {
-      icon: Phone,
-      label: t.phone,
-      value: settings.contact_phone || '02-27565663',
-      sub: t.workday,
-    },
-    {
-      icon: Mail,
-      label: t.email,
-      value: settings.contact_email || 'service@dlalshop.com',
-      sub: t.aiHours,
-    },
+    { icon: Phone, label: t.phone, value: settings.contact_phone || '02-27565663', sub: t.workday },
+    { icon: Mail, label: t.email, value: settings.contact_email || 'service@dlalshop.com', sub: t.aiHours },
     {
       icon: MapPin,
       label: pick(locale, '公司資訊', 'Company Info', '会社情報', '회사 정보'),
@@ -219,66 +209,50 @@ export default function Footer() {
                 </Link>
               </li>
             </ul>
-            <div className="mt-5">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-[#2C1F10]/50">{t.social}</p>
-              <div className="flex flex-wrap gap-2">
-                {socialLinks.map(({ href, label }) => (
-                  <a
-                    key={href}
-                    href={href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-full border border-[#2C1F10]/10 bg-white/50 px-3 py-1.5 text-xs font-medium text-[#2C1F10]/70 transition hover:border-[#C09A6A]/40 hover:bg-white hover:text-[#2C1F10]"
-                  >
-                    {label}
-                  </a>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
 
-        <div className="border-t border-[#2C1F10]/15 pt-6">
-          <div className="flex flex-col items-center justify-between gap-3 text-sm text-[#2C1F10]/50 md:flex-row">
-            <p>&copy; 2026 Nestobi. All rights reserved.</p>
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-              <Link to="/about" className="transition hover:text-[#2C1F10]">
+        <div className="mt-10 border-t border-[#2C1F10]/10 pt-8">
+          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+            <div className="max-w-2xl">
+              <h4 className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-[#2C1F10]/50">{t.supportHours}</h4>
+              <div className="space-y-1 text-sm text-[#2C1F10]/70">
+                <p>{t.workday}</p>
+                <p>{t.aiHours}</p>
+                <p>02-27565663</p>
+                <p>service@dlalshop.com</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-sm md:min-w-[320px]">
+              <Link to="/about" className="rounded-xl border border-[#2C1F10]/10 bg-white/60 px-4 py-3 text-center font-medium text-[#2C1F10]/80 transition hover:bg-white">
                 {t.about}
               </Link>
-              <Link to="/privacy" className="transition hover:text-[#2C1F10]">
+              <Link to="/privacy-policy" className="rounded-xl border border-[#2C1F10]/10 bg-white/60 px-4 py-3 text-center font-medium text-[#2C1F10]/80 transition hover:bg-white">
                 {t.privacy}
               </Link>
-              <Link to="/terms" className="transition hover:text-[#2C1F10]">
+              <Link to="/terms" className="rounded-xl border border-[#2C1F10]/10 bg-white/60 px-4 py-3 text-center font-medium text-[#2C1F10]/80 transition hover:bg-white">
                 {t.terms}
               </Link>
-              <Link to="/anti-fraud" className="transition hover:text-[#2C1F10]">
+              <Link to="/anti-fraud" className="rounded-xl border border-[#2C1F10]/10 bg-white/60 px-4 py-3 text-center font-medium text-[#2C1F10]/80 transition hover:bg-white">
                 {t.antiFraud}
               </Link>
-              <Link to="/cookies" className="transition hover:text-[#2C1F10]">
-                {t.cookies}
-              </Link>
-              <button type="button" onClick={openCookieSettings} className="transition hover:text-[#2C1F10]">
+              <button type="button" onClick={openCookieSettings} className="rounded-xl border border-[#2C1F10]/10 bg-white/60 px-4 py-3 text-center font-medium text-[#2C1F10]/80 transition hover:bg-white">
                 {t.cookieSettings}
               </button>
-              <div className="ml-1 flex items-center gap-2 border-l border-[#2C1F10]/15 pl-4">
-                <Link
-                  to="/vendor"
-                  title={t.vendorPortal}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2C1F10]/5 text-[#2C1F10]/40 transition hover:bg-[#C09A6A]/30 hover:text-[#2C1F10]"
-                >
-                  <ShieldCheck size={15} />
-                </Link>
-                <Link
-                  to="/superadmin"
-                  title={t.superAdmin}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2C1F10]/5 text-[#2C1F10]/40 transition hover:bg-[#C09A6A]/30 hover:text-[#2C1F10]"
-                >
-                  <Settings size={15} />
-                </Link>
-              </div>
+              <Link to="/vendor" className="rounded-xl border border-[#2C1F10]/10 bg-white/60 px-4 py-3 text-center font-medium text-[#2C1F10]/80 transition hover:bg-white">
+                {t.vendorPortal}
+              </Link>
+              <Link to="/superadmin" className="col-span-2 rounded-xl border border-[#2C1F10]/10 bg-white/60 px-4 py-3 text-center font-medium text-[#2C1F10]/80 transition hover:bg-white">
+                {t.superAdmin}
+              </Link>
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="border-t border-[#2C1F10]/10 bg-[#E7D9B5] px-6 py-4 text-center text-xs text-[#2C1F10]/55">
+        <p>© {new Date().getFullYear()} Nestobi / 根本在旅行</p>
       </div>
     </footer>
   );
