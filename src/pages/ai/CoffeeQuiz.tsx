@@ -74,6 +74,11 @@ type QuizSubmissionRow = {
   created_at: string;
 };
 
+type QuizResultCache = {
+  submission: QuizSubmissionRow;
+  result: CoffeeProfileResult;
+};
+
 const COFFEE_PROFILE_LABELS: Record<CoffeeProfileKey, Record<UiLang, string>> = {
   bright_explorer: {
     'zh-TW': '明亮探索型',
@@ -178,7 +183,7 @@ function resolveCoffeeProfileKey(resultType: string | null | undefined): CoffeeP
   return match?.[0] || 'balanced_daily';
 }
 
-function buildResultFromSavedSubmission(questions: Question[], row: QuizSubmissionRow, locale: UiLang) {
+function buildResultFromSavedSubmission(questions: Question[], row: QuizSubmissionRow, locale: UiLang): CoffeeProfileResult | null {
   const savedAnswers = row.answers || {};
   const restoredAnswers = Object.fromEntries(
     questions
@@ -189,6 +194,8 @@ function buildResultFromSavedSubmission(questions: Question[], row: QuizSubmissi
       })
       .filter((item): item is readonly [string, OptionKey] => Boolean(item)),
   ) as Partial<Record<string, OptionKey>>;
+
+  if (!Object.keys(restoredAnswers).length) return null;
 
   const computed = computeResult(questions, restoredAnswers);
   if (computed) {
@@ -851,6 +858,7 @@ function normalizeScore(value: number, max: number) {
 
 function computeResult(questions: Question[], answers: Partial<Record<string, OptionKey>>): CoffeeProfileResult | null {
   if (!questions.length) return null;
+  if (!Object.values(answers).some(Boolean)) return null;
 
   const scores: Record<ScoreKey, number> = {
     bright_explorer: 0,
@@ -911,24 +919,28 @@ function buildAnswerPayload(questions: Question[], answers: Partial<Record<strin
 
 const COFFEE_QUIZ_STORAGE_KEY = 'nestobi:coffee-quiz:last-submission';
 
-function readCoffeeQuizStorage(): QuizSubmissionRow | null {
+function readCoffeeQuizStorage(): QuizResultCache | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = window.localStorage.getItem(COFFEE_QUIZ_STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as QuizSubmissionRow;
+    return JSON.parse(raw) as QuizResultCache;
   } catch {
     return null;
   }
 }
 
-function writeCoffeeQuizStorage(row: QuizSubmissionRow) {
+function writeCoffeeQuizStorage(cache: QuizResultCache) {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(COFFEE_QUIZ_STORAGE_KEY, JSON.stringify(row));
+    window.localStorage.setItem(COFFEE_QUIZ_STORAGE_KEY, JSON.stringify(cache));
   } catch {
     // Ignore storage quota or access errors.
   }
+}
+
+function isMeaningfulQuizResult(result: CoffeeProfileResult | null | undefined) {
+  return Boolean(result && Object.values(result.scores).some((value) => value > 0));
 }
 
 export default function CoffeeQuiz() {
@@ -998,9 +1010,10 @@ export default function CoffeeQuiz() {
     let active = true;
 
     const loadSavedSubmission = async () => {
+      const cached = readCoffeeQuizStorage();
+      const cachedResult = isMeaningfulQuizResult(cached?.result) ? cached.result : null;
       if (!user) {
-        const localRow = readCoffeeQuizStorage();
-        setSavedSubmissionResult(localRow ? buildResultFromSavedSubmission(questions, localRow, uiLang) : null);
+        setSavedSubmissionResult(cachedResult);
         return;
       }
 
@@ -1020,12 +1033,11 @@ export default function CoffeeQuiz() {
 
       const row = (data?.[0] as QuizSubmissionRow | undefined) || null;
       if (!row) {
-        const fallbackRow = readCoffeeQuizStorage();
-        setSavedSubmissionResult(fallbackRow ? buildResultFromSavedSubmission(questions, fallbackRow, uiLang) : null);
+        setSavedSubmissionResult(cachedResult);
         return;
       }
 
-      setSavedSubmissionResult(buildResultFromSavedSubmission(questions, row, uiLang));
+      setSavedSubmissionResult(buildResultFromSavedSubmission(questions, row, uiLang) || cachedResult);
     };
 
     void loadSavedSubmission();
@@ -1167,7 +1179,7 @@ export default function CoffeeQuiz() {
       }
 
       if (cancelled) return;
-      writeCoffeeQuizStorage(submission);
+      writeCoffeeQuizStorage({ submission, result: quizResult });
       setSaveTone('success');
       setSaveMessage(t('測驗資料已寫入完成。', 'Quiz data has been saved successfully.', '診断データの保存が完了しました。', '퀴즈 데이터 저장이 완료되었습니다.'));
       setSaving(false);
@@ -1516,7 +1528,7 @@ export default function CoffeeQuiz() {
 
               {saving && (
                 <p className="mt-4 text-center text-sm font-medium text-gray-500">
-                  {t('正在儲存測驗資料...', 'Saving quiz data...', '診断データを保存しています...', '퀴즈 데이터를 저장하는 중...')}
+                  {t('存檔完成', 'Save complete', '保存完了', '저장 완료')}
                 </p>
               )}
 
