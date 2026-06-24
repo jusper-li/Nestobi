@@ -12,6 +12,7 @@ import { useMemberFavorite } from '../../hooks/useMemberFavorite';
 import { translateCategoriesFromCacheOnly, translateCategoriesOnDemand, translateProductsFromCacheOnly, translateProductsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { sanitizeHtml } from '../../lib/security';
+import { createSubscriptionCheckout, submitNewebPayPeriodForm } from '../../lib/subscriptionCheckout';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
 
@@ -85,8 +86,10 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [reviews, setReviews] = useState<ProductReview[]>([]);
+  const [subscriptionMonths, setSubscriptionMonths] = useState<number | 'NE'>(12);
   const { isFavorite, loading: favoriteLoading, toggleFavorite } = useMemberFavorite(user?.id, 'product', id);
 
   useEffect(() => {
@@ -196,6 +199,33 @@ export default function ProductDetail() {
     return gallery.length ? gallery : [cover];
   }, [viewProduct]);
 
+  const isSubscriptionProduct = Boolean(
+    viewCategory?.slug === 'dlal-subscription' || viewCategory?.slug?.startsWith('subscription-')
+  );
+
+  const subscriptionOptions = [
+    { value: 3 as const, label: '3 個月' },
+    { value: 6 as const, label: '6 個月' },
+    { value: 12 as const, label: '12 個月' },
+    { value: 'NE' as const, label: '持續每月扣款' },
+  ];
+
+  useEffect(() => {
+    switch (viewCategory?.slug) {
+      case 'subscription-3-months':
+        setSubscriptionMonths(3);
+        break;
+      case 'subscription-6-months':
+        setSubscriptionMonths(6);
+        break;
+      case 'subscription-12-months':
+        setSubscriptionMonths(12);
+        break;
+      default:
+        break;
+    }
+  }, [viewCategory?.slug]);
+
   const handleAdd = async () => {
     if (!viewProduct) return;
     setAdding(true);
@@ -203,6 +233,32 @@ export default function ProductDetail() {
       await addItem(viewProduct.id, qty);
     } finally {
       setAdding(false);
+    }
+  };
+
+  const handleSubscribe = async () => {
+    if (!viewProduct) return;
+    if (!user) {
+      navigate('/auth/login');
+      return;
+    }
+
+    setSubscribing(true);
+    try {
+      const result = await createSubscriptionCheckout(viewProduct.id, qty, subscriptionMonths);
+      if (result.paymentUrl && result.merchantId && result.tradeInfo && result.tradeSha && result.version) {
+        submitNewebPayPeriodForm(
+          result.paymentUrl,
+          result.merchantId,
+          result.tradeInfo,
+          result.tradeSha,
+          result.version,
+        );
+      } else {
+        throw new Error('訂閱金流初始化失敗');
+      }
+    } finally {
+      setSubscribing(false);
     }
   };
 
@@ -269,6 +325,37 @@ export default function ProductDetail() {
             <div className="text-4xl font-bold text-[#2C1F10]">{formatCurrency(viewProduct.price)}</div>
             <p className={`text-sm ${inStock ? 'text-emerald-700' : 'text-red-600'}`}>{inStock ? `${viewProduct.stock_quantity}` : labels.soldOut}</p>
 
+            {isSubscriptionProduct ? (
+              <div className="rounded-2xl border border-[#E8D8BF] bg-[#FCF8F0] p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-[#8B6840]">咖啡定期便</p>
+                    <p className="text-xs text-gray-500">選擇訂閱週期，付款後每月由藍新金流自動扣款並建立訂單。</p>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#8B6840] shadow-sm">訂閱制</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {subscriptionOptions.map(option => (
+                    <button
+                      key={String(option.value)}
+                      type="button"
+                      onClick={() => setSubscriptionMonths(option.value)}
+                      className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                        subscriptionMonths === option.value
+                          ? 'border-[#8B6840] bg-[#8B6840] text-white'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-[#C09A6A] hover:text-[#8B6840]'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs leading-5 text-gray-500">
+                  訂閱商品會直接寫入會員與訂單資料，後台可追蹤每次扣款、出貨與會員咖啡偏好。
+                </p>
+              </div>
+            ) : null}
+
             <div className="flex items-center gap-3">
               <span className="text-sm text-gray-600">{labels.quantity}</span>
               <div className="inline-flex items-center rounded-xl border bg-white">
@@ -287,6 +374,17 @@ export default function ProductDetail() {
                 {labels.buyNow}
               </button>
             </div>
+
+            {isSubscriptionProduct ? (
+              <button
+                type="button"
+                onClick={handleSubscribe}
+                disabled={!inStock || subscribing}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#8B6840] to-[#C09A6A] px-4 py-3 font-semibold text-white shadow-sm transition hover:brightness-105 disabled:opacity-40"
+              >
+                {subscribing ? '建立訂閱中...' : '訂閱並每月自動扣款'}
+              </button>
+            ) : null}
 
             <button type="button" onClick={() => void handleFavorite()} disabled={favoriteLoading} className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition disabled:opacity-50 ${isFavorite ? 'border-pink-200 bg-pink-50 text-pink-600' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`}>
               <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />

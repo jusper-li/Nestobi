@@ -161,6 +161,8 @@ export interface CartItem {
 export interface Order {
   id: string;
   user_id: string;
+  subscription_id?: string | null;
+  recurring_cycle_no?: number;
   total_amount: number;
   subtotal_amount?: number;
   points_discount?: number;
@@ -181,6 +183,43 @@ export interface Order {
   created_at: string;
   updated_at: string;
   purchase_records?: PurchaseRecord[];
+}
+
+export interface ProductSubscription {
+  id: string;
+  user_id: string;
+  product_id: string;
+  vendor_id?: string | null;
+  order_id?: string | null;
+  merchant_order_no?: string | null;
+  newebpay_period_no?: string | null;
+  quantity: number;
+  monthly_amount: number;
+  period_type: string;
+  period_point: string;
+  period_start_type: string;
+  period_times: string;
+  billing_cycle_count: number;
+  status: 'pending' | 'active' | 'paused' | 'cancelled' | 'expired';
+  next_bill_at?: string | null;
+  last_billed_at?: string | null;
+  started_at?: string | null;
+  ended_at?: string | null;
+  expires_at?: string | null;
+  shipping_address: Record<string, string>;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  newebpay_trade_no?: string | null;
+  newebpay_auth_code?: string | null;
+  newebpay_card_no?: string | null;
+  newebpay_payment_type?: string | null;
+  newebpay_respond_code?: string | null;
+  newebpay_status: 'pending' | 'success' | 'failed' | 'not_required';
+  newebpay_paid_at?: string | null;
+  notes: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface PurchaseRecord {
