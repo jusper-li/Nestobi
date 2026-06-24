@@ -68,6 +68,12 @@ type RankedProductRecommendation = {
   reasons: string[];
 };
 
+type QuizSubmissionRow = {
+  result_type: string;
+  answers: Record<string, OptionKey> | null;
+  created_at: string;
+};
+
 const COFFEE_PROFILE_LABELS: Record<CoffeeProfileKey, Record<UiLang, string>> = {
   bright_explorer: {
     'zh-TW': '明亮探索型',
@@ -162,6 +168,55 @@ function getCoffeeProfileSummary(key: string, locale: UiLang, fallback: string) 
 function getCoffeeProfileBrewHint(key: string, locale: UiLang, fallback: string) {
   const meta = COFFEE_PROFILE_BREW_HINTS[key as CoffeeProfileKey];
   return meta?.[locale] || fallback;
+}
+
+function resolveCoffeeProfileKey(resultType: string | null | undefined): CoffeeProfileKey {
+  const normalized = (resultType || '').trim();
+  const match = (Object.entries(PROFILE_META) as Array<[CoffeeProfileKey, (typeof PROFILE_META)[CoffeeProfileKey]]>).find(
+    ([key, meta]) => key === normalized || meta.label === normalized,
+  );
+  return match?.[0] || 'balanced_daily';
+}
+
+function buildResultFromSavedSubmission(questions: Question[], row: QuizSubmissionRow, locale: UiLang) {
+  const savedAnswers = row.answers || {};
+  const restoredAnswers = Object.fromEntries(
+    questions
+      .map((question) => {
+        const answerKey = savedAnswers[String(question.display_order)];
+        if (!answerKey) return null;
+        return [question.id, answerKey] as const;
+      })
+      .filter((item): item is readonly [string, OptionKey] => Boolean(item)),
+  ) as Partial<Record<string, OptionKey>>;
+
+  const computed = computeResult(questions, restoredAnswers);
+  if (computed) {
+    return {
+      ...computed,
+      label: getCoffeeProfileLabel(computed.key, locale, computed.label),
+      summary: getCoffeeProfileSummary(computed.key, locale, computed.summary),
+      brewHint: getCoffeeProfileBrewHint(computed.key, locale, computed.brewHint),
+    };
+  }
+
+  const key = resolveCoffeeProfileKey(row.result_type);
+  const meta = PROFILE_META[key];
+  return {
+    key,
+    label: getCoffeeProfileLabel(key, locale, row.result_type || meta.label),
+    summary: getCoffeeProfileSummary(key, locale, meta.summary),
+    brewHint: getCoffeeProfileBrewHint(key, locale, meta.brewHint),
+    flavorNotes: meta.flavorNotes,
+    beanStyle: meta.beanStyle,
+    scores: {
+      bright_explorer: 0,
+      balanced_daily: 0,
+      sweet_smooth: 0,
+      bold_classic: 0,
+      adventure: 0,
+    },
+  } as CoffeeProfileResult;
 }
 
 const FALLBACK_QUIZ_QUESTIONS: Question[] = [
@@ -855,7 +910,7 @@ function buildAnswerPayload(questions: Question[], answers: Partial<Record<strin
 }
 
 export default function CoffeeQuiz() {
-  const { user, profile, updateProfile } = useAuth();
+  const { user, profile } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang);
   const uiLang = locale as UiLang;
@@ -874,25 +929,7 @@ export default function CoffeeQuiz() {
   const [recommendedProducts, setRecommendedProducts] = useState<RankedProductRecommendation[]>([]);
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
   const [recommendationsMessage, setRecommendationsMessage] = useState('');
-  const savedProfileResult = useMemo<CoffeeProfileResult | null>(() => {
-    if (!profile?.coffee_profile_key || !profile.coffee_profile_label) return null;
-    const key = profile.coffee_profile_key as CoffeeProfileKey;
-    return {
-      key,
-      label: getCoffeeProfileLabel(key, uiLang, profile.coffee_profile_label),
-      summary: getCoffeeProfileSummary(key, uiLang, profile.coffee_profile_summary || ''),
-      brewHint: getCoffeeProfileBrewHint(key, uiLang, ''),
-      flavorNotes: [],
-      beanStyle: [],
-      scores: {
-        bright_explorer: Number(profile.coffee_profile_scores?.bright_explorer || 0),
-        balanced_daily: Number(profile.coffee_profile_scores?.balanced_daily || 0),
-        sweet_smooth: Number(profile.coffee_profile_scores?.sweet_smooth || 0),
-        bold_classic: Number(profile.coffee_profile_scores?.bold_classic || 0),
-        adventure: Number(profile.coffee_profile_scores?.adventure || 0),
-      },
-    };
-  }, [profile, uiLang]);
+  const [savedSubmissionResult, setSavedSubmissionResult] = useState<CoffeeProfileResult | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -935,9 +972,49 @@ export default function CoffeeQuiz() {
     };
   }, [locale, shouldTranslate]);
 
+  useEffect(() => {
+    let active = true;
+
+    const loadSavedSubmission = async () => {
+      if (!user) {
+        setSavedSubmissionResult(null);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('coffee_quiz_submissions')
+        .select('result_type, answers, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        if (active) setSavedSubmissionResult(null);
+        return;
+      }
+
+      if (!active) return;
+
+      const row = (data?.[0] as QuizSubmissionRow | undefined) || null;
+      if (!row) {
+        setSavedSubmissionResult(null);
+        return;
+      }
+
+      setSavedSubmissionResult(buildResultFromSavedSubmission(questions, row, uiLang));
+    };
+
+    void loadSavedSubmission();
+
+    return () => {
+      active = false;
+    };
+  }, [questions, uiLang, user]);
+
   const answeredCount = useMemo(() => Object.keys(answers).length, [answers]);
   const quizResult = useMemo(() => computeResult(questions, answers), [questions, answers]);
-  const activeResult = quizResult || savedProfileResult;
+  const activeResult = quizResult || savedSubmissionResult;
+  const hasSavedResult = Boolean(savedSubmissionResult);
   const current = questions[index];
 
   useEffect(() => {
@@ -977,7 +1054,7 @@ export default function CoffeeQuiz() {
         if (!active) return;
 
         const sourceRows = ((data || []) as ProductRecommendation[]).filter(isCoffeeLikeProduct);
-        const rankedRows = rankRecommendedProducts(sourceRows, quizResult).slice(0, RECOMMENDATION_LIMIT);
+        const rankedRows = rankRecommendedProducts(sourceRows, activeResult).slice(0, RECOMMENDATION_LIMIT);
 
         if (!rankedRows.length) {
           setRecommendedProducts([]);
@@ -1027,7 +1104,7 @@ export default function CoffeeQuiz() {
       if (!done || !quizResult || saved || saving) return;
       if (!user) {
         setSaveTone('warning');
-        setSaveMessage(t('登入後會自動寫入會員資料。', 'Sign in to automatically save the quiz result to your profile.', 'サインインすると診断結果が自動的にプロフィールに保存されます。', '로그인하면 퀴즈 결과가 회원 정보에 자동 저장됩니다.'));
+        setSaveMessage(t('Please sign in to save the quiz result automatically.', 'Sign in to automatically save the quiz result.', 'Sign in to automatically save the quiz result.', 'Sign in to automatically save the quiz result.'));
         return;
       }
 
@@ -1036,9 +1113,8 @@ export default function CoffeeQuiz() {
       setSaveTone('');
 
       const payloadAnswers = buildAnswerPayload(questions, answers);
-      const memberName = profile?.display_name?.trim() || user.user_metadata?.display_name || user.email || '會員';
+      const memberName = profile?.display_name?.trim() || user.user_metadata?.display_name || user.email || 'Member';
       const memberPhone = profile?.phone?.trim() || '-';
-      const now = new Date().toISOString();
 
       const submission = {
         user_id: user.id,
@@ -1058,37 +1134,15 @@ export default function CoffeeQuiz() {
         if (cancelled) return;
         setSaving(false);
         setSaveTone('error');
-        setSaveMessage(submissionError.message || t('儲存測驗結果失敗，請稍後再試。', 'Failed to save quiz result. Please try again.', 'クイズ結果の保存に失敗しました。後でもう一度お試しください。', '퀴즈 결과 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.'));
+        setSaveMessage(submissionError.message || 'Failed to save quiz result. Please try again.');
         return;
       }
 
-      try {
-        await updateProfile({
-          coffee_profile_key: quizResult.key,
-          coffee_profile_label: quizResult.label,
-          coffee_profile_summary: quizResult.summary,
-          coffee_profile_scores: quizResult.scores,
-          coffee_profile_answers: payloadAnswers,
-          coffee_quiz_completed_at: now,
-        });
-        if (cancelled) return;
-        setSaveTone('success');
-        setSaveMessage(t('測驗結果已自動同步到會員資料。', 'Quiz result automatically synced to the member profile.', 'クイズ結果は自動的に会員プロフィールに保存されました。', '퀴즈 결과가 회원 정보에 자동 동기화되었습니다.'));
-      } catch (error) {
-        if (cancelled) return;
-        const message = error instanceof Error ? error.message : '';
-        setSaveTone('warning');
-        setSaveMessage(
-          message
-            ? `${t('測驗結果已儲存，但會員資料同步失敗：', 'Quiz result saved, but syncing to the member profile failed: ', 'クイズ結果は保存されましたが、会員プロフィールの同期に失敗しました：', '퀴즈 결과는 저장되었지만 회원 정보 동기화에 실패했습니다: ')}${message}`
-            : t('測驗結果已儲存，但會員資料同步失敗。', 'Quiz result saved, but syncing to the member profile failed.', 'クイズ結果は保存されましたが、会員プロフィールの同期に失敗しました。', '퀴즈 결과는 저장되었지만 회원 정보 동기화에 실패했습니다.'),
-        );
-      } finally {
-        if (!cancelled) {
-          setSaving(false);
-          setSaved(true);
-        }
-      }
+      if (cancelled) return;
+      setSaveTone('success');
+      setSaveMessage('Quiz result was automatically saved to the database.');
+      setSaving(false);
+      setSaved(true);
     };
 
     void autoSave();
@@ -1096,7 +1150,7 @@ export default function CoffeeQuiz() {
     return () => {
       cancelled = true;
     };
-  }, [done, quizResult, saved, saving, user, profile, questions, answers, updateProfile, t]);
+  }, [done, quizResult, saved, saving, user, profile, questions, answers, t]);
 
   const onNext = () => {
     if (!current || !answers[current.id]) return;
@@ -1149,13 +1203,13 @@ export default function CoffeeQuiz() {
               <div className="min-w-0">
                 <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#f6ead7] px-3 py-1 text-sm font-semibold text-[#8a5a22]">
                   <Sparkles className="h-4 w-4" />
-                  {savedProfileResult && !quizResult
+                  {hasSavedResult && !quizResult
                     ? t('你已完成測驗', 'Your saved result', '保存済みの結果', '저장된 결과')
                     : t('你的咖啡偏好', 'Your coffee profile', 'あなたのコーヒープロファイル', '당신의 커피 프로필')}
                 </div>
                 <h2 className="text-2xl font-black text-[#2b2b2b]">{activeResult.label}</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-7 text-gray-700">{activeResult.summary}</p>
-                {savedProfileResult && !quizResult && (
+                {hasSavedResult && !quizResult && (
                   <p className="mt-2 text-xs text-gray-500">
                     {t(
                       '這是你上次測驗留下的結果，下面會直接顯示最適合你的訂閱咖啡。',
