@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+﻿import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Bot, Send, User } from 'lucide-react';
 import Navigation from '../../components/Navigation';
@@ -41,14 +41,15 @@ function formatMessageTime(value?: string) {
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
+    hour12: false,
   }).format(new Date(value || Date.now()));
 }
 
 function detectMessageLanguage(text: string): 'en' | 'zh-TW' | 'ja' | 'ko' | null {
   const sample = text.trim();
   if (!sample) return null;
-  if (/[\uac00-\ud7af]/.test(sample)) return 'ko';
-  if (/[\u3040-\u30ff]/.test(sample)) return 'ja';
+  if (/\p{Script=Hangul}/u.test(sample)) return 'ko';
+  if (/\p{Script=Hiragana}|\p{Script=Katakana}/u.test(sample)) return 'ja';
   if (/[\u4e00-\u9fff]/.test(sample)) return 'zh-TW';
   if (/[A-Za-z]/.test(sample)) return 'en';
   return null;
@@ -62,7 +63,6 @@ async function normalizeAssistantReply(reply: string, locale: Locale) {
   const targetLanguage = localeToResponseLanguage(locale);
   const replyLanguage = detectMessageLanguage(reply);
   if (!replyLanguage || replyLanguage === targetLanguage) return reply;
-  if (targetLanguage === 'zh-TW' && replyLanguage === 'zh-TW') return reply;
 
   try {
     return await callAI<string>('translate', {
@@ -147,10 +147,10 @@ export default function Chatbot() {
 
   const welcomeText = pick(
     locale,
-    '你好，我是 Nestobi AI 客服。可以協助你查找住宿、商品、文章與常見問題，訂房或購物會引導你到正式頁面完成。',
+    '你好，這裡是 Nestobi AI 客服。我可以幫你找住宿、商品、文章與 FAQ，並帶你前往對應頁面。',
     'Hi, I am Nestobi AI support. I can help find stays, products, articles, and FAQs, then guide you to the right booking or shopping page.',
-    'こんにちは、Nestobi AIサポートです。宿泊、商品、記事、よくある質問を探し、予約や購入は正式ページへ案内します。',
-    '안녕하세요, Nestobi AI 고객지원입니다. 숙소, 상품, 글, FAQ를 찾고 예약이나 구매는 공식 페이지로 안내해 드립니다.',
+    'こんにちは、Nestobi AI サポートです。宿泊、商品、記事、FAQ を探して、適切なページへご案内します。',
+    '안녕하세요. Nestobi AI 고객지원입니다. 숙박, 상품, 글, FAQ를 찾아서 알맞은 페이지로 안내해 드립니다.',
   );
 
   const createWelcomeMessage = (): MessageItem => ({
@@ -251,17 +251,6 @@ export default function Chatbot() {
     };
   }, [locale, storageKey, user?.id, welcomeText]);
 
-  const saveMessage = async (message: MessageItem, activeSessionId = sessionId) => {
-    if (!user || message.id === 'welcome') return;
-    const { error } = await supabase.from('tbl_mn5wn257').insert({
-      user_id: user.id,
-      session_id: activeSessionId,
-      role: message.role,
-      content: message.content,
-    });
-    if (error) throw error;
-  };
-
   const startNewChat = () => {
     const nextSessionId = createSessionId();
     localStorage.setItem(storageKey, nextSessionId);
@@ -289,16 +278,11 @@ export default function Chatbot() {
     setHistoryError('');
 
     try {
-      await saveMessage(userMessage, activeSessionId);
-    } catch {
-      setHistoryError(pick(locale, '對話紀錄儲存失敗，請稍後再試。', 'Failed to save chat history. Please try again later.', '会話履歴の保存に失敗しました。後でもう一度お試しください。', '대화 기록 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.'));
-    }
-
-    try {
       const reply = await callAI<string>('chat', {
         messages: [...messages, userMessage].map((m) => ({ role: m.role, content: m.content })),
         language: locale,
         messageLanguage: detectMessageLanguage(userMessage.content) || locale,
+        sessionId: activeSessionId,
       });
       const normalizedReply = await normalizeAssistantReply(reply, locale);
       const assistantMessage: MessageItem = {
@@ -309,36 +293,26 @@ export default function Chatbot() {
         createdAt: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
-      try {
-        await saveMessage(assistantMessage, activeSessionId);
-      } catch {
-        setHistoryError(pick(locale, 'AI 回覆已顯示，但歷史紀錄儲存失敗。', 'The AI reply is shown, but saving history failed.', 'AIの返信は表示されましたが、履歴保存に失敗しました。', 'AI 답변은 표시되었지만 기록 저장에 실패했습니다.'));
-      }
     } catch {
       const fallbackMessage: MessageItem = {
         id: `${Date.now()}-f`,
         role: 'assistant',
-        content: pick(locale, '系統忙碌中，請稍後再試。', 'System is busy now. Please try again soon.', 'システムが混み合っています。しばらくしてからお試しください。', '시스템이 혼잡합니다. 잠시 후 다시 시도해 주세요.'),
+        content: pick(locale, '系統忙碌中，請稍後再試。', 'System is busy now. Please try again soon.', 'システムが混み合っています。しばらくしてから再試行してください。', '시스템이 바쁩니다. 잠시 후 다시 시도해 주세요.'),
         time: formatMessageTime(),
         createdAt: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, fallbackMessage]);
-      try {
-        await saveMessage(fallbackMessage, activeSessionId);
-      } catch {
-        setHistoryError(pick(locale, '對話紀錄儲存失敗，請稍後再試。', 'Failed to save chat history. Please try again later.', '会話履歴の保存に失敗しました。後でもう一度お試しください。', '대화 기록 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.'));
-      }
     } finally {
       setLoading(false);
     }
   };
 
-  const pageTitle = pick(locale, 'AI 客服中心', 'AI Support Center', 'AIサポートセンター', 'AI 고객지원 센터');
+  const pageTitle = pick(locale, 'AI 客服中心', 'AI Support Center', 'AI サポートセンター', 'AI 고객지원 센터');
   const pageDesc = pick(
     locale,
-    '查找住宿、商品、文章與常見問題，並保留你的歷史對話。',
+    '可搜尋住宿、商品、文章與 FAQ，並保留你的歷史對話。',
     'Find stays, products, articles, and FAQs, with your chat history saved.',
-    '宿泊、商品、記事、FAQを探し、会話履歴も保存します。',
+    '宿泊、商品、記事、FAQ を探せて、会話履歴も保存されます。',
     '숙소, 상품, 글, FAQ를 찾고 대화 기록도 저장합니다.',
   );
 
@@ -387,7 +361,6 @@ export default function Chatbot() {
             {loading && <div className="text-sm text-gray-400">{pick(locale, 'AI 輸入中...', 'AI is typing...', 'AI が入力中...', 'AI가 입력 중...')}</div>}
             <div ref={bottomRef} />
           </div>
-
         </div>
       </main>
 
@@ -397,7 +370,7 @@ export default function Chatbot() {
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={pick(locale, '請輸入問題，例如：我想找雙人房或咖啡商品', 'Ask anything, e.g. I want a double room or coffee products', '質問を入力してください。例：二人部屋やコーヒー商品を探したい', '질문을 입력하세요. 예: 2인실이나 커피 상품을 찾고 싶어요')}
+              placeholder={pick(locale, '請輸入問題，例如：我想找雙人房或咖啡商品', 'Ask anything, e.g. I want a double room or coffee products', '質問を入力してください。例：ツインルームやコーヒー商品を探したい', '질문을 입력해 주세요. 예: 더블룸이나 커피 상품을 찾고 싶어요')}
               className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-sky-500 md:text-sm"
             />
             <button type="submit" disabled={!input.trim() || loading || historyLoading} className="rounded-xl bg-sky-600 p-2.5 text-white hover:bg-sky-700 disabled:opacity-40">
@@ -405,7 +378,7 @@ export default function Chatbot() {
             </button>
           </form>
           <p className="mt-2 text-center text-xs text-gray-400">
-            {pick(locale, 'AI 會依公開資料回答，會員訂單、點數與個資仍需登入會員中心查看。', 'AI answers from public data. Orders, points, and profile details still require the member center.', 'AIは公開データに基づいて回答します。注文、ポイント、個人情報は会員センターで確認してください。', 'AI는 공개 자료를 기반으로 답변합니다. 주문, 포인트, 개인정보는 회원센터에서 확인해 주세요.')}
+            {pick(locale, 'AI 回答來自公開資料。訂單、點數與會員資料仍需到會員中心查看。', 'AI answers from public data. Orders, points, and profile details still require the member center.', 'AI の回答は公開データに基づきます。注文、ポイント、会員情報は会員センターでご確認ください。', 'AI 답변은 공개 데이터 기반입니다. 주문, 포인트, 회원 정보는 회원센터에서 확인해 주세요.')}
           </p>
         </div>
       </div>
