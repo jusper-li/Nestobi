@@ -7,6 +7,100 @@ import { normalizeLang, pickByLang } from '../../lib/i18n';
 
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 
+const COFFEE_PROFILE_META = {
+  bright_explorer: {
+    zh: '明亮探索型',
+    en: 'Bright Explorer',
+    ja: '明るい探究型',
+    ko: '밝은 탐색형',
+    summary: {
+      zh: '喜歡果香、清爽酸質與多層次風味，適合從淺焙精品豆開始探索。',
+      en: 'You enjoy fruity notes, bright acidity, and layered flavors. A great starting point for light-roast specialty beans.',
+      ja: 'フルーティーさ、爽やかな酸味、複雑な風味を好みます。浅煎りのスペシャルティ豆から始めるのに向いています。',
+      ko: '과일향, 산뜻한 산미, 다층적인 풍미를 선호합니다. 라이트 로스트 스페셜티 원두로 탐색을 시작하기 좋습니다.',
+    },
+  },
+  balanced_daily: {
+    zh: '日常平衡型',
+    en: 'Balanced Daily',
+    ja: 'バランス日常型',
+    ko: '균형형 데일리',
+    summary: {
+      zh: '喜歡穩定、順口、每天都能喝的平衡風味，適合中焙與均衡口感。',
+      en: 'You prefer a stable, smooth cup that works every day, with a balanced medium-roast profile.',
+      ja: '安定感があり、毎日飲みやすいバランスのよい風味が好みです。中煎りの豆が向いています。',
+      ko: '안정적이고 부드러워 매일 마시기 좋은 균형 잡힌 풍미를 선호합니다. 미디엄 로스트가 잘 맞습니다.',
+    },
+  },
+  sweet_smooth: {
+    zh: '柔順甜感型',
+    en: 'Sweet Smooth',
+    ja: 'やさしい甘さ型',
+    ko: '부드러운 단맛형',
+    summary: {
+      zh: '偏好柔和、甜感明顯、口感圓潤的咖啡，適合中淺焙與風味清晰的豆子。',
+      en: 'You like soft, sweet, and round cups. Medium-light roasts with clear flavor notes are a great match.',
+      ja: 'やわらかく、甘さと丸みのある味わいが好みです。中浅煎りで風味が明瞭な豆が合います。',
+      ko: '부드럽고 달콤하며 둥근 질감의 커피를 좋아합니다. 미디엄 라이트 로스트가 잘 어울립니다.',
+    },
+  },
+  bold_classic: {
+    zh: '濃郁厚實型',
+    en: 'Bold Classic',
+    ja: 'しっかり濃厚型',
+    ko: '진하고 묵직한 타입',
+    summary: {
+      zh: '喜歡厚實、苦甜明顯、存在感強的咖啡，適合深焙與濃縮或奶咖基底。',
+      en: 'You enjoy a fuller-bodied, bolder cup with strong presence. Great for dark roasts, espresso, or milk drinks.',
+      ja: '厚みがあり、苦味と甘さがしっかりした存在感のあるコーヒーが好みです。深煎りやエスプレッソ向きです。',
+      ko: '묵직하고 진하며 존재감 있는 커피를 선호합니다. 다크 로스트, 에스프레소, 밀크 베이스 음료에 잘 맞습니다.',
+    },
+  },
+} as const;
+
+function getCoffeeProfileLabel(key: string, locale: UiLang, fallback: string) {
+  const meta = COFFEE_PROFILE_META[key as keyof typeof COFFEE_PROFILE_META];
+  if (!meta) return fallback;
+  return meta[locale] || meta.zh || fallback;
+}
+
+function getCoffeeProfileSummary(key: string, locale: UiLang, fallback: string) {
+  const meta = COFFEE_PROFILE_META[key as keyof typeof COFFEE_PROFILE_META];
+  if (!meta) return fallback;
+  return meta.summary[locale] || meta.summary.zh || fallback;
+}
+
+function getCoffeeScoreLabel(key: string, locale: UiLang) {
+  const labels: Record<string, Record<UiLang, string>> = {
+    bright_explorer: {
+      'zh-TW': '明亮探索型',
+      en: 'Bright Explorer',
+      ja: '明るい探究型',
+      ko: '밝은 탐색형',
+    },
+    balanced_daily: {
+      'zh-TW': '日常平衡型',
+      en: 'Balanced Daily',
+      ja: 'バランス日常型',
+      ko: '균형형 데일리',
+    },
+    sweet_smooth: {
+      'zh-TW': '柔順甜感型',
+      en: 'Sweet Smooth',
+      ja: 'やさしい甘さ型',
+      ko: '부드러운 단맛형',
+    },
+    bold_classic: {
+      'zh-TW': '濃郁厚實型',
+      en: 'Bold Classic',
+      ja: 'しっかり濃厚型',
+      ko: '진하고 묵직한 타입',
+    },
+  };
+
+  return labels[key]?.[locale] || key.replace(/_/g, ' ');
+}
+
 const Profile: React.FC = () => {
   const { profile, updateProfile } = useAuth();
   const { lang } = useLanguage();
@@ -48,8 +142,8 @@ const Profile: React.FC = () => {
   const coffeeProfile = profile?.coffee_profile_label
     ? {
         key: profile.coffee_profile_key || '',
-        label: profile.coffee_profile_label,
-        summary: profile.coffee_profile_summary || '',
+        label: getCoffeeProfileLabel(profile.coffee_profile_key || '', locale, profile.coffee_profile_label),
+        summary: getCoffeeProfileSummary(profile.coffee_profile_key || '', locale, profile.coffee_profile_summary || ''),
         scores: profile.coffee_profile_scores || {},
       }
     : null;
@@ -207,7 +301,7 @@ const Profile: React.FC = () => {
                 {Object.entries(coffeeProfile.scores).map(([key, value]) => (
                   <div key={key} className="rounded-xl border border-[#f0e6d6] bg-white px-3 py-2 text-sm text-gray-700">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="capitalize">{key.replace(/_/g, ' ')}</span>
+                      <span>{getCoffeeScoreLabel(key, locale)}</span>
                       <span className="font-semibold text-[#8a5a22]">{String(value)}</span>
                     </div>
                   </div>

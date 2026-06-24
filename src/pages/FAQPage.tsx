@@ -152,27 +152,69 @@ export default function FAQPage() {
         </div>
       </section>
 
-      <section className="sticky top-16 z-30 border-b border-gray-100 bg-white/90 py-3 backdrop-blur-md">
-        <div className="mx-auto flex max-w-4xl gap-2 overflow-x-auto px-4">
-          <button
-            onClick={() => setActiveCat('all')}
-            className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
-              activeCat === 'all' ? 'border-[#2C1F10] bg-[#2C1F10] text-white' : 'border-gray-200 bg-white text-gray-600'
-            }`}
-          >
-            {t.all} ({translatedFaqs.length})
-          </button>
-          {categories.map(cat => (
+      <section className="sticky top-16 z-30 border-b border-gray-100 bg-white/90 py-4 backdrop-blur-md">
+        <div className="mx-auto max-w-5xl px-4">
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#C09A6A]">分類</p>
+              <h2 className="text-sm font-bold text-[#2C1F10] md:text-base">快速切換 FAQ 類別</h2>
+            </div>
+            <p className="text-xs text-gray-500">{translatedFaqs.length} 筆問題</p>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <button
-              key={cat}
-              onClick={() => setActiveCat(cat)}
-              className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
-                activeCat === cat ? 'border-[#2C1F10] bg-[#2C1F10] text-white' : 'border-gray-200 bg-white text-gray-600'
+              onClick={() => setActiveCat('all')}
+              className={`min-w-[118px] flex-shrink-0 rounded-2xl border px-4 py-4 text-left shadow-sm transition ${
+                activeCat === 'all'
+                  ? 'border-[#2C1F10] bg-[#2C1F10] text-white shadow-[#2C1F10]/10'
+                  : 'border-gray-200 bg-white text-gray-700 hover:border-[#C09A6A]/40 hover:bg-[#FAF7F1]'
               }`}
             >
-              {cat} ({translatedFaqs.filter(faq => faq.category === cat).length})
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-sm font-semibold leading-5">{t.all}</span>
+                <span
+                  className={`rounded-full px-2 py-1 text-[11px] font-bold ${
+                    activeCat === 'all' ? 'bg-white/15 text-white' : 'bg-[#F3EBDD] text-[#8B6840]'
+                  }`}
+                >
+                  {translatedFaqs.length}
+                </span>
+              </div>
+              <p className={`mt-2 text-[11px] leading-4 ${activeCat === 'all' ? 'text-white/70' : 'text-gray-500'}`}>
+                查看全部分類
+              </p>
             </button>
-          ))}
+            {categories.map(cat => {
+              const count = translatedFaqs.filter(faq => faq.category === cat).length;
+              const isActive = activeCat === cat;
+
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCat(cat)}
+                  className={`min-w-[118px] flex-shrink-0 rounded-2xl border px-4 py-4 text-left shadow-sm transition ${
+                    isActive
+                      ? 'border-[#2C1F10] bg-[#2C1F10] text-white shadow-[#2C1F10]/10'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-[#C09A6A]/40 hover:bg-[#FAF7F1]'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-sm font-semibold leading-5">{cat}</span>
+                    <span
+                      className={`rounded-full px-2 py-1 text-[11px] font-bold ${
+                        isActive ? 'bg-white/15 text-white' : 'bg-[#F3EBDD] text-[#8B6840]'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </div>
+                  <p className={`mt-2 text-[11px] leading-4 ${isActive ? 'text-white/70' : 'text-gray-500'}`}>
+                    點選查看此分類
+                  </p>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </section>
 

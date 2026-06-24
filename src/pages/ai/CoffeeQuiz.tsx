@@ -19,6 +19,7 @@ import {
 type OptionKey = 'A' | 'B' | 'C' | 'D';
 type CoffeeProfileKey = 'bright_explorer' | 'balanced_daily' | 'sweet_smooth' | 'bold_classic';
 type ScoreKey = CoffeeProfileKey | 'adventure';
+type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 
 type QuestionOption = {
   id: string;
@@ -58,6 +59,7 @@ type ProductRecommendation = {
   processing_method: string | null;
   flavor_notes: string[] | null;
   tags: string[] | null;
+  categories?: { id?: string | null; name?: string | null; slug?: string | null } | null;
 };
 
 type RankedProductRecommendation = {
@@ -65,6 +67,102 @@ type RankedProductRecommendation = {
   score: number;
   reasons: string[];
 };
+
+const COFFEE_PROFILE_LABELS: Record<CoffeeProfileKey, Record<UiLang, string>> = {
+  bright_explorer: {
+    'zh-TW': '明亮探索型',
+    en: 'Bright Explorer',
+    ja: '明るい探究型',
+    ko: '밝은 탐색형',
+  },
+  balanced_daily: {
+    'zh-TW': '日常平衡型',
+    en: 'Balanced Daily',
+    ja: 'バランス日常型',
+    ko: '균형형 데일리',
+  },
+  sweet_smooth: {
+    'zh-TW': '柔順甜感型',
+    en: 'Sweet Smooth',
+    ja: 'やさしい甘さ型',
+    ko: '부드러운 단맛형',
+  },
+  bold_classic: {
+    'zh-TW': '濃郁厚實型',
+    en: 'Bold Classic',
+    ja: 'しっかり濃厚型',
+    ko: '진하고 묵직한 타입',
+  },
+};
+
+const COFFEE_PROFILE_SUMMARIES: Record<CoffeeProfileKey, Record<UiLang, string>> = {
+  bright_explorer: {
+    'zh-TW': '喜歡果香、清爽酸質與多層次風味，適合從淺焙精品豆開始探索。',
+    en: 'You enjoy fruity notes, bright acidity, and layered flavors. A great starting point for light-roast specialty beans.',
+    ja: 'フルーティーさ、爽やかな酸味、複雑な風味を好みます。浅煎りのスペシャルティ豆から始めるのに向いています。',
+    ko: '과일향, 산뜻한 산미, 다층적인 풍미를 선호합니다. 라이트 로스트 스페셜티 원두로 탐색을 시작하기 좋습니다.',
+  },
+  balanced_daily: {
+    'zh-TW': '喜歡穩定、順口、每天都能喝的平衡風味，適合中焙與均衡口感。',
+    en: 'You prefer a stable, smooth cup that works every day, with a balanced medium-roast profile.',
+    ja: '安定感があり、毎日飲みやすいバランスのよい風味が好みです。中煎りの豆が向いています。',
+    ko: '안정적이고 부드러워 매일 마시기 좋은 균형 잡힌 풍미를 선호합니다. 미디엄 로스트가 잘 맞습니다.',
+  },
+  sweet_smooth: {
+    'zh-TW': '偏好柔和、甜感明顯、口感圓潤的咖啡，適合中淺焙與風味清晰的豆子。',
+    en: 'You like soft, sweet, and round cups. Medium-light roasts with clear flavor notes are a great match.',
+    ja: 'やわらかく、甘さと丸みのある味わいが好みです。中浅煎りで風味が明瞭な豆が合います。',
+    ko: '부드럽고 달콤하며 둥근 질감의 커피를 좋아합니다. 미디엄 라이트 로스트가 잘 어울립니다.',
+  },
+  bold_classic: {
+    'zh-TW': '喜歡厚實、苦甜明顯、存在感強的咖啡，適合深焙與濃縮或奶咖基底。',
+    en: 'You enjoy a fuller-bodied, bolder cup with strong presence. Great for dark roasts, espresso, or milk drinks.',
+    ja: '厚みがあり、苦味と甘さがしっかりした存在感のあるコーヒーが好みです。深煎りやエスプレッソ向きです。',
+    ko: '묵직하고 진하며 존재감 있는 커피를 선호합니다. 다크 로스트, 에스프레소, 밀크 베이스 음료에 잘 맞습니다.',
+  },
+};
+
+const COFFEE_PROFILE_BREW_HINTS: Record<CoffeeProfileKey, Record<UiLang, string>> = {
+  bright_explorer: {
+    'zh-TW': '建議從淺焙手沖開始，能更完整感受到酸甜與花果香。',
+    en: 'Start with a light-roast pour-over to highlight acidity, sweetness, and floral notes.',
+    ja: '浅煎りのハンドドリップから始めると、酸味・甘さ・花果の香りをより楽しめます。',
+    ko: '라이트 로스트 핸드드립으로 시작하면 산미, 단맛, 플로럴 노트를 더 잘 느낄 수 있습니다.',
+  },
+  balanced_daily: {
+    'zh-TW': '中焙濾掛或手沖都很適合，日常喝起來穩定順口。',
+    en: 'Medium-roast drip bags or pour-over work well for a consistent daily cup.',
+    ja: '中煎りのドリップバッグやハンドドリップが、毎日の一杯にちょうどいいです。',
+    ko: '미디엄 로스트 드립백이나 핸드드립이 매일 마시기 좋은 안정적인 선택입니다.',
+  },
+  sweet_smooth: {
+    'zh-TW': '中淺焙最能表現甜感與圓潤口感，手沖會更清楚。',
+    en: 'Medium-light roasts bring out sweetness and a round mouthfeel, especially with pour-over.',
+    ja: '中浅煎りが甘さとまろやかさを引き立て、ハンドドリップでより鮮明になります。',
+    ko: '미디엄 라이트 로스트가 단맛과 둥근 질감을 잘 살리며, 핸드드립에서 더 선명합니다.',
+  },
+  bold_classic: {
+    'zh-TW': '深焙或義式濃縮最適合，搭配牛奶也能保有存在感。',
+    en: 'Dark roasts or espresso are ideal, and the cup still stands out in milk drinks.',
+    ja: '深煎りやエスプレッソが最適で、ミルク系でも存在感があります。',
+    ko: '다크 로스트나 에스프레소가 잘 맞고, 우유 음료에서도 존재감을 유지합니다.',
+  },
+};
+
+function getCoffeeProfileLabel(key: string, locale: UiLang, fallback: string) {
+  const meta = COFFEE_PROFILE_LABELS[key as CoffeeProfileKey];
+  return meta?.[locale] || fallback;
+}
+
+function getCoffeeProfileSummary(key: string, locale: UiLang, fallback: string) {
+  const meta = COFFEE_PROFILE_SUMMARIES[key as CoffeeProfileKey];
+  return meta?.[locale] || fallback;
+}
+
+function getCoffeeProfileBrewHint(key: string, locale: UiLang, fallback: string) {
+  const meta = COFFEE_PROFILE_BREW_HINTS[key as CoffeeProfileKey];
+  return meta?.[locale] || fallback;
+}
 
 const FALLBACK_QUIZ_QUESTIONS: Question[] = [
   {
@@ -760,6 +858,7 @@ export default function CoffeeQuiz() {
   const { user, profile, updateProfile } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang);
+  const uiLang = locale as UiLang;
   const shouldTranslate = pickByLang(locale, '0', '1', '1', '1') === '1';
   const t = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
 
@@ -775,6 +874,25 @@ export default function CoffeeQuiz() {
   const [recommendedProducts, setRecommendedProducts] = useState<RankedProductRecommendation[]>([]);
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
   const [recommendationsMessage, setRecommendationsMessage] = useState('');
+  const savedProfileResult = useMemo<CoffeeProfileResult | null>(() => {
+    if (!profile?.coffee_profile_key || !profile.coffee_profile_label) return null;
+    const key = profile.coffee_profile_key as CoffeeProfileKey;
+    return {
+      key,
+      label: getCoffeeProfileLabel(key, uiLang, profile.coffee_profile_label),
+      summary: getCoffeeProfileSummary(key, uiLang, profile.coffee_profile_summary || ''),
+      brewHint: getCoffeeProfileBrewHint(key, uiLang, ''),
+      flavorNotes: [],
+      beanStyle: [],
+      scores: {
+        bright_explorer: Number(profile.coffee_profile_scores?.bright_explorer || 0),
+        balanced_daily: Number(profile.coffee_profile_scores?.balanced_daily || 0),
+        sweet_smooth: Number(profile.coffee_profile_scores?.sweet_smooth || 0),
+        bold_classic: Number(profile.coffee_profile_scores?.bold_classic || 0),
+        adventure: Number(profile.coffee_profile_scores?.adventure || 0),
+      },
+    };
+  }, [profile, uiLang]);
 
   useEffect(() => {
     let active = true;
@@ -819,13 +937,14 @@ export default function CoffeeQuiz() {
 
   const answeredCount = useMemo(() => Object.keys(answers).length, [answers]);
   const quizResult = useMemo(() => computeResult(questions, answers), [questions, answers]);
+  const activeResult = quizResult || savedProfileResult;
   const current = questions[index];
 
   useEffect(() => {
     let active = true;
 
     const loadRecommendations = async () => {
-      if (!done || !quizResult) {
+      if (!activeResult) {
         setRecommendedProducts([]);
         setRecommendationsMessage('');
         setRecommendationsLoading(false);
@@ -844,7 +963,7 @@ export default function CoffeeQuiz() {
 
         let productQuery = supabase
           .from('products')
-          .select('id,name,description,price,image_url,stock_quantity,category_id,origin,roast_level,processing_method,flavor_notes,tags')
+          .select('id,name,description,price,image_url,stock_quantity,category_id,origin,roast_level,processing_method,flavor_notes,tags,categories(id,name,slug)')
           .eq('is_active', true)
           .order('created_at', { ascending: false })
           .limit(200);
@@ -899,7 +1018,7 @@ export default function CoffeeQuiz() {
     return () => {
       active = false;
     };
-  }, [done, locale, quizResult, shouldTranslate]);
+  }, [activeResult, locale, shouldTranslate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -998,12 +1117,12 @@ export default function CoffeeQuiz() {
     setRecommendationsLoading(false);
   };
 
-  const scoreBars = quizResult ? [
-    { key: 'bright_explorer', label: t('明亮探索', 'Bright', '明るい', '밝고 산뜻'), value: quizResult.scores.bright_explorer },
-    { key: 'balanced_daily', label: t('日常平衡', 'Balanced', 'バランス', '균형형'), value: quizResult.scores.balanced_daily },
-    { key: 'sweet_smooth', label: t('柔順甜感', 'Smooth', 'まろやか', '부드럽고 달콤'), value: quizResult.scores.sweet_smooth },
-    { key: 'bold_classic', label: t('濃郁厚實', 'Bold', 'しっかり', '진하고 묵직'), value: quizResult.scores.bold_classic },
-    { key: 'adventure', label: t('探索傾向', 'Adventure', '挑戦', '탐험 성향'), value: quizResult.scores.adventure },
+  const scoreBars = activeResult ? [
+    { key: 'bright_explorer', label: t('明亮探索', 'Bright', '明るい', '밝고 산뜻'), value: activeResult.scores.bright_explorer },
+    { key: 'balanced_daily', label: t('日常平衡', 'Balanced', 'バランス', '균형형'), value: activeResult.scores.balanced_daily },
+    { key: 'sweet_smooth', label: t('柔順甜感', 'Smooth', 'まろやか', '부드럽고 달콤'), value: activeResult.scores.sweet_smooth },
+    { key: 'bold_classic', label: t('濃郁厚實', 'Bold', 'しっかり', '진하고 묵직'), value: activeResult.scores.bold_classic },
+    { key: 'adventure', label: t('探索傾向', 'Adventure', '挑戦', '탐험 성향'), value: activeResult.scores.adventure },
   ] : [];
 
   return (
@@ -1023,6 +1142,169 @@ export default function CoffeeQuiz() {
             {t('進度', 'Progress', '進捗', '진행도')} {Math.min(answeredCount, questions.length)}/{questions.length || 30}
           </span>
         </div>
+
+        {activeResult && (
+          <section className="mb-4 overflow-hidden rounded-3xl border border-[#eadfce] bg-gradient-to-br from-[#fff8ee] to-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#f6ead7] px-3 py-1 text-sm font-semibold text-[#8a5a22]">
+                  <Sparkles className="h-4 w-4" />
+                  {savedProfileResult && !quizResult
+                    ? t('你已完成測驗', 'Your saved result', '保存済みの結果', '저장된 결과')
+                    : t('你的咖啡偏好', 'Your coffee profile', 'あなたのコーヒープロファイル', '당신의 커피 프로필')}
+                </div>
+                <h2 className="text-2xl font-black text-[#2b2b2b]">{activeResult.label}</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-7 text-gray-700">{activeResult.summary}</p>
+                {savedProfileResult && !quizResult && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    {t(
+                      '這是你上次測驗留下的結果，下面會直接顯示最適合你的訂閱咖啡。',
+                      'This is your saved quiz result, and the best subscription coffee matches are shown below.',
+                      'これは保存された診断結果です。下にあなたに合う定期便コーヒーを表示します。',
+                      '이것은 저장된 퀴즈 결과이며, 아래에 맞는 정기구독 커피를 표시합니다.',
+                    )}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid min-w-[220px] grid-cols-2 gap-2 text-xs">
+                {scoreBars.slice(0, 4).map((item) => (
+                  <div key={item.key} className="rounded-2xl border border-[#f0e7d8] bg-white px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-gray-700">{item.label}</span>
+                      <span className="font-bold text-[#8a5a22]">{item.value}/10</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-2xl bg-white/80 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-[#8a5a22]">
+                    {t('推薦訂閱咖啡', 'Recommended subscription coffee', 'おすすめの定期便コーヒー', '추천 정기구독 커피')}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {t(
+                      '以下商品依你的咖啡輪廓排序，最上方就是最適合的訂閱咖啡。',
+                      'Products are ranked by your coffee profile, and the first one is the best subscription match.',
+                      '商品はあなたのコーヒープロファイルで並び替えられ、先頭が最適な定期便です。',
+                      '상품은 커피 프로필 기준으로 정렬되며, 맨 위가 가장 잘 맞는 정기구독입니다.',
+                    )}
+                  </p>
+                </div>
+                <span className="rounded-full bg-[#f6ead7] px-3 py-1 text-xs font-bold text-[#8a5a22]">
+                  {recommendedProducts.length}/{RECOMMENDATION_LIMIT}
+                </span>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  to="/shop"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#e9dcc8] bg-white px-4 py-2 text-sm font-semibold text-[#6f4f2b] transition hover:border-[#c09a6a] hover:text-[#8a5a22]"
+                >
+                  {t('查看全部咖啡', 'Browse all coffee', 'コーヒー一覧を見る', '모든 커피 보기')}
+                </Link>
+                <Link
+                  to="/shop?search=定期便"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#2C1F10] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#3a2a17]"
+                >
+                  {t('查看定期便', 'View subscriptions', '定期便を見る', '정기구독 보기')}
+                </Link>
+              </div>
+
+              {recommendationsLoading ? (
+                <div className="mt-4 grid gap-3">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <div key={index} className="animate-pulse rounded-2xl border border-[#f0e7d8] bg-[#fcfaf6] p-3">
+                      <div className="h-4 w-2/3 rounded bg-[#efe5d4]" />
+                      <div className="mt-2 h-3 w-1/3 rounded bg-[#f4ede2]" />
+                    </div>
+                  ))}
+                </div>
+              ) : recommendationsMessage ? (
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  {recommendationsMessage}
+                </div>
+              ) : recommendedProducts.length > 0 ? (
+                <div className="mt-4 space-y-3">
+                  {recommendedProducts.slice(0, 3).map((item, index) => {
+                    const isSubscription = Boolean(
+                      item.product.categories?.slug?.startsWith('subscription') ||
+                        item.product.name.toLowerCase().includes('subscription') ||
+                        item.product.name.includes('定期便'),
+                    );
+
+                    return (
+                      <Link
+                        key={item.product.id}
+                        to={'/shop/' + item.product.id}
+                        className="flex items-center gap-3 rounded-2xl border border-[#f0e7d8] bg-white p-3 shadow-sm transition hover:border-[#c09a6a]/40 hover:bg-[#fffaf2]"
+                      >
+                        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[#f2f2f2]">
+                          <img
+                            src={item.product.image_url || PRODUCT_FALLBACK_IMAGE}
+                            alt={item.product.name}
+                            className="h-full w-full object-cover"
+                          />
+                          <span className="absolute left-1.5 top-1.5 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-white">
+                            #
+                            {index + 1}
+                          </span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="line-clamp-1 text-sm font-bold text-[#222]">{item.product.name}</p>
+                              <p className="mt-1 text-xs font-semibold text-[#8a5a22]">{formatCurrency(item.product.price)}</p>
+                            </div>
+                            <span className="rounded-full bg-[#f6ead7] px-2 py-1 text-[11px] font-bold text-[#8a5a22]">
+                              {Math.max(item.score, 0)} pt
+                            </span>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {isSubscription ? (
+                              <span className="rounded-full bg-[#2C1F10] px-2 py-0.5 text-[10px] font-bold text-white">
+                                {t('?????', 'Ready to subscribe', '???????', '?? ?? ??')}
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-[#f3eee4] px-2 py-0.5 text-[10px] font-bold text-[#7a5a35]">
+                                {t('????', 'One-time purchase', '????', '?? ??')}
+                              </span>
+                            )}
+                            {uniqueDisplayLabels([item.product.origin, item.product.roast_level, item.product.processing_method])
+                              .slice(0, 2)
+                              .map((label, labelIndex) => (
+                                <span key={item.product.id + '-top-' + labelIndex} className="rounded-full border border-[#eadfce] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#6f4f2b]">
+                                  {label}
+                                </span>
+                              ))}
+                          </div>
+                          {isSubscription && (
+                            <div className="mt-2 rounded-xl bg-[#faf5ec] px-3 py-2 text-[11px] leading-5 text-[#6f4f2b]">
+                              <span className="font-semibold text-[#8a5a22]">
+                                {t('訂閱制', 'Subscription', '定期便', '정기구독')}
+                              </span>
+                              <span className="ml-2">
+                                {t(
+                                  '每月自動扣款，並依商品設定自動建立訂單。',
+                                  'Billed automatically every month, with orders created from the subscription settings.',
+                                  '毎月自動で決済され、商品設定に応じて注文が自動作成されます。',
+                                  '매월 자동 결제되며 상품 설정에 따라 주문이 자동 생성됩니다.',
+                                )}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          </section>
+        )}
 
         <section className="rounded-3xl border bg-white p-5 shadow-sm">
           {loading ? (
