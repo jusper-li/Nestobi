@@ -123,6 +123,24 @@ async function sendOrderEmail(
   }
 }
 
+async function getRewardPoints(
+  supabase: ReturnType<typeof createServiceClient>,
+  sourceType: string,
+  amount: number,
+) {
+  const { data, error } = await supabase.rpc("calculate_point_reward_points", {
+    p_source_type: sourceType,
+    p_amount: amount,
+  });
+
+  if (error) {
+    console.warn("[newebpay-mpg-webhook] Failed to calculate reward points:", error);
+    return 0;
+  }
+
+  return Math.max(0, Math.floor(Number(data || 0)));
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -200,11 +218,11 @@ Deno.serve(async (req: Request) => {
         .update({ status: "completed" })
         .eq("order_id", order.id);
 
-      const earnedPoints = Math.floor(Number(order.total_amount || 0) / 100) * 5;
-      if (earnedPoints > 0) {
+      const rewardPoints = await getRewardPoints(supabase, "order", Number(order.total_amount || 0));
+      if (rewardPoints > 0) {
         await supabase.from("points").insert({
           user_id: order.user_id,
-          amount: earnedPoints,
+          amount: rewardPoints,
           transaction_type: "earn",
           reference_id: order.id,
           source_type: "order",

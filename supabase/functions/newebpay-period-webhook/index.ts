@@ -128,6 +128,24 @@ async function sendOrderEmail(
   }
 }
 
+async function getRewardPoints(
+  supabase: ReturnType<typeof createServiceClient>,
+  sourceType: string,
+  amount: number,
+) {
+  const { data, error } = await supabase.rpc("calculate_point_reward_points", {
+    p_source_type: sourceType,
+    p_amount: amount,
+  });
+
+  if (error) {
+    console.warn("[newebpay-period-webhook] Failed to calculate reward points:", error);
+    return 0;
+  }
+
+  return Math.max(0, Math.floor(Number(data || 0)));
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -338,6 +356,20 @@ Deno.serve(async (req: Request) => {
 
       if (vendor?.contact_email) {
         await sendOrderEmail(String(vendor.contact_email), String(vendor.name || "vendor"), items, paidAmount, language);
+      }
+
+      const rewardPoints = await getRewardPoints(supabase, "subscription", paidAmount);
+      if (rewardPoints > 0) {
+        await supabase.from("points").insert({
+          user_id: subscription.user_id,
+          amount: rewardPoints,
+          transaction_type: "earn",
+          reference_id: order.id,
+          source_type: "subscription",
+          source_id: order.id,
+          vendor_id: subscription.vendor_id || null,
+          description: "Subscription reward points",
+        });
       }
 
       return okResponse();

@@ -62,7 +62,7 @@ BEGIN
     );
   END IF;
 
-  earned_points := (floor(NEW.total_price / 100) * 10)::integer;
+  earned_points := public.calculate_point_reward_points('booking', NEW.total_price);
 
   IF earned_points > 0
     AND NOT EXISTS (

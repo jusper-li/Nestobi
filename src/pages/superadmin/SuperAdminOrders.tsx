@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Package, BedDouble, ShoppingBag, DollarSign, Search, Filter } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -42,12 +43,20 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const SuperAdminOrders: React.FC = () => {
-  const [tab, setTab] = useState<TabType>('shop');
+  const location = useLocation();
+  const initialParams = new URLSearchParams(location.search);
+  const [tab, setTab] = useState<TabType>(initialParams.get('tab') === 'booking' ? 'booking' : 'shop');
   const [shopOrders, setShopOrders] = useState<ShopOrder[]>([]);
   const [bookingOrders, setBookingOrders] = useState<BookingOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialParams.get('q') || '');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setTab(params.get('tab') === 'booking' ? 'booking' : 'shop');
+    setSearch(params.get('q') || '');
+  }, [location.search]);
 
   useEffect(() => {
     fetchAll();

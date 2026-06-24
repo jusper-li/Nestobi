@@ -20,7 +20,7 @@ ALTER TABLE public.points
 
 ALTER TABLE public.points
   ADD CONSTRAINT points_source_type_check
-  CHECK (source_type IS NULL OR source_type IN ('booking', 'order', 'manual', 'redemption', 'store_redemption'));
+  CHECK (source_type IS NULL OR source_type IN ('booking', 'order', 'subscription', 'manual', 'redemption', 'store_redemption'));
 
 CREATE TABLE IF NOT EXISTS public.store_location_managers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
