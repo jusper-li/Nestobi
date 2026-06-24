@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Coffee, RotateCcw, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navigation from '../../components/Navigation';
@@ -909,6 +909,28 @@ function buildAnswerPayload(questions: Question[], answers: Partial<Record<strin
   ) as Record<string, OptionKey>;
 }
 
+const COFFEE_QUIZ_STORAGE_KEY = 'nestobi:coffee-quiz:last-submission';
+
+function readCoffeeQuizStorage(): QuizSubmissionRow | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(COFFEE_QUIZ_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as QuizSubmissionRow;
+  } catch {
+    return null;
+  }
+}
+
+function writeCoffeeQuizStorage(row: QuizSubmissionRow) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(COFFEE_QUIZ_STORAGE_KEY, JSON.stringify(row));
+  } catch {
+    // Ignore storage quota or access errors.
+  }
+}
+
 export default function CoffeeQuiz() {
   const { user, profile } = useAuth();
   const { lang } = useLanguage();
@@ -977,7 +999,8 @@ export default function CoffeeQuiz() {
 
     const loadSavedSubmission = async () => {
       if (!user) {
-        setSavedSubmissionResult(null);
+        const localRow = readCoffeeQuizStorage();
+        setSavedSubmissionResult(localRow ? buildResultFromSavedSubmission(questions, localRow, uiLang) : null);
         return;
       }
 
@@ -997,7 +1020,8 @@ export default function CoffeeQuiz() {
 
       const row = (data?.[0] as QuizSubmissionRow | undefined) || null;
       if (!row) {
-        setSavedSubmissionResult(null);
+        const fallbackRow = readCoffeeQuizStorage();
+        setSavedSubmissionResult(fallbackRow ? buildResultFromSavedSubmission(questions, fallbackRow, uiLang) : null);
         return;
       }
 
@@ -1143,6 +1167,7 @@ export default function CoffeeQuiz() {
       }
 
       if (cancelled) return;
+      writeCoffeeQuizStorage(submission);
       setSaveTone('success');
       setSaveMessage(t('測驗資料已寫入完成。', 'Quiz data has been saved successfully.', '診断データの保存が完了しました。', '퀴즈 데이터 저장이 완료되었습니다.'));
       setSaving(false);
@@ -1286,78 +1311,33 @@ export default function CoffeeQuiz() {
                   {recommendationsMessage}
                 </div>
               ) : recommendedProducts.length > 0 ? (
-                <div className="mt-4 space-y-3">
-                  {recommendedProducts.slice(0, 3).map((item, index) => {
-                    const isSubscription = Boolean(
-                      item.product.categories?.slug?.startsWith('subscription') ||
-                        item.product.name.toLowerCase().includes('subscription') ||
-                        item.product.name.includes('定期便'),
-                    );
-
-                    return (
-                      <Link
-                        key={item.product.id}
-                        to={'/shop/' + item.product.id}
-                        className="flex items-center gap-3 rounded-2xl border border-[#f0e7d8] bg-white p-3 shadow-sm transition hover:border-[#c09a6a]/40 hover:bg-[#fffaf2]"
-                      >
-                        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[#f2f2f2]">
-                          <img
-                            src={item.product.image_url || PRODUCT_FALLBACK_IMAGE}
-                            alt={item.product.name}
-                            className="h-full w-full object-cover"
-                          />
-                          <span className="absolute left-1.5 top-1.5 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-white">
-                            #
-                            {index + 1}
+                <div className="mt-4 overflow-hidden rounded-2xl bg-white/70">
+                  {recommendedProducts.slice(0, 3).map((item, index) => (
+                    <Link
+                      key={item.product.id}
+                      to={'/shop/' + item.product.id}
+                      className={`flex items-center gap-3 px-3 py-3 transition ${index > 0 ? 'border-t border-[#efe3d3]' : ''}`}
+                    >
+                      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#f2f2f2]">
+                        <img
+                          src={item.product.image_url || PRODUCT_FALLBACK_IMAGE}
+                          alt={item.product.name}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="line-clamp-1 text-sm font-bold text-[#222]">{item.product.name}</p>
+                            <p className="mt-1 text-xs text-[#8a5a22]">{formatCurrency(item.product.price)}</p>
+                          </div>
+                          <span className="shrink-0 rounded-full bg-[#f6ead7] px-2 py-1 text-[11px] font-bold text-[#8a5a22]">
+                            {Math.max(item.score, 0)} pt
                           </span>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <p className="line-clamp-1 text-sm font-bold text-[#222]">{item.product.name}</p>
-                              <p className="mt-1 text-xs font-semibold text-[#8a5a22]">{formatCurrency(item.product.price)}</p>
-                            </div>
-                            <span className="rounded-full bg-[#f6ead7] px-2 py-1 text-[11px] font-bold text-[#8a5a22]">
-                              {Math.max(item.score, 0)} pt
-                            </span>
-                          </div>
-                          <div className="mt-2 flex flex-wrap gap-1.5">
-                            {isSubscription ? (
-                              <span className="rounded-full bg-[#2C1F10] px-2 py-0.5 text-[10px] font-bold text-white">
-                                {t('可訂閱', 'Ready to subscribe', '定期便対応', '정기구독 가능')}
-                              </span>
-                            ) : (
-                              <span className="rounded-full bg-[#f3eee4] px-2 py-0.5 text-[10px] font-bold text-[#7a5a35]">
-                                {t('單次購買', 'One-time purchase', '単品購入', '단품 구매')}
-                              </span>
-                            )}
-                            {uniqueDisplayLabels([item.product.origin, item.product.roast_level, item.product.processing_method])
-                              .slice(0, 2)
-                              .map((label, labelIndex) => (
-                                <span key={item.product.id + '-top-' + labelIndex} className="rounded-full border border-[#eadfce] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#6f4f2b]">
-                                  {label}
-                                </span>
-                              ))}
-                          </div>
-                          {isSubscription && (
-                            <div className="mt-2 rounded-xl bg-[#faf5ec] px-3 py-2 text-[11px] leading-5 text-[#6f4f2b]">
-                              <span className="font-semibold text-[#8a5a22]">
-                                {t('訂閱制', 'Subscription', '定期便', '정기구독')}
-                              </span>
-                              <span className="ml-2">
-                                {t(
-                                  '每月自動扣款，並依商品設定自動建立訂單。',
-                                  'Billed automatically every month, with orders created from the subscription settings.',
-                                  '毎月自動で決済され、商品設定に応じて注文が自動作成されます。',
-                                  '매월 자동 결제되며 상품 설정에 따라 주문이 자동 생성됩니다.',
-                                )}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </Link>
-                    );
-                  })}
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               ) : null}
             </div>
@@ -1600,3 +1580,5 @@ export default function CoffeeQuiz() {
     </div>
   );
 }
+
+
