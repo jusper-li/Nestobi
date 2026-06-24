@@ -287,18 +287,24 @@ function privateAccountAnswer(language: string) {
 async function persistChatExchange(options: {
   userId: string;
   sessionId: string;
+  userMessageId: string;
+  assistantMessageId: string;
   userMessage: string;
   assistantMessage: string;
 }) {
   const { supabaseUrl, serviceRoleKey } = getSupabaseConfig();
+  const userMessageId = String(options.userMessageId || crypto.randomUUID());
+  const assistantMessageId = String(options.assistantMessageId || crypto.randomUUID());
   const payload = [
     {
+      id: userMessageId,
       user_id: options.userId,
       session_id: options.sessionId,
       role: "user",
       content: preserveText(options.userMessage, 4000),
     },
     {
+      id: assistantMessageId,
       user_id: options.userId,
       session_id: options.sessionId,
       role: "assistant",
@@ -306,13 +312,13 @@ async function persistChatExchange(options: {
     },
   ];
 
-  const res = await fetch(`${supabaseUrl}/rest/v1/tbl_mn5wn257`, {
+  const res = await fetch(`${supabaseUrl}/rest/v1/tbl_mn5wn257?on_conflict=id`, {
     method: "POST",
     headers: {
       apikey: serviceRoleKey,
       Authorization: `Bearer ${serviceRoleKey}`,
       "Content-Type": "application/json",
-      Prefer: "return=minimal",
+      Prefer: "resolution=merge-duplicates,return=minimal",
     },
     body: JSON.stringify(payload),
   });
@@ -826,6 +832,8 @@ Deno.serve(async (req) => {
           await persistChatExchange({
             userId,
             sessionId,
+            userMessageId: String(body.userMessageId || ""),
+            assistantMessageId: String(body.assistantMessageId || ""),
             userMessage: question,
             assistantMessage: result,
           });

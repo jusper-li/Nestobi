@@ -251,6 +251,21 @@ export default function Chatbot() {
     };
   }, [locale, storageKey, user?.id, welcomeText]);
 
+  const saveMessage = async (message: MessageItem, activeSessionId = sessionId) => {
+    if (!user || message.id === 'welcome') return;
+    const { error } = await supabase.from('tbl_mn5wn257').upsert(
+      {
+        id: message.id,
+        user_id: user.id,
+        session_id: activeSessionId,
+        role: message.role,
+        content: message.content,
+      },
+      { onConflict: 'id' },
+    );
+    if (error) throw error;
+  };
+
   const startNewChat = () => {
     const nextSessionId = createSessionId();
     localStorage.setItem(storageKey, nextSessionId);
@@ -265,12 +280,13 @@ export default function Chatbot() {
 
     const activeSessionId = sessionId || createSessionId();
     const userMessage: MessageItem = {
-      id: `${Date.now()}-u`,
+      id: createSessionId(),
       role: 'user',
       content: input.trim(),
       time: formatMessageTime(),
       createdAt: new Date().toISOString(),
     };
+    const assistantMessageId = createSessionId();
 
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
@@ -278,30 +294,43 @@ export default function Chatbot() {
     setHistoryError('');
 
     try {
+      await saveMessage(userMessage, activeSessionId);
       const reply = await callAI<string>('chat', {
         messages: [...messages, userMessage].map((m) => ({ role: m.role, content: m.content })),
         language: locale,
         messageLanguage: detectMessageLanguage(userMessage.content) || locale,
         sessionId: activeSessionId,
+        userMessageId: userMessage.id,
+        assistantMessageId,
       });
       const normalizedReply = await normalizeAssistantReply(reply, locale);
       const assistantMessage: MessageItem = {
-        id: `${Date.now()}-a`,
+        id: assistantMessageId,
         role: 'assistant',
         content: normalizedReply,
         time: formatMessageTime(),
         createdAt: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
+      try {
+        await saveMessage(assistantMessage, activeSessionId);
+      } catch {
+        setHistoryError(pick(locale, 'AI 回覆已顯示，但寫入歷史紀錄失敗。', 'The AI reply is shown, but saving history failed.', 'AI の回答は表示されましたが、履歴の保存に失敗しました。', 'AI 답변은 표시되었지만 기록 저장에 실패했습니다.'));
+      }
     } catch {
       const fallbackMessage: MessageItem = {
-        id: `${Date.now()}-f`,
+        id: createSessionId(),
         role: 'assistant',
         content: pick(locale, '系統忙碌中，請稍後再試。', 'System is busy now. Please try again soon.', 'システムが混み合っています。しばらくしてから再試行してください。', '시스템이 바쁩니다. 잠시 후 다시 시도해 주세요.'),
         time: formatMessageTime(),
         createdAt: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, fallbackMessage]);
+      try {
+        await saveMessage(fallbackMessage, activeSessionId);
+      } catch {
+        setHistoryError(pick(locale, '聊天記錄寫入失敗，請稍後再試。', 'Failed to save chat history. Please try again later.', '会話履歴の保存に失敗しました。後でもう一度お試しください。', '채팅 기록 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.'));
+      }
     } finally {
       setLoading(false);
     }
