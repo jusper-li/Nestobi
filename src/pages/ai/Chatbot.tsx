@@ -54,6 +54,28 @@ function detectMessageLanguage(text: string): 'en' | 'zh-TW' | 'ja' | 'ko' | nul
   return null;
 }
 
+function localeToResponseLanguage(locale: Locale): 'zh-TW' | 'en' | 'ja' | 'ko' {
+  return locale;
+}
+
+async function normalizeAssistantReply(reply: string, locale: Locale) {
+  const targetLanguage = localeToResponseLanguage(locale);
+  const replyLanguage = detectMessageLanguage(reply);
+  if (!replyLanguage || replyLanguage === targetLanguage) return reply;
+  if (targetLanguage === 'zh-TW' && replyLanguage === 'zh-TW') return reply;
+
+  try {
+    return await callAI<string>('translate', {
+      text: reply,
+      sourceLang: replyLanguage,
+      targetLang: targetLanguage,
+      language: locale,
+    });
+  } catch {
+    return reply;
+  }
+}
+
 const INTERNAL_PATH_PATTERN = /^\/(?:rooms|booking|shop|blog|hotels|stores|faq)(?:\/[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]*)?$/;
 const INTERNAL_PATH_SPLIT_PATTERN = /(\/(?:rooms|booking|shop|blog|hotels|stores|faq)(?:\/[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]*)?)/g;
 const MARKDOWN_LINK_PATTERN = /\[([^\]]+)\]\((\/(?:rooms|booking|shop|blog|hotels|stores|faq)(?:\/[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]*)?)\)/g;
@@ -278,10 +300,11 @@ export default function Chatbot() {
         language: locale,
         messageLanguage: detectMessageLanguage(userMessage.content) || locale,
       });
+      const normalizedReply = await normalizeAssistantReply(reply, locale);
       const assistantMessage: MessageItem = {
         id: `${Date.now()}-a`,
         role: 'assistant',
-        content: reply,
+        content: normalizedReply,
         time: formatMessageTime(),
         createdAt: new Date().toISOString(),
       };

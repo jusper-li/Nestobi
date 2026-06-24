@@ -202,7 +202,44 @@ function isPrivateAccountQuestion(question: string) {
   );
 }
 
-function privateAccountAnswer() {
+function privateAccountAnswer(language: string) {
+  const lang = resolveChatLanguage(language || "zh-TW", "", language);
+  if (lang === "en") {
+    return [
+      "I can explain how to check it, but AI Support cannot directly reveal your order status, booking status, points balance, member profile, or favorites.",
+      "",
+      "Please sign in and check the member center:",
+      "1. Bookings: Member Center > Bookings",
+      "2. Orders: Member Center > Orders",
+      "3. Points: Member Center > Points",
+      "",
+      "If the page data does not match your payment or shipping status, please share your order number with human support.",
+    ].join("\n");
+  }
+  if (lang === "ja") {
+    return [
+      "確認方法はご案内できますが、AIサポートから注文状況、予約状況、ポイント残高、会員情報、お気に入りを直接表示することはできません。",
+      "",
+      "ログイン後、会員センターでご確認ください。",
+      "1. 予約履歴：会員センター > 予約",
+      "2. 商品注文：会員センター > 注文",
+      "3. ポイント残高：会員センター > ポイント",
+      "",
+      "ページの内容が支払い・発送状況と一致しない場合は、注文番号を添えて有人サポートへご連絡ください。",
+    ].join("\n");
+  }
+  if (lang === "ko") {
+    return [
+      "조회 방법은 안내할 수 있지만, AI 상담에서 주문 상태, 예약 상태, 포인트 잔액, 회원 정보, 즐겨찾기를 직접 보여드릴 수는 없습니다.",
+      "",
+      "로그인 후 회원센터에서 확인해 주세요.",
+      "1. 예약 내역: 회원센터 > 예약",
+      "2. 상품 주문: 회원센터 > 주문",
+      "3. 포인트 잔액: 회원센터 > 포인트",
+      "",
+      "페이지 정보가 결제 또는 배송 상태와 다르면 주문 번호를 알려 주시면 상담원이 도와드립니다.",
+    ].join("\n");
+  }
   return [
     "可以協助說明查詢方式，但 AI 客服不能直接查詢或揭露你的訂單狀態、訂房狀態、點數餘額、會員資料或收藏內容。",
     "",
@@ -384,26 +421,62 @@ async function searchVectorDocuments(question: string, sourceTypes: string[], ma
   }
 }
 
-async function buildDirectRecommendationAnswer(question: string) {
+async function buildDirectRecommendationAnswer(question: string, language: string) {
   if (!/推薦|找|尋找|有沒有|有什麼|想要|購買|買|訂房|住宿|門市|文章|連結|coffee|product|room|article|store/i.test(question)) return "";
   const sourceTypes = inferSupportSourceTypes(question).filter((sourceType) => sourceType !== "faq");
   if (sourceTypes.length === 0) return "";
   const matches = await searchVectorDocuments(question, sourceTypes, 6);
   if (!matches.length) return "";
 
+  const lang = resolveChatLanguage(language || "zh-TW", question, language);
   const typeName: Record<string, string> = {
     product: "商品",
     room: "住宿",
     article: "文章",
     store: "門市",
   };
+  const typeNameEn: Record<string, string> = {
+    product: "product",
+    room: "stay",
+    article: "article",
+    store: "store",
+  };
   const lines = matches.slice(0, 5).map((match, index) => {
     const bookingUrl = typeof match.metadata?.booking_url === "string" ? match.metadata.booking_url : "";
-    const detailLink = `[查看${typeName[match.source_type] || "資料"}](${match.url_path})`;
-    const actionLink = bookingUrl ? `、[訂房](${bookingUrl})` : "";
+    const detailLabel = lang === "en" ? `View ${typeNameEn[match.source_type] || "item"}` : `查看${typeName[match.source_type] || "資料"}`;
+    const actionLabel = lang === "en" ? "Book" : "訂房";
+    const detailLink = `[${detailLabel}](${match.url_path})`;
+    const actionLink = bookingUrl ? (lang === "en" ? `, [${actionLabel}](${bookingUrl})` : `、[${actionLabel}](${bookingUrl})`) : "";
     return `${index + 1}. **${cleanText(match.title, 120)}**：${detailLink}${actionLink}`;
   });
 
+  if (lang === "en") {
+    return [
+      "Sure, I found these matching results from the site:",
+      "",
+      ...lines,
+      "",
+      "You can open the links for details. Checkout, booking, and payment still happen through the site flow.",
+    ].join("\n");
+  }
+  if (lang === "ja") {
+    return [
+      "はい、条件に合う候補をサイト内から見つけました：",
+      "",
+      ...lines,
+      "",
+      "リンクから詳細をご確認ください。商品購入、予約、決済は引き続きサイト内で行われます。",
+    ].join("\n");
+  }
+  if (lang === "ko") {
+    return [
+      "네, 요청에 맞는 결과를 사이트에서 찾아드렸습니다:",
+      "",
+      ...lines,
+      "",
+      "링크에서 자세한 내용을 확인하실 수 있습니다. 상품 결제, 예약, 결제는 계속 사이트 흐름에서 진행됩니다.",
+    ].join("\n");
+  }
   return [
     "可以，依照你的需求，我先幫你從站內資料找到這些結果：",
     "",
@@ -623,8 +696,8 @@ Deno.serve(async (req) => {
         .slice(-8)
         .map((m: { role: "user" | "assistant"; content: string }) => ({ role: m.role, content: cleanText(m.content, 900) }));
       const question = latestUserMessage(recentMessages);
-      if (isPrivateAccountQuestion(question)) return json({ result: privateAccountAnswer() });
-      const directRecommendation = await buildDirectRecommendationAnswer(question);
+      if (isPrivateAccountQuestion(question)) return json({ result: privateAccountAnswer(String(body.language || "zh-TW")) });
+      const directRecommendation = await buildDirectRecommendationAnswer(question, String(body.language || "zh-TW"));
       if (directRecommendation) return json({ result: directRecommendation });
       const responseLanguage = resolveChatLanguage(String(body.language || "zh-TW"), question, String(body.messageLanguage || ""));
 
