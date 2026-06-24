@@ -143,6 +143,23 @@ function latestUserMessage(messages: Array<{ role?: string; content?: string }>)
   return cleanText(userMessage?.content, 600);
 }
 
+function detectMessageLanguage(text: string): "zh-TW" | "en" | "ja" | "ko" | null {
+  const sample = cleanText(text, 600);
+  if (!sample) return null;
+  if (/[\uac00-\ud7af]/.test(sample)) return "ko";
+  if (/[\u3040-\u30ff]/.test(sample)) return "ja";
+  if (/[\u4e00-\u9fff]/.test(sample)) return "zh-TW";
+  if (/[A-Za-z]/.test(sample)) return "en";
+  return null;
+}
+
+function resolveChatLanguage(requestedLanguage: string, latestQuestion: string, messageLanguage?: string) {
+  const normalizedRequested = cleanText(requestedLanguage || "zh-TW", 20);
+  const detected = detectMessageLanguage(messageLanguage || latestQuestion);
+  if (normalizedRequested === "zh-TW" && detected === "en") return "en";
+  return normalizedRequested || "zh-TW";
+}
+
 function scoreSnippet(snippet: string, query: string) {
   const normalizedSnippet = snippet.toLowerCase();
   const wordKeywords = query
@@ -609,11 +626,14 @@ Deno.serve(async (req) => {
       if (isPrivateAccountQuestion(question)) return json({ result: privateAccountAnswer() });
       const directRecommendation = await buildDirectRecommendationAnswer(question);
       if (directRecommendation) return json({ result: directRecommendation });
+      const responseLanguage = resolveChatLanguage(String(body.language || "zh-TW"), question, String(body.messageLanguage || ""));
 
       const databaseContext = await buildCustomerServiceContext(question);
       const system = [
         "You are Nestobi's AI customer service assistant.",
-        "Use the requested UI language when possible, and default to Traditional Chinese for Nestobi users.",
+        `Respond only in ${responseLanguage}.`,
+        "If the requested language is Traditional Chinese and the latest user question is clearly English, answer in English instead.",
+        "If the user switches the UI language, follow that UI language for all subsequent replies.",
         "Answer the LATEST_USER_QUESTION. DATABASE_CONTEXT is reference material only; never answer an unrelated context item.",
         "Answer primarily from DATABASE_CONTEXT, which is public data from Supabase: products, rooms, hotels, articles, FAQs, pages, stores, and site settings. Vector results are ordered by semantic relevance.",
         "When the user wants to book a room, buy a product, find a store, read an FAQ, or find an article, recommend the best matching public items from DATABASE_CONTEXT and include their provided site links.",
@@ -627,6 +647,7 @@ Deno.serve(async (req) => {
       ].join("\n");
       const supportPrompt = [
         `REQUESTED_LANGUAGE: ${cleanText(body.language || "zh-TW", 20)}`,
+        `RESPONSE_LANGUAGE: ${responseLanguage}`,
         "DATABASE_CONTEXT:",
         databaseContext,
         "",

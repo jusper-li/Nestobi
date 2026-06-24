@@ -35,7 +35,23 @@ function isUuid(value: string | null) {
 }
 
 function formatMessageTime(value?: string) {
-  return new Date(value || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return new Intl.DateTimeFormat([], {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value || Date.now()));
+}
+
+function detectMessageLanguage(text: string): 'en' | 'zh-TW' | 'ja' | 'ko' | null {
+  const sample = text.trim();
+  if (!sample) return null;
+  if (/[\uac00-\ud7af]/.test(sample)) return 'ko';
+  if (/[\u3040-\u30ff]/.test(sample)) return 'ja';
+  if (/[\u4e00-\u9fff]/.test(sample)) return 'zh-TW';
+  if (/[A-Za-z]/.test(sample)) return 'en';
+  return null;
 }
 
 const INTERNAL_PATH_PATTERN = /^\/(?:rooms|booking|shop|blog|hotels|stores|faq)(?:\/[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]*)?$/;
@@ -120,6 +136,7 @@ export default function Chatbot() {
     role: 'assistant',
     content: welcomeText,
     time: formatMessageTime(),
+    createdAt: new Date().toISOString(),
   });
 
   const [messages, setMessages] = useState<MessageItem[]>([createWelcomeMessage()]);
@@ -241,6 +258,7 @@ export default function Chatbot() {
       role: 'user',
       content: input.trim(),
       time: formatMessageTime(),
+      createdAt: new Date().toISOString(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -258,12 +276,14 @@ export default function Chatbot() {
       const reply = await callAI<string>('chat', {
         messages: [...messages, userMessage].map((m) => ({ role: m.role, content: m.content })),
         language: locale,
+        messageLanguage: detectMessageLanguage(userMessage.content) || locale,
       });
       const assistantMessage: MessageItem = {
         id: `${Date.now()}-a`,
         role: 'assistant',
         content: reply,
         time: formatMessageTime(),
+        createdAt: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
       try {
@@ -277,6 +297,7 @@ export default function Chatbot() {
         role: 'assistant',
         content: pick(locale, '系統忙碌中，請稍後再試。', 'System is busy now. Please try again soon.', 'システムが混み合っています。しばらくしてからお試しください。', '시스템이 혼잡합니다. 잠시 후 다시 시도해 주세요.'),
         time: formatMessageTime(),
+        createdAt: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, fallbackMessage]);
       try {
