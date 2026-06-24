@@ -1104,7 +1104,7 @@ export default function CoffeeQuiz() {
       if (!done || !quizResult || saved || saving) return;
       if (!user) {
         setSaveTone('warning');
-        setSaveMessage(t('Please sign in to save the quiz result automatically.', 'Sign in to automatically save the quiz result.', 'Sign in to automatically save the quiz result.', 'Sign in to automatically save the quiz result.'));
+        setSaveMessage(t('請先登入，系統才能自動寫入測驗資料。', 'Please sign in to save the quiz data automatically.', 'ログインすると診断データを自動保存できます。', '로그인 후에만 퀴즈 데이터를 자동 저장할 수 있습니다.'));
         return;
       }
 
@@ -1134,13 +1134,17 @@ export default function CoffeeQuiz() {
         if (cancelled) return;
         setSaving(false);
         setSaveTone('error');
-        setSaveMessage(submissionError.message || 'Failed to save quiz result. Please try again.');
+        setSaveMessage(
+          submissionError.message
+            ? `測驗資料寫入失敗：${submissionError.message}`
+            : t('測驗資料寫入失敗，請稍後再試。', 'Failed to save the quiz data. Please try again.', '診断データの保存に失敗しました。後でもう一度お試しください。', '퀴즈 데이터 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.'),
+        );
         return;
       }
 
       if (cancelled) return;
       setSaveTone('success');
-      setSaveMessage('Quiz result was automatically saved to the database.');
+      setSaveMessage(t('測驗資料已寫入完成。', 'Quiz data has been saved successfully.', '診断データの保存が完了しました。', '퀴즈 데이터 저장이 완료되었습니다.'));
       setSaving(false);
       setSaved(true);
     };
@@ -1320,11 +1324,11 @@ export default function CoffeeQuiz() {
                           <div className="mt-2 flex flex-wrap gap-1.5">
                             {isSubscription ? (
                               <span className="rounded-full bg-[#2C1F10] px-2 py-0.5 text-[10px] font-bold text-white">
-                                {t('?????', 'Ready to subscribe', '???????', '?? ?? ??')}
+                                {t('可訂閱', 'Ready to subscribe', '定期便対応', '정기구독 가능')}
                               </span>
                             ) : (
                               <span className="rounded-full bg-[#f3eee4] px-2 py-0.5 text-[10px] font-bold text-[#7a5a35]">
-                                {t('????', 'One-time purchase', '????', '?? ??')}
+                                {t('單次購買', 'One-time purchase', '単品購入', '단품 구매')}
                               </span>
                             )}
                             {uniqueDisplayLabels([item.product.origin, item.product.roast_level, item.product.processing_method])
@@ -1461,13 +1465,13 @@ export default function CoffeeQuiz() {
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-2xl border border-[#eadfce] bg-white p-4">
+                <div className="mt-5 rounded-3xl bg-[#faf6ee] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-[#8a5a22]">{t('最符合的商品建議', 'Best product matches', '最も合う商品おすすめ', '가장 잘 맞는 상품 추천')}</p>
                       <p className="mt-1 text-xs text-gray-500">{t('依照你的測驗結果、風味偏好與商品資料自動排序。', 'Ranked by your quiz result, flavor profile, and product data.', '診断結果、風味傾向、商品情報をもとに自動で並べ替えています。', '퀴즈 결과와 풍미 선호, 상품 정보를 바탕으로 자동 정렬했습니다.')}</p>
                     </div>
-                    <span className="rounded-full bg-[#f6ead7] px-3 py-1 text-xs font-bold text-[#8a5a22]">
+                    <span className="rounded-full bg-[#f3e4cf] px-3 py-1 text-xs font-bold text-[#8a5a22]">
                       {recommendedProducts.length}/{RECOMMENDATION_LIMIT}
                     </span>
                   </div>
@@ -1492,11 +1496,11 @@ export default function CoffeeQuiz() {
                       {recommendationsMessage}
                     </div>
                   ) : recommendedProducts.length > 0 ? (
-                    <div className="mt-4 space-y-3">
+                    <div className="mt-4 space-y-2.5">
                       {recommendedProducts.map((item, index) => (
-                        <div key={item.product.id} className="overflow-hidden rounded-2xl border border-[#f0e7d8] bg-[#fcfaf6] shadow-sm">
-                          <div className="flex flex-col gap-3 p-3 sm:flex-row">
-                            <Link to={`/shop/${item.product.id}`} className="relative block h-28 w-full overflow-hidden rounded-xl bg-[#f2f2f2] sm:h-24 sm:w-24 sm:shrink-0">
+                        <div key={item.product.id} className="rounded-2xl bg-white/80 px-3 py-3 shadow-[0_1px_0_rgba(122,90,53,0.05)]">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                            <Link to={`/shop/${item.product.id}`} className="relative block h-24 w-full overflow-hidden rounded-xl bg-[#f2f2f2] sm:h-20 sm:w-20 sm:shrink-0">
                               <img
                                 src={item.product.image_url || PRODUCT_FALLBACK_IMAGE}
                                 alt={item.product.name}
@@ -1520,32 +1524,19 @@ export default function CoffeeQuiz() {
                                   </Link>
                                   <p className="mt-1 text-sm font-bold text-[#8a5a22]">{formatCurrency(item.product.price)}</p>
                                 </div>
-                                <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-[#8a5a22] shadow-sm">
+                                <span className="rounded-full bg-[#fff6ea] px-2.5 py-1 text-[11px] font-bold text-[#8a5a22]">
                                   {Math.max(item.score, 0)} pt
                                 </span>
                               </div>
-
-                              {(item.product.origin || item.product.roast_level || item.product.processing_method) && (
-                                <div className="mt-2 flex flex-wrap gap-1.5">
-                                  {uniqueDisplayLabels([item.product.origin, item.product.roast_level, item.product.processing_method])
-                                    .slice(0, 3)
-                                    .map((label, labelIndex) => (
-                                      <span key={`${item.product.id}-meta-${labelIndex}`} className="rounded-full border border-[#eadfce] bg-white px-2 py-0.5 text-[11px] font-semibold text-[#6f4f2b]">
-                                        {label}
-                                      </span>
-                                    ))}
-                                </div>
-                              )}
-
-                              {item.product.flavor_notes?.length ? (
-                                <div className="mt-2 flex flex-wrap gap-1.5">
-                                  {uniqueDisplayLabels(item.product.flavor_notes).slice(0, 3).map((note, noteIndex) => (
-                                    <span key={`${item.product.id}-note-${noteIndex}`} className="rounded-full bg-[#f6ead7] px-2 py-0.5 text-[11px] font-semibold text-[#8a5a22]">
-                                      {note}
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {uniqueDisplayLabels([item.product.origin, item.product.roast_level, item.product.processing_method])
+                                  .slice(0, 2)
+                                  .map((label, labelIndex) => (
+                                    <span key={`${item.product.id}-meta-${labelIndex}`} className="rounded-full border border-[#eadfce] bg-white px-2 py-0.5 text-[11px] font-semibold text-[#6f4f2b]">
+                                      {label}
                                     </span>
                                   ))}
-                                </div>
-                              ) : null}
+                              </div>
 
                               {item.reasons.length > 0 && (
                                 <p className="mt-2 text-xs leading-5 text-gray-600">
@@ -1553,8 +1544,8 @@ export default function CoffeeQuiz() {
                                 </p>
                               )}
 
-                              <div className="mt-3 flex items-center justify-between gap-3">
-                                <p className="text-xs font-medium text-gray-500">
+                              <div className="mt-3 flex items-center justify-end gap-3">
+                                <p className="sr-only text-xs font-medium text-gray-500">
                                   {item.product.stock_quantity > 0 ? t('可直接購買', 'Ready to buy', 'すぐ購入可能', '바로 구매 가능') : t('暫時缺貨', 'Out of stock', '在庫切れ', '품절')}
                                 </p>
                                 <Link
@@ -1581,7 +1572,7 @@ export default function CoffeeQuiz() {
 
               {saving && (
                 <p className="mt-4 text-center text-sm font-medium text-gray-500">
-                  {t('正在自動寫入測驗資料...', 'Saving quiz data automatically...', '診断データを自動保存しています...', '퀴즈 데이터를 자동 저장 중...')}
+                  {t('正在儲存測驗資料...', 'Saving quiz data...', '診断データを保存しています...', '퀴즈 데이터를 저장하는 중...')}
                 </p>
               )}
 
