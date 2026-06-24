@@ -1040,7 +1040,7 @@ export default function CoffeeQuiz() {
 
         let productQuery = supabase
           .from('products')
-          .select('id,name,description,price,image_url,stock_quantity,category_id,origin,roast_level,processing_method,flavor_notes,tags,categories(id,name,slug)')
+          .select('id,name,description,price,image_url,stock_quantity,category_id,origin,roast_level,processing_method,flavor_notes,tags,categories!products_category_id_fkey(id,name,slug)')
           .eq('is_active', true)
           .order('created_at', { ascending: false })
           .limit(200);
@@ -1581,7 +1581,7 @@ export default function CoffeeQuiz() {
 
               {saving && (
                 <p className="mt-4 text-center text-sm font-medium text-gray-500">
-                  {t('正在自動寫入會員資料...', 'Saving to your profile automatically...', 'プロフィールに自動保存しています...', '회원 정보에 자동 저장 중...')}
+                  {t('正在自動寫入測驗資料...', 'Saving quiz data automatically...', '診断データを自動保存しています...', '퀴즈 데이터를 자동 저장 중...')}
                 </p>
               )}
 
