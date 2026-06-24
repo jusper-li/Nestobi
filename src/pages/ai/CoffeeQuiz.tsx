@@ -1476,68 +1476,32 @@ export default function CoffeeQuiz() {
                       {recommendationsMessage}
                     </div>
                   ) : recommendedProducts.length > 0 ? (
-                    <div className="mt-4 space-y-2.5">
-                      {recommendedProducts.map((item, index) => (
-                        <div key={item.product.id} className="rounded-2xl bg-white/80 px-3 py-3 shadow-[0_1px_0_rgba(122,90,53,0.05)]">
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-                            <Link to={`/shop/${item.product.id}`} className="relative block h-24 w-full overflow-hidden rounded-xl bg-[#f2f2f2] sm:h-20 sm:w-20 sm:shrink-0">
-                              <img
-                                src={item.product.image_url || PRODUCT_FALLBACK_IMAGE}
-                                alt={item.product.name}
-                                className="h-full w-full object-cover"
-                              />
-                              <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-bold text-white">
-                                #{index + 1}
+                    <div className="mt-4 overflow-hidden rounded-2xl bg-white/70">
+                      {recommendedProducts.slice(0, 3).map((item, index) => (
+                        <Link
+                          key={item.product.id}
+                          to={'/shop/' + item.product.id}
+                          className={`flex items-center gap-3 px-3 py-3 transition ${index > 0 ? 'border-t border-[#efe3d3]' : ''}`}
+                        >
+                          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#f2f2f2]">
+                            <img
+                              src={item.product.image_url || PRODUCT_FALLBACK_IMAGE}
+                              alt={item.product.name}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="line-clamp-1 text-sm font-bold text-[#222]">{item.product.name}</p>
+                                <p className="mt-1 text-xs text-[#8a5a22]">{formatCurrency(item.product.price)}</p>
+                              </div>
+                              <span className="shrink-0 rounded-full bg-[#f6ead7] px-2 py-1 text-[11px] font-bold text-[#8a5a22]">
+                                {Math.max(item.score, 0)} pt
                               </span>
-                              {item.product.stock_quantity <= 0 && (
-                                <span className="absolute inset-x-0 bottom-0 bg-black/70 px-2 py-1 text-center text-[11px] font-bold text-white">
-                                  {t('暫無現貨', 'Sold out', '在庫切れ', '품절')}
-                                </span>
-                              )}
-                            </Link>
-
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-start justify-between gap-3">
-                                <div>
-                                  <Link to={`/shop/${item.product.id}`} className="line-clamp-2 text-base font-black leading-6 text-[#222] transition hover:text-[#8a5a22]">
-                                    {item.product.name}
-                                  </Link>
-                                  <p className="mt-1 text-sm font-bold text-[#8a5a22]">{formatCurrency(item.product.price)}</p>
-                                </div>
-                                <span className="rounded-full bg-[#fff6ea] px-2.5 py-1 text-[11px] font-bold text-[#8a5a22]">
-                                  {Math.max(item.score, 0)} pt
-                                </span>
-                              </div>
-                              <div className="mt-2 flex flex-wrap gap-1.5">
-                                {uniqueDisplayLabels([item.product.origin, item.product.roast_level, item.product.processing_method])
-                                  .slice(0, 2)
-                                  .map((label, labelIndex) => (
-                                    <span key={`${item.product.id}-meta-${labelIndex}`} className="rounded-full border border-[#eadfce] bg-white px-2 py-0.5 text-[11px] font-semibold text-[#6f4f2b]">
-                                      {label}
-                                    </span>
-                                  ))}
-                              </div>
-
-                              {item.reasons.length > 0 && (
-                                <p className="mt-2 text-xs leading-5 text-gray-600">
-                                  {item.reasons.join(' ・ ')}
-                                </p>
-                              )}
-
-                              <div className="mt-3 flex items-center justify-end gap-3">
-                                <p className="sr-only text-xs font-medium text-gray-500">
-                                  {item.product.stock_quantity > 0 ? t('可直接購買', 'Ready to buy', 'すぐ購入可能', '바로 구매 가능') : t('暫時缺貨', 'Out of stock', '在庫切れ', '품절')}
-                                </p>
-                                <Link
-                                  to={`/shop/${item.product.id}`}
-                                  className="inline-flex items-center gap-1 rounded-full bg-[#212529] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#3a3f45]"
-                                >
-                                  {t('查看商品', 'View product', '商品を見る', '상품 보기')}
-                                </Link>
-                              </div>
                             </div>
                           </div>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   ) : null}
