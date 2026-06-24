@@ -67,9 +67,16 @@ import SuperAdminLayout from './pages/superadmin/SuperAdminLayout';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
 import SuperAdminUsers from './pages/superadmin/SuperAdminUsers';
 import SuperAdminVendors from './pages/superadmin/SuperAdminVendors';
+import SuperAdminVendorDetail from './pages/superadmin/SuperAdminVendorDetail';
+import SuperAdminVendorEdit from './pages/superadmin/SuperAdminVendorEdit';
 import SuperAdminRevenue from './pages/superadmin/SuperAdminRevenue';
+import SuperAdminPointRewards from './pages/superadmin/SuperAdminPointRewards';
+import SuperAdminPointLedger from './pages/superadmin/SuperAdminPointLedger';
+import SuperAdminPointLedgerDetail from './pages/superadmin/SuperAdminPointLedgerDetail';
 import SuperAdminRooms from './pages/superadmin/SuperAdminRooms';
+import SuperAdminRoomDetail from './pages/superadmin/SuperAdminRoomDetail';
 import SuperAdminProducts from './pages/superadmin/SuperAdminProducts';
+import SuperAdminProductDetail from './pages/superadmin/SuperAdminProductDetail';
 import SuperAdminProductCategories from './pages/superadmin/SuperAdminProductCategories';
 import SuperAdminOrders from './pages/superadmin/SuperAdminOrders';
 import SuperAdminAIAnalytics from './pages/superadmin/SuperAdminAIAnalytics';
@@ -213,17 +220,24 @@ function AppShell() {
                   <Route index element={<SuperAdminDashboard />} />
                   <Route path="users" element={<SuperAdminUsers />} />
                   <Route path="vendors" element={<SuperAdminVendors />} />
+                  <Route path="vendors/detail/:id" element={<SuperAdminVendorDetail />} />
+                  <Route path="vendors/edit/:id" element={<SuperAdminVendorEdit />} />
                   <Route path="rooms" element={<SuperAdminRooms />} />
+                  <Route path="rooms/detail/:id" element={<SuperAdminRoomDetail />} />
                   <Route path="room-translations" element={<SuperAdminRoomTranslations />} />
                   <Route path="rooms/new" element={<SuperAdminRoomForm />} />
                   <Route path="rooms/:id" element={<SuperAdminRoomForm />} />
                   <Route path="products" element={<SuperAdminProducts />} />
+                  <Route path="products/detail/:id" element={<SuperAdminProductDetail />} />
                   <Route path="product-categories" element={<SuperAdminProductCategories />} />
                   <Route path="products/new" element={<SuperAdminProductForm />} />
                   <Route path="products/:id" element={<SuperAdminProductForm />} />
                   <Route path="orders" element={<SuperAdminOrders />} />
                   <Route path="engagement" element={<EngagementManagement mode="superadmin" />} />
                   <Route path="revenue" element={<SuperAdminRevenue />} />
+                  <Route path="point-rewards" element={<SuperAdminPointRewards />} />
+                  <Route path="points-ledger" element={<SuperAdminPointLedger />} />
+                  <Route path="points-ledger/:id" element={<SuperAdminPointLedgerDetail />} />
                   <Route path="ai-analytics" element={<SuperAdminAIAnalytics />} />
                   <Route path="chatbot" element={<SuperAdminChatbot />} />
                   <Route path="static-pages" element={<AdminStaticPages />} />

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Search, UserCheck, UserX, Plus, X, Save, Eye, EyeOff, Phone, Globe, FileText, BedDouble, ShoppingBag, Award, Calendar, Mail, Coffee } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -36,11 +37,13 @@ const ROLE_COLORS: Record<string, string> = {
 const PAGE_SIZE = 20;
 
 const SuperAdminUsers: React.FC = () => {
+  const location = useLocation();
+  const initialParams = new URLSearchParams(location.search);
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialParams.get('q') || '');
   const [roleFilter, setRoleFilter] = useState('all');
   const [page, setPage] = useState(0);
   const [updating, setUpdating] = useState<string | null>(null);
@@ -49,6 +52,11 @@ const SuperAdminUsers: React.FC = () => {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
   const [showPw, setShowPw] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setSearch(params.get('q') || '');
+  }, [location.search]);
 
   const handleCreateUser = async () => {
     if (!createForm.email || !createForm.password) { setCreateError('請填寫信箱和密碼'); return; }

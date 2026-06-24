@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Store, Plus, Pencil, Trash2, X, Link, CheckCircle, Search } from 'lucide-react';
+import { Store, Plus, Pencil, Trash2, X, Link, CheckCircle, Search, Eye } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { logAdminAction } from '../../lib/auditLog';
 import { sanitizeText } from '../../lib/security';
@@ -24,9 +25,12 @@ interface Vendor {
 const emptyForm = { name: '', description: '', contact_email: '', contact_phone: '', address: '', website: '', logo_url: '', note: '', is_active: true };
 
 const SuperAdminVendors: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const initialParams = new URLSearchParams(location.search);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialParams.get('q') || '');
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Vendor | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -48,6 +52,11 @@ const SuperAdminVendors: React.FC = () => {
     setVendors(data.map((v: any) => ({ ...v, linked_display_name: v.user_id ? profileMap[v.user_id] : undefined })));
     setLoading(false);
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setSearch(params.get('q') || '');
+  }, [location.search]);
 
   useEffect(() => { fetchVendors(); }, []);
 
@@ -172,6 +181,7 @@ const SuperAdminVendors: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
+                  <button onClick={() => navigate(`/superadmin/vendors/detail/${v.id}`)} className="p-2 hover:bg-sky-50 rounded-xl text-sky-600 transition"><Eye className="w-4 h-4" /></button>
                   <button onClick={() => openEdit(v)} className="p-2 hover:bg-amber-50 rounded-xl text-amber-600 transition"><Pencil className="w-4 h-4" /></button>
                   <button onClick={() => handleDelete(v.id)} className="p-2 hover:bg-red-50 rounded-xl text-red-500 transition"><Trash2 className="w-4 h-4" /></button>
                 </div>
@@ -289,3 +299,6 @@ const SuperAdminVendors: React.FC = () => {
 };
 
 export default SuperAdminVendors;
+
+
+

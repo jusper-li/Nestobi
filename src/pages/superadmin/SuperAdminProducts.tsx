@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+﻿import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle,
@@ -66,13 +66,20 @@ function getCompleteness(product: Product) {
 
 export default function SuperAdminProducts() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const initialParams = new URLSearchParams(location.search);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialParams.get('q') || '');
   const [statusFilter, setStatusFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
   const [qualityFilter, setQualityFilter] = useState('all');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setSearch(params.get('q') || '');
+  }, [location.search]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -295,14 +302,24 @@ export default function SuperAdminProducts() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/superadmin/products/${product.id}`)}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-600 transition hover:bg-amber-100 hover:text-amber-800"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          編輯
-                        </button>
+                        <div className="inline-flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/superadmin/products/detail/${product.id}`)}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-600 transition hover:bg-sky-100 hover:text-sky-800"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            查看
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/superadmin/products/${product.id}`)}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-600 transition hover:bg-amber-100 hover:text-amber-800"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            編輯
+                          </button>
+                        </div>
                       </td>
                     </motion.tr>
                   );

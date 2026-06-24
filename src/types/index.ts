@@ -244,12 +244,22 @@ export interface Point {
   amount: number;
   transaction_type: 'earned' | 'spent' | 'expired' | 'manual' | 'redemption' | 'store_redemption';
   reference_id: string | null;
-  source_type?: 'booking' | 'order' | 'manual' | 'redemption' | 'store_redemption' | null;
+  source_type?: 'booking' | 'order' | 'subscription' | 'manual' | 'redemption' | 'store_redemption' | null;
   source_id?: string | null;
   vendor_id?: string | null;
   store_location_id?: string | null;
   description: string;
   created_at: string;
+}
+
+export interface PointRewardRule {
+  source_type: 'booking' | 'order' | 'subscription';
+  label: string;
+  points_per_100: number;
+  is_active: boolean;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface StoreLocationManager {

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+﻿import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BedDouble, MapPin, Search, Store, Pencil, Plus, Trash2, AlertTriangle, Building2 } from 'lucide-react';
+import { BedDouble, MapPin, Search, Store, Pencil, Plus, Trash2, AlertTriangle, Building2, Eye } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
 
@@ -28,10 +28,12 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const SuperAdminRooms: React.FC = () => {
+  const location = useLocation();
+  const initialParams = new URLSearchParams(location.search);
   const navigate = useNavigate();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialParams.get('q') || '');
   const [typeFilter, setTypeFilter] = useState('all');
   const [availFilter, setAvailFilter] = useState('all');
   const [deleteTarget, setDeleteTarget] = useState<Room | null>(null);
@@ -45,6 +47,11 @@ const SuperAdminRooms: React.FC = () => {
     setRooms((data as any) || []);
     setLoading(false);
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setSearch(params.get('q') || '');
+  }, [location.search]);
 
   useEffect(() => { loadRooms(); }, []);
 
@@ -193,8 +200,14 @@ const SuperAdminRooms: React.FC = () => {
                         {room.is_available ? '可預訂' : '已停用'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                                        <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => navigate(`/superadmin/rooms/detail/${room.id}`)}
+                          className="inline-flex items-center gap-1.5 text-xs text-sky-600 hover:text-sky-800 bg-sky-50 hover:bg-sky-100 px-2.5 py-1.5 rounded-lg transition font-medium"
+                        >
+                          <Eye className="w-3.5 h-3.5" />查看
+                        </button>
                         <button
                           onClick={() => navigate(`/superadmin/rooms/${room.id}`)}
                           className="inline-flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg transition font-medium"
@@ -274,3 +287,5 @@ const SuperAdminRooms: React.FC = () => {
 };
 
 export default SuperAdminRooms;
+
+
