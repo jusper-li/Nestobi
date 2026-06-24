@@ -54,8 +54,14 @@ Deno.serve(async (req) => {
     }
 
     await Promise.allSettled([
-      admin.from("tbl_mn5wgzh0").upsert({ user_id: created.user.id, display_name: safeDisplayName }),
-      admin.from("tbl_user_auth").upsert({ user_id: created.user.id, role: "user" }),
+      admin.from("tbl_mn5wgzh0").upsert(
+        { user_id: created.user.id, display_name: safeDisplayName },
+        { onConflict: "user_id" },
+      ),
+      admin.from("tbl_user_auth").upsert(
+        { user_id: created.user.id, role: "user" },
+        { onConflict: "user_id" },
+      ),
     ]);
 
     return json({ success: true, userId: created.user.id, email: safeEmail });

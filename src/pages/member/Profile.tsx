@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, FileText, Globe, Phone, User } from 'lucide-react';
+import { CheckCircle, Coffee, FileText, Globe, Phone, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
@@ -45,6 +45,14 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const coffeeProfile = profile?.coffee_profile_label
+    ? {
+        key: profile.coffee_profile_key || '',
+        label: profile.coffee_profile_label,
+        summary: profile.coffee_profile_summary || '',
+        scores: profile.coffee_profile_scores || {},
+      }
+    : null;
 
   useEffect(() => {
     if (!profile) return;
@@ -181,6 +189,34 @@ const Profile: React.FC = () => {
           </button>
         </form>
       </div>
+
+      {coffeeProfile && (
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+            <Coffee className="h-5 w-5 text-[#2C1F10]" />
+            {pick('咖啡偏好輪廓', 'Coffee profile', 'コーヒープロファイル', '커피 성향')}
+          </h3>
+
+          <div className="rounded-2xl border border-[#eadfce] bg-gradient-to-br from-[#fff9f0] to-white p-4">
+            <p className="text-base font-bold text-[#3b2a19]">{coffeeProfile.label}</p>
+            {coffeeProfile.summary && <p className="mt-2 text-sm leading-7 text-gray-700">{coffeeProfile.summary}</p>}
+            {coffeeProfile.key && <p className="mt-3 text-xs text-gray-400">Key: {coffeeProfile.key}</p>}
+
+            {coffeeProfile.scores && Object.keys(coffeeProfile.scores).length > 0 && (
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {Object.entries(coffeeProfile.scores).map(([key, value]) => (
+                  <div key={key} className="rounded-xl border border-[#f0e6d6] bg-white px-3 py-2 text-sm text-gray-700">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="capitalize">{key.replace(/_/g, ' ')}</span>
+                      <span className="font-semibold text-[#8a5a22]">{String(value)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

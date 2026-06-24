@@ -16,6 +16,12 @@ export interface MemberProfile {
   bio: string;
   nationality: string;
   preferred_language: string;
+  coffee_profile_key?: string | null;
+  coffee_profile_label?: string | null;
+  coffee_profile_summary?: string | null;
+  coffee_profile_scores?: Record<string, number> | null;
+  coffee_profile_answers?: Record<string, string> | null;
+  coffee_quiz_completed_at?: string | null;
   created_at: string;
   updated_at: string;
 }

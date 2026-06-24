@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Search, UserCheck, UserX, Plus, X, Save, Eye, EyeOff, Phone, Globe, FileText, BedDouble, ShoppingBag, Award, Calendar, Mail } from 'lucide-react';
+import { Users, Search, UserCheck, UserX, Plus, X, Save, Eye, EyeOff, Phone, Globe, FileText, BedDouble, ShoppingBag, Award, Calendar, Mail, Coffee } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDate, formatDateTime, formatCurrency, getStatusLabel, getStatusColor } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
@@ -376,15 +376,45 @@ const SuperAdminUsers: React.FC = () => {
                       </div>
                     </div>
                     {detail.profile ? (
-                      <div className="grid grid-cols-2 gap-4">
-                        <InfoItem icon={<Users className="w-4 h-4" />} label="顯示名稱" value={detail.profile.display_name || '—'} />
-                        <InfoItem icon={<Phone className="w-4 h-4" />} label="電話" value={detail.profile.phone || '—'} />
-                        <InfoItem icon={<Globe className="w-4 h-4" />} label="國籍" value={detail.profile.nationality || '—'} />
-                        <InfoItem icon={<Globe className="w-4 h-4" />} label="偏好語言" value={detail.profile.preferred_language || '—'} />
-                        <div className="col-span-2">
-                          <InfoItem icon={<FileText className="w-4 h-4" />} label="個人簡介" value={detail.profile.bio || '—'} />
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          <InfoItem icon={<Users className="w-4 h-4" />} label="顯示名稱" value={detail.profile.display_name || '—'} />
+                          <InfoItem icon={<Phone className="w-4 h-4" />} label="電話" value={detail.profile.phone || '—'} />
+                          <InfoItem icon={<Globe className="w-4 h-4" />} label="國籍" value={detail.profile.nationality || '—'} />
+                          <InfoItem icon={<Globe className="w-4 h-4" />} label="偏好語言" value={detail.profile.preferred_language || '—'} />
+                          <div className="col-span-2">
+                            <InfoItem icon={<FileText className="w-4 h-4" />} label="個人簡介" value={detail.profile.bio || '—'} />
+                          </div>
                         </div>
-                      </div>
+
+                        {(detail.profile.coffee_profile_label || detail.profile.coffee_profile_summary) && (
+                          <div className="mt-4 rounded-2xl border border-[#eadfce] bg-gradient-to-br from-[#fff9f0] to-white p-4">
+                            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#8a5a22]">
+                              <Coffee className="w-4 h-4" />
+                              咖啡偏好輪廓
+                            </div>
+                            <p className="text-base font-bold text-[#3b2a19]">{detail.profile.coffee_profile_label || '—'}</p>
+                            {detail.profile.coffee_profile_summary && (
+                              <p className="mt-2 text-sm leading-7 text-gray-700">{detail.profile.coffee_profile_summary}</p>
+                            )}
+                            {detail.profile.coffee_profile_key && (
+                              <p className="mt-3 text-xs text-gray-400">Key: {detail.profile.coffee_profile_key}</p>
+                            )}
+                            {detail.profile.coffee_profile_scores && Object.keys(detail.profile.coffee_profile_scores).length > 0 && (
+                              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                                {Object.entries(detail.profile.coffee_profile_scores).map(([key, value]) => (
+                                  <div key={key} className="rounded-xl border border-[#f0e6d6] bg-white px-3 py-2 text-sm text-gray-700">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className="capitalize">{key.replace(/_/g, ' ')}</span>
+                                      <span className="font-semibold text-[#8a5a22]">{String(value)}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-400 text-center">尚未建立個人資料</div>
                     )}

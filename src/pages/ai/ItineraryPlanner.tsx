@@ -34,8 +34,25 @@ type SavedPlan = {
 };
 
 const STORAGE_KEY = 'nestobi_itinerary_plans_fallback';
+const ITINERARY_STATE_KEY = 'nestobi_itinerary_planner_state_v1';
 const BUDGETS: BudgetKey[] = ['budget', 'standard', 'luxury'];
 const INTERESTS: InterestKey[] = ['food', 'culture', 'shopping', 'nature', 'adventure', 'family', 'art', 'nightlife'];
+
+interface PersistedItineraryState {
+  destination: string;
+  startDate: string;
+  endDate: string;
+  groupSize: number;
+  budget: BudgetKey;
+  interests: InterestKey[];
+  requiredPlacesInput: string;
+  itinerary: DayPlan[] | null;
+  currentSourceTitle: string;
+  plans: SavedPlan[];
+  expandedId: string | null;
+  useLocalFallback: boolean;
+  passportAddedKeys: string[];
+}
 
 const readLocalPlans = (userId: string): SavedPlan[] => {
   try {
@@ -56,6 +73,26 @@ const writeLocalPlans = (userId: string, plans: SavedPlan[]) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
   } catch {
     // Local fallback is best-effort only.
+  }
+};
+
+const getItineraryStateKey = (userId: string) => `${ITINERARY_STATE_KEY}:${userId}`;
+
+const readPersistedItineraryState = (userId: string): PersistedItineraryState | null => {
+  try {
+    const raw = localStorage.getItem(getItineraryStateKey(userId));
+    if (!raw) return null;
+    return JSON.parse(raw) as PersistedItineraryState;
+  } catch {
+    return null;
+  }
+};
+
+const writePersistedItineraryState = (userId: string, state: PersistedItineraryState) => {
+  try {
+    localStorage.setItem(getItineraryStateKey(userId), JSON.stringify(state));
+  } catch {
+    // Best-effort persistence only.
   }
 };
 
@@ -83,6 +120,7 @@ export default function ItineraryPlanner() {
   const [passportSavingKey, setPassportSavingKey] = useState('');
   const [passportAddedKeys, setPassportAddedKeys] = useState<string[]>([]);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [hydratedUserId, setHydratedUserId] = useState<string | null>(null);
 
   const days = useMemo(() => {
     if (!startDate || !endDate) return 0;
@@ -122,6 +160,68 @@ export default function ItineraryPlanner() {
 
     void loadPlans();
   }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setHydratedUserId(null);
+      return;
+    }
+
+    const restored = readPersistedItineraryState(user.id);
+    if (restored) {
+      setDestination(restored.destination || '');
+      setStartDate(restored.startDate || '');
+      setEndDate(restored.endDate || '');
+      setGroupSize(restored.groupSize || 2);
+      setBudget(restored.budget || 'standard');
+      setInterests(restored.interests || []);
+      setRequiredPlacesInput(restored.requiredPlacesInput || '');
+      setItinerary(restored.itinerary || null);
+      setCurrentSourceTitle(restored.currentSourceTitle || '');
+      setPlans(restored.plans || []);
+      setExpandedId(restored.expandedId || null);
+      setUseLocalFallback(Boolean(restored.useLocalFallback));
+      setPassportAddedKeys(restored.passportAddedKeys || []);
+    }
+
+    setHydratedUserId(user.id);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || hydratedUserId !== user.id) return;
+
+    writePersistedItineraryState(user.id, {
+      destination,
+      startDate,
+      endDate,
+      groupSize,
+      budget,
+      interests,
+      requiredPlacesInput,
+      itinerary,
+      currentSourceTitle,
+      plans,
+      expandedId,
+      useLocalFallback,
+      passportAddedKeys,
+    });
+  }, [
+    user,
+    hydratedUserId,
+    destination,
+    startDate,
+    endDate,
+    groupSize,
+    budget,
+    interests,
+    requiredPlacesInput,
+    itinerary,
+    currentSourceTitle,
+    plans,
+    expandedId,
+    useLocalFallback,
+    passportAddedKeys,
+  ]);
 
   const budgetLabel = (value: BudgetKey) => {
     if (value === 'budget') return t('精省', 'Budget', '節約', '실속');

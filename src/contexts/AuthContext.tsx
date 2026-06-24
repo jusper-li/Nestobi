@@ -214,7 +214,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) throw new Error('Not signed in');
     const { error } = await supabase
       .from('tbl_mn5wgzh0')
-      .upsert({ ...data, user_id: user.id, updated_at: new Date().toISOString() });
+      .upsert(
+        { ...data, user_id: user.id, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' },
+      );
     if (error) throw error;
     await fetchUserData(user.id);
   };

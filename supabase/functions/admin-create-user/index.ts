@@ -87,10 +87,10 @@ Deno.serve(async (req: Request) => {
     await Promise.allSettled([
       adminClient
         .from("tbl_mn5wgzh0")
-        .upsert({ user_id: userId, display_name: display_name || "" }),
+        .upsert({ user_id: userId, display_name: display_name || "" }, { onConflict: "user_id" }),
       adminClient
         .from("tbl_user_auth")
-        .upsert({ user_id: userId, role: userRole }),
+        .upsert({ user_id: userId, role: userRole }, { onConflict: "user_id" }),
     ]);
 
     return new Response(
