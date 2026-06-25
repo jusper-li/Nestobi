@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -112,6 +112,14 @@ export default function Navigation() {
 
   const brand = useMemo(() => {
     const path = location.pathname;
+    if (path.startsWith('/rooms') || path.startsWith('/booking') || path.startsWith('/hotels')) {
+      return {
+        to: '/rooms',
+        alt: 'nestobi',
+        image: '/20260407_nestobi_logo.svg',
+        className: 'h-10 w-auto md:h-12',
+      };
+    }
     if (path.startsWith('/shop') || path.startsWith('/stores') || path.startsWith('/genbon-travel')) {
       return {
         to: '/shop',
