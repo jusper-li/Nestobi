@@ -110,7 +110,7 @@ export default function Login() {
         </div>
 
         <div className="mb-8 text-center">
-          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#C09A6A] p-2 shadow-lg">
+          <div className="mb-4 inline-flex h-28 w-28 items-center justify-center">
             <img
               src="/assets/ruoshui-jinhe-logo.png"
               alt="若水金禾"
