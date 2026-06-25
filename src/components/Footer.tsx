@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -99,9 +99,9 @@ export default function Footer() {
   ] as const;
 
   const brandLogos = [
-    { src: '/20260407_nestobi_logo.svg', alt: 'Nestobi' },
-    { src: '/genbon-travel-logo.png', alt: '根本在旅行' },
-    { src: '/assets/ruoshui-jinhe-logo.png', alt: '若水金禾' },
+    { src: '/20260407_nestobi_logo.svg', alt: 'Nestobi', className: 'h-14 w-auto' },
+    { src: '/genbon-travel-logo.png', alt: '根本在旅行', className: 'h-12 w-auto' },
+    { src: '/assets/ruoshui-jinhe-logo.png', alt: '若水金禾', className: 'h-12 w-auto' },
   ] as const;
 
   return (
@@ -111,9 +111,7 @@ export default function Footer() {
           <div>
             <div className="mb-6 flex flex-wrap items-center gap-4">
               {brandLogos.map((logo) => (
-                <div key={logo.alt} className="flex h-14 items-center justify-center rounded-2xl bg-white/40 px-4 shadow-sm ring-1 ring-white/40">
-                  <img src={logo.src} alt={logo.alt} className="max-h-10 w-auto object-contain" />
-                </div>
+                <img key={logo.alt} src={logo.src} alt={logo.alt} className={`${logo.className} object-contain`} />
               ))}
             </div>
             <p className="mb-5 max-w-2xl text-sm leading-7 text-[#2C1F10]/70">{t.intro}</p>
