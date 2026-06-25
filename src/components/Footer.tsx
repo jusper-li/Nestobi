@@ -185,7 +185,7 @@ export default function Footer() {
             </div>
 
             <div className="flex items-center gap-4 text-xs text-[#2C1F10]/55">
-              <p>© {new Date().getFullYear()} Nestobi / 根本在旅行</p>
+              <p>© {new Date().getFullYear()} 若水金禾 - 根本在旅行 / Nestobi</p>
               <div className="flex items-center gap-2">
                 {adminLinks.map(({ to, label, icon: Icon }) => (
                   <Link

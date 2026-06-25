@@ -101,6 +101,7 @@ const AI_COOLDOWN_KEY = 'nestobi:translation-ai-cooldown-until';
 const AI_COOLDOWN_MS = 2 * 60 * 1000;
 const TRANSLATION_UNAVAILABLE_TTL_MS = 60 * 1000;
 const TRANSLATION_CONCURRENCY = 3;
+const TRANSLATION_BATCH_SIZE = 8;
 
 function isMojibakeLike(text: string): boolean {
   if (!text) return false;
@@ -298,6 +299,61 @@ function isUsableTranslation(source: string, translated: string): boolean {
   const lower = txt.toLowerCase();
   if (lower.includes(EMPTY_TRANSLATION_HINT) || lower.includes(EMPTY_TRANSLATION_HINT_2)) return false;
   return true;
+}
+
+async function translateEntryBatches(
+  entries: Array<{ entity_id: string; field_key: string; source_text: string; source_hash: string }>,
+  sourceLang: string,
+  targetLang: string,
+  translationMap: Map<string, string>,
+) {
+  const batches = Array.from(
+    { length: Math.ceil(entries.length / TRANSLATION_BATCH_SIZE) },
+    (_, index) => entries.slice(index * TRANSLATION_BATCH_SIZE, (index + 1) * TRANSLATION_BATCH_SIZE),
+  ).filter(batch => batch.length > 0);
+
+  const translatedRows = await mapWithConcurrency(
+    batches,
+    TRANSLATION_CONCURRENCY,
+    async batch => {
+      try {
+        const translated = await callAI<{ translations?: string[] }>('translate', {
+          sourceLang,
+          targetLang,
+          items: batch.map(entry => entry.source_text),
+        });
+        const translations = Array.isArray(translated?.translations) ? translated.translations : [];
+
+        return batch.map((entry, index) => {
+          const clean = String(translations[index] || '').trim();
+          const safe = isUsableTranslation(entry.source_text, clean) ? clean : entry.source_text;
+          translationMap.set(`${entry.entity_id}|${entry.field_key}|${entry.source_hash}`, safe);
+          return {
+            entity_type: '',
+            entity_id: entry.entity_id,
+            field_key: entry.field_key,
+            source_text: entry.source_text,
+            source_hash: entry.source_hash,
+            target_lang: targetLang,
+            translated_text: safe,
+          };
+        });
+      } catch {
+        setAICooldownNow();
+        return batch.map(() => null);
+      }
+    },
+  );
+
+  return translatedRows.flat().filter(Boolean) as Array<{
+    entity_type: string;
+    entity_id: string;
+    field_key: string;
+    source_text: string;
+    source_hash: string;
+    target_lang: string;
+    translated_text: string;
+  }>;
 }
 
 export async function translateRoomsOnDemand<T extends RoomLike>(rooms: T[], targetLang: string): Promise<T[]> {
@@ -600,36 +656,17 @@ async function translateGenericOnDemand<
   if (unresolved.length > 0) {
     if (Date.now() < getAICooldownUntil()) return rows.map(item => applyTranslation(item, translationMap));
 
-    const translatedRows = await mapWithConcurrency(
-      unresolved,
-      TRANSLATION_CONCURRENCY,
-      async entry => {
-        try {
-          const translated = await callAI<string>('translate', {
-            text: entry.source_text,
-            sourceLang,
-            targetLang,
-          });
-          const clean = (translated || '').trim();
-          const safe = isUsableTranslation(entry.source_text, clean) ? clean : entry.source_text;
-          translationMap.set(`${entry.entity_id}|${entry.field_key}|${entry.source_hash}`, safe);
-          return {
-            entity_type: entityType,
-            entity_id: entry.entity_id,
-            field_key: entry.field_key,
-            source_text: entry.source_text,
-            source_hash: entry.source_hash,
-            target_lang: targetLang,
-            translated_text: safe,
-          };
-        } catch {
-          setAICooldownNow();
-          return null;
-        }
-      },
-    );
+    const translatedRows = await translateEntryBatches(unresolved, sourceLang, targetLang, translationMap);
 
-    const inserts = translatedRows.filter(Boolean);
+    const inserts = translatedRows.map(row => ({
+      entity_type: entityType,
+      entity_id: row.entity_id,
+      field_key: row.field_key,
+      source_text: row.source_text,
+      source_hash: row.source_hash,
+      target_lang: row.target_lang,
+      translated_text: row.translated_text,
+    }));
     if (!contentTranslationsTableUnavailable && !translationWriteDisabled && inserts.length > 0) {
       translationWriteAttempts += inserts.length;
       const { error } = await supabase

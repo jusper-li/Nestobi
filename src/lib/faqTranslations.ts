@@ -324,3 +324,14 @@ export function localizeFaqRow<T extends FaqSource>(row: T, lang: string): T {
 export function localizeFaqRows<T extends FaqSource>(rows: T[], lang: string): T[] {
   return rows.map(row => localizeFaqRow(row, lang));
 }
+
+export function getFeaturedFaqPrompts(lang: string, limit = 4) {
+  const normalizedLang = normalizeLang(lang);
+  return Object.entries(FAQ_TRANSLATIONS)
+    .slice(0, limit)
+    .map(([id, entry]) => ({
+      id,
+      category: pickByLang(normalizedLang, entry.category.zh, entry.category.en, entry.category.ja, entry.category.ko),
+      question: pickByLang(normalizedLang, entry.question.zh, entry.question.en, entry.question.ja, entry.question.ko),
+    }));
+}

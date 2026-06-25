@@ -1,10 +1,11 @@
 ﻿import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Bot, Send, User } from 'lucide-react';
+import { ArrowRight, Bot, Hotel, MessageSquareText, Package, Send, Sparkles, User } from 'lucide-react';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { getFeaturedFaqPrompts } from '../../lib/faqTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { callAI } from '../../lib/openai';
 import { supabase } from '../../lib/supabase';
@@ -19,6 +20,8 @@ interface MessageItem {
 
 type Locale = 'zh-TW' | 'en' | 'ja' | 'ko';
 type ChatRow = { id: string; role: 'user' | 'assistant'; content: string; created_at: string; session_id: string };
+const HISTORY_PREVIEW_LIMIT = 12;
+const HISTORY_FULL_LIMIT = 120;
 
 const pick = (locale: Locale, zh: string, en: string, ja: string, ko: string) =>
   pickByLang(locale, zh, en, ja, ko);
@@ -57,23 +60,6 @@ function detectMessageLanguage(text: string): 'en' | 'zh-TW' | 'ja' | 'ko' | nul
 
 function localeToResponseLanguage(locale: Locale): 'zh-TW' | 'en' | 'ja' | 'ko' {
   return locale;
-}
-
-async function normalizeAssistantReply(reply: string, locale: Locale) {
-  const targetLanguage = localeToResponseLanguage(locale);
-  const replyLanguage = detectMessageLanguage(reply);
-  if (!replyLanguage || replyLanguage === targetLanguage) return reply;
-
-  try {
-    return await callAI<string>('translate', {
-      text: reply,
-      sourceLang: replyLanguage,
-      targetLang: targetLanguage,
-      language: locale,
-    });
-  } catch {
-    return reply;
-  }
 }
 
 const INTERNAL_PATH_PATTERN = /^\/(?:rooms|booking|shop|blog|hotels|stores|faq)(?:\/[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]*)?$/;
@@ -134,6 +120,14 @@ function renderMessageContent(content: string, role: MessageItem['role']) {
   ));
 }
 
+function mergeMessages(existing: MessageItem[], incoming: MessageItem[]) {
+  const merged = new Map<string, MessageItem>();
+  [...existing, ...incoming].forEach(message => {
+    merged.set(message.id, message);
+  });
+  return [...merged.values()].sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+}
+
 export default function Chatbot() {
   const { lang } = useLanguage();
   const { user } = useAuth();
@@ -167,10 +161,52 @@ export default function Chatbot() {
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState('');
+  const [quickGuideTab, setQuickGuideTab] = useState<'faq' | 'product' | 'room'>('faq');
+  const [mobileQuickGuideExpanded, setMobileQuickGuideExpanded] = useState<'faq' | 'product' | 'room' | null>(null);
+  const featuredFaqs = useMemo(() => getFeaturedFaqPrompts(locale, 4), [locale]);
+  const quickGuide = useMemo(
+    () => ({
+      title: pick(locale, '快速導覽', 'Quick Guide', 'クイック案内', '빠른 안내'),
+      subtitle: pick(locale, '', '', '', ''),
+      faqTitle: pick(locale, '常見問題', 'FAQ', 'よくある質問', '자주 묻는 질문'),
+      faqCta: pick(locale, '查看 FAQ', 'View FAQ', 'FAQ を見る', 'FAQ 보기'),
+      productTitle: pick(locale, '商品', 'Products', '商品', '상품'),
+      productCta: pick(locale, '查看商品', 'View products', '商品を見る', '상품 보기'),
+      roomTitle: pick(locale, '住宿', 'Stays', '宿泊', '숙소'),
+      roomCta: pick(locale, '查看住宿', 'View stays', '宿泊を見る', '숙소 보기'),
+      faqActions: featuredFaqs,
+      productPrompts: [
+        pick(locale, '我想找咖啡豆', 'I want coffee beans', 'コーヒー豆を探したい', '커피 원두를 찾고 싶어요'),
+        pick(locale, '我想看濾掛咖啡', 'Show me drip coffee', 'ドリップコーヒーを見たい', '드립커피를 보고 싶어요'),
+        pick(locale, '我想看咖啡定期便', 'Show me subscriptions', '定期便を見たい', '구독 상품을 보고 싶어요'),
+      ],
+      roomPrompts: [
+        pick(locale, '我想找雙人房', 'I want a double room', 'ツインルームを探したい', '더블룸을 찾고 싶어요'),
+        pick(locale, '我想找近車站住宿', 'Stays near stations', '駅近の宿を探したい', '역 근처 숙소를 찾고 싶어요'),
+        pick(locale, '我想找有浴缸的住宿', 'Stays with a bathtub', 'バスタブ付きの宿を探したい', '욕조가 있는 숙소를 찾고 싶어요'),
+      ],
+    }),
+    [featuredFaqs, locale],
+  );
+  const quickGuideTabs = [
+    { id: 'faq' as const, label: quickGuide.faqTitle, icon: MessageSquareText, color: 'sky' },
+    { id: 'product' as const, label: quickGuide.productTitle, icon: Package, color: 'amber' },
+    { id: 'room' as const, label: quickGuide.roomTitle, icon: Hotel, color: 'emerald' },
+  ];
+  const activeQuickGuideTab = quickGuideTabs.find((tab) => tab.id === quickGuideTab) ?? quickGuideTabs[0];
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading, historyLoading]);
+
+  useEffect(() => {
+    if (!user) return;
+    void callAI('semantic-search', {
+      query: 'FAQ 常見問題 住宿 商品 文章',
+      scope: 'all',
+      matchCount: 6,
+    }).catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     setMessages((prev) => {
@@ -213,19 +249,20 @@ export default function Chatbot() {
         localStorage.setItem(storageKey, ensuredSessionId);
         if (!cancelled) setSessionId(ensuredSessionId);
 
-        const { data, error } = await supabase
+        const { data: previewData, error: previewError } = await supabase
           .from('tbl_mn5wn257')
           .select('id, role, content, created_at, session_id')
           .eq('user_id', user.id)
           .eq('session_id', ensuredSessionId)
-          .order('created_at', { ascending: true })
-          .limit(120);
+          .order('created_at', { ascending: false })
+          .limit(HISTORY_PREVIEW_LIMIT);
 
-        if (error) throw error;
+        if (previewError) throw previewError;
         if (cancelled) return;
 
-        const history = ((data || []) as ChatRow[])
+        const previewHistory = ((previewData || []) as ChatRow[])
           .filter((row) => row.role === 'user' || row.role === 'assistant')
+          .reverse()
           .map((row) => ({
             id: row.id,
             role: row.role,
@@ -234,7 +271,36 @@ export default function Chatbot() {
             time: formatMessageTime(row.created_at),
           }));
 
-        setMessages(history.length ? history : [createWelcomeMessage()]);
+        setMessages(previewHistory.length ? previewHistory : [createWelcomeMessage()]);
+        setHistoryLoading(false);
+
+        void (async () => {
+          try {
+            const { data: fullData, error: fullError } = await supabase
+              .from('tbl_mn5wn257')
+              .select('id, role, content, created_at, session_id')
+              .eq('user_id', user.id)
+              .eq('session_id', ensuredSessionId)
+              .order('created_at', { ascending: true })
+              .limit(HISTORY_FULL_LIMIT);
+
+            if (fullError || cancelled) return;
+
+            const fullHistory = ((fullData || []) as ChatRow[])
+              .filter((row) => row.role === 'user' || row.role === 'assistant')
+              .map((row) => ({
+                id: row.id,
+                role: row.role,
+                content: row.content,
+                createdAt: row.created_at,
+                time: formatMessageTime(row.created_at),
+              }));
+
+            setMessages(prev => mergeMessages(prev, fullHistory.length ? fullHistory : [createWelcomeMessage()]));
+          } catch {
+            // Keep the fast preview loaded even if the background fill fails.
+          }
+        })();
       } catch (err) {
         if (!cancelled) {
           setHistoryError(err instanceof Error ? err.message : pick(locale, '歷史對話載入失敗。', 'Failed to load chat history.', '会話履歴の読み込みに失敗しました。', '대화 기록을 불러오지 못했습니다.'));
@@ -266,6 +332,42 @@ export default function Chatbot() {
     if (error) throw error;
   };
 
+  const translateAssistantReplyInBackground = async (messageId: string, reply: string, activeSessionId: string) => {
+    const targetLanguage = localeToResponseLanguage(locale);
+    const replyLanguage = detectMessageLanguage(reply);
+    if (!replyLanguage || replyLanguage === targetLanguage) return reply;
+
+    try {
+      const translated = await callAI<string>('translate', {
+        text: reply,
+        sourceLang: replyLanguage,
+        targetLang: targetLanguage,
+        language: locale,
+      });
+      const normalized = translated.trim() || reply;
+      if (normalized !== reply) {
+        setMessages(prev => prev.map(msg => (msg.id === messageId ? { ...msg, content: normalized } : msg)));
+        try {
+          await saveMessage(
+            {
+              id: messageId,
+              role: 'assistant',
+              content: normalized,
+              time: formatMessageTime(),
+              createdAt: new Date().toISOString(),
+            },
+            activeSessionId,
+          );
+        } catch {
+          // Background translation should never block the chat flow.
+        }
+      }
+      return normalized;
+    } catch {
+      return reply;
+    }
+  };
+
   const startNewChat = () => {
     const nextSessionId = createSessionId();
     localStorage.setItem(storageKey, nextSessionId);
@@ -274,15 +376,14 @@ export default function Chatbot() {
     setMessages([createWelcomeMessage()]);
   };
 
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || loading || historyLoading) return;
+  const submitMessage = async (text: string) => {
+    if (!text.trim() || loading || historyLoading) return;
 
     const activeSessionId = sessionId || createSessionId();
     const userMessage: MessageItem = {
       id: createSessionId(),
       role: 'user',
-      content: input.trim(),
+      content: text.trim(),
       time: formatMessageTime(),
       createdAt: new Date().toISOString(),
     };
@@ -294,7 +395,9 @@ export default function Chatbot() {
     setHistoryError('');
 
     try {
-      await saveMessage(userMessage, activeSessionId);
+      const saveUserPromise = saveMessage(userMessage, activeSessionId).catch(() => {
+        setHistoryError(pick(locale, '聊天記錄寫入失敗，請稍後再試。', 'Failed to save chat history. Please try again later.', '会話履歴の保存に失敗しました。後でもう一度お試しください。', '채팅 기록 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.'));
+      });
       const reply = await callAI<string>('chat', {
         messages: [...messages, userMessage].map((m) => ({ role: m.role, content: m.content })),
         language: locale,
@@ -303,11 +406,11 @@ export default function Chatbot() {
         userMessageId: userMessage.id,
         assistantMessageId,
       });
-      const normalizedReply = await normalizeAssistantReply(reply, locale);
+      void saveUserPromise;
       const assistantMessage: MessageItem = {
         id: assistantMessageId,
         role: 'assistant',
-        content: normalizedReply,
+        content: reply,
         time: formatMessageTime(),
         createdAt: new Date().toISOString(),
       };
@@ -317,6 +420,7 @@ export default function Chatbot() {
       } catch {
         setHistoryError(pick(locale, 'AI 回覆已顯示，但寫入歷史紀錄失敗。', 'The AI reply is shown, but saving history failed.', 'AI の回答は表示されましたが、履歴の保存に失敗しました。', 'AI 답변은 표시되었지만 기록 저장에 실패했습니다.'));
       }
+      void translateAssistantReplyInBackground(assistantMessageId, reply, activeSessionId);
     } catch {
       const fallbackMessage: MessageItem = {
         id: createSessionId(),
@@ -336,7 +440,18 @@ export default function Chatbot() {
     }
   };
 
+  const sendQuickPrompt = (question: string) => {
+    void submitMessage(question);
+  };
+
+  const sendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    void submitMessage(input);
+  };
+
   const pageTitle = pick(locale, 'AI 客服中心', 'AI Support Center', 'AI サポートセンター', 'AI 고객지원 센터');
+  const quickFaqTitle = pick(locale, '快速常見問題', 'Quick FAQ', 'よくある質問', '자주 묻는 질문');
+  const quickFaqHint = pick(locale, '點一下就能直接發問', 'Tap to ask instantly', 'タップですぐ質問できます', '눌러서 바로 질문하세요');
   const pageDesc = pick(
     locale,
     '可搜尋住宿、商品、文章與 FAQ，並保留你的歷史對話。',
@@ -365,6 +480,195 @@ export default function Chatbot() {
             >
               {pick(locale, '新對話', 'New chat', '新しい会話', '새 대화')}
             </button>
+          </div>
+
+          <div className="border-b border-slate-100 bg-[linear-gradient(180deg,#FAFAF7_0%,#F5F1E7_100%)] px-3 py-3 md:px-5 md:py-4">
+            <div className="mb-1 inline-flex rounded-full border border-white/70 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.16em] text-slate-500 shadow-sm">
+              <Sparkles className="mr-1 h-3.5 w-3.5 text-amber-500" />
+              {quickGuide.title}
+            </div>
+            <div className="mb-3 text-sm text-slate-500 md:mb-4">{quickGuide.subtitle}</div>
+
+            <div className="mb-3 grid grid-cols-3 gap-2 md:hidden">
+              {quickGuideTabs.map(tab => {
+                const Icon = tab.icon;
+                const active = quickGuideTab === tab.id;
+                const expanded = mobileQuickGuideExpanded === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => {
+                      setQuickGuideTab(tab.id);
+                      setMobileQuickGuideExpanded(prev => (prev === tab.id ? null : tab.id));
+                    }}
+                    className={`flex items-center justify-center gap-1.5 rounded-2xl border px-2.5 py-2 text-sm font-semibold transition ${
+                      active
+                        ? tab.color === 'amber'
+                          ? 'border-amber-300 bg-amber-100 text-amber-900'
+                          : tab.color === 'emerald'
+                            ? 'border-emerald-300 bg-emerald-100 text-emerald-900'
+                            : 'border-sky-300 bg-sky-100 text-sky-900'
+                        : 'border-slate-200 bg-white text-slate-600'
+                    }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{tab.label}</span>
+                      <span className={`ml-0.5 text-[10px] ${expanded ? 'opacity-100' : 'opacity-60'}`}>{expanded ? '–' : '+'}</span>
+                    </button>
+                  );
+                })}
+            </div>
+
+            <div className={`rounded-2xl border border-slate-200/80 bg-white p-3 shadow-[0_8px_24px_rgba(44,31,16,0.05)] md:hidden ${mobileQuickGuideExpanded ? 'block' : 'hidden'}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{mobileQuickGuideExpanded ? quickGuideTabs.find(tab => tab.id === mobileQuickGuideExpanded)?.label : ''}</div>
+                  <div className="mt-1 text-sm font-bold text-slate-800">
+                    {mobileQuickGuideExpanded === 'faq' ? quickGuide.faqCta : mobileQuickGuideExpanded === 'product' ? quickGuide.productCta : quickGuide.roomCta}
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {mobileQuickGuideExpanded === 'faq'
+                      ? pick(locale, '先選問題', 'Pick a question', '質問を選択', '질문 선택')
+                      : mobileQuickGuideExpanded === 'product'
+                        ? pick(locale, '先選商品', 'Pick products', '商品を選択', '상품 선택')
+                        : pick(locale, '先選住宿', 'Pick stays', '宿泊を選択', '숙소 선택')}
+                  </p>
+                </div>
+                <Link
+                  to={mobileQuickGuideExpanded === 'faq' ? '/faq' : mobileQuickGuideExpanded === 'product' ? '/shop' : '/rooms'}
+                  className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                >
+                  {pick(locale, '全部', 'All', '全部', '전체')}
+                </Link>
+              </div>
+
+              <div className="mt-3 grid gap-2">
+                {mobileQuickGuideExpanded === 'faq' &&
+                  quickGuide.faqActions.slice(0, 2).map(item => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => sendQuickPrompt(item.question)}
+                      className="rounded-2xl border border-sky-200 bg-sky-50 px-3 py-2.5 text-left text-sm text-sky-900 transition hover:border-sky-300 hover:bg-sky-100"
+                    >
+                      <span className="block leading-5">{item.question}</span>
+                    </button>
+                  ))}
+                {mobileQuickGuideExpanded === 'product' &&
+                  quickGuide.productPrompts.slice(0, 2).map(prompt => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => sendQuickPrompt(prompt)}
+                      className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-left text-sm text-amber-900 transition hover:border-amber-300 hover:bg-amber-100"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                {mobileQuickGuideExpanded === 'room' &&
+                  quickGuide.roomPrompts.slice(0, 2).map(prompt => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => sendQuickPrompt(prompt)}
+                      className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-left text-sm text-emerald-900 transition hover:border-emerald-300 hover:bg-emerald-100"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+              </div>
+            </div>
+
+            <div className="hidden gap-3 md:grid md:grid-cols-3">
+              <div className={`group relative overflow-hidden rounded-[1.4rem] border border-slate-200/80 bg-white p-4 shadow-[0_10px_30px_rgba(44,31,16,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(44,31,16,0.10)] ${quickGuideTab !== 'faq' ? 'hidden md:block' : ''}`}>
+                <div className="absolute right-0 top-0 h-20 w-20 rounded-bl-full bg-sky-50/80" />
+                <div className="relative mb-3 flex items-start justify-between gap-3">
+                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
+                    <MessageSquareText className="h-5 w-5" />
+                  </div>
+                  <Link to="/faq" className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-sky-300 hover:bg-sky-50">
+                    {pick(locale, '看更多', 'More', 'もっと見る', '더 보기')}
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+                <div className="mb-3">
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{quickGuide.faqTitle}</div>
+                  <div className="text-lg font-bold text-slate-800">{quickGuide.faqCta}</div>
+                </div>
+                <div className="grid gap-2">
+                  {quickGuide.faqActions.map(item => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => sendQuickPrompt(item.question)}
+                      className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-left text-sm text-slate-700 transition hover:border-sky-300 hover:bg-sky-50"
+                    >
+                      <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">{item.category}</span>
+                      <span className="mt-0.5 block leading-5">{item.question}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className={`group relative overflow-hidden rounded-[1.4rem] border border-slate-200/80 bg-white p-4 shadow-[0_10px_30px_rgba(44,31,16,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(44,31,16,0.10)] ${quickGuideTab !== 'product' ? 'hidden md:block' : ''}`}>
+                <div className="absolute right-0 top-0 h-20 w-20 rounded-bl-full bg-amber-50/80" />
+                <div className="relative mb-3 flex items-start justify-between gap-3">
+                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                    <Package className="h-5 w-5" />
+                  </div>
+                  <Link to="/shop" className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-amber-300 hover:bg-amber-50">
+                    {pick(locale, '商品頁', 'Shop', 'ショップ', '상품')}
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+                <div className="mb-3">
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{quickGuide.productTitle}</div>
+                  <div className="text-lg font-bold text-slate-800">{quickGuide.productCta}</div>
+                </div>
+                <div className="grid gap-2">
+                  {quickGuide.productPrompts.map(prompt => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => sendQuickPrompt(prompt)}
+                      className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-left text-sm text-amber-900 transition hover:border-amber-300 hover:bg-amber-100"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className={`group relative overflow-hidden rounded-[1.4rem] border border-slate-200/80 bg-white p-4 shadow-[0_10px_30px_rgba(44,31,16,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(44,31,16,0.10)] ${quickGuideTab !== 'room' ? 'hidden md:block' : ''}`}>
+                <div className="absolute right-0 top-0 h-20 w-20 rounded-bl-full bg-emerald-50/80" />
+                <div className="relative mb-3 flex items-start justify-between gap-3">
+                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                    <Hotel className="h-5 w-5" />
+                  </div>
+                  <Link to="/rooms" className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50">
+                    {pick(locale, '住宿頁', 'Stays', '宿泊', '숙소')}
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+                <div className="mb-3">
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{quickGuide.roomTitle}</div>
+                  <div className="text-lg font-bold text-slate-800">{quickGuide.roomCta}</div>
+                </div>
+                <div className="grid gap-2">
+                  {quickGuide.roomPrompts.map(prompt => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => sendQuickPrompt(prompt)}
+                      className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-left text-sm text-emerald-900 transition hover:border-emerald-300 hover:bg-emerald-100"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 pb-[calc(12rem+env(safe-area-inset-bottom))] md:px-5 md:pb-6">

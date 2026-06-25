@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const VECTOR_EMBEDDING_MODEL = "text-embedding-3-small";
+const TRANSLATION_MODEL = "gpt-5.4-mini";
 const VECTOR_SYNC_INTERVAL_MS = 10 * 60 * 1000;
 const VECTOR_UNAVAILABLE_RETRY_MS = 5 * 60 * 1000;
 const VECTOR_SYNC_BATCH_SIZE = 96;
@@ -750,9 +751,39 @@ Deno.serve(async (req) => {
     const action = body.action;
 
     if (action === "translate") {
+      const items = Array.isArray(body.items) ? body.items.map((item) => String(item || "")) : [];
+      if (items.length > 0) {
+        const resultText = await chatCompletion({
+          model: TRANSLATION_MODEL,
+          temperature: 0.1,
+          max_tokens: Math.max(900, items.length * 180),
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content:
+                [
+                  `Translate from ${body.sourceLang || "auto"} to ${body.targetLang || "zh-TW"}.`,
+                  "Return valid JSON only with this shape: {\"translations\":[\"...\", \"...\"]}.",
+                  "Keep the translations in the same order as the input items.",
+                  "Return only the translated text strings, without numbering or commentary.",
+                ].join(" "),
+            },
+            {
+              role: "user",
+              content: JSON.stringify({ items }),
+            },
+          ],
+        });
+        const parsed = parseJson(resultText);
+        const translations = Array.isArray(parsed?.translations) ? parsed.translations.map((item: unknown) => String(item || "")) : [];
+        return json({ result: { translations } });
+      }
+
       const result = await chatCompletion({
-        temperature: 0.2,
-        max_tokens: 2000,
+        model: TRANSLATION_MODEL,
+        temperature: 0.1,
+        max_tokens: 1000,
         messages: [
           {
             role: "system",
