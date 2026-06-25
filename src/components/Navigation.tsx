@@ -137,7 +137,7 @@ export default function Navigation() {
       };
     }
     return {
-      to: '/rooms',
+      to: '/',
       alt: 'nestobi',
       image: '/assets/ruoshui-jinhe-logo.png',
       className: 'h-12 w-auto md:h-14',
