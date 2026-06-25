@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AlertCircle, ArrowLeft, Eye, EyeOff, Home, Lock, Mail, Plane } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Eye, EyeOff, Home, Lock, Mail } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
@@ -110,8 +110,12 @@ export default function Login() {
         </div>
 
         <div className="mb-8 text-center">
-          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#C09A6A] shadow-lg">
-            <Plane className="h-8 w-8 text-white" />
+          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#C09A6A] p-2 shadow-lg">
+            <img
+              src="/assets/ruoshui-jinhe-logo.png"
+              alt="若水金禾"
+              className="h-full w-full object-contain"
+            />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">{text.welcome}</h1>
           <p className="mt-1 text-gray-500">{text.subtitle}</p>
