@@ -98,12 +98,24 @@ export default function Footer() {
     { to: '/superadmin', label: 'Super Admin', icon: ShieldCheck },
   ] as const;
 
+  const brandLogos = [
+    { src: '/20260407_nestobi_logo.svg', alt: 'Nestobi' },
+    { src: '/genbon-travel-logo.png', alt: '根本在旅行' },
+    { src: '/assets/ruoshui-jinhe-logo.png', alt: '若水金禾' },
+  ] as const;
+
   return (
     <footer className="bg-[#F0E4C8] text-[#2C1F10]">
       <div className="mx-auto max-w-7xl px-6 py-14 lg:px-12">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
           <div>
-            <img src="/20260407_nestobi_logo.svg" alt="Nestobi" className="mb-5 h-14 w-auto" />
+            <div className="mb-6 flex flex-wrap items-center gap-4">
+              {brandLogos.map((logo) => (
+                <div key={logo.alt} className="flex h-14 items-center justify-center rounded-2xl bg-white/40 px-4 shadow-sm ring-1 ring-white/40">
+                  <img src={logo.src} alt={logo.alt} className="max-h-10 w-auto object-contain" />
+                </div>
+              ))}
+            </div>
             <p className="mb-5 max-w-2xl text-sm leading-7 text-[#2C1F10]/70">{t.intro}</p>
             <div className="flex flex-wrap gap-3">
               {socialLinks.map(({ href, label, icon: Icon }) => (
