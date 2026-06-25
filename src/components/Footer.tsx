@@ -139,7 +139,9 @@ export default function Footer() {
                 <div className="text-[#2C1F10]/70">
                   <div className="mb-1 flex items-center gap-2">
                     <Phone size={14} />
-                    <span className="text-xs font-semibold uppercase tracking-[0.15em] text-[#2C1F10]/50">客服電話</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.15em] text-[#2C1F10]/50">
+                      {pick(locale, '客服電話', 'Support Phone', 'サポート電話', '고객센터 전화')}
+                    </span>
                   </div>
                   <div className="font-medium text-[#2C1F10]">{settings.contact_phone || '02-27565663'}</div>
                   <div className="mt-0.5 text-xs leading-5 text-[#2C1F10]/60">{t.workday}</div>
@@ -148,7 +150,9 @@ export default function Footer() {
                 <div className="text-[#2C1F10]/70">
                   <div className="mb-1 flex items-center gap-2">
                     <Mail size={14} />
-                    <span className="text-xs font-semibold uppercase tracking-[0.15em] text-[#2C1F10]/50">客服信箱</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.15em] text-[#2C1F10]/50">
+                      {pick(locale, '客服信箱', 'Support Email', 'サポートメール', '고객센터 이메일')}
+                    </span>
                   </div>
                   <div className="font-medium text-[#2C1F10]">{settings.contact_email || 'service@dlalshop.com'}</div>
                   <div className="mt-0.5 text-xs leading-5 text-[#2C1F10]/60">{t.aiHours}</div>
