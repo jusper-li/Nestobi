@@ -99,9 +99,9 @@ export default function Footer() {
   ] as const;
 
   const brandLogos = [
-    { src: '/20260407_nestobi_logo.svg', alt: 'Nestobi', className: 'h-14 w-auto' },
-    { src: '/genbon-travel-logo.png', alt: '根本在旅行', className: 'h-12 w-auto' },
     { src: '/assets/ruoshui-jinhe-logo.png', alt: '若水金禾', className: 'h-12 w-auto' },
+    { src: '/genbon-travel-logo.png', alt: '根本在旅行', className: 'h-12 w-auto' },
+    { src: '/20260407_nestobi_logo.svg', alt: 'Nestobi', className: 'h-14 w-auto' },
   ] as const;
 
   return (
