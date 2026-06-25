@@ -54,27 +54,47 @@ export default function ProductDetail() {
   const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
 
   const labels = {
-    shop: t4('選物商店', 'Shop', 'ショップ', '샵'),
+    shop: t4('商品列表', 'Shop', '商品一覧', '상품'),
     notFound: t4('找不到商品', 'Product not found', '商品が見つかりません', '상품을 찾을 수 없습니다'),
-    back: t4('返回商店', 'Back to shop', 'ショップへ戻る', '상점으로 돌아가기'),
+    back: t4('返回商品列表', 'Back to shop', '商品一覧に戻る', '상품 목록으로 돌아가기'),
     quantity: t4('數量', 'Quantity', '数量', '수량'),
     addCart: t4('加入購物車', 'Add to cart', 'カートに追加', '장바구니 담기'),
-    buyNow: t4('立即購買', 'Buy now', '今すぐ購入', '지금 구매'),
+    buyNow: t4('立即購買', 'Buy now', '今すぐ購入', '바로 구매'),
     soldOut: t4('已售完', 'Sold out', '売り切れ', '품절'),
     info: t4('商品資訊', 'Product info', '商品情報', '상품 정보'),
-    origin: t4('產地', 'Origin', '産地', '원산지'),
+    origin: t4('產地', 'Origin', '産地', '원산地'),
     roast: t4('烘焙度', 'Roast', '焙煎度', '로스팅'),
     process: t4('處理法', 'Process', '精製方法', '가공 방식'),
-    related: t4('你可能也會喜歡', 'You may also like', 'おすすめ商品', '추천 상품'),
-    details: t4('詳情', 'Details', '詳細', '상세'),
+    related: t4('你可能也喜歡', 'You may also like', 'おすすめ商品', '추천 상품'),
+    details: t4('分類', 'Details', '分類', '분류'),
+    subscriptionTitle: t4('咖啡定期便', 'Coffee subscription', 'コーヒー定期便', '커피 정기배송'),
+    subscriptionDesc: t4(
+      '選擇訂閱週期，付款後每月由藍新金流自動扣款並建立訂單。',
+      'Choose a billing cycle. After payment, NewebPay will auto-charge monthly and create orders.',
+      '支払い後、選択した周期に応じて毎月NewebPayから自動決済され、注文が作成されます。',
+      '결제 후 선택한 주기에 따라 매월 NewebPay로 자동 결제되어 주문이 생성됩니다.',
+    ),
+    subscriptionTag: t4('訂閱制', 'Subscription', '定期購入', '구독형'),
+    subscriptionHint: t4(
+      '訂閱商品會直接寫入會員與訂單資料，後台可追蹤每次扣款、出貨與會員咖啡偏好。',
+      'Subscription items are saved to member and order records so the backend can track charges, shipments, and coffee preferences.',
+      '定期購入商品は会員・注文データに記録され、管理画面で決済、発送、コーヒー嗜好を追跡できます。',
+      '구독 상품은 회원 및 주문 데이터에 저장되어 결제, 출고, 커피 취향을 백오피스에서 추적할 수 있습니다.',
+    ),
+    period3: t4('3 個月', '3 months', '3か月', '3개월'),
+    period6: t4('6 個月', '6 months', '6か月', '6개월'),
+    period12: t4('12 個月', '12 months', '12か月', '12개월'),
+    monthly: t4('持續每月扣款', 'Monthly auto-charge', '毎月自動扣款', '매월 자동결제'),
+    subscribeNow: t4('訂閱並每月自動扣款', 'Subscribe and auto-charge monthly', '定期購入して毎月自動決済', '구독 후 매월 자동 결제'),
+    subscribing: t4('訂閱處理中...', 'Processing subscription...', '定期購入を処理中...', '구독 처리 중...'),
   };
 
   const actionLabels = {
-    favorite: t4('加入收藏', 'Add Favorite', 'お気に入りに追加', '찜하기'),
-    favorited: t4('已收藏', 'Favorited', 'お気に入り済み', '찜 완료'),
-    reviews: t4('商品評價', 'Product Reviews', '商品レビュー', '상품 리뷰'),
-    noReviews: t4('目前尚無評價', 'No reviews yet', 'レビューはまだありません', '아직 리뷰가 없습니다'),
-    loginToFavorite: t4('請先登入後再收藏', 'Please sign in to save favorites.', 'お気に入りにはログインが必要です。', '찜하려면 먼저 로그인해 주세요.'),
+    favorite: t4('加入收藏', 'Add Favorite', 'お気に入りに追加', '즐겨찾기 추가'),
+    favorited: t4('已收藏', 'Favorited', 'お気に入り済み', '즐겨찾기됨'),
+    reviews: t4('商品評論', 'Product Reviews', '商品レビュー', '상품 리뷰'),
+    noReviews: t4('目前沒有評論', 'No reviews yet', 'まだレビューはありません', '아직 리뷰가 없습니다'),
+    loginToFavorite: t4('請先登入後再收藏。', 'Please sign in to save favorites.', 'お気に入りに追加するにはログインしてください。', '즐겨찾기에 추가하려면 먼저 로그인하세요.'),
   };
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -204,10 +224,10 @@ export default function ProductDetail() {
   );
 
   const subscriptionOptions = [
-    { value: 3 as const, label: '3 個月' },
-    { value: 6 as const, label: '6 個月' },
-    { value: 12 as const, label: '12 個月' },
-    { value: 'NE' as const, label: '持續每月扣款' },
+    { value: 3 as const, label: labels.period3 },
+    { value: 6 as const, label: labels.period6 },
+    { value: 12 as const, label: labels.period12 },
+    { value: 'NE' as const, label: labels.monthly },
   ];
 
   useEffect(() => {
@@ -255,7 +275,7 @@ export default function ProductDetail() {
           result.version,
         );
       } else {
-        throw new Error('訂閱金流初始化失敗');
+        throw new Error('Subscription checkout failed.');
       }
     } finally {
       setSubscribing(false);
@@ -329,10 +349,10 @@ export default function ProductDetail() {
               <div className="rounded-2xl border border-[#E8D8BF] bg-[#FCF8F0] p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-[#8B6840]">咖啡定期便</p>
-                    <p className="text-xs text-gray-500">選擇訂閱週期，付款後每月由藍新金流自動扣款並建立訂單。</p>
+                    <p className="text-sm font-semibold text-[#8B6840]">{labels.subscriptionTitle}</p>
+                    <p className="text-xs text-gray-500">{labels.subscriptionDesc}</p>
                   </div>
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#8B6840] shadow-sm">訂閱制</span>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#8B6840] shadow-sm">{labels.subscriptionTag}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {subscriptionOptions.map(option => (
@@ -350,9 +370,7 @@ export default function ProductDetail() {
                     </button>
                   ))}
                 </div>
-                <p className="mt-3 text-xs leading-5 text-gray-500">
-                  訂閱商品會直接寫入會員與訂單資料，後台可追蹤每次扣款、出貨與會員咖啡偏好。
-                </p>
+                <p className="mt-3 text-xs leading-5 text-gray-500">{labels.subscriptionHint}</p>
               </div>
             ) : null}
 
@@ -382,7 +400,7 @@ export default function ProductDetail() {
                 disabled={!inStock || subscribing}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#8B6840] to-[#C09A6A] px-4 py-3 font-semibold text-white shadow-sm transition hover:brightness-105 disabled:opacity-40"
               >
-                {subscribing ? '建立訂閱中...' : '訂閱並每月自動扣款'}
+                {subscribing ? labels.subscribing : labels.subscribeNow}
               </button>
             ) : null}
 
