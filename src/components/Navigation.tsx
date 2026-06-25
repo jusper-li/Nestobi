@@ -131,8 +131,8 @@ export default function Navigation() {
     return {
       to: '/rooms',
       alt: 'nestobi',
-      image: '/20260407_nestobi_logo.svg',
-      className: 'h-10 w-auto md:h-12',
+      image: '/assets/ruoshui-jinhe-logo.png',
+      className: 'h-12 w-auto md:h-14',
     };
   }, [location.pathname, locale]);
 
