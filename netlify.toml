@@ -15,8 +15,8 @@
   force = true
 
 [[redirects]]
-  from = "/.well-known/*"
-  to = "/.well-known/:splat"
+  from = "/.well-known/apple-developer-merchantid-domain-association"
+  to = "/apple-developer-merchantid-domain-association"
   status = 200
   force = true
 
