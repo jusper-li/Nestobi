@@ -15,11 +15,21 @@ import {
   translateProductsFromCacheOnly,
   translateProductsOnDemand,
 } from '../../lib/contentTranslations';
+import { BEAN_FINDER_QUESTIONS } from '../../features/bean-finder/data/beanFinderQuestions';
+import { calculateBeanFinderResult } from '../../features/bean-finder/lib/calculateBeanFinderResult';
+import {
+  recommendBeansForResult,
+  type BeanFinderProductRecommendation,
+  type RankedBeanFinderProductRecommendation,
+} from '../../features/bean-finder/lib/recommendBeansForResult';
+import type { BeanFinderResult } from '../../features/bean-finder/types';
 
-type OptionKey = 'A' | 'B' | 'C' | 'D';
+type OptionKey = 'A' | 'B' | 'C' | 'D' | 'E';
+type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 type CoffeeProfileKey = 'bright_explorer' | 'balanced_daily' | 'sweet_smooth' | 'bold_classic';
 type ScoreKey = CoffeeProfileKey | 'adventure';
-type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
+type ProductRecommendation = BeanFinderProductRecommendation;
+type RankedProductRecommendation = RankedBeanFinderProductRecommendation;
 
 type QuestionOption = {
   id: string;
@@ -36,37 +46,7 @@ type Question = {
   options: QuestionOption[];
 };
 
-type CoffeeProfileResult = {
-  key: CoffeeProfileKey;
-  label: string;
-  summary: string;
-  brewHint: string;
-  flavorNotes: string[];
-  beanStyle: string[];
-  scores: Record<ScoreKey, number>;
-};
-
-type ProductRecommendation = {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  image_url: string | null;
-  stock_quantity: number;
-  category_id: string | null;
-  origin: string | null;
-  roast_level: string | null;
-  processing_method: string | null;
-  flavor_notes: string[] | null;
-  tags: string[] | null;
-  categories?: { id?: string | null; name?: string | null; slug?: string | null } | null;
-};
-
-type RankedProductRecommendation = {
-  product: ProductRecommendation;
-  score: number;
-  reasons: string[];
-};
+type CoffeeProfileResult = BeanFinderResult;
 
 type QuizSubmissionRow = {
   result_type: string;
@@ -160,29 +140,6 @@ const COFFEE_PROFILE_BREW_HINTS: Record<CoffeeProfileKey, Record<UiLang, string>
   },
 };
 
-function getCoffeeProfileLabel(key: string, locale: UiLang, fallback: string) {
-  const meta = COFFEE_PROFILE_LABELS[key as CoffeeProfileKey];
-  return meta?.[locale] || fallback;
-}
-
-function getCoffeeProfileSummary(key: string, locale: UiLang, fallback: string) {
-  const meta = COFFEE_PROFILE_SUMMARIES[key as CoffeeProfileKey];
-  return meta?.[locale] || fallback;
-}
-
-function getCoffeeProfileBrewHint(key: string, locale: UiLang, fallback: string) {
-  const meta = COFFEE_PROFILE_BREW_HINTS[key as CoffeeProfileKey];
-  return meta?.[locale] || fallback;
-}
-
-function resolveCoffeeProfileKey(resultType: string | null | undefined): CoffeeProfileKey {
-  const normalized = (resultType || '').trim();
-  const match = (Object.entries(PROFILE_META) as Array<[CoffeeProfileKey, (typeof PROFILE_META)[CoffeeProfileKey]]>).find(
-    ([key, meta]) => key === normalized || meta.label === normalized,
-  );
-  return match?.[0] || 'balanced_daily';
-}
-
 function buildResultFromSavedSubmission(questions: Question[], row: QuizSubmissionRow, locale: UiLang): CoffeeProfileResult | null {
   const savedAnswers = row.answers || {};
   const restoredAnswers = Object.fromEntries(
@@ -195,35 +152,9 @@ function buildResultFromSavedSubmission(questions: Question[], row: QuizSubmissi
       .filter((item): item is readonly [string, OptionKey] => Boolean(item)),
   ) as Partial<Record<string, OptionKey>>;
 
-  if (!Object.keys(restoredAnswers).length) return null;
+  if (Object.keys(restoredAnswers).length !== questions.length) return null;
 
-  const computed = computeResult(questions, restoredAnswers);
-  if (computed) {
-    return {
-      ...computed,
-      label: getCoffeeProfileLabel(computed.key, locale, computed.label),
-      summary: getCoffeeProfileSummary(computed.key, locale, computed.summary),
-      brewHint: getCoffeeProfileBrewHint(computed.key, locale, computed.brewHint),
-    };
-  }
-
-  const key = resolveCoffeeProfileKey(row.result_type);
-  const meta = PROFILE_META[key];
-  return {
-    key,
-    label: getCoffeeProfileLabel(key, locale, row.result_type || meta.label),
-    summary: getCoffeeProfileSummary(key, locale, meta.summary),
-    brewHint: getCoffeeProfileBrewHint(key, locale, meta.brewHint),
-    flavorNotes: meta.flavorNotes,
-    beanStyle: meta.beanStyle,
-    scores: {
-      bright_explorer: 0,
-      balanced_daily: 0,
-      sweet_smooth: 0,
-      bold_classic: 0,
-      adventure: 0,
-    },
-  } as CoffeeProfileResult;
+  return computeResult(questions, restoredAnswers);
 }
 
 const FALLBACK_QUIZ_QUESTIONS: Question[] = [
@@ -589,320 +520,28 @@ const FALLBACK_QUIZ_QUESTIONS: Question[] = [
   },
 ];
 
-const PROFILE_META: Record<CoffeeProfileKey, {
-  label: string;
-  summary: string;
-  brewHint: string;
-  flavorNotes: string[];
-  beanStyle: string[];
-}> = {
-  bright_explorer: {
-    label: '明亮探索型',
-    summary: '你喜歡花果香、清晰酸質與多層次風味，適合從淺焙單品開始探索。',
-    brewHint: '手沖、虹吸、冷萃都很適合你，重點是把香氣與酸甜層次拉出來。',
-    flavorNotes: ['花香', '柑橘', '莓果', '茶感'],
-    beanStyle: ['衣索比亞水洗', '哥斯大黎加蜜處理', '淺焙單品', '風味標示清楚的豆子'],
-  },
-  balanced_daily: {
-    label: '日常平衡型',
-    summary: '你偏好穩定、順口、耐喝的咖啡，日常飲用與辦公場景都很合拍。',
-    brewHint: '中焙手沖、美式或冰滴都容易喝出你的平衡感。',
-    flavorNotes: ['堅果', '焦糖', '柔和果酸', '乾淨尾韻'],
-    beanStyle: ['哥倫比亞', '巴西', '中焙配方豆', '每天都能喝的日常款'],
-  },
-  sweet_smooth: {
-    label: '柔順甜感型',
-    summary: '你喜歡圓潤甜感、奶香與低刺激風味，舒服順口最重要。',
-    brewHint: '拿鐵、卡布與中深焙手沖都很適合你，甜感會很討喜。',
-    flavorNotes: ['黑糖', '牛奶巧克力', '太妃糖', '堅果奶油感'],
-    beanStyle: ['中深焙', '奶咖配方豆', '低酸甜感豆', '喝起來柔和的選項'],
-  },
-  bold_classic: {
-    label: '濃郁厚實型',
-    summary: '你偏好厚實、濃郁、存在感強的咖啡，義式與深焙會更對你的味。',
-    brewHint: '義式、摩卡壺或濃縮系飲品最能凸顯你的偏好。',
-    flavorNotes: ['可可', '煙燻', '香料', '黑糖'],
-    beanStyle: ['深焙', '義式配方', '高 body 豆子', '適合做奶咖的濃厚豆'],
-  },
-};
-
-const QUESTION_PROFILE_MAP: Record<number, Record<OptionKey, CoffeeProfileKey>> = {
-  1: { A: 'bold_classic', B: 'balanced_daily', C: 'bright_explorer', D: 'sweet_smooth' },
-  2: { A: 'bright_explorer', B: 'balanced_daily', C: 'sweet_smooth', D: 'bold_classic' },
-  3: { A: 'bold_classic', B: 'balanced_daily', C: 'bright_explorer', D: 'sweet_smooth' },
-  4: { A: 'bold_classic', B: 'bold_classic', C: 'sweet_smooth', D: 'bright_explorer' },
-  5: { A: 'bright_explorer', B: 'balanced_daily', C: 'sweet_smooth', D: 'bold_classic' },
-  6: { A: 'sweet_smooth', B: 'sweet_smooth', C: 'bright_explorer', D: 'balanced_daily' },
-  7: { A: 'bold_classic', B: 'balanced_daily', C: 'sweet_smooth', D: 'bright_explorer' },
-  8: { A: 'bold_classic', B: 'sweet_smooth', C: 'balanced_daily', D: 'bright_explorer' },
-  9: { A: 'bright_explorer', B: 'balanced_daily', C: 'sweet_smooth', D: 'bold_classic' },
-  10: { A: 'bright_explorer', B: 'sweet_smooth', C: 'bold_classic', D: 'balanced_daily' },
-  11: { A: 'sweet_smooth', B: 'sweet_smooth', C: 'bold_classic', D: 'bright_explorer' },
-  12: { A: 'bright_explorer', B: 'sweet_smooth', C: 'bold_classic', D: 'balanced_daily' },
-  13: { A: 'bright_explorer', B: 'bold_classic', C: 'balanced_daily', D: 'sweet_smooth' },
-  14: { A: 'bright_explorer', B: 'balanced_daily', C: 'sweet_smooth', D: 'sweet_smooth' },
-  15: { A: 'balanced_daily', B: 'bright_explorer', C: 'sweet_smooth', D: 'bold_classic' },
-  16: { A: 'bright_explorer', B: 'sweet_smooth', C: 'sweet_smooth', D: 'bold_classic' },
-  17: { A: 'bright_explorer', B: 'balanced_daily', C: 'sweet_smooth', D: 'bold_classic' },
-  18: { A: 'balanced_daily', B: 'bright_explorer', C: 'sweet_smooth', D: 'bold_classic' },
-  19: { A: 'bright_explorer', B: 'balanced_daily', C: 'bold_classic', D: 'bold_classic' },
-  20: { A: 'bold_classic', B: 'balanced_daily', C: 'balanced_daily', D: 'bright_explorer' },
-  21: { A: 'sweet_smooth', B: 'sweet_smooth', C: 'bold_classic', D: 'bright_explorer' },
-  22: { A: 'bright_explorer', B: 'balanced_daily', C: 'balanced_daily', D: 'bold_classic' },
-  23: { A: 'bold_classic', B: 'bright_explorer', C: 'balanced_daily', D: 'sweet_smooth' },
-  24: { A: 'sweet_smooth', B: 'balanced_daily', C: 'bold_classic', D: 'balanced_daily' },
-  25: { A: 'balanced_daily', B: 'bright_explorer', C: 'bold_classic', D: 'sweet_smooth' },
-  26: { A: 'balanced_daily', B: 'bright_explorer', C: 'bright_explorer', D: 'balanced_daily' },
-  27: { A: 'bright_explorer', B: 'bright_explorer', C: 'bold_classic', D: 'bold_classic' },
-  28: { A: 'balanced_daily', B: 'bright_explorer', C: 'bright_explorer', D: 'balanced_daily' },
-  29: { A: 'balanced_daily', B: 'balanced_daily', C: 'balanced_daily', D: 'bold_classic' },
-  30: { A: 'balanced_daily', B: 'balanced_daily', C: 'balanced_daily', D: 'bold_classic' },
-};
-
-const ADVENTURE_KEYS: Record<number, OptionKey[]> = {
-  1: ['C'],
-  2: ['A'],
-  3: ['A'],
-  4: ['D'],
-  5: ['A'],
-  9: ['A', 'B'],
-  11: ['A', 'D'],
-  13: ['B'],
-  18: ['B'],
-  23: ['B'],
-  24: ['A', 'C'],
-  25: ['B', 'C'],
-  26: ['C'],
-  27: ['A', 'B'],
-  28: ['B', 'C'],
-  29: ['D'],
-  30: ['C'],
-  12: ['A'],
-};
-
-const PROFILE_ORDER: CoffeeProfileKey[] = ['bright_explorer', 'balanced_daily', 'sweet_smooth', 'bold_classic'];
-
-const COFFEE_CATEGORY_SLUG = 'coffee-beans';
-const RECOMMENDATION_LIMIT = 6;
-const PRODUCT_FALLBACK_IMAGE = 'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=900';
-
-const PROFILE_RECOMMENDATION_RULES: Record<CoffeeProfileKey, {
-  label: string;
-  roastKeywords: string[];
-  originKeywords: string[];
-  processKeywords: string[];
-  flavorKeywords: string[];
-  tagKeywords: string[];
-}> = {
-  bright_explorer: {
-    label: '淺焙果香',
-    roastKeywords: ['淺烘焙', '淺焙', 'light roast', 'light'],
-    originKeywords: ['衣索比亞', '耶加', '肯亞', '哥斯大黎加', '瓜地馬拉', '巴拿馬'],
-    processKeywords: ['水洗', '日曬', '蜜處理'],
-    flavorKeywords: ['花香', '柑橘', '檸檬', '莓果', '茶感', '白花', '葡萄柚', '百香果', '橙皮'],
-    tagKeywords: ['清爽', '明亮', '果酸', '花香', '手沖', '風味層次'],
-  },
-  balanced_daily: {
-    label: '日常均衡',
-    roastKeywords: ['中烘焙', '中焙', 'medium roast', 'medium'],
-    originKeywords: ['哥倫比亞', '巴西', '宏都拉斯', '瓜地馬拉', '衣索比亞', '尼加拉瓜'],
-    processKeywords: ['水洗', '蜜處理'],
-    flavorKeywords: ['堅果', '焦糖', '可可', '奶油', '蜂蜜', '杏仁', '紅糖', '黑糖'],
-    tagKeywords: ['平衡', '順口', '日常', '百搭', '早餐', '手沖'],
-  },
-  sweet_smooth: {
-    label: '甜感柔順',
-    roastKeywords: ['中深烘焙', '中烘焙', 'medium dark', 'medium'],
-    originKeywords: ['巴西', '哥倫比亞', '瓜地馬拉', '印尼', '薩爾瓦多'],
-    processKeywords: ['蜜處理', '日曬', '厭氧', '半水洗'],
-    flavorKeywords: ['巧克力', '焦糖', '奶油', '牛奶', '黑糖', '太妃糖', '榛果', '堅果', '甜感'],
-    tagKeywords: ['滑順', '甜感', '拿鐵', '奶咖', '溫潤'],
-  },
-  bold_classic: {
-    label: '濃厚經典',
-    roastKeywords: ['深烘焙', '深焙', 'dark roast', 'dark'],
-    originKeywords: ['印尼', '蘇門答臘', '巴西', '曼特寧', '哥倫比亞'],
-    processKeywords: ['日曬', '厭氧', '半水洗'],
-    flavorKeywords: ['黑巧克力', '可可', '煙燻', '香料', '木質', '焦糖', '厚實', '醇厚', '苦甜'],
-    tagKeywords: ['厚實', '濃郁', '義式', 'espresso', '奶咖', '重烘焙'],
-  },
-};
-
-function normalizeText(value: string | null | undefined) {
-  return (value || '').toLowerCase();
-}
-
-function joinProductText(product: ProductRecommendation) {
-  return normalizeText([
-    product.name,
-    product.description,
-    product.origin,
-    product.roast_level,
-    product.processing_method,
-    ...(product.flavor_notes || []),
-    ...(product.tags || []),
-  ].filter(Boolean).join(' '));
-}
-
-function uniqueDisplayLabels(values: Array<string | null | undefined>) {
-  const seen = new Set<string>();
-  return values
-    .map((value) => (value || '').trim())
-    .filter((value) => value.length > 0 && value !== '--')
-    .filter((value) => {
-      const normalized = value.toLowerCase();
-      if (seen.has(normalized)) return false;
-      seen.add(normalized);
-      return true;
-    });
-}
-
-function includesAny(text: string, keywords: string[]) {
-  return keywords.filter((keyword) => text.includes(normalizeText(keyword)));
-}
-
-function isCoffeeLikeProduct(product: ProductRecommendation) {
-  return Boolean(
-    product.origin ||
-      product.roast_level ||
-      product.processing_method ||
-      (product.flavor_notes || []).length > 0 ||
-      (product.tags || []).some((tag) => /咖啡|coffee|espresso|手沖|濾掛|精品|豆/.test(tag)) ||
-      /咖啡|coffee|espresso|手沖|濾掛|精品豆|咖啡豆/.test(joinProductText(product)),
-  );
-}
-
-function scoreRecommendedProduct(product: ProductRecommendation, result: CoffeeProfileResult): RankedProductRecommendation | null {
-  const rule = PROFILE_RECOMMENDATION_RULES[result.key];
-  const text = joinProductText(product);
-  if (!text && !product.origin && !product.roast_level && !product.processing_method) return null;
-
-  let score = 0;
-  const reasons: string[] = [];
-  const pushReason = (points: number, reason: string) => {
-    if (points <= 0) return;
-    score += points;
-    if (!reasons.includes(reason)) reasons.push(reason);
-  };
-
-  if (product.stock_quantity > 0) {
-    pushReason(8, '目前有現貨');
-  } else {
-    score -= 10;
-    reasons.push('暫時缺貨');
-  }
-
-  const roastMatches = includesAny(product.roast_level || text, rule.roastKeywords);
-  if (roastMatches.length > 0) {
-    pushReason(28, `烘焙度：${product.roast_level || rule.label}`);
-  }
-
-  const originMatches = includesAny(product.origin || text, rule.originKeywords);
-  if (originMatches.length > 0) {
-    pushReason(18, `產地：${product.origin || originMatches[0]}`);
-  }
-
-  const processMatches = includesAny(product.processing_method || text, rule.processKeywords);
-  if (processMatches.length > 0) {
-    pushReason(14, `處理法：${product.processing_method || processMatches[0]}`);
-  }
-
-  const flavorMatches = includesAny((product.flavor_notes || []).join(' '), rule.flavorKeywords);
-  if (flavorMatches.length > 0) {
-    pushReason(6 * flavorMatches.length, `風味：${flavorMatches.slice(0, 2).join('、')}`);
-  }
-
-  const tagMatches = includesAny((product.tags || []).join(' '), rule.tagKeywords);
-  if (tagMatches.length > 0) {
-    pushReason(5 * tagMatches.length, `標籤：${tagMatches.slice(0, 2).join('、')}`);
-  }
-
-  const quizFlavorMatches = includesAny(text, result.flavorNotes);
-  if (quizFlavorMatches.length > 0) {
-    pushReason(4 * quizFlavorMatches.length, `符合你的風味偏好：${quizFlavorMatches.slice(0, 2).join('、')}`);
-  }
-
-  const quizStyleMatches = includesAny(text, result.beanStyle);
-  if (quizStyleMatches.length > 0) {
-    pushReason(4 * quizStyleMatches.length, `符合你的豆型偏好：${quizStyleMatches.slice(0, 2).join('、')}`);
-  }
-
-  if (!score && !isCoffeeLikeProduct(product)) return null;
-
-  return {
-    product,
-    score,
-    reasons: reasons.slice(0, 3),
-  };
-}
-
-function rankRecommendedProducts(products: ProductRecommendation[], result: CoffeeProfileResult) {
-  return products
-    .map((product) => scoreRecommendedProduct(product, result))
-    .filter((item): item is RankedProductRecommendation => Boolean(item))
-    .sort((a, b) => {
-      const stockA = a.product.stock_quantity > 0 ? 1 : 0;
-      const stockB = b.product.stock_quantity > 0 ? 1 : 0;
-      if (stockA !== stockB) return stockB - stockA;
-      const scoreDiff = b.score - a.score;
-      if (scoreDiff !== 0) return scoreDiff;
-      return a.product.price - b.product.price;
-    });
-}
-
 function normalizeScore(value: number, max: number) {
   if (max <= 0) return 0;
   if (value <= 0) return 0;
   return Math.max(1, Math.min(10, Math.round((value / max) * 10)));
 }
 
+function collectSelectedChoiceIds(questions: Question[], answers: Partial<Record<string, OptionKey>>) {
+  return questions
+    .map((question) => {
+      const answerKey = answers[question.id];
+      if (!answerKey) return null;
+      const option = question.options.find((item) => item.option_key === answerKey);
+      return option?.id || null;
+    })
+    .filter((value): value is string => Boolean(value));
+}
+
 function computeResult(questions: Question[], answers: Partial<Record<string, OptionKey>>): CoffeeProfileResult | null {
   if (!questions.length) return null;
-  if (!Object.values(answers).some(Boolean)) return null;
-
-  const scores: Record<ScoreKey, number> = {
-    bright_explorer: 0,
-    balanced_daily: 0,
-    sweet_smooth: 0,
-    bold_classic: 0,
-    adventure: 0,
-  };
-
-  questions.forEach((question) => {
-    const answerKey = answers[question.id];
-    if (!answerKey) return;
-
-    const profileKey = QUESTION_PROFILE_MAP[question.display_order]?.[answerKey];
-    if (profileKey) scores[profileKey] += 1;
-
-    if (ADVENTURE_KEYS[question.display_order]?.includes(answerKey)) {
-      scores.adventure += 1;
-    }
-  });
-
-  const bestProfile = [...PROFILE_ORDER].sort((a, b) => {
-    const diff = scores[b] - scores[a];
-    if (diff !== 0) return diff;
-    return PROFILE_ORDER.indexOf(a) - PROFILE_ORDER.indexOf(b);
-  })[0];
-
-  const meta = PROFILE_META[bestProfile];
-  const maxScore = questions.length;
-  return {
-    key: bestProfile,
-    label: meta.label,
-    summary: meta.summary,
-    brewHint: meta.brewHint,
-    flavorNotes: meta.flavorNotes,
-    beanStyle: meta.beanStyle,
-    scores: {
-      bright_explorer: normalizeScore(scores.bright_explorer, maxScore),
-      balanced_daily: normalizeScore(scores.balanced_daily, maxScore),
-      sweet_smooth: normalizeScore(scores.sweet_smooth, maxScore),
-      bold_classic: normalizeScore(scores.bold_classic, maxScore),
-      adventure: normalizeScore(scores.adventure, maxScore),
-    },
-  };
+  const selectedChoiceIds = collectSelectedChoiceIds(questions, answers);
+  if (selectedChoiceIds.length !== questions.length) return null;
+  return calculateBeanFinderResult(selectedChoiceIds);
 }
 
 function buildAnswerPayload(questions: Question[], answers: Partial<Record<string, OptionKey>>) {
@@ -968,25 +607,10 @@ export default function CoffeeQuiz() {
   useEffect(() => {
     let active = true;
 
-  const load = async () => {
-    setLoading(true);
+    const load = async () => {
+      setLoading(true);
 
-    const [qRes, oRes] = await Promise.all([
-      supabase.from('coffee_quiz_questions').select('id,question_text,image_url,display_order').eq('is_active', true).order('display_order', { ascending: true }),
-        supabase.from('coffee_quiz_question_options').select('id,question_id,option_key,option_text,score,display_order').order('display_order', { ascending: true }),
-      ]);
-
-      const qRows = (qRes.data || []) as Array<{ id: string; question_text: string; image_url: string | null; display_order: number }>;
-      const oRows = (oRes.data || []) as Array<{ id: string; question_id: string; option_key: OptionKey; option_text: string; score: number; display_order: number }>;
-
-      const merged = qRows
-        .map((q) => ({
-          ...q,
-          options: oRows.filter((o) => o.question_id === q.id).sort((a, b) => a.display_order - b.display_order),
-        }))
-        .filter((q) => q.options.length > 0);
-
-      let rows = merged.length >= FALLBACK_QUIZ_QUESTIONS.length ? merged : FALLBACK_QUIZ_QUESTIONS;
+      let rows = BEAN_FINDER_QUESTIONS;
       if (shouldTranslate) rows = await translateCoffeeQuizQuestionsFromCacheOnly(rows, locale);
       if (!active) return;
       setQuestions(rows);
@@ -1089,8 +713,8 @@ export default function CoffeeQuiz() {
         if (error) throw error;
         if (!active) return;
 
-        const sourceRows = ((data || []) as ProductRecommendation[]).filter(isCoffeeLikeProduct);
-        const rankedRows = rankRecommendedProducts(sourceRows, activeResult).slice(0, RECOMMENDATION_LIMIT);
+        const sourceRows = ((data || []) as BeanFinderProductRecommendation[]).filter(isCoffeeLikeProduct);
+        const rankedRows = recommendBeansForResult(sourceRows, activeResult).slice(0, RECOMMENDATION_LIMIT);
 
         if (!rankedRows.length) {
           setRecommendedProducts([]);
@@ -1157,11 +781,11 @@ export default function CoffeeQuiz() {
         member_email: user.email || null,
         member_name: memberName,
         member_phone: memberPhone,
-        result_type: quizResult.label,
-        roast_score: quizResult.scores.bold_classic,
-        acidity_score: quizResult.scores.bright_explorer,
-        adventure_score: quizResult.scores.adventure,
-        answers: payloadAnswers,
+        result_type: quizResult.resultTypeName,
+        roast_score: quizResult.roastScores[quizResult.primaryRoast],
+        acidity_score: quizResult.acidityRange[1],
+        adventure_score: quizResult.dose,
+        answers: { ...payloadAnswers, age: quizResult.age || null, gender: quizResult.gender || null },
         agreement: true,
       };
 
@@ -1213,18 +837,18 @@ export default function CoffeeQuiz() {
   };
 
   const scoreBars = activeResult ? [
-    { key: 'bright_explorer', label: t('明亮探索', 'Bright', '明るい', '밝고 산뜻'), value: activeResult.scores.bright_explorer },
-    { key: 'balanced_daily', label: t('日常平衡', 'Balanced', 'バランス', '균형형'), value: activeResult.scores.balanced_daily },
-    { key: 'sweet_smooth', label: t('柔順甜感', 'Smooth', 'まろやか', '부드럽고 달콤'), value: activeResult.scores.sweet_smooth },
-    { key: 'bold_classic', label: t('濃郁厚實', 'Bold', 'しっかり', '진하고 묵직'), value: activeResult.scores.bold_classic },
-    { key: 'adventure', label: t('探索傾向', 'Adventure', '挑戦', '탐험 성향'), value: activeResult.scores.adventure },
+    { key: '淺焙', label: t('淺焙', 'Light', '浅煎り', '라이트'), value: activeResult.scores['淺焙'] },
+    { key: '淺中焙', label: t('淺中焙', 'Light-Medium', '浅中煎り', '라이트미디엄'), value: activeResult.scores['淺中焙'] },
+    { key: '中焙', label: t('中焙', 'Medium', '中煎り', '미디엄'), value: activeResult.scores['中焙'] },
+    { key: '中深焙', label: t('中深焙', 'Medium-Dark', '中深煎り', '미디엄다크'), value: activeResult.scores['中深焙'] },
+    { key: '深焙', label: t('深焙', 'Dark', '深煎り', '다크'), value: activeResult.scores['深焙'] },
   ] : [];
 
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
       <SEOHead
         title={t('AI 尋豆師', 'AI Coffee Finder', 'AIコーヒーファインダー', 'AI 원두 찾기')}
-        description={t('用 30 題找出你的咖啡偏好輪廓。', 'Find your coffee preference profile in 30 questions.', '30の質問であなたのコーヒー傾向を見つけます。', '30개의 질문으로 당신의 커피 취향을 찾아보세요.')}
+        description={t('\u7528 12 \u984c\u627e\u51fa\u4f60\u7684\u5496\u5561\u504f\u597d\u8f2a\u5ed3\u3002', 'Find your coffee preference profile in 12 questions.', '12\u306e\u8cea\u554f\u3067\u3042\u306a\u305f\u306e\u30b3\u30fc\u30d2\u30fc\u50be\u5411\u3092\u898b\u3064\u3051\u307e\u3059\u3002', '12\uac1c\uc758 \uc9c8\ubb38\uc73c\ub85c \ub2f9\uc2e0\uc758 \ucee4\ud53c \ucde8\ud5a5\uc744 \ucc3e\uc544\ubcf4\uc138\uc694\u3002')}
       />
       <Navigation />
       <main className="mx-auto max-w-3xl px-4 py-6">
@@ -1234,7 +858,7 @@ export default function CoffeeQuiz() {
             {t('返回首頁', 'Back Home', 'ホームへ戻る', '홈으로')}
           </Link>
           <span>
-            {t('進度', 'Progress', '進捗', '진행도')} {Math.min(answeredCount, questions.length)}/{questions.length || 30}
+            {t('\u9032\u5ea6', 'Progress', '\u9032\u6357', '\uc9c4\ud589\ub3c4')} {Math.min(answeredCount, questions.length)}/{questions.length || 12}
           </span>
         </div>
 
@@ -1262,8 +886,8 @@ export default function CoffeeQuiz() {
                 )}
               </div>
 
-              <div className="grid min-w-[220px] grid-cols-2 gap-2 text-xs">
-                {scoreBars.slice(0, 4).map((item) => (
+              <div className="grid min-w-[220px] grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+                {scoreBars.map((item) => (
                   <div key={item.key} className="rounded-2xl border border-[#f0e7d8] bg-white px-3 py-2">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium text-gray-700">{item.label}</span>
@@ -1556,5 +1180,4 @@ export default function CoffeeQuiz() {
     </div>
   );
 }
-
 
