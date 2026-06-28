@@ -198,34 +198,30 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: false, error: "NewebPay HashKey/HashIV are not configured." }, 500);
     }
 
-    const siteUrl = getSiteUrl().replace(/\/$/, "");
-    const returnUrl = `${siteUrl}/member/orders?subscription=${encodeURIComponent(subscription.id)}`;
-    const clientBackUrl = returnUrl;
     const timestamp = Math.floor(Date.now() / 1000);
     const notifyURL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-period-webhook`;
 
-    const tradeInfoParams = new URLSearchParams({
-      MerchantID: merchantId,
+    const postDataParams = new URLSearchParams({
       RespondType: "JSON",
       TimeStamp: timestamp.toString(),
       Version: "1.5",
-      MerchantOrderNo: merchantOrderNo,
-      ItemDesc: itemDesc,
+      LangType: "zh-Tw",
+      MerOrderNo: merchantOrderNo,
+      ProdDesc: itemDesc,
       PeriodType: "M",
       PeriodAmt: String(monthlyAmount),
       PeriodPoint: periodPoint,
       PeriodStartType: "2",
       PeriodTimes: planMonths,
-      Email: customerEmail,
-      LoginType: "0",
+      PayerEmail: customerEmail,
+      PaymentInfo: "Y",
+      OrderInfo: "N",
+      EmailModify: "1",
       NotifyURL: notifyURL,
-      ReturnURL: returnUrl,
-      ClientBackURL: clientBackUrl,
-      CREDIT: "1",
     });
 
-    const encryptedTradeInfo = await aesEncrypt(tradeInfoParams.toString(), hashKey, hashIV);
-    const tradeSha = await sha256Hex(`HashKey=${hashKey}&${encryptedTradeInfo}&HashIV=${hashIV}`);
+    const postData = await aesEncrypt(postDataParams.toString(), hashKey, hashIV);
+    const tradeSha = await sha256Hex(`HashKey=${hashKey}&${postData}&HashIV=${hashIV}`);
 
     await supabase
       .from("product_subscriptions")
@@ -248,11 +244,9 @@ Deno.serve(async (req: Request) => {
       merchantOrderNo,
       paymentUrl,
       merchantId,
-      tradeInfo: encryptedTradeInfo,
+      postData,
       tradeSha,
       version: "1.5",
-      returnUrl,
-      clientBackUrl,
     });
   } catch (error) {
     console.error("[newebpay-period-payment] Unexpected error:", error);
@@ -262,4 +256,3 @@ Deno.serve(async (req: Request) => {
     }, 500);
   }
 });
-

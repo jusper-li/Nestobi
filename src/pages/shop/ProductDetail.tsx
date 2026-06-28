@@ -266,13 +266,11 @@ export default function ProductDetail() {
     setSubscribing(true);
     try {
       const result = await createSubscriptionCheckout(viewProduct.id, qty, subscriptionMonths);
-      if (result.paymentUrl && result.merchantId && result.tradeInfo && result.tradeSha && result.version) {
+      if (result.paymentUrl && result.merchantId && result.postData) {
         submitNewebPayPeriodForm(
           result.paymentUrl,
           result.merchantId,
-          result.tradeInfo,
-          result.tradeSha,
-          result.version,
+          result.postData,
         );
       } else {
         throw new Error('Subscription checkout failed.');

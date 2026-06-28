@@ -33,10 +33,42 @@ export default function SuperAdminPointRewards() {
   const [saving, setSaving] = useState<string | null>(null);
   const [saved, setSaved] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [tableMissing, setTableMissing] = useState(false);
+
+  const buildFallbackRules = (): PointRewardRule[] => [
+    {
+      source_type: 'booking',
+      label: SOURCE_LABELS.booking,
+      points_per_100: 10,
+      is_active: true,
+      notes: '',
+      updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    },
+    {
+      source_type: 'order',
+      label: SOURCE_LABELS.order,
+      points_per_100: 5,
+      is_active: true,
+      notes: '',
+      updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    },
+    {
+      source_type: 'subscription',
+      label: SOURCE_LABELS.subscription,
+      points_per_100: 5,
+      is_active: true,
+      notes: '',
+      updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    },
+  ];
 
   const loadRules = async () => {
     setLoading(true);
     setError(null);
+    setTableMissing(false);
     const { data, error: loadError } = await supabase
       .from('point_reward_rules')
       .select('*')
@@ -44,8 +76,20 @@ export default function SuperAdminPointRewards() {
       .order('created_at', { ascending: true });
 
     if (loadError) {
-      setError(loadError.message);
-      setRules([]);
+      const isMissingTable =
+        loadError.code === '42P01' ||
+        loadError.status === 404 ||
+        loadError.message.toLowerCase().includes('schema cache') ||
+        loadError.message.toLowerCase().includes('could not find the table');
+
+      if (isMissingTable) {
+        setTableMissing(true);
+        setError('找不到 public.point_reward_rules，請先套用資料庫 migration。');
+        setRules(buildFallbackRules());
+      } else {
+        setError(loadError.message);
+        setRules(buildFallbackRules());
+      }
     } else {
       const next = ['booking', 'order', 'subscription'].map(sourceType => {
         const existing = (data || []).find(item => item.source_type === sourceType) as PointRewardRule | undefined;
@@ -75,6 +119,10 @@ export default function SuperAdminPointRewards() {
   };
 
   const saveRule = async (rule: PointRewardRule) => {
+    if (tableMissing) {
+      setError('資料表尚未建立，無法儲存。請先同步 point_reward_rules migration。');
+      return;
+    }
     setSaving(rule.source_type);
     setError(null);
     try {
@@ -149,8 +197,13 @@ export default function SuperAdminPointRewards() {
       </div>
 
       {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className={`rounded-2xl px-4 py-3 text-sm ${tableMissing ? 'border border-amber-200 bg-amber-50 text-amber-800' : 'border border-red-200 bg-red-50 text-red-700'}`}>
           {error}
+          {tableMissing ? (
+            <p className="mt-1 text-xs leading-5 text-amber-700">
+              頁面已先顯示預設規則，但尚未找到資料表，儲存也會失敗。請先把 `supabase/migrations/20260624170000_add_point_reward_rules.sql` 套用到遠端資料庫。
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -225,7 +278,7 @@ export default function SuperAdminPointRewards() {
                 <button
                   type="button"
                   onClick={() => void saveRule(rule)}
-                  disabled={saving === rule.source_type}
+                  disabled={saving === rule.source_type || tableMissing}
                   className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-50 ${
                     saved.has(rule.source_type) ? 'bg-emerald-600' : 'bg-[#8B6840] hover:bg-[#6f5231]'
                   }`}
@@ -235,7 +288,7 @@ export default function SuperAdminPointRewards() {
                   ) : (
                     <Save className="h-4 w-4" />
                   )}
-                  {saved.has(rule.source_type) ? '已儲存' : '儲存規則'}
+                  {tableMissing ? '資料表未建立' : saved.has(rule.source_type) ? '已儲存' : '儲存規則'}
                 </button>
               </div>
             </div>

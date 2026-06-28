@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import {
   AlertTriangle,
   CheckCircle2,
+  Eye,
   ImageOff,
   Pencil,
   Plus,
