@@ -31,6 +31,37 @@ type ScoreKey = CoffeeProfileKey | 'adventure';
 type ProductRecommendation = BeanFinderProductRecommendation;
 type RankedProductRecommendation = RankedBeanFinderProductRecommendation;
 
+const COFFEE_CATEGORY_SLUG = 'coffee-beans';
+const RECOMMENDATION_LIMIT = 6;
+const PRODUCT_FALLBACK_IMAGE = 'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=900';
+
+function normalizeText(value: string | null | undefined) {
+  return (value || '').toLowerCase();
+}
+
+function joinProductText(product: ProductRecommendation) {
+  return normalizeText([
+    product.name,
+    product.description,
+    product.origin,
+    product.roast_level,
+    product.processing_method,
+    ...(product.flavor_notes || []),
+    ...(product.tags || []),
+  ].filter(Boolean).join(' '));
+}
+
+function isCoffeeLikeProduct(product: ProductRecommendation) {
+  return Boolean(
+    product.origin ||
+      product.roast_level ||
+      product.processing_method ||
+      (product.flavor_notes || []).length > 0 ||
+      (product.tags || []).some((tag) => /咖啡|coffee|espresso|手沖|濾掛|精品|豆/.test(tag)) ||
+      /咖啡|coffee|espresso|手沖|濾掛|精品豆|咖啡豆/.test(joinProductText(product)),
+  );
+}
+
 type QuestionOption = {
   id: string;
   option_key: OptionKey;
@@ -1180,4 +1211,3 @@ export default function CoffeeQuiz() {
     </div>
   );
 }
-
