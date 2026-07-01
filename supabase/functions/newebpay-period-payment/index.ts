@@ -74,10 +74,21 @@ function buildItemDesc(name: string, quantity: number) {
   return quantity > 1 ? `${cleanName} x${quantity}` : cleanName;
 }
 
-function getSiteUrl() {
-  return Deno.env.get("SITE_URL")
-    || Deno.env.get("PUBLIC_SITE_URL")
-    || "http://localhost:5174";
+function getSiteUrl(req: Request) {
+  const configured = Deno.env.get("SITE_URL")
+    || Deno.env.get("PUBLIC_SITE_URL");
+  if (configured) return configured;
+
+  const origin = req.headers.get("Origin") || req.headers.get("Referer");
+  if (origin) {
+    try {
+      return new URL(origin).origin;
+    } catch {
+      // Ignore malformed headers and fall through to the production fallback.
+    }
+  }
+
+  return "https://nestobi.com";
 }
 
 function getPeriodGatewayUrl() {

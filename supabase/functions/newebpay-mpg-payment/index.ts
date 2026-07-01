@@ -102,10 +102,21 @@ function buildItemDesc(items: Array<{ name?: string | null }>) {
   return names.length > 3 ? `${display} and ${names.length - 3} more` : display;
 }
 
-function getSiteUrl() {
-  return Deno.env.get("SITE_URL")
-    || Deno.env.get("PUBLIC_SITE_URL")
-    || "http://localhost:5174";
+function getSiteUrl(req: Request) {
+  const configured = Deno.env.get("SITE_URL")
+    || Deno.env.get("PUBLIC_SITE_URL");
+  if (configured) return configured;
+
+  const origin = req.headers.get("Origin") || req.headers.get("Referer");
+  if (origin) {
+    try {
+      return new URL(origin).origin;
+    } catch {
+      // Ignore malformed headers and fall through to the production fallback.
+    }
+  }
+
+  return "https://nestobi.com";
 }
 
 async function sendOrderEmail(
@@ -187,7 +198,7 @@ Deno.serve(async (req: Request) => {
       items: Array<{ name?: string | null; quantity: number; unit_price: number; total_price: number }>;
     };
 
-    const siteUrl = getSiteUrl().replace(/\/$/, "");
+    const siteUrl = getSiteUrl(req).replace(/\/$/, "");
     const returnUrl = `${siteUrl}/member/orders?merchantOrderNo=${encodeURIComponent(checkout.merchant_order_no)}`;
     const clientBackUrl = returnUrl;
 
