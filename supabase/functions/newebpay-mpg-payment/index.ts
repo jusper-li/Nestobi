@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-type PaymentMethod = "CREDIT" | "WEBATM" | "APPLEPAY" | "ANDROIDPAY" | "UNIONPAY";
+type PaymentMethod = "CREDIT" | "WEBATM" | "ATM" | "CVS" | "BARCODE" | "APPLEPAY" | "ANDROIDPAY" | "UNIONPAY";
 
 interface ShopCheckoutRequest {
   pointsToUse?: number;
@@ -238,6 +238,14 @@ Deno.serve(async (req: Request) => {
     const itemDesc = buildItemDesc(checkout.items);
     const timestamp = Math.floor(Date.now() / 1000);
     const notifyURL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-mpg-webhook`;
+    const enabledPaymentFlags = {
+      CREDIT: "1",
+      WEBATM: "1",
+      VACC: "1",
+      CVS: "1",
+      BARCODE: "1",
+    } as const;
+
     const tradeInfoParams = new URLSearchParams({
       MerchantID: credentials.merchantId,
       RespondType: "JSON",
@@ -251,9 +259,8 @@ Deno.serve(async (req: Request) => {
       NotifyURL: notifyURL,
       ReturnURL: returnUrl,
       ClientBackURL: clientBackUrl,
-      CREDIT: paymentMethod === "CREDIT" ? "1" : "0",
+      ...enabledPaymentFlags,
       UNIONPAY: paymentMethod === "UNIONPAY" ? "1" : "0",
-      WEBATM: paymentMethod === "WEBATM" ? "1" : "0",
       APPLEPAY: paymentMethod === "APPLEPAY" ? "1" : "0",
       ANDROIDPAY: paymentMethod === "ANDROIDPAY" ? "1" : "0",
     });
