@@ -169,6 +169,17 @@ Deno.serve(async (req: Request) => {
     const customerEmail = String(user.email || "");
     const customerName = String(profileRes.data?.display_name || user.email || "");
     const customerPhone = String(profileRes.data?.phone || "");
+    const shippingAddress = {
+      customer_name: customerName,
+      recipient_name: customerName,
+      customer_email: customerEmail,
+      recipient_email: customerEmail,
+      customer_phone: customerPhone,
+      recipient_phone: customerPhone,
+      name: customerName,
+      email: customerEmail,
+      phone: customerPhone,
+    };
 
     const { data: subscription, error: subscriptionError } = await supabase
       .from("product_subscriptions")
@@ -185,7 +196,7 @@ Deno.serve(async (req: Request) => {
         period_times: planMonths,
         status: "pending",
         newebpay_status: "pending",
-        shipping_address: {},
+        shipping_address: shippingAddress,
         customer_name: customerName,
         customer_email: customerEmail,
         customer_phone: customerPhone,
@@ -243,6 +254,7 @@ Deno.serve(async (req: Request) => {
         customer_name: customerName,
         customer_email: customerEmail,
         customer_phone: customerPhone,
+        shipping_address: shippingAddress,
         notes: vendor?.name ? `Vendor: ${vendor.name}` : "",
         updated_at: new Date().toISOString(),
       })
