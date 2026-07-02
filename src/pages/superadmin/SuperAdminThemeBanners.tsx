@@ -3,6 +3,7 @@ import { Edit3, Image, Link as LinkIcon, Plus, Save, Trash2, X } from 'lucide-re
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
+import { logAdminAction } from '../../lib/auditLog';
 import type { ThemeKey } from '../../lib/themeBanners';
 
 interface ThemeBannerRecord {
@@ -146,10 +147,16 @@ export default function SuperAdminThemeBanners() {
       setMessage(result.error.message);
       return;
     }
-    setMessage(t('Banner 已儲存。', 'Banner saved.', 'Banner を保存しました。', '배너가 저장되었습니다.'));
+    await logAdminAction(editingId ? 'update_theme_banner' : 'create_theme_banner', 'theme_banners', editingId || null, {
+      theme_key: payload.theme_key,
+      link_url: payload.link_url,
+      display_order: payload.display_order,
+    });
+    setMessage(t('Banner ???', 'Banner saved.', 'Banner ?????????', '??? ???????.'));
     setEditingId(null);
     setForm(EMPTY_FORM);
     await loadItems();
+
   };
 
   const remove = async (id: string) => {
@@ -160,6 +167,8 @@ export default function SuperAdminThemeBanners() {
       setMessage(error.message);
       return;
     }
+    await logAdminAction('delete_theme_banner', 'theme_banners', id);
+
     await loadItems();
   };
 

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, BedDouble, ShoppingBag, DollarSign, Shield, UserPlus, Activity, CheckCircle, AlertCircle } from 'lucide-react';
+import { logAdminAction } from '../../lib/auditLog';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
 interface AdminUser { id: string; user_id: string; role: string; is_active: boolean; created_at: string; display_name?: string; }
 interface SystemStats { totalUsers: number; totalBookings: number; totalOrders: number; totalRevenue: number; }
+interface ActivityLog { id: string; action: string; entity_type: string; entity_id: string | null; created_at: string; details?: Record<string, unknown> | null; actor_user_id?: string | null; }
 
 const SuperAdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<SystemStats>({ totalUsers: 0, totalBookings: 0, totalOrders: 0, totalRevenue: 0 });
@@ -14,14 +16,16 @@ const SuperAdminDashboard: React.FC = () => {
   const [promoteUserId, setPromoteUserId] = useState('');
   const [promoting, setPromoting] = useState(false);
   const [promoteMsg, setPromoteMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [recentLogs, setRecentLogs] = useState<ActivityLog[]>([]);
 
   const fetchData = async () => {
-    const [{ count: usrCount }, { count: bkCount }, { count: ordCount }, { data: revenue }, { data: adminsData }] = await Promise.all([
+    const [{ count: usrCount }, { count: bkCount }, { count: ordCount }, { data: revenue }, { data: adminsData }, { data: logsData }] = await Promise.all([
       supabase.from('tbl_user_auth').select('*', { count: 'exact', head: true }),
       supabase.from('tbl_bookings').select('*', { count: 'exact', head: true }),
       supabase.from('orders').select('*', { count: 'exact', head: true }),
       supabase.from('orders').select('total_amount').eq('payment_status', 'paid'),
       supabase.from('tbl_user_auth').select('*').in('role', ['admin', 'superadmin']).order('created_at', { ascending: false }),
+      supabase.from('admin_activity_logs').select('id,action,entity_type,entity_id,details,actor_user_id,created_at').order('created_at', { ascending: false }).limit(6),
     ]);
     const totalRev = (revenue || []).reduce((s: number, o: any) => s + (o.total_amount || 0), 0);
     setStats({ totalUsers: usrCount || 0, totalBookings: bkCount || 0, totalOrders: ordCount || 0, totalRevenue: totalRev });
@@ -31,6 +35,7 @@ const SuperAdminDashboard: React.FC = () => {
     const { data: profiles } = await supabase.from('tbl_mn5wgzh0').select('user_id, display_name').in('user_id', adminUserIds);
     const profileMap = Object.fromEntries((profiles || []).map((p: any) => [p.user_id, p.display_name]));
     setAdmins((adminsData || []).map((a: any) => ({ ...a, display_name: profileMap[a.user_id] })));
+    setRecentLogs((logsData || []) as ActivityLog[]);
     setLoading(false);
   };
 
@@ -48,6 +53,7 @@ const SuperAdminDashboard: React.FC = () => {
       }
       const { error } = await supabase.from('tbl_user_auth').update({ role: 'admin' }).eq('user_id', promoteUserId);
       if (!error) {
+        await logAdminAction('promote_admin', 'tbl_user_auth', promoteUserId, { role: 'admin' });
         setPromoteUserId('');
         fetchData();
         setPromoteMsg({ type: 'success', text: '已成功提升為管理員！' });
@@ -154,6 +160,28 @@ const SuperAdminDashboard: React.FC = () => {
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm p-6">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h3 className="font-semibold text-gray-900 flex items-center gap-2"><Activity className="w-5 h-5 text-green-600" />??????</h3>
+          <button type="button" onClick={fetchData} className="text-sm font-medium text-green-700 hover:text-green-800">????</button>
+        </div>
+        {recentLogs.length === 0 ? (
+          <p className="py-4 text-center text-sm text-gray-400">??????</p>
+        ) : (
+          <div className="space-y-3">
+            {recentLogs.map(log => (
+              <div key={log.id} className="rounded-2xl bg-gray-50 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-gray-900">{log.action.replace(/_/g, ' ')}</p>
+                  <span className="text-xs text-gray-400">{formatDate(log.created_at)}</span>
+                </div>
+                <p className="mt-1 text-sm text-gray-600">{log.entity_type}{log.entity_id ? ` ? ${log.entity_id}` : ''}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

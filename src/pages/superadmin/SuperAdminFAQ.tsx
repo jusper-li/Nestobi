@@ -57,10 +57,12 @@ const SuperAdminFAQ: React.FC = () => {
     setSaving(true);
     if (isNew) {
       const { question, answer, category, sort_order, is_published } = editing;
-      await supabase.from('faqs').insert({ question, answer, category, sort_order, is_published });
+      const { data, error } = await supabase.from('faqs').insert({ question, answer, category, sort_order, is_published }).select('id').maybeSingle();
+      if (!error) await logAdminAction('create_faq', 'faqs', data?.id || null, { question, category, sort_order, is_published });
     } else {
       const { id, ...rest } = editing;
-      await supabase.from('faqs').update({ ...rest, updated_at: new Date().toISOString() }).eq('id', id);
+      const { error } = await supabase.from('faqs').update({ ...rest, updated_at: new Date().toISOString() }).eq('id', id);
+      if (!error) await logAdminAction('update_faq', 'faqs', id, { question: rest.question, category: rest.category, sort_order: rest.sort_order, is_published: rest.is_published });
     }
     setEditing(null);
     setIsNew(false);
@@ -69,7 +71,7 @@ const SuperAdminFAQ: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('確定要刪除此常見問題？')) return;
+    if (!confirm('確定要刪除此 FAQ？')) return;
     await supabase.from('faqs').delete().eq('id', id);
     await logAdminAction('delete_faq', 'faqs', id);
     fetchFaqs();
@@ -77,6 +79,7 @@ const SuperAdminFAQ: React.FC = () => {
 
   const togglePublish = async (faq: FAQ) => {
     await supabase.from('faqs').update({ is_published: !faq.is_published }).eq('id', faq.id);
+    await logAdminAction(faq.is_published ? 'unpublish_faq' : 'publish_faq', 'faqs', faq.id, { question: faq.question, category: faq.category });
     fetchFaqs();
   };
 

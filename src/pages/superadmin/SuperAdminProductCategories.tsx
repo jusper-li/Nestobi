@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, FolderTree, Pencil, Plus, Save, Trash2, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { logAdminAction } from '../../lib/auditLog';
 import { getCategoryDepth, getCategoryOptionLabel, sortCategoriesForTree, type CategoryTreeItem } from '../../lib/categoryTree';
 import { sanitizeText } from '../../lib/security';
 
@@ -132,7 +133,12 @@ export default function SuperAdminProductCategories() {
     if (result.error) {
       setError(result.error.message);
     } else {
-      setMessage(editingId ? '分類已更新。' : '分類已新增。');
+      await logAdminAction(editingId ? 'update_product_category' : 'create_product_category', 'categories', editingId || null, {
+        name: payload.name,
+        slug: payload.slug,
+        parent_id: payload.parent_id,
+      });
+      setMessage(editingId ? '?????' : '?????');
       setEditingId(null);
       setForm(emptyForm);
       await loadData();
@@ -156,8 +162,11 @@ export default function SuperAdminProductCategories() {
       return;
     }
 
-    setMessage('分類已刪除。');
-    if (editingId === category.id) startCreate();
+    await logAdminAction('delete_product_category', 'categories', category.id, {
+      name: category.name,
+      slug: category.slug,
+    });
+
     await loadData();
   };
 

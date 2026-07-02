@@ -126,6 +126,12 @@ async function sendOrderEmail(
   to: string,
   displayName: string,
   items: Array<{ name: string; quantity: number; price: number }>,
+  shippingName: string,
+  shippingPhone: string,
+  shippingAddress: string,
+  paymentMethod: string,
+  subtotalAmount: number,
+  pointsDiscount: number,
   totalAmount: number,
   lang: string,
   merchantOrderNo?: string,
@@ -145,6 +151,12 @@ async function sendOrderEmail(
             quantity: item.quantity,
             price: item.price,
           })),
+          shippingName,
+          shippingPhone,
+          shippingAddress,
+          paymentMethod,
+          subtotalPrice: subtotalAmount,
+          pointsDiscount,
           totalAmount,
           lang,
           merchantOrderNo,
@@ -244,13 +256,19 @@ Deno.serve(async (req: Request) => {
     if (user.email) {
       await sendOrderEmail(
         user.email,
-        orderEmailData.displayName,
-        orderEmailItems,
-        orderEmailData.totalAmount,
-        orderEmailData.lang,
-        orderEmailData.merchantOrderNo,
-        orderEmailData.paymentStatus,
-      );
+      orderEmailData.displayName,
+      orderEmailItems,
+      shippingName,
+      shippingPhone,
+      shippingAddress,
+      paymentMethod,
+      Number(checkout.subtotal_amount || 0),
+      Number(checkout.points_discount || 0),
+      orderEmailData.totalAmount,
+      orderEmailData.lang,
+      orderEmailData.merchantOrderNo,
+      orderEmailData.paymentStatus,
+    );
     }
 
     if (checkout.payment_status === "paid") {

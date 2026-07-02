@@ -94,6 +94,7 @@ import SuperAdminStoreLocations from './pages/superadmin/SuperAdminStoreLocation
 import SuperAdminCoffeeQuiz from './pages/superadmin/SuperAdminCoffeeQuiz';
 import SuperAdminRoomTranslations from './pages/superadmin/SuperAdminRoomTranslations';
 import SuperAdminThemeBanners from './pages/superadmin/SuperAdminThemeBanners';
+import SuperAdminActivityLogs from './pages/superadmin/SuperAdminActivityLogs';
 
 import VendorLayout from './pages/vendor/VendorLayout';
 import VendorDashboard from './pages/vendor/VendorDashboard';
@@ -238,6 +239,7 @@ function AppShell() {
                   <Route path="point-rewards" element={<SuperAdminPointRewards />} />
                   <Route path="points-ledger" element={<SuperAdminPointLedger />} />
                   <Route path="points-ledger/:id" element={<SuperAdminPointLedgerDetail />} />
+                  <Route path="activity-logs" element={<SuperAdminActivityLogs />} />
                   <Route path="ai-analytics" element={<SuperAdminAIAnalytics />} />
                   <Route path="chatbot" element={<SuperAdminChatbot />} />
                   <Route path="static-pages" element={<AdminStaticPages />} />

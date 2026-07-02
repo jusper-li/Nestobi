@@ -149,7 +149,7 @@ export default function EngagementManagement({ mode }: EngagementManagementProps
     invalidAdjustment: t('請選擇會員並輸入大於 0 的點數', 'Select a member and enter points greater than 0', '会員を選択し、0より大きいポイントを入力してください', '회원을 선택하고 0보다 큰 포인트를 입력하세요'),
   };
 
-  const [tab, setTab] = useState<Tab>('afterSales');
+  const [tab, setTab] = useState<Tab>(mode === 'vendor' ? 'afterSales' : 'afterSales');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
@@ -402,6 +402,27 @@ export default function EngagementManagement({ mode }: EngagementManagementProps
     { label: labels.points, value: points.length, icon: <Coins className="h-5 w-5" /> },
   ];
 
+  const tabOptions = mode === 'vendor'
+    ? [
+        ['afterSales', labels.afterSales, Headphones, afterSales.length] as const,
+        ['reviews', labels.reviews, MessageSquare, reviews.length] as const,
+        ['favorites', labels.favorites, Heart, favorites.length] as const,
+      ]
+    : [
+        ['afterSales', labels.afterSales, Headphones, afterSales.length] as const,
+        ['reviews', labels.reviews, MessageSquare, reviews.length] as const,
+        ['favorites', labels.favorites, Heart, favorites.length] as const,
+        ['points', labels.points, Coins, points.length] as const,
+      ];
+
+  const activeCount = tab === 'afterSales'
+    ? visibleAfterSales.length
+    : tab === 'reviews'
+      ? visibleReviews.length
+      : tab === 'favorites'
+        ? visibleFavorites.length
+        : visiblePoints.length;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -409,14 +430,10 @@ export default function EngagementManagement({ mode }: EngagementManagementProps
           <h1 className="text-2xl font-bold text-gray-900">{labels.title}</h1>
           <p className="mt-1 text-sm text-gray-500">{labels.subtitle}</p>
         </div>
-        <button type="button" onClick={() => void loadData()} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
-          <RefreshCw className="h-4 w-4" />
-          {labels.refresh}
-        </button>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-4">
-        {stats.map((stat, index) => (
+        {(mode === 'vendor' ? stats.slice(0, 3) : stats).map((stat, index) => (
           <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }} className="rounded-2xl bg-white p-4 shadow-sm">
             <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700">{stat.icon}</div>
             <p className="text-sm text-gray-500">{stat.label}</p>
@@ -425,29 +442,52 @@ export default function EngagementManagement({ mode }: EngagementManagementProps
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex rounded-xl bg-gray-100 p-1">
-          {([
-            ['afterSales', labels.afterSales, Headphones],
-            ['reviews', labels.reviews, MessageSquare],
-            ['favorites', labels.favorites, Heart],
-            ['points', labels.points, Coins],
-          ] as const).map(([key, label, Icon]) => (
-            <button key={key} type="button" onClick={() => setTab(key)} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${tab === key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
-        </div>
-        <div className="relative min-w-64 flex-1">
+      <div className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {tabOptions.map(([key, label, Icon, count]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold transition ${
+                  tab === key
+                    ? 'border-amber-200 bg-amber-50 text-amber-900 shadow-sm'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-amber-200 hover:text-gray-900'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+                <span className={`ml-1 rounded-full px-2 py-0.5 text-xs font-bold ${tab === key ? 'bg-amber-100 text-amber-900' : 'bg-gray-100 text-gray-500'}`}>
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative min-w-64 flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input value={search} onChange={event => setSearch(event.target.value)} placeholder={labels.search} className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-amber-300" />
+            </div>
+            <button type="button" onClick={() => void loadData()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
+              <RefreshCw className="h-4 w-4" />
+              {labels.refresh}
+            </button>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+          <span className="rounded-full bg-gray-100 px-3 py-1 font-medium">顯示 {activeCount} 筆</span>
+          {search.trim() ? <span className="rounded-full bg-amber-50 px-3 py-1 font-medium text-amber-800">搜尋：{search.trim()}</span> : null}
+          <button type="button" onClick={() => void loadData()} className="ml-auto inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1 font-medium text-gray-600 transition hover:bg-gray-50">
+            <RefreshCw className="h-3.5 w-3.5" />
+            {labels.refresh}
+          </button>
         </div>
       </div>
 
       {message ? <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">{message}</div> : null}
 
-      <div className="rounded-2xl bg-white shadow-sm">
+      <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
         {loading ? (
           <div className="flex justify-center py-16"><div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" /></div>
         ) : tab === 'afterSales' ? (
@@ -546,7 +586,8 @@ function AfterSalesTable({ rows, labels, dateLocale, busy, typeLabel, statusLabe
 }) {
   if (rows.length === 0) return <EmptyState labels={labels} />;
   return (
-    <div className="overflow-x-auto">
+    <>
+      <div className="hidden overflow-x-auto md:block">
       <table className="w-full text-sm">
         <thead className="border-b border-gray-100 bg-gray-50">
           <tr>
@@ -578,7 +619,33 @@ function AfterSalesTable({ rows, labels, dateLocale, busy, typeLabel, statusLabe
           })}
         </tbody>
       </table>
-    </div>
+      </div>
+      <div className="space-y-3 p-4 md:hidden">
+        {rows.map(row => {
+          const records = row.orders?.purchase_records || [];
+          const names = records.map(record => record.products?.name).filter(Boolean).join(', ') || row.order_id.slice(-10).toUpperCase();
+          const vendor = records.map(record => record.products?.vendors?.name).filter(Boolean)[0] || '';
+          return (
+            <div key={row.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-gray-900">{typeLabel(row.request_type)}</p>
+                  <p className="mt-1 text-xs text-gray-400">#{row.id.slice(-8)} · {formatDateTime(row.created_at, dateLocale)}</p>
+                </div>
+                <select value={row.status} disabled={busy === row.id} onChange={event => void onStatusChange(row, event.target.value)} className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-amber-300">
+                  {AFTER_SALES_STATUSES.map(status => <option key={status} value={status}>{statusLabel(status)}</option>)}
+                </select>
+              </div>
+              <div className="mt-3 space-y-1 text-sm text-gray-600">
+                <p className="font-medium text-gray-900">{names}</p>
+                {vendor ? <p>{vendor}</p> : null}
+                <p className="text-xs text-gray-400">{labels.member}：<span className="font-mono">{row.user_id.slice(-8)}</span></p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -593,7 +660,8 @@ function ReviewsTable({ rows, labels, dateLocale, busy, typeLabel, statusLabel, 
 }) {
   if (rows.length === 0) return <EmptyState labels={labels} />;
   return (
-    <div className="overflow-x-auto">
+    <>
+      <div className="hidden overflow-x-auto md:block">
       <table className="w-full text-sm">
         <thead className="border-b border-gray-100 bg-gray-50">
           <tr>
@@ -620,7 +688,28 @@ function ReviewsTable({ rows, labels, dateLocale, busy, typeLabel, statusLabel, 
           ))}
         </tbody>
       </table>
-    </div>
+      </div>
+      <div className="space-y-3 p-4 md:hidden">
+        {rows.map(row => (
+          <div key={row.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-semibold text-gray-900">{row.target_name}</p>
+                <p className="mt-1 text-xs text-gray-400">{typeLabel(row.kind)}{row.vendor_name ? ` · ${row.vendor_name}` : ''}</p>
+              </div>
+              <span className="inline-flex items-center gap-1 font-semibold text-yellow-700"><Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />{row.rating}</span>
+            </div>
+            <p className="mt-3 whitespace-pre-wrap text-sm text-gray-600">{row.comment || '-'}</p>
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <select value={row.status} disabled={busy === row.id} onChange={event => void onStatusChange(row, event.target.value)} className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-amber-300">
+                {REVIEW_STATUSES.map(status => <option key={status} value={status}>{statusLabel(status)}</option>)}
+              </select>
+              <span className="text-xs text-gray-400">{formatDateTime(row.created_at, dateLocale)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -632,7 +721,8 @@ function FavoritesTable({ rows, labels, dateLocale, typeLabel }: {
 }) {
   if (rows.length === 0) return <EmptyState labels={labels} />;
   return (
-    <div className="overflow-x-auto">
+    <>
+      <div className="hidden overflow-x-auto md:block">
       <table className="w-full text-sm">
         <thead className="border-b border-gray-100 bg-gray-50">
           <tr>
@@ -655,7 +745,23 @@ function FavoritesTable({ rows, labels, dateLocale, typeLabel }: {
           ))}
         </tbody>
       </table>
-    </div>
+      </div>
+      <div className="space-y-3 p-4 md:hidden">
+        {rows.map(row => (
+          <div key={row.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+            <p className="font-semibold text-gray-900">{row.target_name}</p>
+            <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-500">
+              <span className="rounded-full bg-gray-100 px-2.5 py-1">{typeLabel(row.target_type)}</span>
+              <span className="rounded-full bg-gray-100 px-2.5 py-1">{row.vendor_name || '-'}</span>
+            </div>
+            <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
+              <span>{labels.member}：<span className="font-mono">{row.user_id.slice(-8)}</span></span>
+              <span>{formatDateTime(row.created_at, dateLocale)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -667,7 +773,8 @@ function PointsTable({ rows, labels, dateLocale, typeLabel }: {
 }) {
   if (rows.length === 0) return <EmptyState labels={labels} />;
   return (
-    <div className="overflow-x-auto">
+    <>
+      <div className="hidden overflow-x-auto md:block">
       <table className="w-full text-sm">
         <thead className="border-b border-gray-100 bg-gray-50">
           <tr>
@@ -694,7 +801,27 @@ function PointsTable({ rows, labels, dateLocale, typeLabel }: {
           ))}
         </tbody>
       </table>
-    </div>
+      </div>
+      <div className="space-y-3 p-4 md:hidden">
+        {rows.map(row => (
+          <div key={row.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <span className="font-mono text-xs text-gray-500">{row.user_id.slice(-8)}</span>
+              <span className={`font-bold ${row.amount >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{row.amount >= 0 ? '+' : ''}{row.amount.toLocaleString()} NP</span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-500">
+              <span className="rounded-full bg-gray-100 px-2.5 py-1">{row.source_type ? typeLabel(row.source_type) : '-'}</span>
+              <span className="rounded-full bg-gray-100 px-2.5 py-1">{row.vendors?.name || '-'}</span>
+            </div>
+            <p className="mt-3 text-sm text-gray-600">{row.description || '-'}</p>
+            <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
+              <span>{row.expires_at ? formatDateTime(row.expires_at, dateLocale) : '-'}</span>
+              <span>{formatDateTime(row.created_at, dateLocale)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 

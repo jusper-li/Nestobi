@@ -96,6 +96,13 @@ async function sendOrderEmail(
   to: string,
   displayName: string,
   items: Array<{ name: string; quantity: number; price: number }>,
+  shippingName: string,
+  shippingPhone: string,
+  shippingAddress: string,
+  paymentMethod: string,
+  subtotalAmount: number,
+  pointsDiscount: number,
+  pointsEarned: number,
   totalAmount: number,
   lang: string,
   merchantOrderNo?: string,
@@ -115,6 +122,13 @@ async function sendOrderEmail(
             quantity: item.quantity,
             price: item.price,
           })),
+          shippingName,
+          shippingPhone,
+          shippingAddress,
+          paymentMethod,
+          subtotalPrice: subtotalAmount,
+          pointsDiscount,
+          pointsEarned,
           totalAmount,
           lang,
           merchantOrderNo,
@@ -184,7 +198,7 @@ Deno.serve(async (req: Request) => {
     const supabase = createServiceClient();
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id, user_id, total_amount, subtotal_amount, points_discount, merchant_order_no, newebpay_status")
+      .select("id, user_id, total_amount, subtotal_amount, points_discount, merchant_order_no, newebpay_status, newebpay_payment_type")
       .eq("merchant_order_no", merchantOrderNo)
       .maybeSingle();
 
@@ -254,6 +268,13 @@ Deno.serve(async (req: Request) => {
           email,
           displayName,
           items,
+          String(order.shipping_name || ""),
+          String(order.shipping_phone || ""),
+          String(order.shipping_address || ""),
+          String(order.newebpay_payment_type || "CREDIT"),
+          Number(order.subtotal_amount || 0),
+          Number(order.points_discount || 0),
+          rewardPoints,
           Number(order.total_amount || 0),
           String(profileRes.data?.preferred_language || "zh-TW"),
           order.merchant_order_no,

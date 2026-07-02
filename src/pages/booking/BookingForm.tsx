@@ -142,7 +142,7 @@ const BookingForm: React.FC = () => {
     setError('');
 
     try {
-      const { error: bookingErr } = await supabase
+      const { data: bookingRow, error: bookingErr } = await supabase
         .from('tbl_bookings')
         .insert({
           user_id: user.id,
@@ -157,7 +157,9 @@ const BookingForm: React.FC = () => {
           payment_status: paymentStatus,
           status: 'confirmed',
           special_requests: specialRequests,
-        });
+        })
+        .select('id, created_at')
+        .single();
 
       if (bookingErr) throw bookingErr;
 
@@ -179,16 +181,21 @@ const BookingForm: React.FC = () => {
             type: 'booking-confirmation',
             to: session.user.email,
             data: {
+              bookingNo: bookingRow?.id || '',
               displayName: profile?.display_name || '',
               roomName: room.name,
               location: room.location,
               checkIn: formatDate(checkIn),
               checkOut: formatDate(checkOut),
               guests,
-              totalPrice: payableTotal,
               nights,
+              totalPrice: payableTotal,
+              subtotalPrice: totalPrice,
+              pointsDiscount: pointDiscount,
               pointsEarned,
               paymentMethod,
+              paymentStatus,
+              specialRequests,
               lang: locale,
             },
           }),
