@@ -98,6 +98,10 @@ export interface Booking {
   check_out_date: string;
   guests: number;
   total_price: number;
+  subtotal_price?: number;
+  points_discount?: number;
+  payment_method?: 'points' | 'service' | 'online' | 'points_online';
+  payment_status?: 'unpaid' | 'paid' | 'refunded';
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   special_requests: string;
   created_at: string;

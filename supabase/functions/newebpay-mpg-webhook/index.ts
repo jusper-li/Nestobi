@@ -98,6 +98,8 @@ async function sendOrderEmail(
   items: Array<{ name: string; quantity: number; price: number }>,
   totalAmount: number,
   lang: string,
+  merchantOrderNo?: string,
+  paymentStatus?: string,
 ) {
   try {
     await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
@@ -115,6 +117,8 @@ async function sendOrderEmail(
           })),
           totalAmount,
           lang,
+          merchantOrderNo,
+          paymentStatus,
         },
       }),
     });
@@ -252,6 +256,8 @@ Deno.serve(async (req: Request) => {
           items,
           Number(order.total_amount || 0),
           String(profileRes.data?.preferred_language || "zh-TW"),
+          order.merchant_order_no,
+          "paid",
         );
       }
 

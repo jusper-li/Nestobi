@@ -31,11 +31,13 @@ async function ensureFreshSession() {
   }
 }
 
-export async function createShopCheckout(pointsToUse: number): Promise<ShopCheckoutResponse> {
+export type NewebPayPaymentMethod = 'CREDIT' | 'WEBATM' | 'ATM' | 'CVS' | 'BARCODE';
+
+export async function createShopCheckout(pointsToUse: number, paymentMethod: NewebPayPaymentMethod = 'CREDIT'): Promise<ShopCheckoutResponse> {
   await ensureFreshSession();
 
   const { data, error } = await supabase.functions.invoke('newebpay-mpg-payment', {
-    body: { pointsToUse },
+    body: { pointsToUse, paymentMethod },
   });
 
   if (error) {

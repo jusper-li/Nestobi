@@ -285,12 +285,23 @@ function orderEmail(locale: Locale, data: Record<string, unknown>) {
       </tr>`;
     })
     .join("");
+  const merchantOrderNo = String(data.merchantOrderNo || data.orderNo || "");
+  const paymentStatus = String(data.paymentStatus || "");
+  const infoRows = [
+    merchantOrderNo
+      ? `<tr><td style="padding:6px 0;color:#806d58;">${escapeHtml(orderNoLabel(locale))}</td><td align="right" style="font-weight:700;">${escapeHtml(merchantOrderNo)}</td></tr>`
+      : "",
+    paymentStatus
+      ? `<tr><td style="padding:6px 0;color:#806d58;">${escapeHtml(locale === "zh-TW" ? "付款狀態" : locale === "ja" ? "支払い状況" : locale === "ko" ? "결제 상태" : "Payment status")}</td><td align="right" style="font-weight:700;">${escapeHtml(paymentStatusLabel(locale, paymentStatus))}</td></tr>`
+      : "",
+  ].join("");
 
   return wrapper(
     locale,
     copy.orderTitle,
     `<h1 style="font-size:22px;margin:0 0 12px;">${escapeHtml(copy.orderTitle)}</h1>
      <p style="font-size:15px;line-height:1.7;color:#5f5041;margin:0 0 18px;">${escapeHtml(data.displayName || "traveler")}, ${escapeHtml(copy.orderBody)}</p>
+     ${infoRows ? `<table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f4ee;border-radius:12px;padding:16px;margin:16px 0;">${infoRows}</table>` : ""}
      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f4ee;border-radius:12px;padding:16px;margin:16px 0;">
        <tr>
          <th align="left" style="padding:8px 0;color:#806d58;font-size:13px;font-weight:700;">${escapeHtml(copy.item)}</th>
@@ -314,6 +325,41 @@ function contactEmail(locale: Locale, data: Record<string, unknown>) {
      <p><strong>${escapeHtml(copy.subject)}:</strong> ${escapeHtml(data.subject)}</p>
      <div style="background:#f8f4ee;border-radius:12px;padding:16px;white-space:pre-wrap;line-height:1.7;">${escapeHtml(data.message)}</div>`,
   );
+}
+
+function paymentStatusLabel(locale: Locale, value: unknown) {
+  const status = String(value || "").toLowerCase();
+  switch (locale) {
+    case "zh-TW":
+      if (status === "paid") return "已付款";
+      if (status === "refunded") return "已退款";
+      return "待付款";
+    case "ja":
+      if (status === "paid") return "支払い済み";
+      if (status === "refunded") return "返金済み";
+      return "支払い待ち";
+    case "ko":
+      if (status === "paid") return "결제 완료";
+      if (status === "refunded") return "환불 완료";
+      return "결제 대기";
+    default:
+      if (status === "paid") return "Paid";
+      if (status === "refunded") return "Refunded";
+      return "Pending payment";
+  }
+}
+
+function orderNoLabel(locale: Locale) {
+  switch (locale) {
+    case "zh-TW":
+      return "訂單編號";
+    case "ja":
+      return "注文番号";
+    case "ko":
+      return "주문 번호";
+    default:
+      return "Order No.";
+  }
 }
 
 Deno.serve(async (req) => {

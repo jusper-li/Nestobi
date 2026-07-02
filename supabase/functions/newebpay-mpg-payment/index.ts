@@ -125,6 +125,8 @@ async function sendOrderEmail(
   items: Array<{ name: string; quantity: number; price: number }>,
   totalAmount: number,
   lang: string,
+  merchantOrderNo?: string,
+  paymentStatus?: string,
 ) {
   try {
     await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
@@ -142,6 +144,8 @@ async function sendOrderEmail(
           })),
           totalAmount,
           lang,
+          merchantOrderNo,
+          paymentStatus,
         },
       }),
     });
@@ -201,25 +205,39 @@ Deno.serve(async (req: Request) => {
     const siteUrl = getSiteUrl(req).replace(/\/$/, "");
     const returnUrl = `${siteUrl}/member/orders?merchantOrderNo=${encodeURIComponent(checkout.merchant_order_no)}`;
     const clientBackUrl = returnUrl;
+    const { data: profile } = await createServiceClient()
+      .from("tbl_mn5wgzh0")
+      .select("display_name, preferred_language")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const orderEmailItems = checkout.items.map(item => ({
+      name: String(item.name || ""),
+      quantity: Number(item.quantity || 0),
+      price: Number(item.unit_price || 0),
+    }));
+    const orderEmailData = {
+      displayName: String(profile?.display_name || user.email || ""),
+      items: orderEmailItems,
+      totalAmount: Number(checkout.total_amount || 0),
+      lang: String(profile?.preferred_language || "zh-TW"),
+      merchantOrderNo: checkout.merchant_order_no,
+      paymentStatus: checkout.payment_status,
+      orderStatus: checkout.order_status,
+    };
+
+    if (user.email) {
+      await sendOrderEmail(
+        user.email,
+        orderEmailData.displayName,
+        orderEmailItems,
+        orderEmailData.totalAmount,
+        orderEmailData.lang,
+        orderEmailData.merchantOrderNo,
+        orderEmailData.paymentStatus,
+      );
+    }
 
     if (checkout.payment_status === "paid") {
-      const { data: profile } = await createServiceClient()
-        .from("tbl_mn5wgzh0")
-        .select("display_name, preferred_language")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      await sendOrderEmail(
-        user.email || "",
-        String(profile?.display_name || user.email || ""),
-        checkout.items.map(item => ({
-          name: String(item.name || ""),
-          quantity: Number(item.quantity || 0),
-          price: Number(item.unit_price || 0),
-        })),
-        Number(checkout.total_amount || 0),
-        String(profile?.preferred_language || "zh-TW"),
-      );
-
       return jsonResponse({
         success: true,
         mode: "points",

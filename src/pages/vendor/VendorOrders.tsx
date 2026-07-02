@@ -1,21 +1,30 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle, BedDouble, Package, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
+import { refundOrder } from '../../lib/orderRefund';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
 
 interface Booking {
   id: string;
+  user_id: string;
   check_in_date: string;
   check_out_date: string;
   guests: number;
   total_price: number;
+  payment_status?: string | null;
   status: string;
   created_at: string;
-  tbl_rooms?: { name: string; location: string };
+  tbl_rooms?: { name: string; location: string } | null;
+}
+
+interface CustomerProfile {
+  user_id: string;
+  display_name: string;
+  phone: string;
 }
 
 interface ProductOrderLine {
@@ -27,15 +36,15 @@ interface ProductOrderLine {
   payment_method: string;
   status: string;
   created_at: string;
-  products?: { id: string; name: string; image_url?: string | null; sku?: string | null; vendor_id?: string | null };
-  orders?: { id: string; status: string; payment_status: string; total_amount: number; currency?: string | null; created_at: string };
+  products?: { id: string; name: string; image_url?: string | null; sku?: string | null; vendor_id?: string | null } | null;
+  orders?: { id: string; user_id: string; status: string; payment_status: string; payment_method?: string | null; merchant_order_no?: string | null; newebpay_status?: string | null; total_amount: number; currency?: string | null; created_at: string } | null;
 }
 
 type VendorOrderItem =
   | { kind: 'booking'; id: string; created_at: string; status: string; booking: Booking }
   | { kind: 'product'; id: string; created_at: string; status: string; productOrder: ProductOrderLine };
 
-const PRODUCT_STATUS_FILTERS = ['all', 'pending', 'processing', 'shipped', 'completed', 'cancelled'];
+const PRODUCT_STATUS_FILTERS = ['all', 'pending', 'processing', 'shipped', 'completed', 'cancelled', 'refunded'];
 const BOOKING_STATUS_FILTERS = ['all', 'pending', 'confirmed', 'completed', 'cancelled'];
 
 const VendorOrders: React.FC = () => {
@@ -47,6 +56,7 @@ const VendorOrders: React.FC = () => {
   const [vendorId, setVendorId] = useState<string | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [productOrders, setProductOrders] = useState<ProductOrderLine[]>([]);
+  const [customerProfiles, setCustomerProfiles] = useState<Record<string, CustomerProfile>>({});
   const [loading, setLoading] = useState(true);
   const [noVendor, setNoVendor] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<'product' | 'booking'>('product');
@@ -55,11 +65,11 @@ const VendorOrders: React.FC = () => {
   const [message, setMessage] = useState('');
 
   const labels = {
-    title: pick('訂單與訂房', 'Orders & Bookings', '注文と予約', '주문 및 예약'),
-    noVendor: pick('目前找不到你的廠商資料，請聯絡管理員。', 'No vendor profile was found. Please contact an administrator.', 'ベンダー情報が見つかりません。管理者へお問い合わせください。', '업체 정보를 찾을 수 없습니다. 관리자에게 문의하세요.'),
-    empty: pick('目前沒有符合條件的訂單或訂房。', 'No matching product orders or bookings yet.', '条件に合う注文または予約はまだありません。', '조건에 맞는 주문 또는 예약이 없습니다.'),
-    productEmpty: pick('目前沒有符合條件的商品訂單。', 'No matching product orders yet.', '条件に合う商品注文はまだありません。', '조건에 맞는 상품 주문이 없습니다.'),
-    bookingEmpty: pick('目前沒有符合條件的訂房。', 'No matching bookings yet.', '条件に合う予約はまだありません。', '조건에 맞는 예약이 없습니다.'),
+    title: pick('商品訂單與訂房', 'Orders & Bookings', '注文と予約', '주문 및 예약'),
+    noVendor: pick('找不到廠商資料，請聯絡管理員。', 'No vendor profile was found. Please contact an administrator.', 'ベンダー情報が見つかりません。管理者に連絡してください。', '판매자 프로필을 찾을 수 없습니다. 관리자에게 문의하세요.'),
+    empty: pick('目前沒有符合條件的訂單或訂房。', 'No matching product orders or bookings yet.', '条件に一致する注文や予約はまだありません。', '조건에 맞는 주문이나 예약이 아직 없습니다.'),
+    productEmpty: pick('目前沒有符合條件的商品訂單。', 'No matching product orders yet.', '条件に一致する商品注文はまだありません。', '조건에 맞는 상품 주문이 아직 없습니다.'),
+    bookingEmpty: pick('目前沒有符合條件的訂房。', 'No matching bookings yet.', '条件に一致する予約はまだありません。', '조건에 맞는 예약이 아직 없습니다.'),
     all: pick('全部', 'All', 'すべて', '전체'),
     productTab: pick('商品訂單', 'Product Orders', '商品注文', '상품 주문'),
     bookingTab: pick('訂房', 'Bookings', '予約', '예약'),
@@ -68,16 +78,23 @@ const VendorOrders: React.FC = () => {
     orderNumber: pick('訂單編號', 'Order No.', '注文番号', '주문 번호'),
     quantity: pick('數量', 'Quantity', '数量', '수량'),
     unitPrice: pick('單價', 'Unit price', '単価', '단가'),
-    paymentStatus: pick('付款狀態', 'Payment', '支払い状態', '결제 상태'),
+    paymentStatus: pick('付款狀態', 'Payment', '支払い状況', '결제 상태'),
+    orderPaymentStatus: pick('訂單付款', 'Order payment', '注文支払い', '주문 결제'),
+    bookingPaymentStatus: pick('訂房付款', 'Booking payment', '予約支払い', '예약 결제'),
+    customer: pick('消費者', 'Customer', '顧客', '고객'),
+    phone: pick('電話', 'Phone', '電話番号', '전화'),
     checkIn: pick('入住', 'Check-in', 'チェックイン', '체크인'),
-    checkOut: pick('退房', 'Check-out', 'チェックアウト', '체크아웃'),
-    guests: pick('人', 'guests', '名', '명'),
-    createdAt: pick('下單時間', 'Created', '作成日時', '생성 시간'),
+    checkOut: pick('退房', 'Check-out', 'Check-out', '체크아웃'),
+    guests: pick('位', 'guests', '名', '명'),
+    createdAt: pick('建立時間', 'Created', '作成時間', '생성 시간'),
     markProcessing: pick('開始處理', 'Start Processing', '処理開始', '처리 시작'),
-    markShipped: pick('標記出貨', 'Mark Shipped', '発送済みにする', '출고 처리'),
+    markShipped: pick('標記出貨', 'Mark Shipped', '発送済みにする', '배송 처리'),
     markCompleted: pick('標記完成', 'Mark Completed', '完了にする', '완료 처리'),
     cancel: pick('取消', 'Cancel', 'キャンセル', '취소'),
-    updateFailed: pick('更新失敗，請稍後再試。', 'Update failed. Please try again later.', '更新に失敗しました。後でもう一度お試しください。', '업데이트에 실패했습니다. 잠시 후 다시 시도하세요.'),
+    updateFailed: pick('更新失敗，請稍後再試。', 'Update failed. Please try again later.', '更新に失敗しました。後でもう一度お試しください。', '업데이트 실패. 잠시 후 다시 시도하세요.'),
+    paid: pick('已付款', 'Paid', '支払済み', '결제 완료'),
+    unpaid: pick('未付款', 'Unpaid', '未払い', '미결제'),
+    refunded: pick('已退款', 'Refunded', '返金済み', '환불됨'),
   };
 
   const activeStatusFilters = categoryFilter === 'product' ? PRODUCT_STATUS_FILTERS : BOOKING_STATUS_FILTERS;
@@ -94,6 +111,13 @@ const VendorOrders: React.FC = () => {
     shipped: getStatusLabel('shipped', locale),
     completed: getStatusLabel('completed', locale),
     cancelled: getStatusLabel('cancelled', locale),
+    refunded: labels.refunded,
+  };
+
+  const getPaymentLabel = (status?: string | null) => {
+    if (status === 'paid') return labels.paid;
+    if (status === 'refunded') return labels.refunded;
+    return labels.unpaid;
   };
 
   useEffect(() => {
@@ -106,12 +130,12 @@ const VendorOrders: React.FC = () => {
     const [bookingRes, productRes] = await Promise.all([
       supabase
         .from('tbl_bookings')
-        .select('id, check_in_date, check_out_date, guests, total_price, status, created_at, tbl_rooms!inner(name, location, vendor_id)')
+        .select('id, user_id, check_in_date, check_out_date, guests, total_price, payment_status, status, created_at, tbl_rooms!inner(name, location, vendor_id)')
         .eq('tbl_rooms.vendor_id', vid)
         .order('created_at', { ascending: false }),
       supabase
         .from('purchase_records')
-        .select('id, order_id, quantity, unit_price, total_price, payment_method, status, created_at, products!inner(id, name, image_url, sku, vendor_id), orders(id, status, payment_status, total_amount, currency, created_at)')
+        .select('id, order_id, quantity, unit_price, total_price, payment_method, status, created_at, products!inner(id, name, image_url, sku, vendor_id), orders(id, user_id, status, payment_status, payment_method, merchant_order_no, newebpay_status, total_amount, currency, created_at)')
         .eq('products.vendor_id', vid)
         .order('created_at', { ascending: false }),
     ]);
@@ -120,8 +144,33 @@ const VendorOrders: React.FC = () => {
       setMessage(bookingRes.error?.message || productRes.error?.message || labels.updateFailed);
     }
 
-    setBookings((bookingRes.data || []) as unknown as Booking[]);
-    setProductOrders((productRes.data || []) as unknown as ProductOrderLine[]);
+    const bookingData = (bookingRes.data || []) as Booking[];
+    const productData = (productRes.data || []) as ProductOrderLine[];
+    setBookings(bookingData);
+    setProductOrders(productData);
+
+    const userIds = Array.from(new Set([
+      ...bookingData.map(item => item.user_id).filter(Boolean),
+      ...productData.map(item => item.orders?.user_id).filter(Boolean),
+    ]));
+
+    if (userIds.length === 0) {
+      setCustomerProfiles({});
+      return;
+    }
+
+    const { data: profiles, error: profileError } = await supabase
+      .from('tbl_mn5wgzh0')
+      .select('user_id, display_name, phone')
+      .in('user_id', userIds);
+
+    if (profileError) {
+      setCustomerProfiles({});
+      return;
+    }
+
+    const profileMap = Object.fromEntries((profiles || []).map((profile: any) => [profile.user_id, profile])) as Record<string, CustomerProfile>;
+    setCustomerProfiles(profileMap);
   };
 
   useEffect(() => {
@@ -185,12 +234,25 @@ const VendorOrders: React.FC = () => {
     setUpdating(null);
   };
 
-  const updateProductStatus = async (recordId: string, status: string) => {
-    setUpdating(`product:${recordId}`);
-    const { error } = await supabase.from('purchase_records').update({ status }).eq('id', recordId);
-    if (error) setMessage(labels.updateFailed);
-    await refresh();
-    setUpdating(null);
+  const updateProductStatus = async (item: ProductOrderLine, status: string) => {
+    setUpdating(`product:${item.id}`);
+    try {
+      if (status === 'cancelled' && item.orders?.payment_status === 'paid') {
+        await refundOrder(item.order_id);
+        await refresh();
+        setMessage('');
+        return;
+      }
+
+      const { error } = await supabase.from('purchase_records').update({ status }).eq('id', item.id);
+      if (error) throw error;
+      await refresh();
+      setMessage('');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : labels.updateFailed);
+    } finally {
+      setUpdating(null);
+    }
   };
 
   if (loading) return <div className="flex justify-center py-16"><div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" /></div>;
@@ -251,9 +313,25 @@ const VendorOrders: React.FC = () => {
           {filtered.map((item, index) => (
             <motion.div key={item.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.03 }} className="rounded-2xl bg-white p-5 shadow-sm">
               {item.kind === 'product' ? (
-                <ProductOrderCard item={item.productOrder} labels={labels} locale={locale} updating={updating} onUpdate={updateProductStatus} />
+                  <ProductOrderCard
+                  item={item.productOrder}
+                  labels={labels}
+                  locale={locale}
+                  updating={updating}
+                  onUpdate={updateProductStatus}
+                  customer={item.productOrder.orders?.user_id ? customerProfiles[item.productOrder.orders.user_id] : undefined}
+                  paymentLabel={getPaymentLabel(item.productOrder.orders?.payment_status)}
+                />
               ) : (
-                <BookingCard item={item.booking} labels={labels} locale={locale} updating={updating} onUpdate={updateBookingStatus} />
+                <BookingCard
+                  item={item.booking}
+                  labels={labels}
+                  locale={locale}
+                  updating={updating}
+                  onUpdate={updateBookingStatus}
+                  customer={customerProfiles[item.booking.user_id]}
+                  paymentLabel={getPaymentLabel(item.booking.payment_status)}
+                />
               )}
             </motion.div>
           ))}
@@ -269,12 +347,16 @@ function ProductOrderCard({
   locale,
   updating,
   onUpdate,
+  customer,
+  paymentLabel,
 }: {
   item: ProductOrderLine;
   labels: Record<string, string>;
   locale: string;
   updating: string | null;
-  onUpdate: (id: string, status: string) => void;
+  onUpdate: (item: ProductOrderLine, status: string) => void;
+  customer?: CustomerProfile;
+  paymentLabel: string;
 }) {
   const busy = updating === `product:${item.id}`;
   return (
@@ -289,10 +371,14 @@ function ProductOrderCard({
         </div>
         <p className="font-semibold text-gray-900">{item.products?.name || labels.productOrder}</p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+          <span>{labels.customer}: {customer?.display_name || item.orders?.user_id || '—'}</span>
+          <span>{labels.phone}: {customer?.phone || '—'}</span>
+        </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
           <span>{labels.orderNumber}: #{item.order_id.slice(0, 8).toUpperCase()}</span>
           <span>{labels.quantity}: {item.quantity}</span>
           <span>{labels.unitPrice}: {formatCurrency(item.unit_price)}</span>
-          <span>{labels.paymentStatus}: {getStatusLabel(item.orders?.payment_status || 'unpaid', locale)}</span>
+          <span>{labels.orderPaymentStatus}: {paymentLabel}</span>
         </div>
         <p className="text-xs text-gray-400">{labels.createdAt}: {formatDate(item.created_at)}</p>
       </div>
@@ -300,21 +386,21 @@ function ProductOrderCard({
         <p className="text-xl font-bold text-emerald-700">{formatCurrency(item.total_price)}</p>
         {item.status === 'pending' && (
           <div className="flex gap-2">
-            <button type="button" onClick={() => onUpdate(item.id, 'processing')} disabled={busy} className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60">
+            <button type="button" onClick={() => onUpdate(item, 'processing')} disabled={busy} className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60">
               {busy ? '...' : labels.markProcessing}
             </button>
-            <button type="button" onClick={() => onUpdate(item.id, 'cancelled')} disabled={busy} className="rounded-xl bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-100 disabled:opacity-60">
+            <button type="button" onClick={() => onUpdate(item, 'cancelled')} disabled={busy} className="rounded-xl bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-100 disabled:opacity-60">
               {labels.cancel}
             </button>
           </div>
         )}
         {item.status === 'processing' && (
-          <button type="button" onClick={() => onUpdate(item.id, 'shipped')} disabled={busy} className="rounded-xl bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 transition hover:bg-blue-100 disabled:opacity-60">
+          <button type="button" onClick={() => onUpdate(item, 'shipped')} disabled={busy} className="rounded-xl bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 transition hover:bg-blue-100 disabled:opacity-60">
             {busy ? '...' : labels.markShipped}
           </button>
         )}
         {item.status === 'shipped' && (
-          <button type="button" onClick={() => onUpdate(item.id, 'completed')} disabled={busy} className="rounded-xl bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 transition hover:bg-blue-100 disabled:opacity-60">
+          <button type="button" onClick={() => onUpdate(item, 'completed')} disabled={busy} className="rounded-xl bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 transition hover:bg-blue-100 disabled:opacity-60">
             {busy ? '...' : labels.markCompleted}
           </button>
         )}
@@ -329,12 +415,16 @@ function BookingCard({
   locale,
   updating,
   onUpdate,
+  customer,
+  paymentLabel,
 }: {
   item: Booking;
   labels: Record<string, string>;
   locale: string;
   updating: string | null;
   onUpdate: (id: string, status: string) => void;
+  customer?: CustomerProfile;
+  paymentLabel: string;
 }) {
   const busy = updating === `booking:${item.id}`;
   return (
@@ -349,6 +439,11 @@ function BookingCard({
         </div>
         <p className="font-semibold text-gray-900">{item.tbl_rooms?.name || labels.booking}</p>
         {item.tbl_rooms?.location && <p className="text-sm text-gray-400">{item.tbl_rooms.location}</p>}
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+          <span>{labels.customer}: {customer?.display_name || item.user_id || '—'}</span>
+          <span>{labels.phone}: {customer?.phone || '—'}</span>
+          <span>{labels.bookingPaymentStatus}: {paymentLabel}</span>
+        </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
           <span>{labels.checkIn}: {formatDate(item.check_in_date)}</span>
           <span>{labels.checkOut}: {formatDate(item.check_out_date)}</span>

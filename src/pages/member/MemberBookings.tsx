@@ -76,11 +76,13 @@ export default function MemberBookings() {
     paymentTime: pick('付款時間', 'Payment Time', '支払い時間', '결제 시간'),
     invoice: pick('發票', 'Invoice', '請求書', '영수증'),
     onlinePayment: pick('線上付款', 'Online Payment', 'オンライン決済', '온라인 결제'),
+    servicePayment: pick('專人服務', 'Service support', '専人サポート', '전담 서비스'),
     notIssued: pick('尚未開立', 'Not issued', '未発行', '미발행'),
     noCoupon: pick('未使用', 'Not used', '未使用', '미사용'),
     included: pick('已包含', 'Included', '含まれています', '포함'),
     noExtraBed: pick('0 張', '0 beds', '0台', '0개'),
     pendingPayment: pick('等待付款確認', 'Pending payment confirmation', '支払い確認待ち', '결제 확인 대기'),
+    pendingService: pick('待專人確認', 'Pending service confirmation', '専人確認待ち', '전담 확인 대기'),
     viewOrder: pick('查看訂單', 'View Order', '注文を見る', '주문 보기'),
     viewDetails: pick('查看明細', 'View Details', '詳細を見る', '상세 보기'),
     hideDetails: pick('收合明細', 'Hide Details', '詳細を閉じる', '상세 닫기'),
@@ -146,8 +148,10 @@ export default function MemberBookings() {
     if (!window.confirm(t.confirmCancel)) return;
     setCancelId(id);
     try {
-      await supabase.from('tbl_bookings').update({ status: 'cancelled' }).eq('id', id);
-      setBookings(prev => prev.map(item => (item.id === id ? { ...item, status: 'cancelled' } : item)));
+      const booking = bookings.find(item => item.id === id);
+      const nextPaymentStatus = booking?.payment_status === 'paid' ? 'refunded' : booking?.payment_status;
+      await supabase.from('tbl_bookings').update({ status: 'cancelled', payment_status: nextPaymentStatus || 'unpaid' }).eq('id', id);
+      setBookings(prev => prev.map(item => (item.id === id ? { ...item, status: 'cancelled', payment_status: nextPaymentStatus || item.payment_status } : item)));
     } finally {
       setCancelId(null);
     }
@@ -170,6 +174,7 @@ export default function MemberBookings() {
 
   const paymentMethodLabel = (method?: string) => {
     if (method === 'points') return pick('點數支付', 'Points payment', 'ポイント支払い', '포인트 결제');
+    if (method === 'service') return t.servicePayment;
     if (method === 'points_online') return pick('點數折抵 + 線上付款', 'Points discount + online payment', 'ポイント割引 + オンライン支払い', '포인트 할인 + 온라인 결제');
     return t.onlinePayment;
   };
@@ -213,7 +218,7 @@ export default function MemberBookings() {
           const phone = hotel?.phone || vendor?.contact_phone || '';
           const hostName = hotel?.name || vendor?.name || room?.name || t.room;
           const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address || hostName)}`;
-          const paid = booking.status !== 'pending' && booking.status !== 'cancelled';
+          const paid = booking.payment_status === 'paid' || booking.payment_status === 'refunded';
           const isExpanded = expandedId === booking.id;
 
           return (
@@ -308,7 +313,7 @@ export default function MemberBookings() {
                             <Info label={t.coupon} value={t.noCoupon} />
                             <Info label={t.total} value={formatCurrency(booking.total_price)} strong />
                             <Info label={t.paymentMethod} value={paymentMethodLabel(booking.payment_method)} />
-                            <Info label={t.paymentTime} value={paid ? formatDateTime(booking.updated_at, dateLocale) : t.pendingPayment} />
+                            <Info label={t.paymentTime} value={paid ? formatDateTime(booking.updated_at, dateLocale) : booking.payment_method === 'service' ? t.pendingService : t.pendingPayment} />
                             <Info label={t.invoice} value={t.notIssued} />
                           </div>
                         </section>

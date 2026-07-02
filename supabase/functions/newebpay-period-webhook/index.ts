@@ -103,6 +103,8 @@ async function sendOrderEmail(
   items: Array<{ name: string; quantity: number; price: number }>,
   totalAmount: number,
   lang: string,
+  merchantOrderNo?: string,
+  paymentStatus?: string,
 ) {
   try {
     await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
@@ -120,6 +122,8 @@ async function sendOrderEmail(
           })),
           totalAmount,
           lang,
+          merchantOrderNo,
+          paymentStatus,
         },
       }),
     });
@@ -351,11 +355,19 @@ Deno.serve(async (req: Request) => {
       const language = String(profile?.preferred_language || "zh-TW");
 
       if (email) {
-        await sendOrderEmail(email, displayName, items, paidAmount, language);
+        await sendOrderEmail(email, displayName, items, paidAmount, language, subscription.merchant_order_no, "paid");
       }
 
       if (vendor?.contact_email) {
-        await sendOrderEmail(String(vendor.contact_email), String(vendor.name || "vendor"), items, paidAmount, language);
+        await sendOrderEmail(
+          String(vendor.contact_email),
+          String(vendor.name || "vendor"),
+          items,
+          paidAmount,
+          language,
+          subscription.merchant_order_no,
+          "paid",
+        );
       }
 
       const rewardPoints = await getRewardPoints(supabase, "subscription", paidAmount);

@@ -21,6 +21,8 @@ interface Room {
   capacity: number;
 }
 
+type BookingPaymentChoice = 'POINTS' | 'SERVICE';
+
 const DAY_LABELS: Record<number, { zh: string; en: string; ja: string; ko: string }> = {
   0: { zh: '週日', en: 'Sun', ja: '日', ko: '일' },
   1: { zh: '週一', en: 'Mon', ja: '月', ko: '월' },
@@ -67,7 +69,7 @@ const BookingForm: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [availablePoints, setAvailablePoints] = useState(0);
-  const [pointsToUse, setPointsToUse] = useState(0);
+  const [paymentChoice, setPaymentChoice] = useState<BookingPaymentChoice>('SERVICE');
 
   useEffect(() => {
     const fetchRoom = async () => {
@@ -107,12 +109,13 @@ const BookingForm: React.FC = () => {
     [checkIn, checkOut, nights, room, dayPrices],
   );
   const totalPrice = nightBreakdown.reduce((sum, row) => sum + row.price, 0);
-  const maxPointUse = Math.max(0, Math.min(availablePoints, totalPrice));
-  const pointDiscount = Math.max(0, Math.min(pointsToUse, maxPointUse));
-  const payableTotal = Math.max(0, totalPrice - pointDiscount);
-  const paymentMethod = pointDiscount >= totalPrice && totalPrice > 0 ? 'points' : pointDiscount > 0 ? 'points_online' : 'online';
+  const canUsePointPayment = totalPrice > 0 && availablePoints >= totalPrice;
+  const paymentMethod = paymentChoice === 'POINTS' && canUsePointPayment ? 'points' : 'service';
+  const pointDiscount = paymentMethod === 'points' ? totalPrice : 0;
+  const payableTotal = paymentMethod === 'points' ? 0 : totalPrice;
+  const paymentStatus = paymentMethod === 'points' ? 'paid' : 'unpaid';
   const hasVariablePricing = Object.values(dayPrices).some(v => v > 0);
-  const pointsEarned = Math.floor(payableTotal / 100) * 10;
+  const pointsEarned = paymentStatus === 'paid' ? Math.floor(payableTotal / 100) * 10 : 0;
 
   const dayLabel = (day: number) => {
     const item = DAY_LABELS[day];
@@ -127,6 +130,11 @@ const BookingForm: React.FC = () => {
     }
     if (nights <= 0) {
       setError(t('請確認退房日期晚於入住日期。', 'Check-out date must be after check-in date.', 'チェックアウト日はチェックイン日より後にしてください。', '체크아웃 날짜는 체크인 날짜 이후여야 합니다.'));
+      return;
+    }
+
+    if (paymentChoice === 'POINTS' && !canUsePointPayment) {
+      setError(t('點數不足，請改選專人服務。', 'Not enough points. Please choose service support instead.', 'ポイントが不足しています。専人サポートをお選びください。', '포인트가 부족합니다. 전담 서비스를 선택해 주세요.'));
       return;
     }
 
@@ -146,7 +154,7 @@ const BookingForm: React.FC = () => {
           subtotal_price: totalPrice,
           points_discount: pointDiscount,
           payment_method: paymentMethod,
-          payment_status: 'paid',
+          payment_status: paymentStatus,
           status: 'confirmed',
           special_requests: specialRequests,
         });
@@ -155,7 +163,6 @@ const BookingForm: React.FC = () => {
 
       const { data: updatedBalance } = await supabase.from('member_point_balances').select('current_points').eq('user_id', user.id).maybeSingle();
       setAvailablePoints(Number(updatedBalance?.current_points || 0));
-      setPointsToUse(0);
 
       const {
         data: { session },
@@ -181,6 +188,7 @@ const BookingForm: React.FC = () => {
               totalPrice: payableTotal,
               nights,
               pointsEarned,
+              paymentMethod,
               lang: locale,
             },
           }),
@@ -314,6 +322,42 @@ const BookingForm: React.FC = () => {
             />
           </div>
 
+          <section className="rounded-2xl border border-[#E7DBC7] bg-[#FFF9F0] p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between gap-3 text-sm text-gray-700">
+              <span className="font-medium">{t('付款方式', 'Payment method', '支払い方法', '결제 방식')}</span>
+              <span>{t('可用點數', 'Available points', '利用可能ポイント', '사용 가능 포인트')} {availablePoints.toLocaleString()} NP</span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setPaymentChoice('POINTS')}
+                disabled={!canUsePointPayment}
+                className={paymentChoice === 'POINTS' ? 'rounded-xl border border-[#C09A6A] bg-white px-4 py-3 text-left text-[#2C1F10] transition disabled:cursor-not-allowed disabled:opacity-50' : 'rounded-xl border border-gray-200 bg-white px-4 py-3 text-left text-gray-700 transition hover:border-[#C09A6A]/60 disabled:cursor-not-allowed disabled:opacity-50'}
+              >
+                <div className="text-sm font-semibold">{t('點數付款', 'Points payment', 'ポイント払い', '포인트 결제')}</div>
+                <div className="mt-1 text-xs leading-5 text-gray-500">
+                  {canUsePointPayment
+                    ? t('可全額折抵本次訂房。', 'Use points to cover the full booking amount.', '今回の予約金額を全額ポイントで支払えます。', '이번 예약 금액을 포인트로 전액 결제할 수 있습니다。')
+                    : t('點數不足，請改選專人服務。', 'Not enough points. Please choose service support instead.', 'ポイントが不足しています。専人サポートをお選びください。', '포인트가 부족합니다. 전담 서비스를 선택해 주세요。')}
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentChoice('SERVICE')}
+                className={paymentChoice === 'SERVICE' ? 'rounded-xl border border-[#C09A6A] bg-white px-4 py-3 text-left text-[#2C1F10] transition' : 'rounded-xl border border-gray-200 bg-white px-4 py-3 text-left text-gray-700 transition hover:border-[#C09A6A]/60'}
+              >
+                <div className="text-sm font-semibold">{t('專人服務', 'Service support', '専人サポート', '전담 서비스')}</div>
+                <div className="mt-1 text-xs leading-5 text-gray-500">
+                  {t('由專人協助確認付款與入住細節。', 'A specialist will help confirm payment and stay details.', '専任スタッフが支払いと宿泊内容を確認します。', '전담 담당자가 결제 및 숙박 세부 사항을 확인합니다。')}
+                </div>
+              </button>
+            </div>
+            <div className="mt-3 flex justify-between text-sm text-gray-700">
+              <span>{paymentMethod === 'points' ? t('點數折抵', 'Points applied', '適用ポイント', '적용 포인트') : t('待專人確認', 'Pending service confirmation', '専人確認待ち', '전담 확인 대기')}</span>
+              <span>{paymentMethod === 'points' ? '-' + formatCurrency(pointDiscount) : formatCurrency(payableTotal)}</span>
+            </div>
+          </section>
+
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
               <span className="inline-flex items-center gap-1">
@@ -352,26 +396,6 @@ const BookingForm: React.FC = () => {
               <div className="flex justify-between pt-1 text-sm text-green-600">
                 <span>{t('回饋點數', 'Reward points', '獲得ポイント', '리워드 포인트')}</span>
                 <span>+{pointsEarned}</span>
-              </div>
-              <div className="space-y-2 pt-2">
-                <label className="flex items-center justify-between gap-3 text-sm text-gray-700">
-                  <span>{t('使用點數折抵', 'Use points', 'ポイント利用', '포인트 사용')}</span>
-                  <span>{t('可用', 'Available', '利用可能', '사용 가능')} {availablePoints.toLocaleString()} NP</span>
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  max={maxPointUse}
-                  value={pointsToUse}
-                  onChange={event => setPointsToUse(Math.max(0, Math.min(Number(event.target.value || 0), maxPointUse)))}
-                  className="w-full rounded-lg border border-[#D5CDB8] bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#C09A6A]"
-                />
-                {pointDiscount > 0 ? (
-                  <div className="flex justify-between text-sm text-red-600">
-                    <span>{t('點數折抵', 'Point discount', 'ポイント割引', '포인트 할인')}</span>
-                    <span>-{formatCurrency(pointDiscount)}</span>
-                  </div>
-                ) : null}
               </div>
               <div className="flex justify-between border-t border-[#D5CDB8] pt-2 text-lg font-bold text-gray-900">
                 <span>{t('總金額', 'Total', '合計', '총액')}</span>

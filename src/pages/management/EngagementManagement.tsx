@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Coins, Heart, Headphones, MessageSquare, Plus, RefreshCw, Search, Star } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
+import { refundOrder } from '../../lib/orderRefund';
 import { supabase } from '../../lib/supabase';
 import { formatDateTime } from '../../lib/utils';
 
@@ -126,6 +127,7 @@ export default function EngagementManagement({ mode }: EngagementManagementProps
     cancelled: t('已取消', 'Cancelled', 'キャンセル済み', '취소됨'),
     saved: t('已更新', 'Updated', '更新しました', '업데이트됨'),
     failed: t('更新失敗', 'Update failed', '更新に失敗しました', '업데이트 실패'),
+    refundFailed: t('退款失敗', 'Refund failed', '返金に失敗しました', '환불 실패'),
     unknown: t('未命名項目', 'Unnamed item', '未命名項目', '이름 없는 항목'),
     amount: t('點數', 'Points', 'ポイント', '포인트'),
     source: t('來源', 'Source', 'ソース', '출처'),
@@ -291,16 +293,24 @@ export default function EngagementManagement({ mode }: EngagementManagementProps
     });
   };
 
-  const updateAfterSalesStatus = async (id: string, status: string) => {
-    setBusy(id);
-    const { error } = await supabase.from('after_sales_requests').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
-    setBusy(null);
-    if (error) {
-      setMessage(labels.failed);
-      return;
+  const updateAfterSalesStatus = async (item: AfterSalesItem, status: string) => {
+    setBusy(item.id);
+    try {
+      if (status === 'resolved' && item.request_type === 'refund') {
+        await refundOrder(item.order_id);
+      }
+
+      const { error } = await supabase.from('after_sales_requests').update({ status, updated_at: new Date().toISOString() }).eq('id', item.id);
+      if (error) throw error;
+
+      setMessage(labels.saved);
+      setAfterSales(prev => prev.map(row => row.id === item.id ? { ...row, status } : row));
+    } catch (error) {
+      setMessage(status === 'resolved' && item.request_type === 'refund' ? labels.refundFailed : labels.failed);
+      console.error('[EngagementManagement] updateAfterSalesStatus failed:', error);
+    } finally {
+      setBusy(null);
     }
-    setMessage(labels.saved);
-    setAfterSales(prev => prev.map(item => item.id === id ? { ...item, status } : item));
   };
 
   const updateReviewStatus = async (item: ReviewItem, status: string) => {
@@ -532,7 +542,7 @@ function AfterSalesTable({ rows, labels, dateLocale, busy, typeLabel, statusLabe
   busy: string | null;
   typeLabel: (type: string) => string;
   statusLabel: (status: string) => string;
-  onStatusChange: (id: string, status: string) => Promise<void>;
+  onStatusChange: (item: AfterSalesItem, status: string) => Promise<void>;
 }) {
   if (rows.length === 0) return <EmptyState labels={labels} />;
   return (
@@ -558,7 +568,7 @@ function AfterSalesTable({ rows, labels, dateLocale, busy, typeLabel, statusLabe
                 <Td><p className="font-medium text-gray-800">{names}</p><p className="text-xs text-gray-400">{vendor}</p></Td>
                 <Td><span className="font-mono text-xs text-gray-500">{row.user_id.slice(-8)}</span></Td>
                 <Td>
-                  <select value={row.status} disabled={busy === row.id} onChange={event => void onStatusChange(row.id, event.target.value)} className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-amber-300">
+                  <select value={row.status} disabled={busy === row.id} onChange={event => void onStatusChange(row, event.target.value)} className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-amber-300">
                     {AFTER_SALES_STATUSES.map(status => <option key={status} value={status}>{statusLabel(status)}</option>)}
                   </select>
                 </Td>

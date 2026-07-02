@@ -8,7 +8,7 @@ import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
-import { createShopCheckout, submitNewebPayMpgForm } from '../../lib/shopCheckout';
+import { createShopCheckout, submitNewebPayMpgForm, type NewebPayPaymentMethod } from '../../lib/shopCheckout';
 import { formatCurrency } from '../../lib/utils';
 
 interface CartProduct {
@@ -31,6 +31,8 @@ function hasProduct(item: CartItemWithProduct): item is CartItemWithProduct & { 
   return item.products !== null;
 }
 
+type PaymentChoice = 'POINTS' | NewebPayPaymentMethod;
+
 export default function Cart() {
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
@@ -42,7 +44,7 @@ export default function Cart() {
   const [checkoutError, setCheckoutError] = useState('');
   const [success, setSuccess] = useState(false);
   const [availablePoints, setAvailablePoints] = useState(0);
-  const [pointsToUse, setPointsToUse] = useState(0);
+  const [paymentChoice, setPaymentChoice] = useState<PaymentChoice>('CREDIT');
   const navigate = useNavigate();
 
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
@@ -66,6 +68,13 @@ export default function Cart() {
     unavailableCount: (count: number) => pick(`有 ${count} 個項目無法購買。`, `${count} unavailable item(s) found.`, `${count} 件の商品が購入できません。`, `구매할 수 없는 항목이 ${count}개 있습니다.`),
     pointsDesc: (points: number) => pick(`預估可得點數：${points}`, `Estimated points: ${points}`, `獲得見込みポイント：${points}`, `예상 적립 포인트: ${points}`),
     pointsOrderDesc: pick('購物金點數回饋', 'Shop purchase points reward', 'ショッピングポイント還元', '쇼핑 포인트 적립'),
+    newebpayMethods: pick('藍新付款（信用卡 / WebATM / ATM轉帳 / 超商代碼）', 'NewebPay checkout (Credit Card / WebATM / ATM / CVS code)', '藍新決済（クレジットカード / WebATM / ATM振込 / コンビニ番号）', '나이스페이 결제 (신용카드 / WebATM / ATM 입금 / 편의점 코드)'),
+    card: pick('信用卡', 'Credit card', 'クレジットカード', '신용카드'),
+    webatm: pick('WebATM', 'WebATM', 'WebATM', 'WebATM'),
+    atm: pick('ATM 轉帳', 'ATM transfer', 'ATM振込', 'ATM 이체'),
+    cvs: pick('超商代碼', 'CVS code', 'コンビニ代碼', '편의점 코드'),
+    pointsPayment: pick('點數全額支付', 'Pay with points', 'ポイント全額支払い', '포인트 전액 결제'),
+    choosePayment: pick('擇一付款方式', 'Choose one payment method', '支払い方法を1つ選択', '결제 수단을 하나 선택'),
   };
 
   useEffect(() => {
@@ -98,9 +107,9 @@ export default function Cart() {
   const unavailableCartItems = cartItems.filter((item) => !item.products);
   const subtotal = validCartItems.reduce((sum, item) => sum + item.products.price * item.quantity, 0);
   const maxPointUse = Math.max(0, Math.min(availablePoints, subtotal));
-  const pointDiscount = Math.max(0, Math.min(pointsToUse, maxPointUse));
+  const pointDiscount = paymentChoice === 'POINTS' ? subtotal : 0;
   const payableSubtotal = Math.max(0, subtotal - pointDiscount);
-  const paymentMethod = pointDiscount >= subtotal && subtotal > 0 ? 'points' : pointDiscount > 0 ? 'points_credit_card' : 'credit_card';
+  const paymentMethod = paymentChoice === 'POINTS' ? 'points' : 'credit_card';
   const pointsEarned = Math.floor(payableSubtotal / 100) * 5;
 
   const handleRemoveUnavailableItems = async () => {
@@ -120,7 +129,7 @@ export default function Cart() {
     setCheckoutError('');
 
     try {
-      const checkout = await createShopCheckout(pointDiscount);
+      const checkout = await createShopCheckout(pointDiscount, paymentChoice === 'POINTS' ? 'CREDIT' : paymentChoice);
       await clearCart();
 
       if (checkout.mode === 'newebpay') {
@@ -281,32 +290,26 @@ export default function Cart() {
                   <span className="text-[#C09A6A]">{formatCurrency(subtotal)}</span>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-semibold">
-                  <button type="button" onClick={() => setPointsToUse(0)} className={`rounded-lg border px-3 py-2 transition ${pointDiscount === 0 ? 'border-[#C09A6A] bg-[#FEF9EC] text-[#8B6840]' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-                    {pick('信用卡', 'Credit card', 'クレジットカード', '신용카드')}
-                  </button>
-                  <button type="button" disabled={maxPointUse <= 0} onClick={() => setPointsToUse(maxPointUse)} className={`rounded-lg border px-3 py-2 transition disabled:opacity-50 ${pointDiscount > 0 ? 'border-[#C09A6A] bg-[#FEF9EC] text-[#8B6840]' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-                    {maxPointUse >= subtotal ? pick('點數全額支付', 'Points payment', 'ポイント全額支払い', '포인트 전액 결제') : pick('點數折抵', 'Points discount', 'ポイント割引', '포인트 할인')}
-                  </button>
+                  {([
+                    { value: 'CREDIT' as const, label: t.card },
+                    { value: 'WEBATM' as const, label: t.webatm },
+                    { value: 'ATM' as const, label: t.atm },
+                    { value: 'CVS' as const, label: t.cvs },
+                    ...(availablePoints >= subtotal && subtotal > 0 ? [{ value: 'POINTS' as const, label: t.pointsPayment }] : []),
+                  ]).map(option => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setPaymentChoice(option.value)}
+                      className={`rounded-lg border px-3 py-2 transition ${paymentChoice === option.value ? 'border-[#C09A6A] bg-[#FEF9EC] text-[#8B6840]' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
                 </div>
-                <div className="mt-3 space-y-2">
-                  <label className="flex items-center justify-between gap-3 text-sm text-gray-700">
-                    <span>{pick('使用點數', 'Use points', '利用ポイント', '사용 포인트')}</span>
-                    <span>{pick('可用', 'Available', '利用可能', '사용 가능')} {availablePoints.toLocaleString()} NP</span>
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={maxPointUse}
-                    value={pointsToUse}
-                    onChange={event => setPointsToUse(Math.max(0, Math.min(Number(event.target.value || 0), maxPointUse)))}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#C09A6A]"
-                  />
-                  {pointDiscount > 0 ? (
-                    <div className="flex justify-between text-sm text-red-600">
-                      <span>{pick('點數折抵', 'Point discount', 'ポイント割引', '포인트 할인')}</span>
-                      <span>-{formatCurrency(pointDiscount)}</span>
-                    </div>
-                  ) : null}
+                <div className="mt-3 flex items-center justify-between gap-3 text-sm text-gray-700">
+                  <span>{t.choosePayment}</span>
+                  <span>{pick('可用', 'Available', '利用可能', '사용 가능')} {availablePoints.toLocaleString()} NP</span>
                 </div>
                 <div className="mt-3 flex justify-between border-t border-gray-100 pt-3 text-lg font-bold">
                   <span>{pick('Total', 'Total', 'Total', 'Total')}</span>
@@ -314,7 +317,7 @@ export default function Cart() {
                 </div>
                 <p className="mt-1 text-xs font-semibold text-[#8B6840]">{t.pointsDesc(pointsEarned)}</p>
                 <p className="mt-1 text-xs text-gray-500">
-                  {pick('付款方式', 'Payment method', '支払い方法', '결제 수단')}: {paymentMethod === 'points' ? pick('點數全額支付', 'Points payment', 'ポイント全額支払い', '포인트 전액 결제') : paymentMethod === 'points_credit_card' ? pick('點數折抵＋信用卡', 'Points discount + credit card', 'ポイント割引＋クレジットカード', '포인트 할인 + 신용카드') : pick('信用卡', 'Credit card', 'クレジットカード', '신용카드')}
+                  {pick('付款方式', 'Payment method', '支払い方法', '결제 수단')}: {paymentChoice === 'POINTS' ? t.pointsPayment : t.newebpayMethods}
                 </p>
               </div>
               {checkoutError && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-600">{checkoutError}</p>}
