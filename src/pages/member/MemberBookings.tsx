@@ -97,6 +97,23 @@ export default function MemberBookings() {
     confirmCancel: pick('確定要取消這筆訂房嗎？', 'Cancel this booking?', 'この予約をキャンセルしますか？', '이 예약을 취소하시겠어요?'),
     nightUnit: pick('晚', 'nights', '泊', '박'),
     guestUnit: pick('人', 'guests', '名', '명'),
+    confirmedStatus: pick('預訂確認', 'Booking Confirmed', '予約確認', '예약 확인'),
+    paymentStatus: pick('付款狀態', 'Payment Status', '支払い状況', '결제 상태'),
+    roomDetail: pick('房間詳情', 'Room Details', '客室詳細', '객실 상세'),
+    travelerInfo: pick('旅客資訊', 'Traveler Info', '宿泊者情報', '투숙객 정보'),
+    serviceInfo: pick('飯店服務', 'Hotel Services', 'ホテルサービス', '호텔 서비스'),
+    rewardInfo: pick('獎勵及禮遇', 'Rewards & Benefits', '特典とサービス', '혜택'),
+    supportInfo: pick('專業客服', 'Support', 'サポート', '고객 지원'),
+    cancelPolicy: pick('取消政策', 'Cancellation Policy', 'キャンセルポリシー', '취소 정책'),
+    refundNotice: pick('此筆訂單目前無法退款', 'This booking is non-refundable for now.', 'この予約は現在返金不可です。', '현재 이 예약은 환불이 불가합니다.'),
+    checkInTime: pick('入住時間', 'Check-in Time', 'チェックイン時間', '체크인 시간'),
+    checkOutTime: pick('退房時間', 'Check-out Time', 'チェックアウト時間', '체크아웃 시간'),
+    roomCount: pick('房間數量', 'Rooms', '部屋数', '객실 수'),
+    contactProperty: pick('聯絡住宿', 'Contact Property', '宿泊施設に連絡', '숙소 연락'),
+    viewMap: pick('查看地圖', 'View Map', '地図を見る', '지도 보기'),
+    manageBooking: pick('管理訂單', 'Manage Booking', '予約管理', '예약 관리'),
+    extendStay: pick('延長入住', 'Extend Stay', '滞在延長', '숙박 연장'),
+    orderSummary: pick('訂單摘要', 'Booking Summary', '予約概要', '예약 요약'),
   };
 
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -179,6 +196,27 @@ export default function MemberBookings() {
     return t.onlinePayment;
   };
 
+  const paymentStatusLabel = (booking: Booking) => {
+    if (booking.payment_status === 'paid') return pick('已付款', 'Paid', '支払い済み', '결제 완료');
+    if (booking.payment_status === 'refunded') return pick('已退款', 'Refunded', '返金済み', '환불 완료');
+    if (booking.payment_status === 'cancelled') return pick('已取消', 'Cancelled', 'キャンセル済み', '취소됨');
+    if (booking.payment_method === 'service') return t.pendingService;
+    return t.pendingPayment;
+  };
+
+  const bookingSummaryText = (booking: Booking) => {
+    if (booking.status === 'confirmed' && booking.payment_status === 'paid') {
+      return pick('已確認並完成付款，請準備入住。', 'Confirmed and paid. Please get ready for check-in.', '予約確認と支払いが完了しました。チェックインのご準備をお願いします。', '예약 확인 및 결제가 완료되었습니다. 체크인 준비를 해주세요.');
+    }
+    if (booking.status === 'cancelled') {
+      return pick('此筆訂單目前已取消。', 'This booking has been cancelled.', 'この予約はキャンセルされています。', '이 예약은 취소되었습니다.');
+    }
+    if (booking.payment_method === 'service') {
+      return pick('目前使用專人服務處理，請留意客服通知。', 'Your booking is being handled by support.', '現在サポート担当が対応中です。', '현재 고객 지원이 처리 중입니다.');
+    }
+    return pick('訂房資料已建立，請確認付款與入住資訊。', 'Your booking is created. Please review payment and stay details.', '予約情報が作成されました。支払いと宿泊情報をご確認ください。', '예약 정보가 생성되었습니다. 결제 및 숙박 정보를 확인해주세요.');
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-16">
@@ -240,6 +278,25 @@ export default function MemberBookings() {
                     <span className={`rounded-full px-3 py-1.5 text-sm font-medium ${getStatusColor(booking.status)}`}>{getStatusLabel(booking.status, lang)}</span>
                   </div>
 
+                  <div className="rounded-2xl border border-[#EADCC7] bg-gradient-to-r from-[#FFF9EF] to-white p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[#A37234]">{t.confirmedStatus}</p>
+                        <p className="mt-1 text-sm leading-6 text-gray-600">{bookingSummaryText(booking)}</p>
+                      </div>
+                      <div className="rounded-2xl bg-white px-4 py-3 text-right shadow-sm">
+                        <p className="text-xs font-medium text-gray-400">{t.total}</p>
+                        <p className="text-xl font-bold text-[#2C1F10]">{formatCurrency(booking.total_price)}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+                      <Info label={t.paymentStatus} value={paymentStatusLabel(booking)} />
+                      <Info label={t.paymentMethod} value={paymentMethodLabel(booking.payment_method)} />
+                      <Info label={t.checkIn} value={formatDate(booking.check_in_date, dateLocale)} />
+                      <Info label={t.checkOut} value={formatDate(booking.check_out_date, dateLocale)} />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                     <Info label={t.checkIn} value={formatDate(booking.check_in_date, dateLocale)} prominent />
                     <Info label={t.checkOut} value={formatDate(booking.check_out_date, dateLocale)} prominent />
@@ -273,6 +330,30 @@ export default function MemberBookings() {
                           </div>
                         )}
 
+                        <section className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                          <SectionTitle icon={<BedDouble className="h-4 w-4 text-[#0D9488]" />} label={t.roomDetail} />
+                          <div className="grid gap-3 text-sm md:grid-cols-2">
+                            <Info label={t.roomCount} value={`1 ${t.room}`} />
+                            <Info label={t.guests} value={`${booking.guests} ${t.guestUnit}`} />
+                            <Info label={t.checkInTime} value={pick('16:00 後', 'After 16:00', '16:00以降', '16:00 이후')} />
+                            <Info label={t.checkOutTime} value={pick('11:00 前', 'Before 11:00', '11:00前', '11:00 이전')} />
+                          </div>
+                          <div className="mt-3 rounded-xl bg-white p-3 text-sm leading-6 text-gray-600">
+                            <p className="font-medium text-gray-900">{t.cancelPolicy}</p>
+                            <p className="mt-1">{t.refundNotice}</p>
+                          </div>
+                        </section>
+
+                        <section className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                          <SectionTitle icon={<Mail className="h-4 w-4 text-[#0D9488]" />} label={t.travelerInfo} />
+                          <div className="grid gap-3 text-sm md:grid-cols-2">
+                            <Info label={t.guestName} value={profile?.display_name || t.unknownGuest} />
+                            <Info label={t.phone} value={profile?.phone || '-'} />
+                            <Info label={t.email} value={user?.email || '-'} />
+                            <Info label={t.bookingDate} value={formatDateTime(booking.created_at, dateLocale)} />
+                          </div>
+                        </section>
+
                         <section>
                           <SectionTitle label={t.timeline} />
                           <div className="grid gap-2 md:grid-cols-5">
@@ -303,30 +384,48 @@ export default function MemberBookings() {
                           </div>
                         </section>
 
+                        <section className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                          <SectionTitle icon={<MessageCircle className="h-4 w-4 text-[#0D9488]" />} label={t.supportInfo} />
+                          <p className="text-sm leading-6 text-gray-600">{pick('30 秒內獲得客服協助', 'Get support in 30 seconds.', '30秒以内にサポートを受けられます。', '30초 내 고객 지원을 받을 수 있습니다.')}</p>
+                          <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+                            <Link to="/contact" className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">{t.contactProperty}</Link>
+                            <a href={mapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#C09A6A] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#8B6840]">{t.viewMap}</a>
+                          </div>
+                        </section>
+
                         <section className="rounded-xl border border-gray-100 p-4">
                           <SectionTitle icon={<Receipt className="h-4 w-4 text-orange-500" />} label={t.paymentInfo} />
                           <div className="grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-1">
                             <Info label={t.roomPrice} value={formatCurrency(booking.total_price)} />
                             <Info label={t.cleaningFee} value={t.included} />
                             <Info label={t.serviceFee} value={t.included} />
-                            <Info label={t.discount} value={formatCurrency(0)} />
+                            <Info label={t.discount} value={formatCurrency(booking.points_discount || 0)} />
                             <Info label={t.coupon} value={t.noCoupon} />
                             <Info label={t.total} value={formatCurrency(booking.total_price)} strong />
                             <Info label={t.paymentMethod} value={paymentMethodLabel(booking.payment_method)} />
+                            <Info label={t.paymentStatus} value={paymentStatusLabel(booking)} />
                             <Info label={t.paymentTime} value={paid ? formatDateTime(booking.updated_at, dateLocale) : booking.payment_method === 'service' ? t.pendingService : t.pendingPayment} />
                             <Info label={t.invoice} value={t.notIssued} />
+                          </div>
+                        </section>
+
+                        <section className="rounded-xl border border-gray-100 bg-[#F7F9FC] p-4">
+                          <SectionTitle icon={<Receipt className="h-4 w-4 text-[#0D9488]" />} label={t.rewardInfo} />
+                          <div className="grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-1">
+                            <Info label={pick('預估可得點數', 'Estimated Points', '獲得予定ポイント', '예상 적립 포인트')} value={booking.payment_status === 'paid' ? `${Math.max(1, Math.floor(booking.total_price / 100))} pts` : pick('待付款後發放', 'Issued after payment', '支払い後に付与', '결제 후 지급')} />
+                            <Info label={pick('禮遇狀態', 'Benefit Status', '特典状況', '혜택 상태')} value={paid ? pick('已啟用', 'Active', '有効', '활성화') : pick('待確認', 'Pending', '確認待ち', '확인 대기')} />
                           </div>
                         </section>
                       </aside>
                     </div>
 
                     <div className="flex flex-wrap gap-2 border-t border-gray-100 pt-4">
-                      <button type="button" className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"><ExternalLink className="h-4 w-4" />{t.viewOrder}</button>
+                      <button type="button" className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"><ExternalLink className="h-4 w-4" />{t.manageBooking}</button>
                       {booking.status === 'confirmed' && (
                         <button type="button" onClick={() => handleCancel(booking.id)} disabled={cancelId === booking.id} className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"><AlertCircle className="h-4 w-4" />{cancelId === booking.id ? t.cancelling : t.cancel}</button>
                       )}
                       <Link to={booking.room_id ? `/booking/${booking.room_id}` : '/rooms'} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"><Calendar className="h-4 w-4" />{t.modifyDates}</Link>
-                      <Link to={booking.room_id ? `/booking/${booking.room_id}` : '/rooms'} className="inline-flex items-center gap-1.5 rounded-lg bg-[#C09A6A] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#8B6840]"><RotateCcw className="h-4 w-4" />{t.bookAgain}</Link>
+                      <Link to={booking.room_id ? `/booking/${booking.room_id}` : '/rooms'} className="inline-flex items-center gap-1.5 rounded-lg bg-[#C09A6A] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#8B6840]"><RotateCcw className="h-4 w-4" />{t.extendStay}</Link>
                       <button type="button" disabled className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-400"><Download className="h-4 w-4" />{t.downloadInvoice}</button>
                       {hotel?.email && <a href={`mailto:${hotel.email}`} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"><Mail className="h-4 w-4" />{hotel.email}</a>}
                     </div>
