@@ -12,6 +12,7 @@ export interface MemberProfile {
   user_id: string;
   display_name: string;
   phone: string;
+  shipping_address?: string | null;
   avatar_url: string;
   bio: string;
   nationality: string;

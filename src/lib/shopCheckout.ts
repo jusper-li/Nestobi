@@ -16,6 +16,12 @@ export interface ShopCheckoutResponse {
   clientBackUrl?: string;
 }
 
+export interface ShippingInfo {
+  name: string;
+  phone: string;
+  address: string;
+}
+
 async function ensureFreshSession() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
@@ -33,11 +39,15 @@ async function ensureFreshSession() {
 
 export type NewebPayPaymentMethod = 'CREDIT' | 'WEBATM' | 'ATM' | 'CVS' | 'BARCODE';
 
-export async function createShopCheckout(pointsToUse: number, paymentMethod: NewebPayPaymentMethod = 'CREDIT'): Promise<ShopCheckoutResponse> {
+export async function createShopCheckout(
+  pointsToUse: number,
+  paymentMethod: NewebPayPaymentMethod = 'CREDIT',
+  shippingInfo: ShippingInfo,
+): Promise<ShopCheckoutResponse> {
   await ensureFreshSession();
 
   const { data, error } = await supabase.functions.invoke('newebpay-mpg-payment', {
-    body: { pointsToUse, paymentMethod },
+    body: { pointsToUse, paymentMethod, ...shippingInfo },
   });
 
   if (error) {

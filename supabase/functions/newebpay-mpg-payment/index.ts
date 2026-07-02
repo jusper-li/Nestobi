@@ -12,6 +12,9 @@ type PaymentMethod = "CREDIT" | "WEBATM" | "ATM" | "CVS" | "BARCODE" | "APPLEPAY
 interface ShopCheckoutRequest {
   pointsToUse?: number;
   paymentMethod?: PaymentMethod;
+  name?: string;
+  phone?: string;
+  address?: string;
 }
 
 interface NewebPayCredentials {
@@ -174,10 +177,23 @@ Deno.serve(async (req: Request) => {
     const body: ShopCheckoutRequest = await req.json();
     const pointsToUse = Math.max(0, Math.floor(Number(body.pointsToUse || 0)));
     const paymentMethod = body.paymentMethod || "CREDIT";
+    const shippingName = String(body.name || "").trim();
+    const shippingPhone = String(body.phone || "").trim();
+    const shippingAddress = String(body.address || "").trim();
+
+    if (!shippingName || !shippingPhone || !shippingAddress) {
+      return jsonResponse({
+        success: false,
+        error: "Shipping name, phone, and address are required.",
+      }, 400);
+    }
 
     const merchantOrderNo = buildMerchantOrderNo(user.id);
     const { data: checkoutResult, error: checkoutError } = await authClient.rpc("create_shop_checkout_order", {
       p_merchant_order_no: merchantOrderNo,
+      p_shipping_name: shippingName,
+      p_shipping_phone: shippingPhone,
+      p_shipping_address: shippingAddress,
       p_points_to_use: pointsToUse,
     });
 

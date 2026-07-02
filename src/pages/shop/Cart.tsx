@@ -36,7 +36,7 @@ type PaymentChoice = 'POINTS' | NewebPayPaymentMethod;
 export default function Cart() {
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { items, removeItem, updateQuantity, clearCart } = useCart();
   const [cartItems, setCartItems] = useState<CartItemWithProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +45,9 @@ export default function Cart() {
   const [success, setSuccess] = useState(false);
   const [availablePoints, setAvailablePoints] = useState(0);
   const [paymentChoice, setPaymentChoice] = useState<PaymentChoice>('CREDIT');
+  const [shippingName, setShippingName] = useState('');
+  const [shippingPhone, setShippingPhone] = useState('');
+  const [shippingAddress, setShippingAddress] = useState('');
   const navigate = useNavigate();
 
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
@@ -75,6 +78,12 @@ export default function Cart() {
     cvs: pick('超商代碼', 'CVS code', 'コンビニ代碼', '편의점 코드'),
     pointsPayment: pick('點數全額支付', 'Pay with points', 'ポイント全額支払い', '포인트 전액 결제'),
     choosePayment: pick('擇一付款方式', 'Choose one payment method', '支払い方法を1つ選択', '결제 수단을 하나 선택'),
+    shippingInfo: pick('收件資訊', 'Shipping information', '配送先情報', '배송 정보'),
+    shippingName: pick('姓名', 'Name', '氏名', '이름'),
+    shippingPhone: pick('電話', 'Phone', '電話番号', '전화'),
+    shippingAddress: pick('地址', 'Address', '住所', '주소'),
+    shippingHint: pick('請填寫姓名、電話與地址，系統會自動保存，下次購買可直接帶入。', 'Fill in your name, phone, and address. We will save them for next time.', '氏名・電話・住所を入力すると、次回の購入時に自動入力されます。', '이름, 전화번호, 주소를 입력하면 다음 구매 때 자동으로 불러옵니다.'),
+    shippingRequired: pick('請先填寫姓名、電話與地址，才能成立訂單。', 'Please complete your name, phone, and address before placing the order.', '注文する前に氏名・電話・住所を入力してください。', '주문하려면 이름, 전화번호, 주소를 먼저 입력해 주세요.'),
   };
 
   useEffect(() => {
@@ -90,6 +99,14 @@ export default function Cart() {
     };
     fetchCartItems();
   }, [user, items]);
+
+  useEffect(() => {
+    if (profile) {
+      setShippingName(profile.display_name || '');
+      setShippingPhone(profile.phone || '');
+      setShippingAddress(profile.shipping_address || '');
+    }
+  }, [profile?.user_id]);
 
   useEffect(() => {
     const fetchPointBalance = async () => {
@@ -111,6 +128,7 @@ export default function Cart() {
   const payableSubtotal = Math.max(0, subtotal - pointDiscount);
   const paymentMethod = paymentChoice === 'POINTS' ? 'points' : 'credit_card';
   const pointsEarned = Math.floor(payableSubtotal / 100) * 5;
+  const shippingReady = shippingName.trim().length > 0 && shippingPhone.trim().length > 0 && shippingAddress.trim().length > 0;
 
   const handleRemoveUnavailableItems = async () => {
     if (checkoutLoading) return;
@@ -125,11 +143,23 @@ export default function Cart() {
       navigate(`/auth/login?redirect=${encodeURIComponent('/cart')}`);
       return;
     }
+    if (!shippingReady) {
+      setCheckoutError(t.shippingRequired);
+      return;
+    }
     setCheckoutLoading(true);
     setCheckoutError('');
 
     try {
-      const checkout = await createShopCheckout(pointDiscount, paymentChoice === 'POINTS' ? 'CREDIT' : paymentChoice);
+      const checkout = await createShopCheckout(
+        pointDiscount,
+        paymentChoice === 'POINTS' ? 'CREDIT' : paymentChoice,
+        {
+          name: shippingName.trim(),
+          phone: shippingPhone.trim(),
+          address: shippingAddress.trim(),
+        },
+      );
       await clearCart();
 
       if (checkout.mode === 'newebpay') {
@@ -285,6 +315,47 @@ export default function Cart() {
                 ))}
               </div>
               <div className="mb-4 border-t border-gray-100 pt-4">
+                <div className="mb-4 rounded-2xl border border-[#F0E4C8] bg-[#FEF9EC] p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div className="text-sm font-bold text-gray-900">{t.shippingInfo}</div>
+                    <span className="text-[11px] font-semibold text-[#8B6840]">{t.shippingHint}</span>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-gray-600">{t.shippingName}</label>
+                      <input
+                        type="text"
+                        value={shippingName}
+                        onChange={e => setShippingName(e.target.value)}
+                        placeholder={t.shippingName}
+                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C09A6A]/30"
+                        disabled={checkoutLoading}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-gray-600">{t.shippingPhone}</label>
+                      <input
+                        type="tel"
+                        value={shippingPhone}
+                        onChange={e => setShippingPhone(e.target.value)}
+                        placeholder="09XX-XXX-XXX"
+                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C09A6A]/30"
+                        disabled={checkoutLoading}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-gray-600">{t.shippingAddress}</label>
+                      <textarea
+                        value={shippingAddress}
+                        onChange={e => setShippingAddress(e.target.value)}
+                        placeholder={t.shippingAddress}
+                        rows={3}
+                        className="w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C09A6A]/30"
+                        disabled={checkoutLoading}
+                      />
+                    </div>
+                  </div>
+                </div>
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>{t.subtotal}</span>
                   <span className="text-[#C09A6A]">{formatCurrency(subtotal)}</span>
@@ -322,7 +393,7 @@ export default function Cart() {
               </div>
               {checkoutError && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-600">{checkoutError}</p>}
               {!user && <p className="mb-3 rounded-lg bg-[#FEF9EC] px-3 py-2 text-center text-sm font-semibold text-[#8B6840]">{t.loginBeforeCheckout}</p>}
-              <button type="button" onClick={handleCheckout} disabled={checkoutLoading || validCartItems.length === 0} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C09A6A] py-3 font-bold text-white transition hover:bg-[#8B6840] disabled:opacity-60">
+              <button type="button" onClick={handleCheckout} disabled={checkoutLoading || validCartItems.length === 0 || !shippingReady} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C09A6A] py-3 font-bold text-white transition hover:bg-[#8B6840] disabled:opacity-60">
                 {checkoutLoading && <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />}
                 {t.placeOrder}
               </button>

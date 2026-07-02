@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, FileText, Globe, Phone, User } from 'lucide-react';
+import { CheckCircle, FileText, Globe, MapPin, Phone, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
@@ -23,12 +23,14 @@ const Profile: React.FC = () => {
     ),
     displayName: pick('顯示名稱', 'Display name', '表示名', '표시 이름'),
     phone: pick('手機號碼', 'Phone', '電話番号', '휴대폰 번호'),
+    shippingAddress: pick('收件地址', 'Shipping address', '配送先住所', '배송 주소'),
     bio: pick('自我介紹', 'Bio', '自己紹介', '자기소개'),
     nationality: pick('國籍', 'Nationality', '国籍', '국적'),
     preferredLanguage: pick('偏好語言', 'Preferred language', '言語設定', '선호 언어'),
     save: pick('儲存變更', 'Save changes', '変更を保存', '변경 저장'),
     displayNamePlaceholder: pick('請輸入顯示名稱', 'Enter your display name', '表示名を入力', '표시 이름을 입력하세요'),
     phonePlaceholder: '09XX-XXX-XXX',
+    shippingAddressPlaceholder: pick('請輸入可收件的地址', 'Enter your shipping address', '配送先住所を入力', '배송 가능한 주소를 입력하세요'),
     bioPlaceholder: pick('簡單介紹一下你自己...', 'Tell us a little about yourself...', '自己紹介を入力してください...', '자기소개를 입력하세요...'),
     nationalityPlaceholder: pick('例如：台灣', 'e.g. Taiwan', '例：台湾', '예: 대만'),
     zhTw: pick('繁體中文', 'Traditional Chinese', '繁體中文', '번체 중국어'),
@@ -39,6 +41,7 @@ const Profile: React.FC = () => {
 
   const [displayName, setDisplayName] = useState('');
   const [phone, setPhone] = useState('');
+  const [shippingAddress, setShippingAddress] = useState('');
   const [bio, setBio] = useState('');
   const [nationality, setNationality] = useState('');
   const [preferredLanguage, setPreferredLanguage] = useState('zh-TW');
@@ -50,6 +53,7 @@ const Profile: React.FC = () => {
     if (!profile) return;
     setDisplayName(profile.display_name || '');
     setPhone(profile.phone || '');
+    setShippingAddress(profile.shipping_address || '');
     setBio(profile.bio || '');
     setNationality(profile.nationality || '');
     setPreferredLanguage(profile.preferred_language || 'zh-TW');
@@ -64,6 +68,7 @@ const Profile: React.FC = () => {
       await updateProfile({
         display_name: displayName,
         phone,
+        shipping_address: shippingAddress,
         bio,
         nationality,
         preferred_language: preferredLanguage,
@@ -126,6 +131,20 @@ const Profile: React.FC = () => {
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="mb-1 flex items-center gap-1 text-sm font-medium text-gray-700">
+              <MapPin className="h-4 w-4" />
+              {text.shippingAddress}
+            </label>
+            <textarea
+              value={shippingAddress}
+              onChange={e => setShippingAddress(e.target.value)}
+              placeholder={text.shippingAddressPlaceholder}
+              rows={3}
+              className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
+            />
           </div>
 
           <div>
