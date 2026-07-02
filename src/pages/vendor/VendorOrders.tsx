@@ -74,7 +74,19 @@ interface ProductOrderLine {
   status: string;
   created_at: string;
   products?: { id: string; name: string; image_url?: string | null; sku?: string | null; vendor_id?: string | null } | null;
-  orders?: { id: string; user_id: string; status: string; payment_status: string; payment_method?: string | null; merchant_order_no?: string | null; newebpay_status?: string | null; total_amount: number; currency?: string | null; created_at: string } | null;
+  orders?: {
+    id: string;
+    user_id: string;
+    status: string;
+    payment_status: string;
+    payment_method?: string | null;
+    merchant_order_no?: string | null;
+    newebpay_status?: string | null;
+    total_amount: number;
+    currency?: string | null;
+    created_at: string;
+    shipping_address?: Record<string, string> | null;
+  } | null;
 }
 
 interface ShopOrderDetail {
@@ -188,6 +200,51 @@ const VendorOrders: React.FC = () => {
     return labels.unpaid;
   };
 
+  const getShippingAddress = () => {
+    if (selectedDetail?.kind !== 'product') return null;
+    return detailShopOrder?.shipping_address || selectedDetail.productOrder.orders?.shipping_address || null;
+  };
+
+  const getOrdererName = () => {
+    const shippingAddress = getShippingAddress();
+    return detailCustomer?.display_name
+      || shippingAddress?.customer_name
+      || shippingAddress?.recipient_name
+      || detailShopOrder?.user_id
+      || detailBooking?.user_id
+      || '-';
+  };
+
+  const getOrdererPhone = () => {
+    const shippingAddress = getShippingAddress();
+    return detailCustomer?.phone
+      || shippingAddress?.customer_phone
+      || shippingAddress?.recipient_phone
+      || '-';
+  };
+
+  const getOrdererEmail = () => {
+    const shippingAddress = getShippingAddress();
+    return shippingAddress?.customer_email
+      || shippingAddress?.email
+      || '-';
+  };
+
+  const copyShippingSlip = async () => {
+    const shippingAddress = getShippingAddress();
+    const summary = [
+      `訂單編號：${selectedDetail?.id || '-'}`,
+      `訂購者：${getOrdererName()}`,
+      `電話：${getOrdererPhone()}`,
+      `Email：${getOrdererEmail()}`,
+      `商品：${selectedDetail?.kind === 'product' ? (selectedDetail.productOrder.products?.name || labels.productOrder) : (detailBooking?.tbl_rooms?.name || labels.booking)}`,
+      `配送資料：${shippingAddress ? Object.entries(shippingAddress).map(([key, value]) => `${key}：${value}`).join(' / ') : '無'}`,
+    ].join('\n');
+    await navigator.clipboard.writeText(summary);
+    setMessage('已複製出貨單摘要');
+    setTimeout(() => setMessage(''), 3000);
+  };
+
   const openDetail = async (item: VendorOrderItem) => {
     setSelectedDetail(item);
     setDetailLoading(true);
@@ -211,7 +268,13 @@ const VendorOrders: React.FC = () => {
             .maybeSingle(),
           supabase.from('after_sales_requests').select('id,request_type,status,message,created_at,updated_at').eq('order_id', orderId).order('created_at', { ascending: false }),
         ]);
-        setDetailCustomer((profileRes.data as CustomerProfile) || null);
+        const shippingAddress = (orderRes.data as ShopOrderDetail | null)?.shipping_address || null;
+        setDetailCustomer((profileRes.data as CustomerProfile) || (shippingAddress ? {
+          user_id: userId,
+          display_name: shippingAddress.customer_name || shippingAddress.recipient_name || '',
+          phone: shippingAddress.customer_phone || shippingAddress.recipient_phone || '',
+          email: shippingAddress.customer_email || shippingAddress.email || '',
+        } : null));
         setDetailShopOrder((orderRes.data as ShopOrderDetail) || null);
         setDetailAfterSales((afterSalesRes.data || []) as AfterSalesRequest[]);
       } else {
@@ -257,7 +320,7 @@ const VendorOrders: React.FC = () => {
         .order('created_at', { ascending: false }),
       supabase
         .from('purchase_records')
-        .select('id, order_id, quantity, unit_price, total_price, payment_method, status, created_at, products!inner(id, name, image_url, sku, vendor_id), orders(id, user_id, status, payment_status, payment_method, merchant_order_no, newebpay_status, total_amount, currency, created_at)')
+        .select('id, order_id, quantity, unit_price, total_price, payment_method, status, created_at, products!inner(id, name, image_url, sku, vendor_id), orders(id, user_id, status, payment_status, payment_method, merchant_order_no, newebpay_status, total_amount, currency, created_at, shipping_address)')
         .eq('products.vendor_id', vid)
         .order('created_at', { ascending: false }),
     ]);
@@ -524,10 +587,10 @@ const VendorOrders: React.FC = () => {
 
                       <DetailCard title="訂購人資訊" icon={<User className="h-4 w-4" />}>
                         <div className="grid gap-4 md:grid-cols-2">
-                          <DetailField label={labels.customer} value={detailCustomer?.display_name || detailShopOrder?.user_id || '-'} />
-                          <DetailField label={labels.phone} value={detailCustomer?.phone || '-'} />
+                          <DetailField label="訂購者名稱" value={getOrdererName()} />
+                          <DetailField label={labels.phone} value={getOrdererPhone()} />
+                          <DetailField label="Email" value={getOrdererEmail()} />
                           <DetailField label="User ID" value={detailShopOrder?.user_id || '-'} mono />
-                          <DetailField label="Email" value={String(detailShopOrder?.shipping_address?.email || detailShopOrder?.shipping_address?.customer_email || '-')} />
                         </div>
                       </DetailCard>
 
@@ -555,11 +618,26 @@ const VendorOrders: React.FC = () => {
                       </DetailCard>
 
                       <DetailCard title="配送 / 送貨資料" icon={<MapPin className="h-4 w-4" />}>
-                        {detailShopOrder?.shipping_address && Object.keys(detailShopOrder.shipping_address).length > 0 ? (
-                          <div className="grid gap-4 md:grid-cols-2">
-                            {Object.entries(detailShopOrder.shipping_address).map(([key, value]) => (
+                        {getShippingAddress() && Object.keys(getShippingAddress() || {}).length > 0 ? (
+                          <div className="space-y-4">
+                            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-emerald-50 px-4 py-3">
+                              <div>
+                                <p className="text-sm font-semibold text-emerald-800">出貨單摘要</p>
+                                <p className="text-xs text-emerald-700">先確認訂購者名稱、電話與配送資訊後即可出貨</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => void copyShippingSlip()}
+                                className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
+                              >
+                                建立出貨單
+                              </button>
+                            </div>
+                            <div className="grid gap-4 md:grid-cols-2">
+                            {Object.entries(getShippingAddress() || {}).map(([key, value]) => (
                               <DetailField key={key} label={key} value={String(value)} />
                             ))}
+                            </div>
                           </div>
                         ) : (
                           <div className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-500">沒有配送資料</div>
@@ -712,8 +790,8 @@ function ProductOrderCard({
         </div>
         <p className="font-semibold text-gray-900">{item.products?.name || labels.productOrder}</p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
-          <span>{labels.customer}: {customer?.display_name || item.orders?.user_id || '—'}</span>
-          <span>{labels.phone}: {customer?.phone || '—'}</span>
+          <span>{labels.customer}: {customer?.display_name || item.orders?.shipping_address?.customer_name || item.orders?.shipping_address?.recipient_name || item.orders?.user_id || '—'}</span>
+          <span>{labels.phone}: {customer?.phone || item.orders?.shipping_address?.customer_phone || item.orders?.shipping_address?.recipient_phone || '—'}</span>
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
           <span>{labels.orderNumber}: #{item.order_id.slice(0, 8).toUpperCase()}</span>
