@@ -1,12 +1,28 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { AlertCircle, BedDouble, Package, ShoppingBag } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  AlertCircle,
+  BedDouble,
+  Calendar,
+  Clock3,
+  ExternalLink,
+  Mail,
+  MapPin,
+  MessageSquare,
+  Package,
+  Phone,
+  Receipt,
+  ShoppingBag,
+  Truck,
+  User,
+  X,
+} from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { refundOrder } from '../../lib/orderRefund';
 import { supabase } from '../../lib/supabase';
-import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
+import { formatCurrency, formatDate, formatDateTime, getStatusColor, getStatusLabel } from '../../lib/utils';
 
 interface Booking {
   id: string;
@@ -21,10 +37,31 @@ interface Booking {
   tbl_rooms?: { name: string; location: string } | null;
 }
 
+interface BookingDetail extends Booking {
+  room?: { id?: string | null; name?: string | null; location?: string | null } | null;
+  tbl_rooms?: {
+    id?: string | null;
+    name?: string | null;
+    location?: string | null;
+    vendors?: { name?: string | null; contact_phone?: string | null; contact_email?: string | null } | null;
+    hotels?: { name?: string | null; phone?: string | null; email?: string | null; address?: string | null } | null;
+  } | null;
+}
+
 interface CustomerProfile {
   user_id: string;
   display_name: string;
   phone: string;
+  email?: string | null;
+}
+
+interface AfterSalesRequest {
+  id: string;
+  request_type: string;
+  status: string;
+  message: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface ProductOrderLine {
@@ -38,6 +75,30 @@ interface ProductOrderLine {
   created_at: string;
   products?: { id: string; name: string; image_url?: string | null; sku?: string | null; vendor_id?: string | null } | null;
   orders?: { id: string; user_id: string; status: string; payment_status: string; payment_method?: string | null; merchant_order_no?: string | null; newebpay_status?: string | null; total_amount: number; currency?: string | null; created_at: string } | null;
+}
+
+interface ShopOrderDetail {
+  id: string;
+  user_id: string;
+  total_amount: number;
+  subtotal_amount?: number | null;
+  points_discount?: number | null;
+  status: string;
+  payment_method?: string | null;
+  payment_status?: string | null;
+  merchant_order_no?: string | null;
+  newebpay_status?: string | null;
+  newebpay_trade_no?: string | null;
+  newebpay_auth_code?: string | null;
+  newebpay_card_no?: string | null;
+  newebpay_respond_code?: string | null;
+  newebpay_payment_type?: string | null;
+  newebpay_paid_at?: string | null;
+  shipping_address?: Record<string, string> | null;
+  discount_code?: string | null;
+  currency?: string | null;
+  created_at: string;
+  updated_at?: string | null;
 }
 
 type VendorOrderItem =
@@ -63,6 +124,13 @@ const VendorOrders: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [updating, setUpdating] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+  const [selectedDetail, setSelectedDetail] = useState<VendorOrderItem | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
+  const [detailCustomer, setDetailCustomer] = useState<CustomerProfile | null>(null);
+  const [detailShopOrder, setDetailShopOrder] = useState<ShopOrderDetail | null>(null);
+  const [detailBooking, setDetailBooking] = useState<BookingDetail | null>(null);
+  const [detailAfterSales, setDetailAfterSales] = useState<AfterSalesRequest[]>([]);
 
   const labels = {
     title: pick('商品訂單與訂房', 'Orders & Bookings', '注文と予約', '주문 및 예약'),
@@ -118,6 +186,60 @@ const VendorOrders: React.FC = () => {
     if (status === 'paid') return labels.paid;
     if (status === 'refunded') return labels.refunded;
     return labels.unpaid;
+  };
+
+  const openDetail = async (item: VendorOrderItem) => {
+    setSelectedDetail(item);
+    setDetailLoading(true);
+    setDetailError('');
+    setDetailCustomer(null);
+    setDetailShopOrder(null);
+    setDetailAfterSales([]);
+
+    try {
+      if (item.kind === 'product') {
+        const orderId = item.productOrder.order_id;
+        const userId = item.productOrder.orders?.user_id || '';
+        const [profileRes, orderRes, afterSalesRes] = await Promise.all([
+          userId
+            ? supabase.from('tbl_mn5wgzh0').select('user_id, display_name, phone').eq('user_id', userId).maybeSingle()
+            : Promise.resolve({ data: null }),
+          supabase
+            .from('orders')
+            .select('id,user_id,total_amount,subtotal_amount,points_discount,status,payment_method,payment_status,merchant_order_no,newebpay_status,newebpay_trade_no,newebpay_auth_code,newebpay_card_no,newebpay_respond_code,newebpay_payment_type,newebpay_paid_at,shipping_address,discount_code,currency,created_at,updated_at')
+            .eq('id', orderId)
+            .maybeSingle(),
+          supabase.from('after_sales_requests').select('id,request_type,status,message,created_at,updated_at').eq('order_id', orderId).order('created_at', { ascending: false }),
+        ]);
+        setDetailCustomer((profileRes.data as CustomerProfile) || null);
+        setDetailShopOrder((orderRes.data as ShopOrderDetail) || null);
+        setDetailAfterSales((afterSalesRes.data || []) as AfterSalesRequest[]);
+      } else {
+        const [{ data: profileData }, { data: bookingData }] = await Promise.all([
+          supabase.from('tbl_mn5wgzh0').select('user_id, display_name, phone').eq('user_id', item.booking.user_id).maybeSingle(),
+          supabase
+            .from('tbl_bookings')
+            .select('id,user_id,room_id,check_in_date,check_out_date,guests,total_price,subtotal_price,points_discount,status,payment_method,payment_status,special_requests,created_at,updated_at,tbl_rooms(id,name,location,vendors(name,contact_phone,contact_email),hotels(name,phone,email,address))')
+            .eq('id', item.booking.id)
+            .maybeSingle(),
+        ]);
+        setDetailCustomer((profileData as CustomerProfile) || null);
+        setDetailBooking((bookingData as BookingDetail) || null);
+      }
+    } catch (error) {
+      setDetailError(error instanceof Error ? error.message : labels.updateFailed);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const closeDetail = () => {
+    setSelectedDetail(null);
+    setDetailError('');
+    setDetailCustomer(null);
+    setDetailShopOrder(null);
+    setDetailBooking(null);
+    setDetailAfterSales([]);
   };
 
   useEffect(() => {
@@ -313,7 +435,7 @@ const VendorOrders: React.FC = () => {
           {filtered.map((item, index) => (
             <motion.div key={item.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.03 }} className="rounded-2xl bg-white p-5 shadow-sm">
               {item.kind === 'product' ? (
-                  <ProductOrderCard
+              <ProductOrderCard
                   item={item.productOrder}
                   labels={labels}
                   locale={locale}
@@ -321,6 +443,7 @@ const VendorOrders: React.FC = () => {
                   onUpdate={updateProductStatus}
                   customer={item.productOrder.orders?.user_id ? customerProfiles[item.productOrder.orders.user_id] : undefined}
                   paymentLabel={getPaymentLabel(item.productOrder.orders?.payment_status)}
+                  onViewDetail={() => void openDetail(item)}
                 />
               ) : (
                 <BookingCard
@@ -331,12 +454,228 @@ const VendorOrders: React.FC = () => {
                   onUpdate={updateBookingStatus}
                   customer={customerProfiles[item.booking.user_id]}
                   paymentLabel={getPaymentLabel(item.booking.payment_status)}
+                  onViewDetail={() => void openDetail(item)}
                 />
               )}
             </motion.div>
           ))}
         </div>
       )}
+
+      <AnimatePresence>
+        {selectedDetail && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            onClick={closeDetail}
+          >
+            <motion.div
+              initial={{ scale: 0.98, opacity: 0, y: 12 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.98, opacity: 0, y: 12 }}
+              onClick={(e) => e.stopPropagation()}
+              className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
+            >
+              <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-5">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+                      <Package className="h-3.5 w-3.5" />
+                      {selectedDetail.kind === 'product' ? labels.productOrder : labels.booking}
+                    </span>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${getStatusColor(selectedDetail.kind === 'product' ? selectedDetail.productOrder.status : selectedDetail.booking.status)}`}>
+                      {selectedDetail.kind === 'product' ? getStatusLabel(selectedDetail.productOrder.status, locale) : getStatusLabel(selectedDetail.booking.status, locale)}
+                    </span>
+                  </div>
+                  <h2 className="mt-2 text-2xl font-bold text-gray-900">
+                    #{selectedDetail.id.split(':').pop()?.slice(-10).toUpperCase()}
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-500">{formatDateTime(selectedDetail.created_at)}</p>
+                </div>
+                <button type="button" onClick={closeDetail} className="rounded-xl border border-gray-200 bg-white p-2 text-gray-500 transition hover:bg-gray-50">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6">
+                {detailLoading ? (
+                  <div className="flex justify-center py-16">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
+                  </div>
+                ) : detailError ? (
+                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{detailError}</div>
+                ) : selectedDetail.kind === 'product' ? (
+                  <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+                    <div className="space-y-6">
+                      <DetailCard title="訂單資料" icon={<Receipt className="h-4 w-4" />}>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <DetailField label={labels.orderNumber} value={detailShopOrder?.id ? `#${detailShopOrder.id.slice(-10).toUpperCase()}` : '-'} mono />
+                          <DetailField label={labels.orderPaymentStatus} value={getPaymentLabel(detailShopOrder?.payment_status)} />
+                          <DetailField label={labels.paymentStatus} value={detailShopOrder?.status || '-'} />
+                          <DetailField label="支付方式" value={getPaymentMethodLabel(detailShopOrder?.payment_method)} />
+                          <DetailField label="Merchant Order No." value={detailShopOrder?.merchant_order_no || '-'} mono />
+                          <DetailField label="交易序號" value={detailShopOrder?.newebpay_trade_no || '-'} mono />
+                          <DetailField label="付款時間" value={detailShopOrder?.newebpay_paid_at ? formatDateTime(detailShopOrder.newebpay_paid_at) : '-'} />
+                          <DetailField label="更新時間" value={detailShopOrder?.updated_at ? formatDateTime(detailShopOrder.updated_at) : '-'} />
+                        </div>
+                      </DetailCard>
+
+                      <DetailCard title="訂購人資訊" icon={<User className="h-4 w-4" />}>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <DetailField label={labels.customer} value={detailCustomer?.display_name || detailShopOrder?.user_id || '-'} />
+                          <DetailField label={labels.phone} value={detailCustomer?.phone || '-'} />
+                          <DetailField label="User ID" value={detailShopOrder?.user_id || '-'} mono />
+                          <DetailField label="Email" value={String(detailShopOrder?.shipping_address?.email || detailShopOrder?.shipping_address?.customer_email || '-')} />
+                        </div>
+                      </DetailCard>
+
+                      <DetailCard title={labels.productOrder} icon={<ShoppingBag className="h-4 w-4" />}>
+                        <div className="space-y-3">
+                          {(selectedDetail.productOrder.products?.name || selectedDetail.productOrder.products?.sku) ? (
+                            <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                              <div className="flex items-start justify-between gap-4">
+                                <div>
+                                  <p className="font-semibold text-gray-900">{selectedDetail.productOrder.products?.name || labels.productOrder}</p>
+                                  <p className="mt-1 text-xs text-gray-400">{selectedDetail.productOrder.products?.sku || selectedDetail.productOrder.id}</p>
+                                  <p className="mt-1 text-sm text-gray-600">
+                                    {selectedDetail.productOrder.products?.vendors?.name || '-'}
+                                    {selectedDetail.productOrder.products?.vendors?.contact_phone ? ` · ${selectedDetail.productOrder.products.vendors.contact_phone}` : ''}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-base font-bold text-gray-900">{formatCurrency(selectedDetail.productOrder.total_price)}</p>
+                                  <p className="text-xs text-gray-400">{selectedDetail.productOrder.quantity} x {formatCurrency(selectedDetail.productOrder.unit_price)}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      </DetailCard>
+
+                      <DetailCard title="配送 / 送貨資料" icon={<MapPin className="h-4 w-4" />}>
+                        {detailShopOrder?.shipping_address && Object.keys(detailShopOrder.shipping_address).length > 0 ? (
+                          <div className="grid gap-4 md:grid-cols-2">
+                            {Object.entries(detailShopOrder.shipping_address).map(([key, value]) => (
+                              <DetailField key={key} label={key} value={String(value)} />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-500">沒有配送資料</div>
+                        )}
+                      </DetailCard>
+                    </div>
+
+                    <aside className="space-y-6">
+                      <DetailCard title="訂單通訊" icon={<MessageSquare className="h-4 w-4" />}>
+                        <div className="space-y-3">
+                          {detailAfterSales.length === 0 ? (
+                            <div className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-500">目前沒有售後留言</div>
+                          ) : detailAfterSales.map((req) => (
+                            <div key={req.id} className="rounded-2xl bg-gray-50 p-4">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-sm font-semibold text-gray-900">{req.request_type}</p>
+                                <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-gray-600">{req.status}</span>
+                              </div>
+                              <p className="mt-2 text-sm leading-6 text-gray-700">{req.message || '-'}</p>
+                              <p className="mt-2 text-xs text-gray-400">{formatDateTime(req.created_at)}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </DetailCard>
+
+                      <DetailCard title="訂單活動紀錄" icon={<Clock3 className="h-4 w-4" />}>
+                        <div className="space-y-3">
+                          {[
+                            { label: '建立訂單', value: formatDateTime(selectedDetail.productOrder.created_at) },
+                            { label: '付款狀態', value: getPaymentLabel(selectedDetail.productOrder.orders?.payment_status) },
+                            { label: '訂單狀態', value: getStatusLabel(selectedDetail.productOrder.status, locale) },
+                            { label: '最後更新', value: detailShopOrder?.updated_at ? formatDateTime(detailShopOrder.updated_at) : '-' },
+                          ].map((step) => (
+                            <div key={step.label} className="flex gap-3 rounded-2xl bg-gray-50 p-4">
+                              <div className="mt-0.5 h-7 w-7 flex-shrink-0 rounded-full bg-emerald-100 text-center text-xs font-bold leading-7 text-emerald-700">•</div>
+                              <div>
+                                <p className="text-sm font-semibold text-gray-900">{step.label}</p>
+                                <p className="mt-1 text-sm text-gray-500">{step.value}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </DetailCard>
+                    </aside>
+                  </div>
+                ) : (
+                  <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+                    <div className="space-y-6">
+                      <DetailCard title="訂房資料" icon={<BedDouble className="h-4 w-4" />}>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <DetailField label={labels.orderNumber} value={detailBooking?.id ? `#${detailBooking.id.slice(-10).toUpperCase()}` : '-'} mono />
+                          <DetailField label={labels.bookingPaymentStatus} value={getPaymentLabel(detailBooking?.payment_status)} />
+                          <DetailField label={labels.paymentStatus} value={detailBooking?.status || '-'} />
+                          <DetailField label={labels.checkIn} value={formatDate(detailBooking?.check_in_date || '')} />
+                          <DetailField label={labels.checkOut} value={formatDate(detailBooking?.check_out_date || '')} />
+                          <DetailField label={labels.guests} value={String(detailBooking?.guests || '-')} />
+                          <DetailField label="總金額" value={formatCurrency(detailBooking?.total_price || 0)} />
+                          <DetailField label="特殊需求" value={detailBooking?.special_requests || '-'} />
+                        </div>
+                      </DetailCard>
+
+                      <DetailCard title="房型資訊" icon={<Receipt className="h-4 w-4" />}>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <DetailField label="房型" value={detailBooking?.room?.name || detailBooking?.tbl_rooms?.name || '-'} />
+                          <DetailField label="地點" value={detailBooking?.room?.location || detailBooking?.tbl_rooms?.location || '-'} />
+                          <DetailField label="入住日期" value={formatDate(detailBooking?.check_in_date || '')} />
+                          <DetailField label="退房日期" value={formatDate(detailBooking?.check_out_date || '')} />
+                        </div>
+                      </DetailCard>
+                    </div>
+
+                    <aside className="space-y-6">
+                      <DetailCard title="訂購人資訊" icon={<User className="h-4 w-4" />}>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <DetailField label={labels.customer} value={detailCustomer?.display_name || detailBooking?.user_id || '-'} />
+                          <DetailField label={labels.phone} value={detailCustomer?.phone || '-'} />
+                          <DetailField label="User ID" value={detailBooking?.user_id || '-'} mono />
+                          <DetailField label="Email" value={'-'} />
+                        </div>
+                      </DetailCard>
+
+                      <DetailCard title="聯絡方式" icon={<Phone className="h-4 w-4" />}>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <DetailField label="接待方" value={detailBooking?.tbl_rooms?.vendors?.name || detailBooking?.tbl_rooms?.hotels?.name || '-'} />
+                          <DetailField label="電話" value={detailBooking?.tbl_rooms?.vendors?.contact_phone || detailBooking?.tbl_rooms?.hotels?.phone || '-'} />
+                          <DetailField label="Email" value={detailBooking?.tbl_rooms?.vendors?.contact_email || detailBooking?.tbl_rooms?.hotels?.email || '-'} />
+                          <DetailField label="地址" value={detailBooking?.tbl_rooms?.vendors?.address || detailBooking?.tbl_rooms?.hotels?.address || detailBooking?.tbl_rooms?.location || '-'} />
+                        </div>
+                      </DetailCard>
+
+                      <DetailCard title="訂單活動紀錄" icon={<Clock3 className="h-4 w-4" />}>
+                        <div className="space-y-3">
+                          {[
+                            { label: '建立訂單', value: formatDateTime(selectedDetail.booking.created_at) },
+                            { label: '付款狀態', value: getPaymentLabel(selectedDetail.booking.payment_status) },
+                            { label: '訂房狀態', value: getStatusLabel(selectedDetail.booking.status, locale) },
+                            { label: '最後更新', value: detailBooking?.updated_at ? formatDateTime(detailBooking.updated_at) : '-' },
+                          ].map((step) => (
+                            <div key={step.label} className="flex gap-3 rounded-2xl bg-gray-50 p-4">
+                              <div className="mt-0.5 h-7 w-7 flex-shrink-0 rounded-full bg-emerald-100 text-center text-xs font-bold leading-7 text-emerald-700">•</div>
+                              <div>
+                                <p className="text-sm font-semibold text-gray-900">{step.label}</p>
+                                <p className="mt-1 text-sm text-gray-500">{step.value}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </DetailCard>
+                    </aside>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -349,6 +688,7 @@ function ProductOrderCard({
   onUpdate,
   customer,
   paymentLabel,
+  onViewDetail,
 }: {
   item: ProductOrderLine;
   labels: Record<string, string>;
@@ -357,6 +697,7 @@ function ProductOrderCard({
   onUpdate: (item: ProductOrderLine, status: string) => void;
   customer?: CustomerProfile;
   paymentLabel: string;
+  onViewDetail: () => void;
 }) {
   const busy = updating === `product:${item.id}`;
   return (
@@ -404,6 +745,9 @@ function ProductOrderCard({
             {busy ? '...' : labels.markCompleted}
           </button>
         )}
+        <button type="button" onClick={onViewDetail} className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
+          查看明細
+        </button>
       </div>
     </div>
   );
@@ -417,6 +761,7 @@ function BookingCard({
   onUpdate,
   customer,
   paymentLabel,
+  onViewDetail,
 }: {
   item: Booking;
   labels: Record<string, string>;
@@ -425,6 +770,7 @@ function BookingCard({
   onUpdate: (id: string, status: string) => void;
   customer?: CustomerProfile;
   paymentLabel: string;
+  onViewDetail: () => void;
 }) {
   const busy = updating === `booking:${item.id}`;
   return (
@@ -468,9 +814,59 @@ function BookingCard({
             {busy ? '...' : labels.markCompleted}
           </button>
         )}
+        <button type="button" onClick={onViewDetail} className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
+          查看明細
+        </button>
       </div>
     </div>
   );
+}
+
+function DetailCard({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+      <h3 className="mb-4 flex items-center gap-2 text-base font-bold text-gray-900">
+        {icon}
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+function DetailField({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="rounded-2xl bg-gray-50 p-3">
+      <p className="text-xs font-medium text-gray-400">{label}</p>
+      <p className={`mt-1 text-sm font-medium text-gray-900 ${mono ? 'break-all font-mono text-xs' : ''}`}>{value || '-'}</p>
+    </div>
+  );
+}
+
+function getPaymentMethodLabel(method?: string | null) {
+  switch (method) {
+    case 'credit_card':
+      return '信用卡';
+    case 'points':
+      return '點數';
+    case 'points_credit_card':
+      return '點數 + 信用卡';
+    case 'points_online':
+      return '點數 + 線上付款';
+    case 'service':
+      return '專人服務';
+    case 'online':
+      return '線上付款';
+    case 'webatm':
+      return 'WebATM';
+    case 'atm':
+    case 'bank_transfer':
+      return 'ATM 轉帳';
+    case 'cvs':
+      return '超商代碼';
+    default:
+      return method || '-';
+  }
 }
 
 export default VendorOrders;

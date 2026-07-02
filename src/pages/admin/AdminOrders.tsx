@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ShoppingBag, Filter } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate } from '../../lib/utils';
+import { logAdminAction } from '../../lib/auditLog';
 
 interface Order { id: string; user_id: string; total_amount: number; status: string; payment_status: string; payment_method: string; created_at: string; }
 
@@ -27,6 +28,7 @@ const AdminOrders: React.FC = () => {
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+    await logAdminAction('update_order_status', 'orders', orderId, { status: newStatus });
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
   };
 
