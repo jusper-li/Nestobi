@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AlertCircle, CheckCircle, ChevronDown, ChevronUp, Heart, Headphones, Package, Receipt, RotateCcw, Search, ShoppingBag, Star, Truck } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -22,6 +22,7 @@ interface PurchaseRecord {
 
 interface Order {
   id: string;
+  merchant_order_no?: string;
   total_amount: number;
   status: string;
   payment_status: string;
@@ -39,6 +40,9 @@ export default function MemberOrders() {
   const { settings } = useSiteSettings();
   const { lang } = useLanguage();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const merchantOrderNo = searchParams.get('merchantOrderNo');
+  const syncAttemptedRef = useRef<string | null>(null);
   const locale = normalizeLang(lang) as UiLang;
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
   const dateLocale = pickByLang(locale, 'zh-TW', 'en-US', 'ja-JP', 'ko-KR');
@@ -109,6 +113,7 @@ export default function MemberOrders() {
   const [reviewText, setReviewText] = useState('');
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const ORDER_SYNC_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/newebpay-order-sync`;
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -122,6 +127,34 @@ export default function MemberOrders() {
     };
     void fetchOrders();
   }, [user]);
+
+  useEffect(() => {
+    const syncPaymentStatus = async () => {
+      if (!user || !merchantOrderNo || loading) return;
+      if (syncAttemptedRef.current === merchantOrderNo) return;
+
+      const currentOrder = orders.find(order => order.merchant_order_no === merchantOrderNo);
+      if (!currentOrder || currentOrder.payment_status === 'paid') return;
+
+      syncAttemptedRef.current = merchantOrderNo;
+
+      try {
+        const response = await fetch(ORDER_SYNC_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ merchantOrderNo }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (response.ok && (result.synced || result.success)) {
+          window.location.reload();
+        }
+      } catch {
+        // Keep the current list visible if the sync request fails.
+      }
+    };
+
+    void syncPaymentStatus();
+  }, [ORDER_SYNC_URL, loading, merchantOrderNo, orders, user]);
 
   useEffect(() => {
     setDetails({});
