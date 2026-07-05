@@ -87,15 +87,13 @@ const dedupeMenuLinks = <T extends { label: string; href: string }>(
 const hasRenderableName = (value: string) => {
   const trimmed = value.trim();
   if (!trimmed) return false;
-  if (trimmed.length <= 3 && /[?�]/.test(trimmed)) return false;
-  if (/[�]/.test(trimmed)) return false;
-  const meaningfulChars = trimmed.match(/[\p{Letter}\p{Number}\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu);
-  return (meaningfulChars?.length || 0) >= 1;
+  const renderablePattern = /[\p{Letter}\p{Number}\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+  return renderablePattern.test(trimmed);
 };
 
 const getDisplayNameFallback = (email?: string | null) => {
   const localPart = (email || '').split('@')[0].trim();
-  return localPart || '會員';
+  return localPart || 'Member';
 };
 
 export default function SiteHeader() {
@@ -307,7 +305,7 @@ export default function SiteHeader() {
       <header className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-md transition-all duration-500 ${isSolidHeader ? 'bg-[#fbf6ee]/96 shadow-[0_1px_30px_rgba(61,43,31,0.08)] border-b border-[#eadfd1]/90' : 'bg-transparent'}`}>
         <nav className="container mx-auto px-5 py-2 md:py-3">
           <div className="flex items-center justify-between">
-            <Link to="/" className="group relative block flex-shrink-0" aria-label="? Sonpin 擐?">
+            <Link to="/" className="group relative block flex-shrink-0" aria-label="回到首頁">
               {settings.logo_image ? (
                 <img
                   src={settings.logo_image}
@@ -343,7 +341,7 @@ export default function SiteHeader() {
               <Link
                 to={user ? '/member/profile' : '/member'}
                 className={`relative p-2.5 transition-all duration-300 group ${isSolidHeader ? 'text-[#9f8a7b] hover:text-[#2b221d]' : 'text-white/70 hover:text-white'}`}
-                title={user ? '?銝剖?' : '?餃 / ??'}
+                title={user ? '會員中心' : '登入 / 註冊'}
               >
                 {memberInitial ? (
                   <span className="w-5 h-5 flex items-center justify-center bg-[#2b221d] text-[#fffaf2] text-xs font-medium">
@@ -471,7 +469,7 @@ export default function SiteHeader() {
               <button
                 className={`p-2 transition-all duration-200 ${isSolidHeader ? 'text-[#9f8a7b] hover:text-[#2b221d]' : 'text-white/70 hover:text-white'}`}
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                aria-label={isMenuOpen ? '???詨' : '???詨'}
+                aria-label={isMenuOpen ? '關閉選單' : '開啟選單'}
                 aria-expanded={isMenuOpen}
               >
                 <div className="relative w-5 h-5 flex items-center justify-center">
