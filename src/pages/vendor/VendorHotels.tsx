@@ -4,6 +4,7 @@ import { Hotel, Plus, Pencil, Trash2, X, AlertCircle, Star, MapPin, Phone, Mail,
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import MultiImageUpload from '../../components/MultiImageUpload';
+import { logAdminAction } from '../../lib/auditLog';
 import { sanitizeText } from '../../lib/security';
 
 interface HotelRow {
@@ -132,8 +133,10 @@ const VendorHotels: React.FC = () => {
     };
     if (editing) {
       await supabase.from('hotels').update(payload).eq('id', editing.id).eq('vendor_id', vendorId);
+      await logAdminAction('update_hotel', 'hotels', editing.id, { name: payload.name, vendor_id: vendorId });
     } else {
       await supabase.from('hotels').insert(payload);
+      await logAdminAction('create_hotel', 'hotels', null, { name: payload.name, vendor_id: vendorId });
     }
     await fetchHotels(vendorId);
     setSaving(false);
@@ -142,12 +145,14 @@ const VendorHotels: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!vendorId) return;
     await supabase.from('hotels').delete().eq('id', id).eq('vendor_id', vendorId);
+    await logAdminAction('delete_hotel', 'hotels', id, { vendor_id: vendorId });
     await fetchHotels(vendorId);
     setDeleteConfirm(null);
   };
   const toggleActive = async (h: HotelRow) => {
     if (!vendorId) return;
     await supabase.from('hotels').update({ is_active: !h.is_active, updated_at: new Date().toISOString() }).eq('id', h.id).eq('vendor_id', vendorId);
+    await logAdminAction(h.is_active ? 'disable_hotel' : 'enable_hotel', 'hotels', h.id, { vendor_id: vendorId });
     setHotels(prev => prev.map(x => x.id === h.id ? { ...x, is_active: !h.is_active } : x));
   };
   const setField = (key: string, value: unknown) => setForm(f => ({ ...f, [key]: value }));
@@ -202,6 +207,7 @@ const VendorHotels: React.FC = () => {
       updated_at: new Date().toISOString()
     };
     await supabase.from('hotels').insert(payload);
+    await logAdminAction('create_hotel', 'hotels', null, { name: payload.name, vendor_id: vendorId, source: 'scraper' });
     await fetchHotels(vendorId);
     setScraperSaving(false);
     setShowScraper(false);
@@ -282,6 +288,7 @@ const VendorHotels: React.FC = () => {
       updated_at: new Date().toISOString()
     };
     await supabase.from('hotels').insert(payload);
+    await logAdminAction('create_hotel', 'hotels', null, { name: payload.name, vendor_id: vendorId, source: 'parser' });
     await fetchHotels(vendorId);
     setParserSaving(false);
     setShowParser(false);

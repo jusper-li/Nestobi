@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { logAdminAction } from '../../lib/auditLog';
 import { sanitizeText } from '../../lib/security';
 
 interface StaffMember {
@@ -68,8 +69,10 @@ const StaffModal: React.FC<StaffModalProps> = ({ open, editItem, vendorId, onClo
     };
     if (editItem) {
       await supabase.from('vendor_staff').update(payload).eq('id', editItem.id).eq('vendor_id', vendorId);
+      await logAdminAction('update_vendor_staff', 'vendor_staff', editItem.id, { name: payload.name, role: payload.role, vendor_id: vendorId });
     } else {
       await supabase.from('vendor_staff').insert(payload);
+      await logAdminAction('create_vendor_staff', 'vendor_staff', null, { name: payload.name, role: payload.role, vendor_id: vendorId });
     }
     setSaving(false);
     onSaved();
@@ -191,6 +194,7 @@ const VendorStaff: React.FC = () => {
     if (!vendorId || !confirm('確定要刪除此人員資料？')) return;
     setDeleting(id);
     await supabase.from('vendor_staff').delete().eq('id', id).eq('vendor_id', vendorId);
+    await logAdminAction('delete_vendor_staff', 'vendor_staff', id, { vendor_id: vendorId });
     setStaff(prev => prev.filter(s => s.id !== id));
     setDeleting(null);
   };
@@ -198,6 +202,7 @@ const VendorStaff: React.FC = () => {
   const toggleActive = async (member: StaffMember) => {
     if (!vendorId) return;
     await supabase.from('vendor_staff').update({ is_active: !member.is_active, updated_at: new Date().toISOString() }).eq('id', member.id).eq('vendor_id', vendorId);
+    await logAdminAction(member.is_active ? 'disable_vendor_staff' : 'enable_vendor_staff', 'vendor_staff', member.id, { vendor_id: vendorId, name: member.name });
     setStaff(prev => prev.map(s => s.id === member.id ? { ...s, is_active: !s.is_active } : s));
   };
 

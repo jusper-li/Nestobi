@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency } from '../../lib/utils';
 import MultiImageUpload from '../../components/MultiImageUpload';
+import { logAdminAction } from '../../lib/auditLog';
 import { sanitizeText } from '../../lib/security';
 
 interface Room {
@@ -199,8 +200,10 @@ const VendorRooms: React.FC = () => {
     };
     if (editing) {
       await supabase.from('tbl_rooms').update(payload).eq('id', editing.id).eq('vendor_id', vendorId);
+      await logAdminAction('update_room', 'tbl_rooms', editing.id, { name: payload.name, vendor_id: vendorId, hotel_id: selectedHotelId });
     } else {
       await supabase.from('tbl_rooms').insert(payload);
+      await logAdminAction('create_room', 'tbl_rooms', null, { name: payload.name, vendor_id: vendorId, hotel_id: selectedHotelId });
     }
     await fetchRooms(vendorId, selectedHotelId);
     setSaving(false);
@@ -209,6 +212,7 @@ const VendorRooms: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!vendorId || !confirm('確定要刪除此房間嗎？')) return;
     await supabase.from('tbl_rooms').delete().eq('id', id).eq('vendor_id', vendorId);
+    await logAdminAction('delete_room', 'tbl_rooms', id, { vendor_id: vendorId, hotel_id: selectedHotelId });
     await fetchRooms(vendorId, selectedHotelId);
   };
   const addAmenity = () => {
@@ -279,6 +283,7 @@ const VendorRooms: React.FC = () => {
       };
     });
     await supabase.from('tbl_rooms').insert(payload);
+    await logAdminAction('bulk_import_rooms', 'tbl_rooms', null, { count: toInsert.length, vendor_id: vendorId, hotel_id: selectedHotelId, source: 'scraper' });
     await fetchRooms(vendorId, selectedHotelId);
     setScraperBulkSaving(false);
     setShowScraper(false);
@@ -353,6 +358,7 @@ const VendorRooms: React.FC = () => {
       image_url: images[0] || sanitizeText(parserForm.image_url || '', 1000),
       updated_at: new Date().toISOString()
     });
+    await logAdminAction('create_room', 'tbl_rooms', null, { name: parserForm.name, vendor_id: vendorId, hotel_id: selectedHotelId, source: 'parser' });
     await fetchRooms(vendorId, selectedHotelId);
     setParserSaving(false);
     setShowParser(false);

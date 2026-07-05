@@ -165,6 +165,11 @@ export default function SuperAdminBlogCategories() {
       setError(result.error.message);
     } else {
       setMessage(editingId ? '文章分類已更新。' : '文章分類已新增。');
+      await logAdminAction(editingId ? 'update_blog_category' : 'create_blog_category', 'blog_categories', editingId, {
+        name: payload.name,
+        slug: payload.slug,
+        parent_id: payload.parent_id,
+      });
       setEditingId(null);
       setForm(emptyForm);
       await loadData();
@@ -184,6 +189,10 @@ export default function SuperAdminBlogCategories() {
       return;
     }
 
+    await logAdminAction(category.is_active ? 'disable_blog_category' : 'enable_blog_category', 'blog_categories', category.id, {
+      name: category.name,
+      is_active: !category.is_active,
+    });
     setCategories(items => items.map(item => item.id === category.id ? { ...item, is_active: !item.is_active } : item));
   };
 

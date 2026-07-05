@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Terminal, Send, CheckCircle, AlertCircle, Loader, ChevronDown, ChevronUp, Tag, Building2, BedDouble, ShoppingBag, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { logAdminAction } from '../../lib/auditLog';
 
 interface Category { id: string; name: string; slug: string; }
 interface Vendor { id: string; name: string; }
@@ -167,6 +168,7 @@ const SuperAdminListingCommand: React.FC = () => {
         };
         const { error: dbErr } = await supabase.from('products').insert(payload);
         if (dbErr) throw new Error(dbErr.message);
+        await logAdminAction('create_product', 'products', null, { name: payload.name, vendor_id: payload.vendor_id, source: 'listing_command' });
         setSavedMsg('商品已成功上架！');
       } else if (parsed.intent === 'hotel') {
         const payload: Record<string, any> = {
@@ -190,6 +192,7 @@ const SuperAdminListingCommand: React.FC = () => {
         };
         const { error: dbErr } = await supabase.from('hotels').insert(payload);
         if (dbErr) throw new Error(dbErr.message);
+        await logAdminAction('create_hotel', 'hotels', null, { name: payload.name, vendor_id: payload.vendor_id, source: 'listing_command' });
         setSavedMsg('飯店已成功上架！');
       } else if (parsed.intent === 'room') {
         const payload: Record<string, any> = {
@@ -211,6 +214,7 @@ const SuperAdminListingCommand: React.FC = () => {
         };
         const { error: dbErr } = await supabase.from('tbl_rooms').insert(payload);
         if (dbErr) throw new Error(dbErr.message);
+        await logAdminAction('create_room', 'tbl_rooms', null, { name: payload.name, vendor_id: payload.vendor_id, hotel_id: payload.hotel_id, source: 'listing_command' });
         setSavedMsg('房型已成功上架！');
       }
 

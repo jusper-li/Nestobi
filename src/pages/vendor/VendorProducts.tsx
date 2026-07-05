@@ -21,6 +21,7 @@ import HtmlEditor from '../../components/HtmlEditor';
 import MultiImageUpload from '../../components/MultiImageUpload';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { logAdminAction } from '../../lib/auditLog';
 import { getCategoryOptionLabel, getCategoryPath, sortCategoriesForTree } from '../../lib/categoryTree';
 import { sanitizeHtml, sanitizeText } from '../../lib/security';
 import { formatCurrency } from '../../lib/utils';
@@ -278,11 +279,21 @@ export default function VendorProducts() {
 
         if (existing?.id) {
           await supabase.from('products').update(payload).eq('id', existing.id).eq('vendor_id', vendorId);
+          await logAdminAction('update_product', 'products', existing.id, {
+            name: payload.name,
+            vendor_id: vendorId,
+            source: 'bulk_import',
+          });
           continue;
         }
       }
 
       await supabase.from('products').insert(payload);
+      await logAdminAction('create_product', 'products', null, {
+        name: payload.name,
+        vendor_id: vendorId,
+        source: 'bulk_import',
+      });
     }
 
     await fetchProducts(vendorId);
@@ -293,8 +304,13 @@ export default function VendorProducts() {
     setSaving(true);
 
     const payload = toProductPayload(form, vendorId);
-    if (editing) await supabase.from('products').update(payload).eq('id', editing.id).eq('vendor_id', vendorId);
-    else await supabase.from('products').insert(payload);
+    if (editing) {
+      await supabase.from('products').update(payload).eq('id', editing.id).eq('vendor_id', vendorId);
+      await logAdminAction('update_product', 'products', editing.id, { name: payload.name, vendor_id: vendorId });
+    } else {
+      await supabase.from('products').insert(payload);
+      await logAdminAction('create_product', 'products', null, { name: payload.name, vendor_id: vendorId });
+    }
 
     await fetchProducts(vendorId);
     setSaving(false);
@@ -304,6 +320,7 @@ export default function VendorProducts() {
   const handleDelete = async (id: string) => {
     if (!vendorId || !confirm('確定要刪除這項商品嗎？')) return;
     await supabase.from('products').delete().eq('id', id).eq('vendor_id', vendorId);
+    await logAdminAction('delete_product', 'products', id, { vendor_id: vendorId });
     await fetchProducts(vendorId);
   };
 
@@ -360,6 +377,11 @@ export default function VendorProducts() {
     setScraperSaving(true);
     try {
       await saveForms(selected);
+      await logAdminAction('bulk_import_products', 'products', null, {
+        count: selected.length,
+        vendor_id: vendorId,
+        source: 'scraper',
+      });
       setShowScraper(false);
     } finally {
       setScraperSaving(false);

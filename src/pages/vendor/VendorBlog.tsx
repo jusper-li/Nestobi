@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { FileText, Plus, Pencil, Trash2, Eye, EyeOff, ExternalLink, Search, Tag, Calendar } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { logAdminAction } from '../../lib/auditLog';
 
 interface BlogPost {
   id: string;
@@ -59,7 +60,14 @@ const VendorBlog: React.FC = () => {
       update.published_at = new Date().toISOString();
     }
     const { error } = await supabase.from('blog_posts').update(update).eq('id', post.id).eq('vendor_id', vendorId);
-    if (!error) setPosts(ps => ps.map(p => p.id === post.id ? { ...p, status: newStatus, published_at: update.published_at as string || p.published_at } : p));
+    if (!error) {
+      setPosts(ps => ps.map(p => p.id === post.id ? { ...p, status: newStatus, published_at: update.published_at as string || p.published_at } : p));
+      await logAdminAction(newStatus === 'published' ? 'publish_blog_post' : 'unpublish_blog_post', 'blog_posts', post.id, {
+        status: newStatus,
+        title: post.title,
+        vendor_id: vendorId,
+      });
+    }
     setToggling(null);
   };
 
@@ -67,7 +75,10 @@ const VendorBlog: React.FC = () => {
     if (!vendorId || !confirm('確定要刪除此文章？此操作無法復原。')) return;
     setDeleting(id);
     const { error } = await supabase.from('blog_posts').delete().eq('id', id).eq('vendor_id', vendorId);
-    if (!error) setPosts(ps => ps.filter(p => p.id !== id));
+    if (!error) {
+      setPosts(ps => ps.filter(p => p.id !== id));
+      await logAdminAction('delete_blog_post', 'blog_posts', id, { vendor_id: vendorId });
+    }
     setDeleting(null);
   };
 

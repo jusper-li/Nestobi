@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, Save, ArrowLeft, X, Plus, ExternalLink, CheckCircle, AlertCircle, Upload, Sparkles, Link, ChevronDown, ChevronUp, Tag } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { logAdminAction } from '../../lib/auditLog';
 import HtmlEditor from '../../components/HtmlEditor';
 import { sanitizeHtml, sanitizeText } from '../../lib/security';
 
@@ -222,6 +223,12 @@ const VendorBlogForm: React.FC = () => {
     if (error) {
       setSaveStatus('error');
     } else {
+      await logAdminAction(isEdit ? 'update_blog_post' : 'create_blog_post', 'blog_posts', isEdit ? id : null, {
+        title: payload.title,
+        slug: payload.slug,
+        status: payload.status,
+        vendor_id: vendorId,
+      });
       setSaveStatus('success');
       if (statusOverride) setForm(f => ({ ...f, status: statusOverride }));
       setTimeout(() => { setSaveStatus('idle'); if (!isEdit) navigate('/vendor/blog'); }, 1200);

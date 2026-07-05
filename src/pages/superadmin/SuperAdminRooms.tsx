@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BedDouble, MapPin, Search, Store, Pencil, Plus, Trash2, AlertTriangle, Building2, Eye } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { logAdminAction } from '../../lib/auditLog';
 import { formatCurrency } from '../../lib/utils';
 
 interface Room {
@@ -59,6 +60,7 @@ const SuperAdminRooms: React.FC = () => {
     if (!deleteTarget) return;
     setDeleting(true);
     await supabase.from('tbl_rooms').delete().eq('id', deleteTarget.id);
+    await logAdminAction('delete_room', 'tbl_rooms', deleteTarget.id, { name: deleteTarget.name, vendor_id: deleteTarget.vendor_id });
     setDeleteTarget(null);
     setDeleting(false);
     await loadRooms();

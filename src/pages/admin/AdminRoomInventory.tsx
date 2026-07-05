@@ -7,6 +7,7 @@ import {
   Layers, ChevronDown, Minus,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { logAdminAction } from '../../lib/auditLog';
 
 type Category = '3c' | 'cleaning' | 'bedding' | 'furniture';
 type Status = '檢查' | '確認' | '遺失' | '損壞' | '清潔中' | '待補充' | '補充完畢';
@@ -123,6 +124,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ open, categoryKey, roomId
       updated_at: new Date().toISOString(),
     }));
     const { data } = await supabase.from('room_inventory_items').insert(rows).select();
+    await logAdminAction('create_room_inventory_batch', 'room_inventory_items', roomId, { count: rows.length, categoryKey });
     if (data) onSaved(data as InventoryItem[]);
     setSaving(false);
     onClose();
@@ -247,6 +249,7 @@ const EditModal: React.FC<EditModalProps> = ({ open, item, onClose, onSaved }) =
       .update({ ...form, name: form.name.trim(), updated_at: new Date().toISOString() })
       .eq('id', item.id).select().maybeSingle();
     if (data) onSaved(data as InventoryItem);
+    await logAdminAction('update_room_inventory_item', 'room_inventory_items', item.id, { room_id: item.room_id, name: form.name.trim() });
     setSaving(false);
     onClose();
   };
@@ -329,6 +332,7 @@ const StatusDropdown: React.FC<{ item: InventoryItem; onUpdate: (item: Inventory
       .update({ status, updated_at: new Date().toISOString() })
       .eq('id', item.id).select().maybeSingle();
     if (data) onUpdate(data as InventoryItem);
+    await logAdminAction('update_room_inventory_status', 'room_inventory_items', item.id, { room_id: item.room_id, status });
   };
 
   return (
@@ -386,6 +390,7 @@ const AdminRoomInventory: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!confirm('確定要刪除此設備紀錄？')) return;
     await supabase.from('room_inventory_items').delete().eq('id', id);
+    await logAdminAction('delete_room_inventory_item', 'room_inventory_items', id);
     setItems(prev => prev.filter(i => i.id !== id));
   };
 

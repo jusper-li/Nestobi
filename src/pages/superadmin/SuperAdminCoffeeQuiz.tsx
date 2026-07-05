@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, Check, Coffee, Plus, Save, Trash2, Upload } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { logAdminAction } from '../../lib/auditLog';
 
 type OptionKey = 'A' | 'B' | 'C' | 'D';
 
@@ -104,6 +105,7 @@ export default function SuperAdminCoffeeQuiz() {
       setMsg(`建立失敗：${error?.message || 'unknown error'}`);
       return;
     }
+    const questionId = data.id;
 
     const rows = (Object.keys(formOptions) as OptionKey[]).map((key, index) => ({
       question_id: data.id,
@@ -119,6 +121,11 @@ export default function SuperAdminCoffeeQuiz() {
       return;
     }
 
+    await logAdminAction('create_coffee_quiz_question', 'coffee_quiz_questions', questionId, {
+      question_text: questionText.trim(),
+      display_order: questionOrder,
+    });
+
     setQuestionText('');
     setQuestionOrder((v) => v + 1);
     setQuestionImage('');
@@ -130,15 +137,18 @@ export default function SuperAdminCoffeeQuiz() {
 
   const updateQuestionOption = async (id: string, patch: Partial<OptionRow>) => {
     await supabase.from('coffee_quiz_question_options').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id);
+    await logAdminAction('update_coffee_quiz_option', 'coffee_quiz_question_options', id, patch as Record<string, unknown>);
   };
 
   const updateQuestion = async (id: string, patch: Partial<QuestionRow>) => {
     await supabase.from('coffee_quiz_questions').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id);
+    await logAdminAction('update_coffee_quiz_question', 'coffee_quiz_questions', id, patch as Record<string, unknown>);
   };
 
   const deleteQuestion = async (id: string) => {
     if (!window.confirm('確定刪除這題？')) return;
     await supabase.from('coffee_quiz_questions').delete().eq('id', id);
+    await logAdminAction('delete_coffee_quiz_question', 'coffee_quiz_questions', id);
     await loadAll();
   };
 

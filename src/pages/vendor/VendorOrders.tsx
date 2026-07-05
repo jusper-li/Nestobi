@@ -21,6 +21,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { refundOrder } from '../../lib/orderRefund';
+import { logAdminAction } from '../../lib/auditLog';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, formatDateTime, getStatusColor, getStatusLabel } from '../../lib/utils';
 
@@ -415,6 +416,7 @@ const VendorOrders: React.FC = () => {
     setUpdating(`booking:${bookingId}`);
     const { error } = await supabase.from('tbl_bookings').update({ status, updated_at: new Date().toISOString() }).eq('id', bookingId);
     if (error) setMessage(labels.updateFailed);
+    else await logAdminAction('update_booking_status', 'tbl_bookings', bookingId, { status, vendor_id: vendorId });
     await refresh();
     setUpdating(null);
   };
@@ -424,6 +426,11 @@ const VendorOrders: React.FC = () => {
     try {
       if (status === 'cancelled' && item.orders?.payment_status === 'paid') {
         await refundOrder(item.order_id);
+        await logAdminAction('refund_product_order', 'purchase_records', item.id, {
+          order_id: item.order_id,
+          vendor_id: vendorId,
+          status,
+        });
         await refresh();
         setMessage('');
         return;
@@ -431,6 +438,7 @@ const VendorOrders: React.FC = () => {
 
       const { error } = await supabase.from('purchase_records').update({ status }).eq('id', item.id);
       if (error) throw error;
+      await logAdminAction('update_product_order_status', 'purchase_records', item.id, { order_id: item.order_id, status, vendor_id: vendorId });
       await refresh();
       setMessage('');
     } catch (error) {
