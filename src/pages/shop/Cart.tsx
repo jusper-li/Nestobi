@@ -6,6 +6,7 @@ import Navigation from '../../components/Navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { trackBeginCheckout, trackPurchase } from '../../lib/analytics';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { createShopCheckout, submitNewebPayMpgForm, type NewebPayPaymentMethod } from '../../lib/shopCheckout';
@@ -151,6 +152,16 @@ export default function Cart() {
     setCheckoutError('');
 
     try {
+      trackBeginCheckout({
+        value: subtotal,
+        items: validCartItems.map(item => ({
+          item_id: item.product_id,
+          item_name: item.products.name,
+          price: item.products.price,
+          quantity: item.quantity,
+        })),
+      });
+
       const checkout = await createShopCheckout(
         pointDiscount,
         paymentChoice === 'POINTS' ? 'CREDIT' : paymentChoice,
@@ -177,6 +188,16 @@ export default function Cart() {
       }
 
       if (checkout.mode === 'points') {
+        trackPurchase({
+          transaction_id: checkout.orderId,
+          value: payableSubtotal,
+          items: validCartItems.map(item => ({
+            item_id: item.product_id,
+            item_name: item.products.name,
+            price: item.products.price,
+            quantity: item.quantity,
+          })),
+        });
         setSuccess(true);
         return;
       }

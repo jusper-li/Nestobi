@@ -10,6 +10,7 @@ import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
 import { useSiteSettings } from '../../contexts/SiteSettingsContext';
+import { trackPurchase } from '../../lib/analytics';
 
 interface PurchaseRecord {
   id: string;
@@ -114,6 +115,7 @@ export default function MemberOrders() {
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const ORDER_SYNC_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/newebpay-order-sync`;
+  const trackedPurchaseRef = useRef<string | null>(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -155,6 +157,37 @@ export default function MemberOrders() {
 
     void syncPaymentStatus();
   }, [ORDER_SYNC_URL, loading, merchantOrderNo, orders, user]);
+
+  useEffect(() => {
+    const trackCompletedPurchase = async () => {
+      if (!user || !merchantOrderNo || loading) return;
+      if (trackedPurchaseRef.current === merchantOrderNo) return;
+
+      const currentOrder = orders.find(order => order.merchant_order_no === merchantOrderNo);
+      if (!currentOrder || currentOrder.payment_status !== 'paid') return;
+
+      trackedPurchaseRef.current = merchantOrderNo;
+
+      const { data } = await supabase
+        .from('purchase_records')
+        .select('id, quantity, unit_price, total_price, products(id, name)')
+        .eq('order_id', currentOrder.id);
+
+      const records = (data || []) as PurchaseRecord[];
+      trackPurchase({
+        transaction_id: currentOrder.merchant_order_no || currentOrder.id,
+        value: Number(currentOrder.total_amount || 0),
+        items: records.map(record => ({
+          item_id: record.products?.id || record.id,
+          item_name: record.products?.name || t.unknown,
+          price: Number(record.unit_price || 0),
+          quantity: Number(record.quantity || 1),
+        })),
+      });
+    };
+
+    void trackCompletedPurchase();
+  }, [loading, merchantOrderNo, orders, t.unknown, user]);
 
   useEffect(() => {
     setDetails({});

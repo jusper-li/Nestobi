@@ -14,6 +14,27 @@ function json(body: unknown, status = 200) {
   });
 }
 
+async function sendNotificationEmail(subject: string, message: string, recipientKind: "member" | "system" = "member") {
+  try {
+    await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "notification",
+        to: "",
+        data: {
+          subject,
+          message,
+          lang: "zh-TW",
+          recipientKind,
+        },
+      }),
+    });
+  } catch (error) {
+    console.warn("[public-register-user] Failed to send notification email:", error);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -63,6 +84,16 @@ Deno.serve(async (req) => {
         { onConflict: "user_id" },
       ),
     ]);
+
+    await sendNotificationEmail(
+      `新會員註冊：${safeEmail}`,
+      [
+        `Email：${safeEmail}`,
+        `顯示名稱：${safeDisplayName || "-"}`,
+        `User ID：${created.user.id}`,
+      ].join("\n"),
+      "member",
+    );
 
     return json({ success: true, userId: created.user.id, email: safeEmail });
   } catch (err) {

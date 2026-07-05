@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Globe, Save, Eye, Image, Phone, Share2,
+  Globe, Save, Eye, Image, Phone, Share2, Mail, BarChart3,
   Search, Bot, FileText, Check, Upload, Loader2
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -44,6 +44,13 @@ const FIELD_GROUPS = [
     ],
   },
   {
+    title: '分析追蹤',
+    icon: BarChart3,
+    fields: [
+      { key: 'ga_measurement_id', label: 'Google Analytics Measurement ID', placeholder: 'G-9JDDRD8P1X', type: 'text' },
+    ],
+  },
+  {
     title: '聯絡資訊',
     icon: Phone,
     fields: [
@@ -52,6 +59,60 @@ const FIELD_GROUPS = [
       { key: 'company_no', label: '統一編號', placeholder: '83122492', type: 'text' },
       { key: 'company_name', label: '營業人名稱', placeholder: '若水金禾餐飲股份有限公司', type: 'text' },
       { key: 'headquarters_address', label: '總部地址', placeholder: '台北市信義區忠孝東路四段553巷22弄4-1號', type: 'text' },
+    ],
+  },
+  {
+    title: '郵件通知',
+    icon: Mail,
+    fields: [
+      {
+        key: 'support_notification_emails',
+        label: '客服通知收件人',
+        placeholder: 'service@dlalshop.com, support@nestobi.com',
+        type: 'textarea',
+      },
+      {
+        key: 'booking_notification_emails',
+        label: '訂房通知收件人',
+        placeholder: 'booking@nestobi.com',
+        type: 'textarea',
+      },
+      {
+        key: 'order_notification_emails',
+        label: '訂單通知收件人',
+        placeholder: 'orders@nestobi.com, finance@nestobi.com',
+        type: 'textarea',
+      },
+      {
+        key: 'system_notification_emails',
+        label: '系統通知收件人',
+        placeholder: 'ops@nestobi.com',
+        type: 'textarea',
+      },
+      {
+        key: 'payment_failed_notification_emails',
+        label: '付款失敗通知收件人',
+        placeholder: 'finance@nestobi.com',
+        type: 'textarea',
+      },
+      {
+        key: 'refund_notification_emails',
+        label: '退款通知收件人',
+        placeholder: 'finance@nestobi.com, service@nestobi.com',
+        type: 'textarea',
+      },
+      {
+        key: 'member_notification_emails',
+        label: '會員通知收件人',
+        placeholder: 'crm@nestobi.com',
+        type: 'textarea',
+      },
+      {
+        key: 'alert_notification_emails',
+        label: '例外告警收件人',
+        placeholder: 'ops@nestobi.com, dev@nestobi.com',
+        type: 'textarea',
+      },
     ],
   },
   {
@@ -325,10 +386,19 @@ const SuperAdminSiteSettings: React.FC = () => {
               { ok: !!form.og_image_url, label: 'OG 社群分享圖片已設定' },
               { ok: form.meta_keywords.split(',').filter(Boolean).length >= 3, label: '至少 3 個 Meta Keywords' },
                             { ok: !!form.contact_phone || !!form.contact_email, label: '至少一種聯絡方式' },
+              { ok: !!form.support_notification_emails, label: '客服通知收件人已設定' },
+              { ok: !!form.booking_notification_emails, label: '訂房通知收件人已設定' },
+              { ok: !!form.order_notification_emails, label: '訂單通知收件人已設定' },
+              { ok: !!form.system_notification_emails, label: '系統通知收件人已設定' },
+              { ok: !!form.payment_failed_notification_emails, label: '付款失敗通知已設定' },
+              { ok: !!form.refund_notification_emails, label: '退款通知已設定' },
+              { ok: !!form.member_notification_emails, label: '會員通知已設定' },
+              { ok: !!form.alert_notification_emails, label: '例外告警已設定' },
               { ok: !!form.company_no, label: '統一編號已填寫' },
               { ok: !!form.company_name, label: '營業人名稱已填寫' },
               { ok: !!form.headquarters_address, label: '總部地址已填寫' },
               { ok: !!form.ai_site_summary, label: 'AI 搜尋摘要已填寫' },
+              { ok: !!form.ga_measurement_id, label: 'Google Analytics Measurement ID' },
                             { ok: !!form.social_facebook || !!form.social_instagram || !!form.social_line || !!form.social_youtube || !!form.social_x || !!form.social_tiktok, label: '至少一種社群連結' },
               { ok: /^#[0-9A-Fa-f]{6}$/.test(form.theme_color), label: '有效的主題色彩 (hex)' },
             ].map(({ ok, label }) => (

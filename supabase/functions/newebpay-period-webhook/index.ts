@@ -105,6 +105,7 @@ async function sendOrderEmail(
   lang: string,
   merchantOrderNo?: string,
   paymentStatus?: string,
+  recipientKind?: "customer" | "vendor" | "support" | "booking" | "order" | "system",
 ) {
   try {
     await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
@@ -124,11 +125,33 @@ async function sendOrderEmail(
           lang,
           merchantOrderNo,
           paymentStatus,
+          recipientKind: recipientKind || "order",
         },
       }),
     });
   } catch (error) {
     console.warn("[newebpay-period-webhook] Failed to send confirmation email:", error);
+  }
+}
+
+async function sendNotificationEmail(subject: string, message: string, recipientKind: "payment-failed" | "alert" = "payment-failed") {
+  try {
+    await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "notification",
+        to: "",
+        data: {
+          subject,
+          message,
+          lang: "zh-TW",
+          recipientKind,
+        },
+      }),
+    });
+  } catch (error) {
+    console.warn("[newebpay-period-webhook] Failed to send notification email:", error);
   }
 }
 
@@ -367,6 +390,7 @@ Deno.serve(async (req: Request) => {
           language,
           subscription.merchant_order_no,
           "paid",
+          "vendor",
         );
       }
 
@@ -401,6 +425,18 @@ Deno.serve(async (req: Request) => {
         updated_at: now.toISOString(),
       })
       .eq("id", subscription.id);
+
+    await sendNotificationEmail(
+      `定期便付款失敗：${subscription.merchant_order_no}`,
+      [
+        `訂閱編號：${subscription.id}`,
+        `訂單編號：${subscription.merchant_order_no}`,
+        `會員 ID：${subscription.user_id}`,
+        `商品 ID：${subscription.product_id}`,
+        `狀態：付款失敗`,
+      ].join("\n"),
+      "payment-failed",
+    );
 
     return okResponse();
   } catch (error) {

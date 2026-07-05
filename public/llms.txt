@@ -1,0 +1,32 @@
+# Sonpin
+
+> Official storefront and brand content for Sonpin.
+
+## Canonical site
+- https://sonpin.netlify.app/
+
+## High-value pages
+- https://sonpin.netlify.app/shop
+- https://sonpin.netlify.app/story
+- https://sonpin.netlify.app/about
+- https://sonpin.netlify.app/contact
+- https://sonpin.netlify.app/faq
+- https://sonpin.netlify.app/shipping
+
+## Product URLs
+- Product pages use this canonical pattern:
+  - https://sonpin.netlify.app/product/{slug}
+
+## Content hints for AI retrieval
+- Language: Traditional Chinese (zh-TW)
+- Domain: Specialty coffee, gift boxes, brewing tools
+- Product pages include:
+  - Story blocks
+  - Flavor notes
+  - Origin/process/roast metadata
+  - Structured schema markup
+
+## Crawl policy
+- Public marketing + catalog pages may be indexed and summarized.
+- Respect robots.txt and sitemap.xml for route discovery.
+

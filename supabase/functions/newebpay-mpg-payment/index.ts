@@ -161,6 +161,7 @@ async function sendOrderEmail(
           lang,
           merchantOrderNo,
           paymentStatus,
+          recipientKind: "order",
         },
       }),
     });

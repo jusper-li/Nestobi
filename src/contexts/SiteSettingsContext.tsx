@@ -11,6 +11,15 @@ export interface SiteSettings {
   meta_keywords: string;
   contact_phone: string;
   contact_email: string;
+  support_notification_emails: string;
+  booking_notification_emails: string;
+  order_notification_emails: string;
+  system_notification_emails: string;
+  payment_failed_notification_emails: string;
+  refund_notification_emails: string;
+  member_notification_emails: string;
+  alert_notification_emails: string;
+  ga_measurement_id: string;
   company_no: string;
   company_name: string;
   headquarters_address: string;
@@ -37,6 +46,15 @@ const DEFAULTS: SiteSettings = {
     'Nestobi, 根本在旅行, 住宿, 商品, 文章, 門市, AI客服, AI導遊, AI尋豆師, 旅遊平台',
   contact_phone: '02-27565663',
   contact_email: 'service@dlalshop.com',
+  support_notification_emails: 'service@dlalshop.com',
+  booking_notification_emails: 'service@dlalshop.com',
+  order_notification_emails: 'service@dlalshop.com',
+  system_notification_emails: 'service@dlalshop.com',
+  payment_failed_notification_emails: 'service@dlalshop.com',
+  refund_notification_emails: 'service@dlalshop.com',
+  member_notification_emails: 'service@dlalshop.com',
+  alert_notification_emails: 'service@dlalshop.com',
+  ga_measurement_id: 'G-9JDDRD8P1X',
   company_no: '83122492',
   company_name: '若水金禾餐飲股份有限公司',
   headquarters_address: '台北市信義區忠孝東路四段553巷22弄4-1號',

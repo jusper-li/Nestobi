@@ -36,6 +36,32 @@ function createServiceClient() {
   );
 }
 
+async function sendNotificationEmail(
+  subject: string,
+  message: string,
+  lang = "zh-TW",
+  recipientKind: "system" | "refund" | "payment-failed" | "alert" = "refund",
+) {
+  try {
+    await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "notification",
+        to: "",
+        data: {
+          subject,
+          message,
+          lang,
+          recipientKind,
+        },
+      }),
+    });
+  } catch (error) {
+    console.warn("[newebpay-order-refund] Failed to send notification email:", error);
+  }
+}
+
 async function isElevatedUser(supabase: ReturnType<typeof createServiceClient>, userId: string) {
   const { data, error } = await supabase
     .from("tbl_user_auth")
@@ -292,6 +318,20 @@ Deno.serve(async (req: Request) => {
     if (recordUpdateError) {
       return jsonResponse({ success: false, error: recordUpdateError.message }, 500);
     }
+
+    await sendNotificationEmail(
+      `訂單退款完成：${order.merchant_order_no}`,
+      [
+        `訂單編號：${order.merchant_order_no}`,
+        `訂單 ID：${order.id}`,
+        `付款狀態：${nextPaymentStatus}`,
+        `退款金額：NT$${orderAmount.toLocaleString("en-US")}`,
+        `點數退回：${pointsDiscount}`,
+        `退款方式：${usesNewebPay ? "NewebPay Credit Card Close" : "Points only"}`,
+      ].join("\n"),
+      "zh-TW",
+      "refund",
+    );
 
     return jsonResponse({
       success: true,

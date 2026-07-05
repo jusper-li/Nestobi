@@ -1,5 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import {
+  dedupeEmails,
+  getNotificationEmailSettings,
+  normalizeEmailRoute,
+  parseEmailList,
+  resolveRouteRecipients,
+  type EmailRoute,
+} from "../_shared/email-routing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,6 +33,8 @@ type MailCopy = {
   orderBody: string;
   contactTitle: string;
   contactBody: string;
+  notificationTitle: string;
+  notificationBody: string;
   total: string;
   subtotal: string;
   discount: string;
@@ -167,6 +177,18 @@ function copy(locale: Locale): MailCopy {
       en: "You received a new contact message:",
       ja: "新しいお問い合わせメッセージがあります：",
       ko: "새 문의 메시지가 도착했습니다:",
+    }),
+    notificationTitle: text(locale, {
+      "zh-TW": "系統通知",
+      en: "System notification",
+      ja: "システム通知",
+      ko: "시스템 알림",
+    }),
+    notificationBody: text(locale, {
+      "zh-TW": "您收到一則新的系統通知：",
+      en: "You received a new system notification:",
+      ja: "新しいシステム通知を受け取りました：",
+      ko: "새 시스템 알림이 도착했습니다:",
     }),
     total: text(locale, {
       "zh-TW": "總金額",
@@ -607,6 +629,19 @@ function contactEmail(locale: Locale, data: Record<string, unknown>) {
   );
 }
 
+function notificationEmail(locale: Locale, data: Record<string, unknown>) {
+  const c = copy(locale);
+  const subject = String(data.subject || c.notificationTitle);
+  const message = String(data.message || data.body || "");
+  return wrapper(
+    locale,
+    subject,
+    `<h1 style="font-size:22px;margin:0 0 12px;">${escapeHtml(subject)}</h1>
+     <p style="font-size:15px;line-height:1.7;color:#5f5041;margin:0 0 18px;">${escapeHtml(c.notificationBody)}</p>
+     <div style="background:#f8f4ee;border-radius:12px;padding:16px;white-space:pre-wrap;line-height:1.7;">${escapeHtml(message)}</div>`,
+  );
+}
+
 function row(label: string, value: unknown, locale: Locale, color = "#24180d", strong = false) {
   return `<tr>
     <td style="padding:7px 0;color:#806d58;">${escapeHtml(label)}</td>
@@ -623,7 +658,31 @@ Deno.serve(async (req) => {
     const locale = normalizeLocale((data as Record<string, unknown>).lang);
     let subject = "";
     let html = "";
-    let toAddress = String(to || "");
+    const recipientKind = normalizeEmailRoute((data as Record<string, unknown>).recipientKind);
+    const replyTo = String((data as Record<string, unknown>).replyTo || (data as Record<string, unknown>).email || "").trim();
+    const routing = await getNotificationEmailSettings();
+    const explicitRecipients = parseEmailList(to);
+    const defaultRoute: EmailRoute =
+      type === "contact"
+        ? "support"
+        : type === "booking-confirmation"
+          ? "booking"
+          : type === "order-confirmation"
+            ? "order"
+            : type === "notification"
+              ? recipientKind || "system"
+              : "customer";
+    const route = recipientKind || defaultRoute;
+    const routeRecipients =
+      route === "customer" || route === "vendor"
+        ? []
+        : resolveRouteRecipients(route, routing, routing.contact_email);
+    let toRecipients = explicitRecipients.length > 0 ? explicitRecipients : routeRecipients;
+    const primaryRecipient = explicitRecipients[0] || String(to || "").trim();
+
+    if (type === "reset-password" && !primaryRecipient) {
+      return json({ error: "Missing recipient" }, 400);
+    }
 
     if (type === "verification") {
       const c = copy(locale);
@@ -637,7 +696,7 @@ Deno.serve(async (req) => {
       const token = `${crypto.randomUUID()}${crypto.randomUUID().replaceAll("-", "")}`;
       const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
       const supabase = createClient(supabaseUrl, serviceRoleKey);
-      await supabase.from("password_reset_tokens").insert({ email: toAddress, token, expires_at: expiresAt });
+      await supabase.from("password_reset_tokens").insert({ email: primaryRecipient, token, expires_at: expiresAt });
 
       const siteUrl = String((data as Record<string, unknown>).siteUrl || "http://localhost:5174");
       subject = copy(locale).resetTitle;
@@ -651,13 +710,25 @@ Deno.serve(async (req) => {
     } else if (type === "contact") {
       const c = copy(locale);
       subject = `${c.contactTitle}: ${String((data as Record<string, unknown>).subject || "untitled")}`;
-      toAddress = String(to || "service@dlalshop.com");
       html = contactEmail(locale, data as Record<string, unknown>);
+    } else if (type === "notification") {
+      const c = copy(locale);
+      subject = String((data as Record<string, unknown>).subject || c.notificationTitle);
+      html = notificationEmail(locale, data as Record<string, unknown>);
     } else {
       return json({ error: "Invalid type" }, 400);
     }
 
-    if (!toAddress) return json({ error: "Missing recipient" }, 400);
+    if (toRecipients.length === 0) {
+      return json({ error: "Missing recipient" }, 400);
+    }
+
+    const finalBccRecipients =
+      route === "customer" || route === "vendor"
+        ? []
+        : explicitRecipients.length > 0
+          ? dedupeEmails(routeRecipients.filter((email) => !toRecipients.includes(email)))
+          : [];
 
     const resendApiKey = await getSecret("RESEND_API_KEY");
     const fromAddress = await getSecret("RESEND_FROM_EMAIL")
@@ -672,9 +743,11 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         from: fromAddress,
-        to: [toAddress],
+        to: toRecipients,
         subject,
         html,
+        ...(finalBccRecipients.length > 0 ? { bcc: finalBccRecipients } : {}),
+        ...(replyTo ? { reply_to: replyTo } : {}),
       }),
     });
 

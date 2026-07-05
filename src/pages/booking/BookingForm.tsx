@@ -5,6 +5,7 @@ import { Calendar, CheckCircle, FileText, MapPin, Users } from 'lucide-react';
 import Navigation from '../../components/Navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { trackPurchase } from '../../lib/analytics';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { dateDiffInDays, formatCurrency, formatDate } from '../../lib/utils';
@@ -163,6 +164,18 @@ const BookingForm: React.FC = () => {
 
       if (bookingErr) throw bookingErr;
 
+      trackPurchase({
+        transaction_id: bookingRow?.id || `${room.id}-${Date.now()}`,
+        value: payableTotal,
+        items: [{
+          item_id: room.id,
+          item_name: room.name,
+          price: payableTotal,
+          quantity: 1,
+          item_category: 'booking',
+        }],
+      });
+
       const { data: updatedBalance } = await supabase.from('member_point_balances').select('current_points').eq('user_id', user.id).maybeSingle();
       setAvailablePoints(Number(updatedBalance?.current_points || 0));
 
@@ -197,6 +210,7 @@ const BookingForm: React.FC = () => {
               paymentStatus,
               specialRequests,
               lang: locale,
+              recipientKind: 'booking',
             },
           }),
         });

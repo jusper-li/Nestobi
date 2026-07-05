@@ -4,6 +4,7 @@ import { CartProvider } from './contexts/CartContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { SiteSettingsProvider } from './contexts/SiteSettingsContext';
 import CookieConsent from './components/CookieConsent';
+import GoogleAnalytics from './components/GoogleAnalytics';
 import MobileBottomNav from './components/MobileBottomNav';
 import ScrollToTop from './components/ScrollToTop';
 import { UserRoute, AdminRoute, SuperAdminRoute, VendorRoute, GuestRoute, PermissionRoute, StoreManagerRoute } from './components/ProtectedRoute';
@@ -128,6 +129,7 @@ function AppShell() {
         <AuthProvider>
           <CartProvider>
             <ScrollToTop />
+            <GoogleAnalytics />
             <div className={`min-h-screen ${hasGlobalBottomNav ? 'pb-[calc(5.75rem+env(safe-area-inset-bottom))] md:pb-0' : ''}`}>
               <Routes>
                 <Route path="/" element={<Home />} />

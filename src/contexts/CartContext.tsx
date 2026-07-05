@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { trackAddToCart } from '../lib/analytics';
 import { useAuth } from './AuthContext';
 import type { CartItem, Product } from '../types';
 
@@ -121,12 +122,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = async (product: Product | string, quantity = 1) => {
     const productId = typeof product === 'string' ? product : product.id;
+    const productData = typeof product === 'string'
+      ? items.find(item => item.product_id === productId)?.products || (await supabase.from('products').select('*').eq('id', productId).maybeSingle()).data as Product | null
+      : product;
 
     if (!user) {
-      const productData = typeof product === 'string'
-        ? items.find(item => item.product_id === productId)?.products || (await supabase.from('products').select('*').eq('id', productId).maybeSingle()).data as Product | null
-        : product;
-
       if (!productData) return;
 
       setItems(prev => {
@@ -137,6 +137,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
         writeGuestCart(next);
         return next;
       });
+      if (productData) {
+        trackAddToCart({
+          value: productData.price * quantity,
+          items: [{
+            item_id: productData.id,
+            item_name: productData.name,
+            price: productData.price,
+            quantity,
+          }],
+        });
+      }
       return;
     }
 
@@ -152,6 +163,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
         .insert({ user_id: user.id, product_id: productId, quantity });
     }
     await fetchCart();
+    if (productData) {
+      trackAddToCart({
+        value: productData.price * quantity,
+        items: [{
+          item_id: productData.id,
+          item_name: productData.name,
+          price: productData.price,
+          quantity,
+        }],
+      });
+    }
   };
 
   const removeItem = async (cartItemId: string) => {

@@ -133,11 +133,33 @@ async function sendOrderEmail(
           lang,
           merchantOrderNo,
           paymentStatus,
+          recipientKind: "order",
         },
       }),
     });
   } catch (error) {
     console.warn("[newebpay-mpg-webhook] Failed to send confirmation email:", error);
+  }
+}
+
+async function sendNotificationEmail(subject: string, message: string, recipientKind: "payment-failed" | "alert" = "payment-failed") {
+  try {
+    await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "notification",
+        to: "",
+        data: {
+          subject,
+          message,
+          lang: "zh-TW",
+          recipientKind,
+        },
+      }),
+    });
+  } catch (error) {
+    console.warn("[newebpay-mpg-webhook] Failed to send notification email:", error);
   }
 }
 
@@ -321,6 +343,18 @@ Deno.serve(async (req: Request) => {
         description: "NewebPay payment failed refund",
       });
     }
+
+    await sendNotificationEmail(
+      `付款失敗：${order.merchant_order_no}`,
+      [
+        `訂單編號：${order.merchant_order_no}`,
+        `訂單 ID：${order.id}`,
+        `會員 ID：${order.user_id}`,
+        `付款方式：${String(order.newebpay_payment_type || order.payment_method || "CREDIT")}`,
+        `狀態：付款失敗`,
+      ].join("\n"),
+      "payment-failed",
+    );
 
     return okResponse();
   } catch (error) {
