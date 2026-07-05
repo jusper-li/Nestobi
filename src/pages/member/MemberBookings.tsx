@@ -292,16 +292,7 @@ export default function MemberBookings() {
                     <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
                       <Info label={t.paymentStatus} value={paymentStatusLabel(booking)} />
                       <Info label={t.paymentMethod} value={paymentMethodLabel(booking.payment_method)} />
-                      <Info label={t.checkIn} value={formatDate(booking.check_in_date, dateLocale)} />
-                      <Info label={t.checkOut} value={formatDate(booking.check_out_date, dateLocale)} />
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                    <Info label={t.checkIn} value={formatDate(booking.check_in_date, dateLocale)} prominent />
-                    <Info label={t.checkOut} value={formatDate(booking.check_out_date, dateLocale)} prominent />
-                    <Info label={t.nights} value={`${nights} ${t.nightUnit}`} prominent />
-                    <Info label={t.total} value={formatCurrency(booking.total_price)} strong prominent />
                   </div>
 
                   <button type="button" onClick={() => setExpandedId(isExpanded ? null : booking.id)} className="flex w-full items-center justify-between rounded-xl border border-gray-100 px-3 py-2 text-sm font-medium text-gray-600 sm:hidden">
@@ -341,16 +332,6 @@ export default function MemberBookings() {
                           <div className="mt-3 rounded-xl bg-white p-3 text-sm leading-6 text-gray-600">
                             <p className="font-medium text-gray-900">{t.cancelPolicy}</p>
                             <p className="mt-1">{t.refundNotice}</p>
-                          </div>
-                        </section>
-
-                        <section className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                          <SectionTitle icon={<Mail className="h-4 w-4 text-[#0D9488]" />} label={t.travelerInfo} />
-                          <div className="grid gap-3 text-sm md:grid-cols-2">
-                            <Info label={t.guestName} value={profile?.display_name || t.unknownGuest} />
-                            <Info label={t.phone} value={profile?.phone || '-'} />
-                            <Info label={t.email} value={user?.email || '-'} />
-                            <Info label={t.bookingDate} value={formatDateTime(booking.created_at, dateLocale)} />
                           </div>
                         </section>
 
