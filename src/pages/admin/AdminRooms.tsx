@@ -32,6 +32,7 @@ const AdminRooms: React.FC = () => {
 
   const handleToggleAvailable = async (id: string, current: boolean) => {
     await supabase.from('tbl_rooms').update({ is_available: !current }).eq('id', id);
+    await logAdminAction(current ? 'disable_room' : 'enable_room', 'tbl_rooms', id, { is_available: !current });
     setRooms(prev => prev.map(r => r.id === id ? { ...r, is_available: !current } : r));
   };
 

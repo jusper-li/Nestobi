@@ -33,8 +33,18 @@ const AdminVendors: React.FC = () => {
     try {
       if (isEdit && editing.id) {
         await supabase.from('vendors').update(editing).eq('id', editing.id);
+        await logAdminAction('update_vendor', 'vendors', editing.id, {
+          name: editing.name,
+          is_active: editing.is_active,
+          contact_email: editing.contact_email,
+        });
       } else {
-        await supabase.from('vendors').insert(editing);
+        const { data } = await supabase.from('vendors').insert(editing).select('id').maybeSingle();
+        await logAdminAction('create_vendor', 'vendors', data?.id || null, {
+          name: editing.name,
+          is_active: editing.is_active,
+          contact_email: editing.contact_email,
+        });
       }
       setShowModal(false);
       fetchVendors();

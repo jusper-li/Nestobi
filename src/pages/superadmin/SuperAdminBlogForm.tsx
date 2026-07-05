@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Coffee, Save, ArrowLeft, X, Plus, ExternalLink, CheckCircle, AlertCircle, Sparkles, Link, ChevronDown, ChevronUp, Tag } from 'lucide-react';
+import { logAdminAction } from '../../lib/auditLog';
 import { supabase } from '../../lib/supabase';
 import HtmlEditor from '../../components/HtmlEditor';
 import { sanitizeHtml, sanitizeText } from '../../lib/security';
@@ -203,6 +204,12 @@ const SuperAdminBlogForm: React.FC = () => {
     if (error) {
       setSaveStatus('error');
     } else {
+      await logAdminAction(
+        isEdit ? 'update_blog_post' : 'create_blog_post',
+        'blog_posts',
+        (isEdit ? id : null) || null,
+        { title: payload.title, slug: payload.slug, status: payload.status, category: payload.category }
+      );
       setSaveStatus('success');
       if (statusOverride) setForm(f => ({ ...f, status: statusOverride }));
       setTimeout(() => {

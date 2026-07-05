@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Coffee, Save, ArrowLeft, X, Plus, ExternalLink, CheckCircle, AlertCircle, Sparkles, Link, ChevronDown, ChevronUp, Tag } from 'lucide-react';
 import HtmlEditor from '../../components/HtmlEditor';
+import { logAdminAction } from '../../lib/auditLog';
 import { supabase } from '../../lib/supabase';
 import { sanitizeHtml, sanitizeText } from '../../lib/security';
 
@@ -194,6 +195,12 @@ const AdminBlogForm: React.FC = () => {
     if (error) {
       setSaveStatus('error');
     } else {
+      await logAdminAction(
+        isEdit ? 'update_blog_post' : 'create_blog_post',
+        'blog_posts',
+        (isEdit ? id : null) || null,
+        { title: payload.title, slug: payload.slug, status: payload.status, category: payload.category }
+      );
       setSaveStatus('success');
       if (statusOverride) setForm(f => ({ ...f, status: statusOverride }));
       setTimeout(() => { setSaveStatus('idle'); if (!isEdit) navigate('/admin/blog'); }, 1200);

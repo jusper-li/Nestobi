@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Save, Building2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { logAdminAction } from '../../lib/auditLog';
 import WeeklyPricingSection from '../../components/WeeklyPricingSection';
 import MultiImageUpload from '../../components/MultiImageUpload';
 
@@ -75,13 +76,25 @@ const AdminRoomForm: React.FC = () => {
     setSaving(true);
     try {
       const payload = { ...form, hotel_id: form.hotel_id || null, image_url: form.images[0] || form.image_url || '', images: form.images };
-      if (isNew) {
-        const { data } = await supabase.from('tbl_rooms').insert(payload).select('id').single();
-        if (data) await saveDayPrices(data.id);
-      } else {
-        await supabase.from('tbl_rooms').update(payload).eq('id', id!);
-        await saveDayPrices(id!);
-      }
+    if (isNew) {
+      const { data } = await supabase.from('tbl_rooms').insert(payload).select('id').single();
+      if (data) await saveDayPrices(data.id);
+      await logAdminAction('create_room', 'tbl_rooms', data?.id || null, {
+        name: payload.name,
+        room_type: payload.room_type,
+        vendor_id: payload.vendor_id,
+        hotel_id: payload.hotel_id,
+      });
+    } else {
+      await supabase.from('tbl_rooms').update(payload).eq('id', id!);
+      await saveDayPrices(id!);
+      await logAdminAction('update_room', 'tbl_rooms', id!, {
+        name: payload.name,
+        room_type: payload.room_type,
+        vendor_id: payload.vendor_id,
+        hotel_id: payload.hotel_id,
+      });
+    }
       navigate('/admin/rooms');
     } finally {
       setSaving(false);

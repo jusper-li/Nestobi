@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Save } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { logAdminAction } from '../../lib/auditLog';
 import HtmlEditor from '../../components/HtmlEditor';
 import { getCategoryOptionLabel, sortCategoriesForTree } from '../../lib/categoryTree';
 import { sanitizeHtml, sanitizeText } from '../../lib/security';
@@ -54,9 +55,23 @@ const AdminProductForm: React.FC = () => {
         category_id: form.category_id || null,
       };
       if (isNew) {
-        await supabase.from('products').insert(payload);
+        const { data, error } = await supabase.from('products').insert(payload).select('id').maybeSingle();
+        if (error) throw error;
+        await logAdminAction('create_product', 'products', data?.id || null, {
+          name: payload.name,
+          vendor_id: payload.vendor_id,
+          category_id: payload.category_id,
+          price: payload.price,
+        });
       } else {
-        await supabase.from('products').update(payload).eq('id', id);
+        const { error } = await supabase.from('products').update(payload).eq('id', id);
+        if (error) throw error;
+        await logAdminAction('update_product', 'products', id || null, {
+          name: payload.name,
+          vendor_id: payload.vendor_id,
+          category_id: payload.category_id,
+          price: payload.price,
+        });
       }
       navigate('/admin/products');
     } finally {
