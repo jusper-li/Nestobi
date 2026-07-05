@@ -95,6 +95,7 @@ import SuperAdminCoffeeQuiz from './pages/superadmin/SuperAdminCoffeeQuiz';
 import SuperAdminRoomTranslations from './pages/superadmin/SuperAdminRoomTranslations';
 import SuperAdminThemeBanners from './pages/superadmin/SuperAdminThemeBanners';
 import SuperAdminActivityLogs from './pages/superadmin/SuperAdminActivityLogs';
+import SuperAdminVersionLogs from './pages/superadmin/SuperAdminVersionLogs';
 
 import VendorLayout from './pages/vendor/VendorLayout';
 import VendorDashboard from './pages/vendor/VendorDashboard';
@@ -254,6 +255,7 @@ function AppShell() {
                   <Route path="blog/:id" element={<SuperAdminBlogForm />} />
                   <Route path="blog-categories" element={<SuperAdminBlogCategories />} />
                   <Route path="coffee-quiz" element={<SuperAdminCoffeeQuiz />} />
+                  <Route path="version-logs" element={<SuperAdminVersionLogs />} />
                 </Route>
 
                 <Route path="/admin/login" element={<Navigate to="/auth/login" replace />} />

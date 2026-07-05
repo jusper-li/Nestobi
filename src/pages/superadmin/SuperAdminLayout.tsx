@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Award,
   BarChart2,
+  BadgeCheck,
   BedDouble,
   Brain,
   Coffee,
@@ -30,7 +31,16 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { APP_BUILD_LABEL, APP_COMMIT_LONG } from '../../lib/appVersion';
+import { logSystemCheck, recordVersionBaseline } from '../../lib/auditLog';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
+
+type NavItem = {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+  end?: boolean;
+};
 
 const SuperAdminLayout: React.FC = () => {
   const { signOut, user } = useAuth();
@@ -39,11 +49,9 @@ const SuperAdminLayout: React.FC = () => {
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const t = {
-    title: pick('超級管理後台', 'Super Admin', 'スーパー管理', '슈퍼 관리자'),
-    signOut: pick('登出', 'Logout', 'ログアウト', '로그아웃'),
-  };
-  const navLinks = [
+  const location = useLocation();
+
+  const navLinks: NavItem[] = useMemo(() => [
     { to: '/superadmin/engagement', icon: <MessageSquare className="h-5 w-5" />, label: pick('經營分析', 'Engagement', '運営分析', '경영 분석') },
     { to: '/superadmin', icon: <LayoutDashboard className="h-5 w-5" />, label: pick('總覽', 'Overview', '概要', '개요'), end: true },
     { to: '/superadmin/products', icon: <ShoppingBag className="h-5 w-5" />, label: pick('商品管理', 'Genbon Products', '商品管理', '상품 관리') },
@@ -59,9 +67,10 @@ const SuperAdminLayout: React.FC = () => {
     { to: '/superadmin/users', icon: <Users className="h-5 w-5" />, label: pick('會員管理', 'Members', '会員管理', '회원 관리') },
     { to: '/superadmin/revenue', icon: <BarChart2 className="h-5 w-5" />, label: pick('營收分析', 'Revenue', '売上分析', '매출 분석') },
     { to: '/superadmin/point-rewards', icon: <Award className="h-5 w-5" />, label: pick('點數回饋管理', 'Point Rewards', 'ポイント還元管理', '포인트 적립 관리') },
-                        { to: '/superadmin/points-ledger', icon: <Coins className="h-5 w-5" />, label: pick('點數發放紀錄', 'Points Ledger', 'Points Ledger', 'Points Ledger') },
+    { to: '/superadmin/points-ledger', icon: <Coins className="h-5 w-5" />, label: pick('點數發放紀錄', 'Points Ledger', 'Points Ledger', 'Points Ledger') },
     { to: '/superadmin/activity-logs', icon: <History className="h-5 w-5" />, label: pick('管理員操作紀錄', 'Admin Activity Logs', 'Admin Activity Logs', 'Admin Activity Logs') },
-{ to: '/superadmin/ai-analytics', icon: <Brain className="h-5 w-5" />, label: pick('AI 分析', 'AI Analytics', 'AI 分析', 'AI 분석') },
+    { to: '/superadmin/version-logs', icon: <BadgeCheck className="h-5 w-5" />, label: pick('版本與稽核', 'Version & Audit', 'バージョン監査', '버전 감사') },
+    { to: '/superadmin/ai-analytics', icon: <Brain className="h-5 w-5" />, label: pick('AI 分析', 'AI Analytics', 'AI 分析', 'AI 분석') },
     { to: '/superadmin/chatbot', icon: <MessageSquare className="h-5 w-5" />, label: pick('AI 客服', 'AI Support', 'AI サポート', 'AI 상담') },
     { to: '/superadmin/static-pages', icon: <FileText className="h-5 w-5" />, label: pick('靜態頁面', 'Static Pages', '静的ページ', '정적 페이지') },
     { to: '/superadmin/permissions', icon: <Shield className="h-5 w-5" />, label: pick('權限管理', 'Permissions', '権限管理', '권한 관리') },
@@ -69,12 +78,39 @@ const SuperAdminLayout: React.FC = () => {
     { to: '/superadmin/site-settings', icon: <Settings className="h-5 w-5" />, label: pick('站點設定', 'Site Settings', 'サイト設定', '사이트 설정') },
     { to: '/superadmin/theme-banners', icon: <Image className="h-5 w-5" />, label: pick('Banner 管理', 'Banners', 'バナー管理', '배너 관리') },
     { to: '/superadmin/listing-command', icon: <Terminal className="h-5 w-5" />, label: pick('AI 刊登指令', 'AI Listing Command', 'AI 出品コマンド', 'AI 등록 명령') },
-  ];
+  ], [pick]);
+
+  const currentPage = useMemo(() => navLinks.find(link => link.to === location.pathname) || null, [location.pathname, navLinks]);
 
   const doSignOut = async () => {
     await signOut();
     navigate('/auth/login');
   };
+
+  useEffect(() => {
+    const baselineKey = `superadmin-baseline:${APP_BUILD_LABEL}`;
+    if (typeof window !== 'undefined' && !window.sessionStorage.getItem(baselineKey)) {
+      window.sessionStorage.setItem(baselineKey, '1');
+      void recordVersionBaseline(APP_BUILD_LABEL, {
+        source: 'superadmin-layout',
+        pathname: location.pathname,
+        commit: APP_COMMIT_LONG,
+      }, {
+        route: location.pathname,
+        summary: 'superadmin baseline recorded',
+      });
+    }
+
+    void logSystemCheck(location.pathname, {
+      source: 'superadmin-layout',
+      pathname: location.pathname,
+      page: currentPage?.label || location.pathname,
+      commit: APP_COMMIT_LONG,
+    }, {
+      route: location.pathname,
+      summary: `route check: ${currentPage?.label || location.pathname}`,
+    });
+  }, [currentPage?.label, location.pathname]);
 
   const Sidebar = () => (
     <div className="flex h-full flex-col">
@@ -84,7 +120,7 @@ const SuperAdminLayout: React.FC = () => {
             <Crown className="h-6 w-6 text-slate-900" />
           </div>
           <div>
-            <p className="text-sm font-bold text-white">{t.title}</p>
+            <p className="text-sm font-bold text-white">{pick('超級管理後台', 'Super Admin', 'スーパー管理', '슈퍼관리')}</p>
             <span className="rounded bg-amber-400 px-1.5 py-0.5 text-xs font-bold text-slate-900">SUPERADMIN</span>
           </div>
         </div>
@@ -115,7 +151,7 @@ const SuperAdminLayout: React.FC = () => {
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-400 transition hover:bg-slate-700"
         >
           <LogOut className="h-5 w-5" />
-          <span>{t.signOut}</span>
+          <span>{pick('登出', 'Logout', 'ログアウト', '로그아웃')}</span>
         </button>
       </div>
     </div>
@@ -139,7 +175,7 @@ const SuperAdminLayout: React.FC = () => {
           <button type="button" onClick={() => setSidebarOpen(true)} className="rounded-lg p-2 hover:bg-slate-800">
             <Menu className="h-5 w-5 text-white" />
           </button>
-          <span className="font-semibold text-white">{t.title}</span>
+          <span className="font-semibold text-white">{currentPage?.label || pick('超級管理後台', 'Super Admin', 'スーパー管理', '슈퍼관리')}</span>
         </header>
         <main className="flex-1 overflow-auto p-4 md:p-6">
           <Outlet />
