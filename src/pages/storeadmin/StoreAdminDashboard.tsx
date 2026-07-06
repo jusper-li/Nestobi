@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Loader2, Store, Users, Package, Warehouse, Coins, Save, Search, Plus, AlertCircle, CheckCircle2, Shield, CalendarDays, Camera, QrCode, ScanLine, X } from 'lucide-react';
+import { Loader2, Store, Users, Package, Warehouse, Coins, Save, Search, Plus, AlertCircle, CheckCircle2, Shield, CalendarDays, Camera, QrCode, ScanLine, X, BarChart3, TrendingUp, DollarSign } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { parseMemberQrPayload } from '../../lib/memberQr';
 import { supabase } from '../../lib/supabase';
 import { normalizeStoreLocation, type StoreLocation } from '../../lib/storeLocations';
-import type { Product, StoreInventoryMovement, StoreLocationManager, StorePointRedemption } from '../../types';
+import type { Product, StoreDailySale, StoreInventoryMovement, StoreLocationManager, StorePointRedemption } from '../../types';
 import { formatCurrency } from '../../lib/utils';
 
 type StoreForm = {
@@ -60,6 +60,13 @@ type ManagerForm = {
   can_manage_products: boolean;
   can_manage_inventory: boolean;
   can_manage_points: boolean;
+  can_manage_sales: boolean;
+};
+
+type SalesForm = {
+  sales_date: string;
+  revenue_amount: string;
+  note: string;
 };
 
 type SearchResult = { user_id: string; display_name: string };
@@ -115,7 +122,38 @@ const emptyManagerForm: ManagerForm = {
   can_manage_products: true,
   can_manage_inventory: true,
   can_manage_points: true,
+  can_manage_sales: true,
 };
+
+const emptySalesForm: SalesForm = {
+  sales_date: new Date().toISOString().slice(0, 10),
+  revenue_amount: '',
+  note: '',
+};
+
+const SALES_RANGE_LABELS = {
+  '30d': { label: '近30天' },
+  '90d': { label: '近90天' },
+  custom: { label: '自訂區間' },
+} as const;
+
+function resolveSalesRange(range: keyof typeof SALES_RANGE_LABELS, start: string, end: string) {
+  const today = new Date();
+  const todayIso = today.toISOString().slice(0, 10);
+  if (range === 'custom') {
+    return {
+      start: start || todayIso,
+      end: end || todayIso,
+    };
+  }
+  const days = range === '30d' ? 29 : 89;
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - days);
+  return {
+    start: startDate.toISOString().slice(0, 10),
+    end: todayIso,
+  };
+}
 
 function getHoursFormValue(hours: StoreLocation['hours']) {
   return {
@@ -138,6 +176,10 @@ export default function StoreAdminDashboard() {
   const [movementForm, setMovementForm] = useState<MovementForm>(emptyMovementForm);
   const [redemptionForm, setRedemptionForm] = useState<RedemptionForm>(emptyRedemptionForm);
   const [managerForm, setManagerForm] = useState<ManagerForm>(emptyManagerForm);
+  const [salesForm, setSalesForm] = useState<SalesForm>(emptySalesForm);
+  const [salesRangePreset, setSalesRangePreset] = useState<keyof typeof SALES_RANGE_LABELS>('90d');
+  const [salesRangeStart, setSalesRangeStart] = useState('');
+  const [salesRangeEnd, setSalesRangeEnd] = useState('');
   const [managerQuery, setManagerQuery] = useState('');
   const [managerResults, setManagerResults] = useState<SearchResult[]>([]);
   const [memberQuery, setMemberQuery] = useState('');
@@ -151,6 +193,7 @@ export default function StoreAdminDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [movements, setMovements] = useState<StoreInventoryMovement[]>([]);
   const [redemptions, setRedemptions] = useState<StorePointRedemption[]>([]);
+  const [salesRecords, setSalesRecords] = useState<StoreDailySale[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
@@ -167,7 +210,7 @@ export default function StoreAdminDashboard() {
     [assignedStoreIds, isElevated, stores, vendorId],
   );
   const selectedStore = useMemo(() => stores.find(store => store.id === selectedStoreId) || null, [selectedStoreId, stores]);
-  const canManageStore = (storeId: string, permission: 'any' | 'info' | 'products' | 'inventory' | 'points' = 'any') => {
+  const canManageStore = (storeId: string, permission: 'any' | 'info' | 'products' | 'inventory' | 'points' | 'sales' = 'any') => {
     const store = stores.find(item => item.id === storeId);
     const isVendorOwner = !!store && !!vendorId && store.vendor_id === vendorId;
     return isElevated || isVendorOwner || hasStorePermission(storeId, permission);
@@ -176,6 +219,23 @@ export default function StoreAdminDashboard() {
   const canEditProducts = !!selectedStoreId && canManageStore(selectedStoreId, 'products');
   const canEditInventory = !!selectedStoreId && canManageStore(selectedStoreId, 'inventory');
   const canEditPoints = !!selectedStoreId && canManageStore(selectedStoreId, 'points');
+  const canEditSales = !!selectedStoreId && canManageStore(selectedStoreId, 'sales');
+  const salesRangeLabel = SALES_RANGE_LABELS[salesRangePreset].label;
+  const salesStats = useMemo(() => {
+    const totalRevenue = salesRecords.reduce((sum, record) => sum + Number(record.revenue_amount || 0), 0);
+    const count = salesRecords.length;
+    const avgRevenue = count ? totalRevenue / count : 0;
+    const highestRecord = salesRecords.reduce<StoreDailySale | null>((best, record) => {
+      if (!best) return record;
+      return Number(record.revenue_amount || 0) > Number(best.revenue_amount || 0) ? record : best;
+    }, null);
+    return {
+      totalRevenue,
+      count,
+      avgRevenue,
+      highestRevenue: Number(highestRecord?.revenue_amount || 0),
+    };
+  }, [salesRecords]);
 
   const loadStores = async (currentVendorId: string | null) => {
     let query = supabase
@@ -200,7 +260,7 @@ export default function StoreAdminDashboard() {
     }
     const { data, error } = await supabase
       .from('store_location_managers')
-      .select('id,store_location_id,user_id,role,can_manage_store_info,can_manage_products,can_manage_inventory,can_manage_points,is_active,created_at,updated_at')
+      .select('id,store_location_id,user_id,role,can_manage_store_info,can_manage_products,can_manage_inventory,can_manage_points,can_manage_sales,is_active,created_at,updated_at')
       .eq('store_location_id', storeId)
       .order('created_at', { ascending: true });
     if (error) throw error;
@@ -208,10 +268,12 @@ export default function StoreAdminDashboard() {
   };
 
   const loadStoreData = async (storeId: string) => {
+    const salesRange = resolveSalesRange(salesRangePreset, salesRangeStart, salesRangeEnd);
     const [
       { data: productRows, error: productError },
       { data: movementRows, error: movementError },
       { data: redemptionRows, error: redemptionError },
+      { data: salesRows, error: salesError },
     ] = await Promise.all([
       supabase.from('products')
         .select('id,category_id,vendor_id,store_location_id,name,description,price,image_url,stock_quantity,is_active,sku,origin,roast_level,processing_method,flavor_notes,tags,created_at,updated_at')
@@ -226,13 +288,21 @@ export default function StoreAdminDashboard() {
         .select('id,store_location_id,user_id,points_used,discount_amount,reference_type,reference_id,note,used_at,created_by,created_at,updated_at')
         .eq('store_location_id', storeId)
         .order('used_at', { ascending: false }),
+      supabase.from('store_daily_sales')
+        .select('id,store_location_id,sales_date,revenue_amount,note,recorded_by,created_at,updated_at')
+        .eq('store_location_id', storeId)
+        .gte('sales_date', salesRange.start)
+        .lte('sales_date', salesRange.end)
+        .order('sales_date', { ascending: false }),
     ]);
     if (productError) throw productError;
     if (movementError) throw movementError;
     if (redemptionError) throw redemptionError;
+    if (salesError) throw salesError;
     setProducts((productRows || []) as Product[]);
     setMovements((movementRows || []) as unknown as StoreInventoryMovement[]);
     setRedemptions((redemptionRows || []) as StorePointRedemption[]);
+    setSalesRecords((salesRows || []) as StoreDailySale[]);
   };
 
   const loadAll = async () => {
@@ -316,6 +386,7 @@ export default function StoreAdminDashboard() {
     setSelectedMember(null);
     setQrScannerHint('');
     setQrScannerError(null);
+    setSalesForm(emptySalesForm);
     closeQrScanner();
     void Promise.all([loadStoreData(selectedStoreId), loadManagers(selectedStoreId)])
       .catch(error => setMessage({
@@ -323,7 +394,7 @@ export default function StoreAdminDashboard() {
         text: error instanceof Error ? error.message : pick('載入門市資料失敗', 'Failed to load store data', '店舗データの読み込みに失敗しました。', '매장 데이터를 불러오지 못했습니다.'),
       }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStoreId]);
+  }, [selectedStoreId, salesRangePreset, salesRangeStart, salesRangeEnd]);
 
   useEffect(() => {
     if (!managerQuery.trim() || !canEditStoreInfo) {
@@ -551,6 +622,7 @@ export default function StoreAdminDashboard() {
         can_manage_products: managerForm.can_manage_products,
         can_manage_inventory: managerForm.can_manage_inventory,
         can_manage_points: managerForm.can_manage_points,
+        can_manage_sales: managerForm.can_manage_sales,
         is_active: true,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'store_location_id,user_id' });
@@ -655,6 +727,34 @@ export default function StoreAdminDashboard() {
       await loadStoreData(selectedStoreId);
     } catch (error) {
       setMessage({ type: 'error', text: error instanceof Error ? error.message : pick('新增點數折抵失敗', 'Failed to redeem points', 'ポイント利用の記録に失敗しました。', '포인트 차감 기록 추가에 실패했습니다.') });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveSales = async () => {
+    if (!selectedStoreId || !salesForm.sales_date || salesForm.revenue_amount === '') return;
+    if (!canEditSales) {
+      setMessage({ type: 'error', text: pick('你沒有這間門市的營業額管理權限。', 'You do not have permission to manage store sales.', 'この店舗の売上管理権限がありません。', '이 매장의 매출 관리 권한이 없습니다.') });
+      return;
+    }
+    setBusy(true);
+    setMessage(null);
+    try {
+      const { error } = await supabase.from('store_daily_sales').upsert({
+        store_location_id: selectedStoreId,
+        sales_date: salesForm.sales_date,
+        revenue_amount: Number(salesForm.revenue_amount || 0),
+        note: salesForm.note.trim(),
+        recorded_by: user?.id || null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'store_location_id,sales_date' });
+      if (error) throw error;
+      setSalesForm(emptySalesForm);
+      setMessage({ type: 'success', text: pick('門市營業額已儲存', 'Daily sales saved', '店舗売上を保存しました。', '매장 매출이 저장되었습니다.') });
+      await loadStoreData(selectedStoreId);
+    } catch (error) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : pick('儲存營業額失敗', 'Failed to save daily sales', '売上の保存に失敗しました。', '매출 저장에 실패했습니다.') });
     } finally {
       setBusy(false);
     }
@@ -791,6 +891,28 @@ export default function StoreAdminDashboard() {
                   <option value="assistant">{pick('副管理員', 'Assistant', 'アシスタント', '부관리자')}</option>
                   <option value="supervisor">{pick('主管', 'Supervisor', '責任者', '담당자')}</option>
                 </select>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-600">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={managerForm.can_manage_store_info} onChange={e => setManagerForm(prev => ({ ...prev, can_manage_store_info: e.target.checked }))} />
+                  {pick('門市資料', 'Store info', '店舗情報', '매장 정보')}
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={managerForm.can_manage_products} onChange={e => setManagerForm(prev => ({ ...prev, can_manage_products: e.target.checked }))} />
+                  {pick('商品', 'Products', '商品', '상품')}
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={managerForm.can_manage_inventory} onChange={e => setManagerForm(prev => ({ ...prev, can_manage_inventory: e.target.checked }))} />
+                  {pick('庫存', 'Inventory', '在庫', '재고')}
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={managerForm.can_manage_points} onChange={e => setManagerForm(prev => ({ ...prev, can_manage_points: e.target.checked }))} />
+                  {pick('點數', 'Points', 'ポイント', '포인트')}
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={managerForm.can_manage_sales} onChange={e => setManagerForm(prev => ({ ...prev, can_manage_sales: e.target.checked }))} />
+                  {pick('營業額', 'Sales', '売上', '매출')}
+                </label>
               </div>
               <div className="mt-3 space-y-2">
                 {managerResults.length === 0 ? (
@@ -1021,6 +1143,106 @@ export default function StoreAdminDashboard() {
           </div>
         </section>
       </div>
+
+      <section className="rounded-2xl bg-white p-5 shadow-sm">
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-indigo-600" />
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">{pick('門市銷售成績', 'Store sales performance', '店舗売上実績', '매장 매출 성과')}</h2>
+              <p className="text-sm text-slate-500">{pick('可依日期區間查看趨勢，並由門市人員每日輸入當日營業額。', 'View performance by date range and let staff enter each day\'s revenue.', '日付範囲で実績を確認し、スタッフが毎日の売上を入力できます。', '날짜 구간별로 실적을 보고, 매장 직원이 매일 매출을 입력할 수 있습니다.')}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(['30d', '90d', 'custom'] as const).map(range => (
+              <button
+                key={range}
+                type="button"
+                onClick={() => setSalesRangePreset(range)}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  salesRangePreset === range
+                    ? 'bg-indigo-600 text-white'
+                    : 'border border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-700'
+                }`}
+              >
+                {SALES_RANGE_LABELS[range].label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-4">
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-xs font-semibold text-slate-500">{pick('區間', 'Range', '期間', '기간')}</p>
+            <p className="mt-1 text-lg font-bold text-slate-900">
+              {salesRangePreset === 'custom'
+                ? `${salesRangeStart || '---'} → ${salesRangeEnd || '---'}`
+                : salesRangeLabel}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-xs font-semibold text-slate-500">{pick('總營業額', 'Total revenue', '総売上', '총 매출')}</p>
+            <p className="mt-1 text-lg font-bold text-slate-900">{formatCurrency(salesStats.totalRevenue)}</p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-xs font-semibold text-slate-500">{pick('平均日營業額', 'Average daily revenue', '1日平均売上', '일평균 매출')}</p>
+            <p className="mt-1 text-lg font-bold text-slate-900">{formatCurrency(salesStats.avgRevenue)}</p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <p className="text-xs font-semibold text-slate-500">{pick('最高單日', 'Highest day', '最高日売上', '최고 매출일')}</p>
+            <p className="mt-1 text-lg font-bold text-slate-900">{formatCurrency(salesStats.highestRevenue)}</p>
+          </div>
+        </div>
+
+        {salesRangePreset === 'custom' && (
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <input type="date" value={salesRangeStart} onChange={e => setSalesRangeStart(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm" />
+            <input type="date" value={salesRangeEnd} onChange={e => setSalesRangeEnd(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm" />
+          </div>
+        )}
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="rounded-2xl border border-slate-200 p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-indigo-600" />
+              <h3 className="text-sm font-bold text-slate-900">{pick('每日營業額輸入', 'Daily revenue input', '日別売上入力', '일별 매출 입력')}</h3>
+            </div>
+            <div className="space-y-3">
+              <input type="date" value={salesForm.sales_date} onChange={e => setSalesForm(prev => ({ ...prev, sales_date: e.target.value }))} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" />
+              <input type="number" min="0" value={salesForm.revenue_amount} onChange={e => setSalesForm(prev => ({ ...prev, revenue_amount: e.target.value }))} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder={pick('今日營業額', 'Revenue amount', '当日の売上', '오늘 매출액')} />
+              <textarea value={salesForm.note} onChange={e => setSalesForm(prev => ({ ...prev, note: e.target.value }))} rows={3} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder={pick('備註（選填）', 'Note (optional)', '備考（任意）', '메모(선택)')} />
+              <button type="button" onClick={saveSales} disabled={busy || !canEditSales} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {pick('儲存營業額', 'Save revenue', '売上を保存', '매출 저장')}
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-indigo-600" />
+              <h3 className="text-sm font-bold text-slate-900">{pick('區間明細', 'Range details', '期間明細', '기간별 내역')}</h3>
+            </div>
+            <div className="max-h-80 space-y-2 overflow-y-auto">
+              {salesRecords.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-400">
+                  {pick('這個區間內還沒有營業額資料。', 'No sales records in this range yet.', 'この期間の売上データはまだありません。', '이 기간에는 아직 매출 데이터가 없습니다.')}
+                </div>
+              ) : salesRecords.map(record => (
+                <div key={record.id} className="rounded-xl border border-slate-100 px-4 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-slate-900">{record.sales_date}</p>
+                      <p className="mt-1 text-xs text-slate-500">{record.note || pick('無備註', 'No note', '備考なし', '메모 없음')}</p>
+                    </div>
+                    <p className="text-base font-bold text-slate-900">{formatCurrency(Number(record.revenue_amount || 0))}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
       {qrScannerOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">

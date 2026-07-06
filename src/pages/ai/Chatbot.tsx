@@ -54,7 +54,9 @@ function detectMessageLanguage(text: string): 'en' | 'zh-TW' | 'ja' | 'ko' | nul
   if (/\p{Script=Hangul}/u.test(sample)) return 'ko';
   if (/\p{Script=Hiragana}|\p{Script=Katakana}/u.test(sample)) return 'ja';
   if (/[\u4e00-\u9fff]/.test(sample)) return 'zh-TW';
-  if (/[A-Za-z]/.test(sample)) return 'en';
+  const latinWords = sample.match(/[A-Za-z]{2,}/g) || [];
+  const latinChars = (sample.match(/[A-Za-z]/g) || []).length;
+  if (latinWords.length >= 2 || latinChars >= 6) return 'en';
   return null;
 }
 

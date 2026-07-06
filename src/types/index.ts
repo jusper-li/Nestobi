@@ -276,6 +276,7 @@ export interface StoreLocationManager {
   can_manage_products: boolean;
   can_manage_inventory: boolean;
   can_manage_points: boolean;
+  can_manage_sales?: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -312,6 +313,18 @@ export interface StorePointRedemption {
   note: string;
   used_at: string;
   created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  store_locations?: StoreLocation | null;
+}
+
+export interface StoreDailySale {
+  id: string;
+  store_location_id: string;
+  sales_date: string;
+  revenue_amount: number;
+  note: string;
+  recorded_by: string | null;
   created_at: string;
   updated_at: string;
   store_locations?: StoreLocation | null;

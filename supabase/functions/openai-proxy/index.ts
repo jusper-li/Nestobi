@@ -182,15 +182,31 @@ function detectMessageLanguage(text: string): "zh-TW" | "en" | "ja" | "ko" | nul
   if (/[\uac00-\ud7af]/.test(sample)) return "ko";
   if (/[\u3040-\u30ff]/.test(sample)) return "ja";
   if (/[\u4e00-\u9fff]/.test(sample)) return "zh-TW";
-  if (/[A-Za-z]/.test(sample)) return "en";
+  const latinWords = sample.match(/[A-Za-z]{2,}/g) || [];
+  const latinChars = (sample.match(/[A-Za-z]/g) || []).length;
+  if (latinWords.length >= 2 || latinChars >= 6) return "en";
+  return null;
+}
+
+function normalizeLanguageTag(value: string) {
+  const sample = cleanText(value, 20).toLowerCase();
+  if (!sample) return null;
+  if (sample.startsWith("zh")) return "zh-TW";
+  if (sample.startsWith("en")) return "en";
+  if (sample.startsWith("ja")) return "ja";
+  if (sample.startsWith("ko")) return "ko";
   return null;
 }
 
 function resolveChatLanguage(requestedLanguage: string, latestQuestion: string, messageLanguage?: string) {
-  const normalizedRequested = cleanText(requestedLanguage || "zh-TW", 20);
-  const detected = detectMessageLanguage(messageLanguage || latestQuestion);
-  if (normalizedRequested === "zh-TW" && detected === "en") return "en";
-  return normalizedRequested || "zh-TW";
+  const normalizedRequested = normalizeLanguageTag(requestedLanguage) || "zh-TW";
+  const detectedQuestion = detectMessageLanguage(latestQuestion);
+  if (detectedQuestion) return detectedQuestion;
+  const normalizedMessage = normalizeLanguageTag(messageLanguage || "");
+  if (normalizedMessage) return normalizedMessage;
+  const detectedMessage = detectMessageLanguage(messageLanguage || "");
+  if (detectedMessage) return detectedMessage;
+  return normalizedRequested;
 }
 
 function scoreSnippet(snippet: string, query: string) {
@@ -235,8 +251,8 @@ function isPrivateAccountQuestion(question: string) {
   );
 }
 
-function privateAccountAnswer(language: string) {
-  const lang = resolveChatLanguage(language || "zh-TW", "", language);
+function privateAccountAnswer(language: string, latestQuestion = "", messageLanguage?: string) {
+  const lang = resolveChatLanguage(language || "zh-TW", latestQuestion, messageLanguage);
   if (lang === "en") {
     return [
       "I can explain how to check it, but AI Support cannot directly reveal your order status, booking status, points balance, member profile, or favorites.",
@@ -809,7 +825,7 @@ Deno.serve(async (req) => {
       let result = "";
 
       if (isPrivateAccountQuestion(question)) {
-        result = privateAccountAnswer(language);
+        result = privateAccountAnswer(language, question, String(body.messageLanguage || ""));
       } else {
         const directRecommendation = await buildDirectRecommendationAnswer(question, language);
         if (directRecommendation) {
@@ -821,8 +837,8 @@ Deno.serve(async (req) => {
           const system = [
             "You are Nestobi's AI customer service assistant.",
             `Respond only in ${responseLanguage}.`,
-            "If the requested language is Traditional Chinese and the latest user question is clearly English, answer in English instead.",
-            "If the user switches the UI language, follow that UI language for all subsequent replies.",
+            "Use the language of the latest user question whenever it can be detected clearly. If the latest user question is ambiguous or mixed, fall back to the requested UI language.",
+            "Do not switch languages just because the UI language changed if the latest user question is clearly written in another language.",
             "Answer the LATEST_USER_QUESTION. DATABASE_CONTEXT is reference material only; never answer an unrelated context item.",
             "Answer primarily from DATABASE_CONTEXT, which is public data from Supabase: products, rooms, hotels, articles, FAQs, pages, stores, and site settings. Vector results are ordered by semantic relevance.",
             "When the user wants to book a room, buy a product, find a store, read an FAQ, or find an article, recommend the best matching public items from DATABASE_CONTEXT and include their provided site links.",

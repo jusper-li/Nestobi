@@ -16,7 +16,7 @@ interface AuthContextType {
   permissions: Record<string, boolean>;
   loading: boolean;
   hasPermission: (key: string) => boolean;
-  hasStorePermission: (storeId: string, permission?: 'any' | 'info' | 'products' | 'inventory' | 'points') => boolean;
+  hasStorePermission: (storeId: string, permission?: 'any' | 'info' | 'products' | 'inventory' | 'points' | 'sales') => boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const assignmentRes = await withTimeout(
         supabase
           .from('store_location_managers')
-          .select('id,store_location_id,user_id,role,can_manage_store_info,can_manage_products,can_manage_inventory,can_manage_points,is_active,created_at,updated_at')
+          .select('id,store_location_id,user_id,role,can_manage_store_info,can_manage_products,can_manage_inventory,can_manage_points,can_manage_sales,is_active,created_at,updated_at')
           .eq('user_id', userId)
           .eq('is_active', true),
         8000,
@@ -240,7 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasStorePermission = useCallback((
     storeId: string,
-    permission: 'any' | 'info' | 'products' | 'inventory' | 'points' = 'any',
+    permission: 'any' | 'info' | 'products' | 'inventory' | 'points' | 'sales' = 'any',
   ): boolean => {
     if (role === 'superadmin' || role === 'admin') return true;
     return storeAssignments.some(assignment => (
@@ -252,6 +252,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         || (permission === 'products' && assignment.can_manage_products)
         || (permission === 'inventory' && assignment.can_manage_inventory)
         || (permission === 'points' && assignment.can_manage_points)
+        || (permission === 'sales' && assignment.can_manage_sales)
       )
     ));
   }, [role, storeAssignments]);
