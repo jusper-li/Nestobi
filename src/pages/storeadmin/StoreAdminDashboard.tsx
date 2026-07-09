@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Loader2,
   Store,
@@ -100,8 +100,7 @@ type SalesForm = {
 };
 
 type SearchResult = { user_id: string; display_name: string };
-type StoreAdminModule =
-  "overview" | "basic" | "stock" | "points" | "sales" | "recent";
+type StoreAdminModule = "basic" | "stock" | "points" | "sales" | "recent";
 
 const emptyStoreForm: StoreForm = {
   name: "",
@@ -191,6 +190,23 @@ function resolveSalesRange(
   };
 }
 
+function formatDateTime(value?: string | null) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("zh-TW", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatKeyword(value: string) {
+  return value.trim().toLowerCase();
+}
+
 function getHoursFormValue(hours: StoreLocation["hours"]) {
   return {
     hours_primary: hours?.primary || "",
@@ -220,8 +236,9 @@ export default function StoreAdminDashboard() {
     useState<keyof typeof SALES_RANGE_LABELS>("90d");
   const [salesRangeStart, setSalesRangeStart] = useState("");
   const [salesRangeEnd, setSalesRangeEnd] = useState("");
-  const [activeModule, setActiveModule] =
-    useState<StoreAdminModule>("overview");
+  const [stockQuery, setStockQuery] = useState("");
+  const [pointQuery, setPointQuery] = useState("");
+  const [activeModule, setActiveModule] = useState<StoreAdminModule>("basic");
   const [managerQuery, setManagerQuery] = useState("");
   const [managerResults, setManagerResults] = useState<SearchResult[]>([]);
   const [memberQuery, setMemberQuery] = useState("");
@@ -316,17 +333,64 @@ export default function StoreAdminDashboard() {
       highestRevenue: Number(highestRecord?.revenue_amount || 0),
     };
   }, [salesRecords]);
+  const filteredStockProducts = useMemo(() => {
+    const keyword = formatKeyword(stockQuery);
+    if (!keyword) return products;
+    return products.filter((product) => {
+      const text = [
+        product.name,
+        product.sku,
+        product.origin,
+        product.roast_level,
+        product.processing_method,
+        product.description,
+        ...(product.tags || []),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return text.includes(keyword);
+    });
+  }, [products, stockQuery]);
+  const filteredInventoryMovements = useMemo(() => {
+    const keyword = formatKeyword(stockQuery);
+    if (!keyword) return movements;
+    return movements.filter((movement) => {
+      const text = [
+        movement.products?.name || "",
+        movement.products?.sku || "",
+        movement.movement_type,
+        movement.supplier_name,
+        movement.invoice_no,
+        movement.note,
+        movement.purchase_date,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return text.includes(keyword);
+    });
+  }, [movements, stockQuery]);
+  const filteredRedemptions = useMemo(() => {
+    const keyword = formatKeyword(pointQuery);
+    if (!keyword) return redemptions;
+    return redemptions.filter((redemption) => {
+      const text = [
+        redemption.user_id,
+        String(redemption.points_used || ""),
+        String(redemption.discount_amount || ""),
+        redemption.reference_type,
+        redemption.reference_id || "",
+        redemption.note,
+        redemption.used_at,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return text.includes(keyword);
+    });
+  }, [pointQuery, redemptions]);
   const moduleNav = [
-    {
-      key: "overview" as const,
-      label: pick("總覽", "Overview", "概要", "개요"),
-      hint: pick(
-        "先看統計，再選功能",
-        "Check stats first",
-        "まず概要を見る",
-        "먼저 현황 보기",
-      ),
-    },
     {
       key: "basic" as const,
       label: pick("門市資料", "Store info", "店舗情報", "매장 정보"),
@@ -1369,28 +1433,17 @@ export default function StoreAdminDashboard() {
           })}
         </div>
         <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-          {activeModule === "overview" ? (
-            <span>
-              {pick(
-                "請先點選上方功能，查看對應管理內容。",
-                "Select a function above to view its tools.",
-                "上の機能を選んで、対応する管理画面を開いてください。",
-                "위의 기능을 선택하면 해당 관리 화면이 열립니다.",
-              )}
+          <>
+            <span className="font-semibold text-slate-900">
+              {activeModuleItem.label}
             </span>
-          ) : (
-            <>
-              <span className="font-semibold text-slate-900">
-                {activeModuleItem.label}
-              </span>
-              <span className="mx-2 text-slate-300">·</span>
-              <span>{activeModuleItem.hint}</span>
-            </>
-          )}
+            <span className="mx-2 text-slate-300">·</span>
+            <span>{activeModuleItem.hint}</span>
+          </>
         </div>
       </section>
 
-      {(activeModule === "overview" || activeModule === "basic") && (
+      {activeModule === "basic" && (
         <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="rounded-2xl bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
@@ -1525,7 +1578,7 @@ export default function StoreAdminDashboard() {
             </div>
           </section>
 
-          {(activeModule === "overview" || activeModule === "basic") && (
+          {activeModule === "basic" && (
             <section className="rounded-2xl bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <Users className="h-5 w-5 text-amber-600" />
@@ -1738,310 +1791,482 @@ export default function StoreAdminDashboard() {
         </div>
       )}
 
-      {(activeModule === "overview" || activeModule === "stock") && (
-        <div className="grid gap-4 xl:grid-cols-3">
-          <section className="rounded-2xl bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <Package className="h-5 w-5 text-amber-600" />
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">
-                  {pick("建立商品", "Product setup", "商品作成", "상품 생성")}
-                </h2>
-                <p className="text-sm text-slate-500">
-                  {pick(
-                    "同時建立商品與初始庫存。",
-                    "Create the product and initial stock together.",
-                    "商品と初期在庫を同時に作成します。",
-                    "상품과 초기 재고를 함께 생성합니다.",
-                  )}
-                </p>
+      {activeModule === "stock" && (
+        <>
+          <div className="grid gap-4 xl:grid-cols-3">
+            <section className="rounded-2xl bg-white p-5 shadow-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <Package className="h-5 w-5 text-amber-600" />
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">
+                    {pick("建立商品", "Product setup", "商品作成", "상품 생성")}
+                  </h2>
+                  <p className="text-sm text-slate-500">
+                    {pick(
+                      "同時建立商品與初始庫存。",
+                      "Create the product and initial stock together.",
+                      "商品と初期在庫を同時に作成します。",
+                      "상품과 초기 재고를 함께 생성합니다.",
+                    )}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="space-y-3">
-              <input
-                value={productForm.name}
-                onChange={(e) =>
-                  setProductForm((prev) => ({ ...prev, name: e.target.value }))
-                }
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                placeholder={pick(
-                  "商品名稱",
-                  "Product name",
-                  "商品名",
-                  "상품명",
-                )}
-              />
-              <input
-                type="number"
-                min="0"
-                value={productForm.price}
-                onChange={(e) =>
-                  setProductForm((prev) => ({ ...prev, price: e.target.value }))
-                }
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                placeholder={pick("價格", "Price", "価格", "가격")}
-              />
-              <input
-                type="number"
-                min="0"
-                value={productForm.stock_quantity}
-                onChange={(e) =>
-                  setProductForm((prev) => ({
-                    ...prev,
-                    stock_quantity: e.target.value,
-                  }))
-                }
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                placeholder={pick(
-                  "初始庫存",
-                  "Initial stock",
-                  "初期在庫",
-                  "초기 재고",
-                )}
-              />
-              <input
-                value={productForm.sku}
-                onChange={(e) =>
-                  setProductForm((prev) => ({ ...prev, sku: e.target.value }))
-                }
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                placeholder="SKU"
-              />
-              <input
-                value={productForm.image_url}
-                onChange={(e) =>
-                  setProductForm((prev) => ({
-                    ...prev,
-                    image_url: e.target.value,
-                  }))
-                }
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                placeholder={pick(
-                  "圖片網址",
-                  "Image URL",
-                  "画像 URL",
-                  "이미지 URL",
-                )}
-              />
-              <textarea
-                value={productForm.description}
-                onChange={(e) =>
-                  setProductForm((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                rows={3}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                placeholder={pick("商品說明", "Description", "説明", "설명")}
-              />
-              <label className="flex items-center gap-2 text-sm text-slate-600">
+              <div className="space-y-3">
                 <input
-                  type="checkbox"
-                  checked={productForm.is_active}
+                  value={productForm.name}
                   onChange={(e) =>
                     setProductForm((prev) => ({
                       ...prev,
-                      is_active: e.target.checked,
+                      name: e.target.value,
                     }))
                   }
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                  placeholder={pick(
+                    "商品名稱",
+                    "Product name",
+                    "商品名",
+                    "상품명",
+                  )}
                 />
-                {pick(
-                  "上架商品",
-                  "Publish product",
-                  "商品を公開する",
-                  "상품 게시",
-                )}
-              </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={productForm.price}
+                  onChange={(e) =>
+                    setProductForm((prev) => ({
+                      ...prev,
+                      price: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                  placeholder={pick("價格", "Price", "価格", "가격")}
+                />
+                <input
+                  type="number"
+                  min="0"
+                  value={productForm.stock_quantity}
+                  onChange={(e) =>
+                    setProductForm((prev) => ({
+                      ...prev,
+                      stock_quantity: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                  placeholder={pick(
+                    "初始庫存",
+                    "Initial stock",
+                    "初期在庫",
+                    "초기 재고",
+                  )}
+                />
+                <input
+                  value={productForm.sku}
+                  onChange={(e) =>
+                    setProductForm((prev) => ({ ...prev, sku: e.target.value }))
+                  }
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                  placeholder="SKU"
+                />
+                <input
+                  value={productForm.image_url}
+                  onChange={(e) =>
+                    setProductForm((prev) => ({
+                      ...prev,
+                      image_url: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                  placeholder={pick(
+                    "圖片網址",
+                    "Image URL",
+                    "画像 URL",
+                    "이미지 URL",
+                  )}
+                />
+                <textarea
+                  value={productForm.description}
+                  onChange={(e) =>
+                    setProductForm((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  rows={3}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                  placeholder={pick("商品說明", "Description", "説明", "설명")}
+                />
+                <label className="flex items-center gap-2 text-sm text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={productForm.is_active}
+                    onChange={(e) =>
+                      setProductForm((prev) => ({
+                        ...prev,
+                        is_active: e.target.checked,
+                      }))
+                    }
+                  />
+                  {pick(
+                    "上架商品",
+                    "Publish product",
+                    "商品を公開する",
+                    "상품 게시",
+                  )}
+                </label>
+                <button
+                  type="button"
+                  onClick={saveProduct}
+                  disabled={
+                    busy || !productForm.name.trim() || !canEditProducts
+                  }
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {busy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  {pick("新增商品", "Add product", "商品を追加", "상품 추가")}
+                </button>
+              </div>
+            </section>
+
+            <section className="rounded-2xl bg-white p-5 shadow-sm xl:col-span-2">
+              <div className="mb-4 flex items-center gap-2">
+                <Warehouse className="h-5 w-5 text-sky-600" />
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">
+                    {pick(
+                      "進貨管理",
+                      "Inventory intake",
+                      "入庫管理",
+                      "입고 관리",
+                    )}
+                  </h2>
+                  <p className="text-sm text-slate-500">
+                    {pick(
+                      "記錄進貨日期、供應商與發票。",
+                      "Track stock intake with purchase date and supplier.",
+                      "入庫日、仕入先、伝票番号を記録します。",
+                      "입고 날짜, 공급업체, 송장을 기록합니다.",
+                    )}
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <select
+                  value={movementForm.product_id}
+                  onChange={(e) =>
+                    setMovementForm((prev) => ({
+                      ...prev,
+                      product_id: e.target.value,
+                    }))
+                  }
+                  className="md:col-span-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
+                >
+                  <option value="">
+                    {pick(
+                      "選擇商品",
+                      "Select a product",
+                      "商品を選択",
+                      "상품 선택",
+                    )}
+                  </option>
+                  {products.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={movementForm.movement_type}
+                  onChange={(e) =>
+                    setMovementForm((prev) => ({
+                      ...prev,
+                      movement_type: e.target
+                        .value as MovementForm["movement_type"],
+                    }))
+                  }
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
+                >
+                  <option value="purchase">
+                    {pick("進貨", "Purchase", "仕入", "입고")}
+                  </option>
+                  <option value="adjustment_in">
+                    {pick("調整入庫", "Adjustment in", "在庫増加", "재고 증가")}
+                  </option>
+                  <option value="adjustment_out">
+                    {pick(
+                      "調整出庫",
+                      "Adjustment out",
+                      "在庫減少",
+                      "재고 감소",
+                    )}
+                  </option>
+                  <option value="transfer_in">
+                    {pick("調撥入庫", "Transfer in", "移動入庫", "이동 입고")}
+                  </option>
+                  <option value="transfer_out">
+                    {pick("調撥出庫", "Transfer out", "移動出庫", "이동 출고")}
+                  </option>
+                  <option value="writeoff">
+                    {pick("報廢", "Write-off", "廃棄", "폐기")}
+                  </option>
+                  <option value="sale">
+                    {pick("銷售", "Sale", "販売", "판매")}
+                  </option>
+                </select>
+                <input
+                  type="number"
+                  min="1"
+                  value={movementForm.quantity}
+                  onChange={(e) =>
+                    setMovementForm((prev) => ({
+                      ...prev,
+                      quantity: e.target.value,
+                    }))
+                  }
+                  className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                  placeholder={pick("數量", "Quantity", "数量", "수량")}
+                />
+                <input
+                  type="number"
+                  min="0"
+                  value={movementForm.unit_cost}
+                  onChange={(e) =>
+                    setMovementForm((prev) => ({
+                      ...prev,
+                      unit_cost: e.target.value,
+                    }))
+                  }
+                  className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                  placeholder={pick("單價", "Unit cost", "単価", "단가")}
+                />
+                <input
+                  value={movementForm.supplier_name}
+                  onChange={(e) =>
+                    setMovementForm((prev) => ({
+                      ...prev,
+                      supplier_name: e.target.value,
+                    }))
+                  }
+                  className="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                  placeholder={pick("供應商", "Supplier", "仕入先", "공급업체")}
+                />
+                <input
+                  value={movementForm.invoice_no}
+                  onChange={(e) =>
+                    setMovementForm((prev) => ({
+                      ...prev,
+                      invoice_no: e.target.value,
+                    }))
+                  }
+                  className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                  placeholder={pick(
+                    "發票號碼",
+                    "Invoice no.",
+                    "伝票番号",
+                    "송장 번호",
+                  )}
+                />
+                <input
+                  type="date"
+                  value={movementForm.purchase_date}
+                  onChange={(e) =>
+                    setMovementForm((prev) => ({
+                      ...prev,
+                      purchase_date: e.target.value,
+                    }))
+                  }
+                  className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                />
+                <textarea
+                  value={movementForm.note}
+                  onChange={(e) =>
+                    setMovementForm((prev) => ({
+                      ...prev,
+                      note: e.target.value,
+                    }))
+                  }
+                  rows={2}
+                  className="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
+                  placeholder={pick("備註", "Note", "メモ", "메모")}
+                />
+                <button
+                  type="button"
+                  onClick={saveMovement}
+                  disabled={
+                    busy || !movementForm.product_id || !canEditInventory
+                  }
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60 md:col-span-2"
+                >
+                  {busy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {pick(
+                    "新增進貨",
+                    "Add intake log",
+                    "入庫を追加",
+                    "입고 추가",
+                  )}
+                </button>
+              </div>
+            </section>
+          </div>
+          <section className="rounded-2xl bg-white p-5 shadow-sm xl:col-span-3">
+            <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-2">
+                <Search className="h-5 w-5 text-indigo-600" />
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">
+                    商品 / 庫存查詢表
+                  </h2>
+                  <p className="text-sm text-slate-500">
+                    快速搜尋商品資訊與庫存異動紀錄。
+                  </p>
+                </div>
+              </div>
               <button
                 type="button"
-                onClick={saveProduct}
-                disabled={busy || !productForm.name.trim() || !canEditProducts}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                onClick={() => setStockQuery("")}
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600"
               >
-                {busy ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
-                {pick("新增商品", "Add product", "商品を追加", "상품 추가")}
+                清除搜尋
               </button>
             </div>
-          </section>
-
-          <section className="rounded-2xl bg-white p-5 shadow-sm xl:col-span-2">
-            <div className="mb-4 flex items-center gap-2">
-              <Warehouse className="h-5 w-5 text-sky-600" />
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">
-                  {pick(
-                    "進貨管理",
-                    "Inventory intake",
-                    "入庫管理",
-                    "입고 관리",
-                  )}
-                </h2>
-                <p className="text-sm text-slate-500">
-                  {pick(
-                    "記錄進貨日期、供應商與發票。",
-                    "Track stock intake with purchase date and supplier.",
-                    "入庫日、仕入先、伝票番号を記録します。",
-                    "입고 날짜, 공급업체, 송장을 기록합니다.",
-                  )}
-                </p>
+            <div className="relative mb-4">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={stockQuery}
+                onChange={(e) => setStockQuery(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 py-2.5 pl-9 pr-3 text-sm"
+                placeholder="搜尋商品名稱、SKU、供應商、日期"
+              />
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="overflow-hidden rounded-xl border border-slate-100">
+                <div className="border-b border-slate-100 bg-slate-50 px-4 py-3">
+                  <p className="text-sm font-semibold text-slate-900">
+                    商品清單
+                  </p>
+                </div>
+                <div className="max-h-[24rem] overflow-auto">
+                  <table className="min-w-full divide-y divide-slate-100 text-left text-sm">
+                    <thead className="bg-white text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <tr>
+                        <th className="px-4 py-3">商品</th>
+                        <th className="px-4 py-3">SKU</th>
+                        <th className="px-4 py-3">價格</th>
+                        <th className="px-4 py-3">庫存</th>
+                        <th className="px-4 py-3">狀態</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredStockProducts.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="px-4 py-8 text-center text-sm text-slate-400"
+                          >
+                            查無商品資料
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredStockProducts.map((product) => (
+                          <tr key={product.id} className="align-top">
+                            <td className="px-4 py-3 font-semibold text-slate-900">
+                              {product.name}
+                            </td>
+                            <td className="px-4 py-3 text-slate-600">
+                              {product.sku || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-slate-600">
+                              {formatCurrency(Number(product.price || 0))}
+                            </td>
+                            <td className="px-4 py-3 text-slate-600">
+                              {product.stock_quantity}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                  product.is_active
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : "bg-slate-100 text-slate-500"
+                                }`}
+                              >
+                                {product.is_active ? "上架中" : "停用"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="overflow-hidden rounded-xl border border-slate-100">
+                <div className="border-b border-slate-100 bg-slate-50 px-4 py-3">
+                  <p className="text-sm font-semibold text-slate-900">
+                    庫存異動
+                  </p>
+                </div>
+                <div className="max-h-[24rem] overflow-auto">
+                  <table className="min-w-full divide-y divide-slate-100 text-left text-sm">
+                    <thead className="bg-white text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <tr>
+                        <th className="px-4 py-3">品項</th>
+                        <th className="px-4 py-3">類型</th>
+                        <th className="px-4 py-3">數量</th>
+                        <th className="px-4 py-3">單價</th>
+                        <th className="px-4 py-3">日期</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredInventoryMovements.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="px-4 py-8 text-center text-sm text-slate-400"
+                          >
+                            查無庫存異動資料
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredInventoryMovements.map((movement) => (
+                          <tr key={movement.id} className="align-top">
+                            <td className="px-4 py-3 font-semibold text-slate-900">
+                              {movement.products?.name ||
+                                movement.product_id ||
+                                "-"}
+                            </td>
+                            <td className="px-4 py-3 text-slate-600">
+                              {movement.movement_type}
+                            </td>
+                            <td className="px-4 py-3 text-slate-600">
+                              {movement.quantity}
+                            </td>
+                            <td className="px-4 py-3 text-slate-600">
+                              {formatCurrency(Number(movement.unit_cost || 0))}
+                            </td>
+                            <td className="px-4 py-3 text-slate-500">
+                              {formatDateTime(movement.purchase_date)}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              <select
-                value={movementForm.product_id}
-                onChange={(e) =>
-                  setMovementForm((prev) => ({
-                    ...prev,
-                    product_id: e.target.value,
-                  }))
-                }
-                className="md:col-span-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
-              >
-                <option value="">
-                  {pick(
-                    "選擇商品",
-                    "Select a product",
-                    "商品を選択",
-                    "상품 선택",
-                  )}
-                </option>
-                {products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={movementForm.movement_type}
-                onChange={(e) =>
-                  setMovementForm((prev) => ({
-                    ...prev,
-                    movement_type: e.target
-                      .value as MovementForm["movement_type"],
-                  }))
-                }
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
-              >
-                <option value="purchase">
-                  {pick("進貨", "Purchase", "仕入", "입고")}
-                </option>
-                <option value="adjustment_in">
-                  {pick("調整入庫", "Adjustment in", "在庫増加", "재고 증가")}
-                </option>
-                <option value="adjustment_out">
-                  {pick("調整出庫", "Adjustment out", "在庫減少", "재고 감소")}
-                </option>
-                <option value="transfer_in">
-                  {pick("調撥入庫", "Transfer in", "移動入庫", "이동 입고")}
-                </option>
-                <option value="transfer_out">
-                  {pick("調撥出庫", "Transfer out", "移動出庫", "이동 출고")}
-                </option>
-                <option value="writeoff">
-                  {pick("報廢", "Write-off", "廃棄", "폐기")}
-                </option>
-                <option value="sale">
-                  {pick("銷售", "Sale", "販売", "판매")}
-                </option>
-              </select>
-              <input
-                type="number"
-                min="1"
-                value={movementForm.quantity}
-                onChange={(e) =>
-                  setMovementForm((prev) => ({
-                    ...prev,
-                    quantity: e.target.value,
-                  }))
-                }
-                className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                placeholder={pick("數量", "Quantity", "数量", "수량")}
-              />
-              <input
-                type="number"
-                min="0"
-                value={movementForm.unit_cost}
-                onChange={(e) =>
-                  setMovementForm((prev) => ({
-                    ...prev,
-                    unit_cost: e.target.value,
-                  }))
-                }
-                className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                placeholder={pick("單價", "Unit cost", "単価", "단가")}
-              />
-              <input
-                value={movementForm.supplier_name}
-                onChange={(e) =>
-                  setMovementForm((prev) => ({
-                    ...prev,
-                    supplier_name: e.target.value,
-                  }))
-                }
-                className="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                placeholder={pick("供應商", "Supplier", "仕入先", "공급업체")}
-              />
-              <input
-                value={movementForm.invoice_no}
-                onChange={(e) =>
-                  setMovementForm((prev) => ({
-                    ...prev,
-                    invoice_no: e.target.value,
-                  }))
-                }
-                className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                placeholder={pick(
-                  "發票號碼",
-                  "Invoice no.",
-                  "伝票番号",
-                  "송장 번호",
-                )}
-              />
-              <input
-                type="date"
-                value={movementForm.purchase_date}
-                onChange={(e) =>
-                  setMovementForm((prev) => ({
-                    ...prev,
-                    purchase_date: e.target.value,
-                  }))
-                }
-                className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-              />
-              <textarea
-                value={movementForm.note}
-                onChange={(e) =>
-                  setMovementForm((prev) => ({ ...prev, note: e.target.value }))
-                }
-                rows={2}
-                className="md:col-span-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-                placeholder={pick("備註", "Note", "メモ", "메모")}
-              />
-              <button
-                type="button"
-                onClick={saveMovement}
-                disabled={busy || !movementForm.product_id || !canEditInventory}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60 md:col-span-2"
-              >
-                {busy ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                {pick("新增進貨", "Add intake log", "入庫を追加", "입고 추가")}
-              </button>
-            </div>
           </section>
-        </div>
+        </>
       )}
 
       <div className="grid gap-4 xl:grid-cols-2">
-        {(activeModule === "overview" || activeModule === "points") && (
+        {activeModule === "points" && (
           <section className="rounded-2xl bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
               <Coins className="h-5 w-5 text-emerald-600" />
@@ -2228,11 +2453,89 @@ export default function StoreAdminDashboard() {
                   "차감 기록 추가",
                 )}
               </button>
+              <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 md:col-span-2">
+                <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">
+                      點數折抵查詢表
+                    </h3>
+                    <p className="text-sm text-slate-500">
+                      搜尋會員、來源、備註與折抵時間。
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPointQuery("")}
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600"
+                  >
+                    清除搜尋
+                  </button>
+                </div>
+                <div className="relative mb-3">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    value={pointQuery}
+                    onChange={(e) => setPointQuery(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 py-2.5 pl-9 pr-3 text-sm"
+                    placeholder="搜尋會員、來源、備註、日期"
+                  />
+                </div>
+                <div className="max-h-[24rem] overflow-auto rounded-xl border border-slate-100 bg-white">
+                  <table className="min-w-full divide-y divide-slate-100 text-left text-sm">
+                    <thead className="bg-white text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <tr>
+                        <th className="px-4 py-3">會員</th>
+                        <th className="px-4 py-3">點數</th>
+                        <th className="px-4 py-3">折抵金額</th>
+                        <th className="px-4 py-3">來源</th>
+                        <th className="px-4 py-3">時間</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredRedemptions.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="px-4 py-8 text-center text-sm text-slate-400"
+                          >
+                            查無點數折抵資料
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredRedemptions.map((redemption) => (
+                          <tr key={redemption.id} className="align-top">
+                            <td className="px-4 py-3 font-semibold text-slate-900">
+                              <div>{redemption.user_id}</div>
+                              <div className="mt-1 text-xs font-normal text-slate-500">
+                                {redemption.note || "-"}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-slate-600">
+                              {redemption.points_used} NP
+                            </td>
+                            <td className="px-4 py-3 text-slate-600">
+                              {formatCurrency(
+                                Number(redemption.discount_amount || 0),
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-slate-600">
+                              {redemption.reference_type || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-slate-500">
+                              {formatDateTime(redemption.used_at)}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </section>
         )}
 
-        {(activeModule === "overview" || activeModule === "recent") && (
+        {activeModule === "recent" && (
           <section className="rounded-2xl bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
               <CalendarDays className="h-5 w-5 text-violet-600" />
@@ -2374,7 +2677,7 @@ export default function StoreAdminDashboard() {
         )}
       </div>
 
-      {(activeModule === "overview" || activeModule === "sales") && (
+      {activeModule === "sales" && (
         <section className="rounded-2xl bg-white p-5 shadow-sm">
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-2">
