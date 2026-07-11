@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Search, UserCheck, UserX, Plus, X, Save, Eye, EyeOff, Phone, Globe, FileText, BedDouble, ShoppingBag, Award, Calendar, Mail, Coffee } from 'lucide-react';
@@ -25,8 +25,13 @@ interface UserDetail {
   totalPoints: number;
 }
 
-const ROLE_OPTIONS = ['user', 'vendor', 'admin', 'superadmin'];
-const ROLE_LABELS: Record<string, string> = { user: '一般用戶', vendor: '廠商', admin: '管理員', superadmin: '超管' };
+const ROLE_OPTIONS = ['user', 'vendor', 'admin', 'superadmin'] as const;
+const ROLE_LABELS: Record<string, string> = {
+  user: 'User',
+  vendor: 'Vendor',
+  admin: 'Admin',
+  superadmin: 'Super Admin',
+};
 const ROLE_COLORS: Record<string, string> = {
   superadmin: 'bg-amber-100 text-amber-700',
   admin: 'bg-blue-100 text-blue-700',
@@ -53,64 +58,15 @@ const SuperAdminUsers: React.FC = () => {
   const [createError, setCreateError] = useState('');
   const [showPw, setShowPw] = useState(false);
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    setSearch(params.get('q') || '');
-  }, [location.search]);
-
-  const handleCreateUser = async () => {
-    if (!createForm.email || !createForm.password) { setCreateError('請填寫信箱和密碼'); return; }
-    if (createForm.password.length < 6) { setCreateError('密碼至少 6 個字元'); return; }
-    setCreating(true);
-    setCreateError('');
-    try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
-        body: JSON.stringify(createForm),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '建立失敗');
-      setShowCreate(false);
-      setCreateForm({ email: '', password: '', display_name: '', role: 'user' });
-      fetchUsers();
-    } catch (err: any) {
-      setCreateError(err.message || '建立失敗');
-    } finally {
-      setCreating(false);
-    }
-  };
-
   const [viewUser, setViewUser] = useState<UserRow | null>(null);
   const [detail, setDetail] = useState<UserDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailTab, setDetailTab] = useState<'profile' | 'bookings' | 'orders' | 'points'>('profile');
 
-  const openDetail = async (u: UserRow) => {
-    setViewUser(u);
-    setDetail(null);
-    setDetailLoading(true);
-    setDetailTab('profile');
-    const [profileRes, bookingsRes, ordersRes, pointsRes] = await Promise.all([
-      supabase.from('tbl_mn5wgzh0').select('*').eq('user_id', u.user_id).maybeSingle(),
-      supabase.from('tbl_bookings').select('*, tbl_rooms(name)').eq('user_id', u.user_id).order('created_at', { ascending: false }).limit(10),
-      supabase.from('orders').select('*').eq('user_id', u.user_id).order('created_at', { ascending: false }).limit(10),
-      supabase.from('points').select('*').eq('user_id', u.user_id).order('created_at', { ascending: false }).limit(20),
-    ]);
-    const pts = (pointsRes.data || []) as any[];
-    const totalPoints = pts.reduce((sum: number, p: any) => sum + (p.transaction_type === 'earned' ? p.amount : p.transaction_type === 'spent' ? -p.amount : 0), 0);
-    setDetail({
-      profile: profileRes.data,
-      bookings: bookingsRes.data || [],
-      orders: ordersRes.data || [],
-      points: pts,
-      totalPoints,
-    });
-    setDetailLoading(false);
-  };
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setSearch(params.get('q') || '');
+  }, [location.search]);
 
   const fetchEmails = async (userIds: string[]): Promise<Record<string, string>> => {
     try {
@@ -122,49 +78,120 @@ const SuperAdminUsers: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ user_ids: validUserIds }),
       });
       if (!res.ok) return {};
       const { emails } = await res.json();
       return emails || {};
-    } catch { return {}; }
+    } catch {
+      return {};
+    }
   };
 
   const fetchUsers = async () => {
     setLoading(true);
-    let q = supabase.from('tbl_user_auth').select('*', { count: 'exact' });
-    if (roleFilter !== 'all') q = q.eq('role', roleFilter);
-    q = q.order('created_at', { ascending: false }).range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+    let query = supabase.from('tbl_user_auth').select('*', { count: 'exact' });
+    if (roleFilter !== 'all') query = query.eq('role', roleFilter);
+    query = query.order('created_at', { ascending: false }).range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-    const { data, count } = await q;
-    if (!data) { setLoading(false); return; }
+    const { data, count } = await query;
+    if (!data) {
+      setLoading(false);
+      return;
+    }
 
-    const userIds = data.map((u: any) => u.user_id);
+    const userIds = data.map((user: any) => user.user_id);
     const [{ data: profiles }, emailMap] = await Promise.all([
       supabase.from('tbl_mn5wgzh0').select('user_id, display_name').in('user_id', userIds),
       fetchEmails(userIds),
     ]);
-    const profileMap = Object.fromEntries((profiles || []).map((p: any) => [p.user_id, p.display_name]));
+    const profileMap = Object.fromEntries((profiles || []).map((profile: any) => [profile.user_id, profile.display_name]));
 
-    const rows = data.map((u: any) => ({ ...u, display_name: profileMap[u.user_id] || '', email: emailMap[u.user_id] || '' }));
-    const filtered = search ? rows.filter((u: UserRow) => (u.display_name || '').toLowerCase().includes(search.toLowerCase()) || (u.email || '').toLowerCase().includes(search.toLowerCase()) || u.user_id.includes(search)) : rows;
+    const rows = data.map((user: any) => ({ ...user, display_name: profileMap[user.user_id] || '', email: emailMap[user.user_id] || '' }));
+    const filtered = search
+      ? rows.filter((user: UserRow) =>
+          (user.display_name || '').toLowerCase().includes(search.toLowerCase()) ||
+          (user.email || '').toLowerCase().includes(search.toLowerCase()) ||
+          user.user_id.includes(search))
+      : rows;
 
     setUsers(filtered as UserRow[]);
     setTotal(count || 0);
     setLoading(false);
   };
 
-  useEffect(() => { fetchUsers(); }, [roleFilter, page]);
   useEffect(() => {
-    const t = setTimeout(() => fetchUsers(), 300);
-    return () => clearTimeout(t);
+    fetchUsers();
+  }, [roleFilter, page]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => fetchUsers(), 300);
+    return () => clearTimeout(timer);
   }, [search]);
+
+  const handleCreateUser = async () => {
+    if (!createForm.email || !createForm.password) {
+      setCreateError('Please enter email and password');
+      return;
+    }
+    if (createForm.password.length < 6) {
+      setCreateError('Password must be at least 6 characters');
+      return;
+    }
+    setCreating(true);
+    setCreateError('');
+    try {
+      const session = (await supabase.auth.getSession()).data.session;
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token || ''}`,
+        },
+        body: JSON.stringify(createForm),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Create user failed');
+      setShowCreate(false);
+      setCreateForm({ email: '', password: '', display_name: '', role: 'user' });
+      fetchUsers();
+    } catch (err: any) {
+      setCreateError(err.message || 'Create user failed');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const openDetail = async (user: UserRow) => {
+    setViewUser(user);
+    setDetail(null);
+    setDetailLoading(true);
+    setDetailTab('profile');
+
+    const [profileRes, bookingsRes, ordersRes, pointsRes] = await Promise.all([
+      supabase.from('tbl_mn5wgzh0').select('*').eq('user_id', user.user_id).maybeSingle(),
+      supabase.from('tbl_bookings').select('*, tbl_rooms(name)').eq('user_id', user.user_id).order('created_at', { ascending: false }).limit(10),
+      supabase.from('orders').select('*').eq('user_id', user.user_id).order('created_at', { ascending: false }).limit(10),
+      supabase.from('points').select('*').eq('user_id', user.user_id).order('created_at', { ascending: false }).limit(20),
+    ]);
+
+    const pts = (pointsRes.data || []) as any[];
+    const totalPoints = pts.reduce((sum: number, point: any) => sum + (point.transaction_type === 'earned' ? point.amount : point.transaction_type === 'spent' ? -point.amount : 0), 0);
+    setDetail({
+      profile: profileRes.data,
+      bookings: bookingsRes.data || [],
+      orders: ordersRes.data || [],
+      points: pts,
+      totalPoints,
+    });
+    setDetailLoading(false);
+  };
 
   const updateRole = async (userId: string, role: string) => {
     if (userId === currentUser?.id) return;
-    if (!window.confirm(`確定要將此用戶角色改為 ${role}？`)) return;
+    if (!window.confirm(`Change role to ${role}?`)) return;
     setUpdating(userId);
     await supabase.from('tbl_user_auth').update({ role, updated_at: new Date().toISOString() }).eq('user_id', userId);
     await logAdminAction('update_user_role', 'tbl_user_auth', userId, { role });
@@ -174,7 +201,7 @@ const SuperAdminUsers: React.FC = () => {
 
   const toggleActive = async (userId: string, current: boolean) => {
     if (userId === currentUser?.id) return;
-    if (!window.confirm(`確定要${current ? '停用' : '啟用'}此用戶帳號？`)) return;
+    if (!window.confirm(`Are you sure you want to ${current ? 'deactivate' : 'activate'} this user?`)) return;
     setUpdating(userId);
     await supabase.from('tbl_user_auth').update({ is_active: !current, updated_at: new Date().toISOString() }).eq('user_id', userId);
     await logAdminAction(current ? 'deactivate_user' : 'activate_user', 'tbl_user_auth', userId);
@@ -182,58 +209,60 @@ const SuperAdminUsers: React.FC = () => {
     setUpdating(null);
   };
 
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="p-2 bg-amber-100 rounded-xl"><Users className="w-6 h-6 text-amber-700" /></div>
-        <h1 className="text-2xl font-bold text-gray-900">用戶管理</h1>
-        <span className="text-sm text-gray-400 ml-1">共 {total} 位用戶</span>
+      <div className="mb-2 flex items-center gap-3">
+        <div className="rounded-xl bg-amber-100 p-2"><Users className="h-6 w-6 text-amber-700" /></div>
+        <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+        <span className="ml-1 text-sm text-gray-400">Total {total}</span>
         <div className="flex-1" />
-        <button onClick={() => { setShowCreate(true); setCreateError(''); }} className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white rounded-xl text-sm font-semibold hover:bg-amber-600 transition shadow-sm">
-          <Plus className="w-4 h-4" />新增會員
+        <button onClick={() => { setShowCreate(true); setCreateError(''); }} className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600">
+          <Plus className="h-4 w-4" />
+          New user
         </button>
       </div>
 
-      {/* Create User Modal */}
       <AnimatePresence>
         {showCreate && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                <h3 className="font-semibold text-gray-900">新增會員</h3>
-                <button onClick={() => setShowCreate(false)} className="p-1 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-400" /></button>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+                <h3 className="font-semibold text-gray-900">Create user</h3>
+                <button onClick={() => setShowCreate(false)} className="rounded-lg p-1 hover:bg-gray-100"><X className="h-5 w-5 text-gray-400" /></button>
               </div>
-              <div className="p-6 space-y-4">
-                {createError && <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">{createError}</div>}
+              <div className="space-y-4 p-6">
+                {createError && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{createError}</div>}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">信箱 *</label>
-                  <input type="email" value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} placeholder="user@example.com" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40" />
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+                  <input type="email" value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} placeholder="user@example.com" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">密碼 *</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Password</label>
                   <div className="relative">
-                    <input type={showPw ? 'text' : 'password'} value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} placeholder="至少 6 個字元" className="w-full px-4 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40" />
+                    <input type={showPw ? 'text' : 'password'} value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} placeholder="At least 6 characters" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40" />
                     <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">顯示名稱</label>
-                  <input type="text" value={createForm.display_name} onChange={e => setCreateForm({ ...createForm, display_name: e.target.value })} placeholder="選填" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40" />
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Display name</label>
+                  <input type="text" value={createForm.display_name} onChange={e => setCreateForm({ ...createForm, display_name: e.target.value })} placeholder="Optional" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">角色</label>
-                  <select value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value })} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40 bg-white">
-                    {ROLE_OPTIONS.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Role</label>
+                  <select value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40">
+                    {ROLE_OPTIONS.map(role => <option key={role} value={role}>{ROLE_LABELS[role]}</option>)}
                   </select>
                 </div>
               </div>
-              <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100">
-                <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition">取消</button>
-                <button onClick={handleCreateUser} disabled={creating} className="flex items-center gap-1.5 px-5 py-2 bg-amber-500 text-white text-sm font-semibold rounded-xl hover:bg-amber-600 disabled:opacity-50 transition">
-                  {creating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
-                  建立
+              <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
+                <button onClick={() => setShowCreate(false)} className="rounded-xl px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100">Cancel</button>
+                <button onClick={handleCreateUser} disabled={creating} className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50">
+                  {creating ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Save className="h-4 w-4" />}
+                  Create
                 </button>
               </div>
             </motion.div>
@@ -242,85 +271,99 @@ const SuperAdminUsers: React.FC = () => {
       </AnimatePresence>
 
       <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} placeholder="搜尋姓名、帳號或 User ID…"
-            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+        <div className="relative min-w-48 flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(0); }}
+            placeholder="Search by name, email, or user ID"
+            className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+          />
         </div>
-        <select value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(0); }}
-          className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white">
-          <option value="all">全部角色</option>
-          {ROLE_OPTIONS.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+        <select value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(0); }} className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+          <option value="all">All roles</option>
+          {ROLE_OPTIONS.map(role => <option key={role} value={role}>{ROLE_LABELS[role]}</option>)}
         </select>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
         {loading ? (
-          <div className="flex justify-center py-16"><div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" /></div>
+          <div className="flex justify-center py-16"><div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" /></div>
         ) : users.length === 0 ? (
-          <div className="text-center py-16 text-gray-400"><Users className="w-10 h-10 mx-auto mb-2 opacity-20" /><p>找不到用戶</p></div>
+          <div className="py-16 text-center text-gray-400"><Users className="mx-auto mb-2 h-10 w-10 opacity-20" /><p className="text-sm">No users found</p></div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead><tr className="border-b border-gray-100 bg-gray-50">
-                <th className="text-left px-5 py-3 text-gray-500 font-medium">用戶</th>
-                <th className="text-left px-5 py-3 text-gray-500 font-medium hidden md:table-cell">User ID</th>
-                <th className="text-center px-5 py-3 text-gray-500 font-medium">角色</th>
-                <th className="text-center px-5 py-3 text-gray-500 font-medium">狀態</th>
-                <th className="text-left px-5 py-3 text-gray-500 font-medium hidden lg:table-cell">建立時間</th>
-                <th className="text-right px-5 py-3 text-gray-500 font-medium">操作</th>
-              </tr></thead>
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50">
+                  <th className="px-5 py-3 text-left font-medium text-gray-500">User</th>
+                  <th className="hidden px-5 py-3 text-left font-medium text-gray-500 md:table-cell">User ID</th>
+                  <th className="px-5 py-3 text-center font-medium text-gray-500">Role</th>
+                  <th className="px-5 py-3 text-center font-medium text-gray-500">Status</th>
+                  <th className="hidden px-5 py-3 text-left font-medium text-gray-500 lg:table-cell">Created at</th>
+                  <th className="px-5 py-3 text-right font-medium text-gray-500">Actions</th>
+                </tr>
+              </thead>
               <tbody>
-                {users.map((u, i) => (
-                  <motion.tr key={u.user_id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
-                    className={`border-b border-gray-50 last:border-0 ${u.user_id === currentUser?.id ? 'bg-amber-50/30' : ''}`}>
+                {users.map((user, index) => (
+                  <motion.tr
+                    key={user.user_id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: index * 0.02 }}
+                    className={`border-b border-gray-50 last:border-0 ${user.user_id === currentUser?.id ? 'bg-amber-50/30' : ''}`}
+                  >
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${ROLE_COLORS[u.role] || 'bg-gray-100 text-gray-600'}`}>
-                          {u.display_name?.[0] || '?'}
+                        <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold ${ROLE_COLORS[user.role] || 'bg-gray-100 text-gray-600'}`}>
+                          {user.display_name?.[0] || '?'}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-medium text-gray-900">{u.display_name || '（未設定）'}</p>
-                          {u.email && <p className="text-xs text-gray-400 truncate">{u.email}</p>}
-                          {u.user_id === currentUser?.id && <span className="text-xs text-amber-600">(目前登入)</span>}
+                          <p className="font-medium text-gray-900">{user.display_name || 'Unnamed user'}</p>
+                          {user.email && <p className="truncate text-xs text-gray-400">{user.email}</p>}
+                          {user.user_id === currentUser?.id && <span className="text-xs text-amber-600">(You)</span>}
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 hidden md:table-cell">
-                      <button onClick={() => navigator.clipboard.writeText(u.user_id)} title="點擊複製 User ID" className="group flex items-center gap-1 hover:text-amber-600 transition">
-                        <code className="text-xs text-gray-400 font-mono group-hover:text-amber-600">{u.user_id.slice(-12)}</code>
-                        <span className="text-xs text-gray-300 group-hover:text-amber-400 opacity-0 group-hover:opacity-100 transition">複製</span>
+                    <td className="hidden px-5 py-3.5 md:table-cell">
+                      <button onClick={() => navigator.clipboard.writeText(user.user_id)} title="Copy user ID" className="group flex items-center gap-1 transition hover:text-amber-600">
+                        <code className="font-mono text-xs text-gray-400 group-hover:text-amber-600">{user.user_id.slice(-12)}</code>
+                        <span className="text-xs text-gray-300 opacity-0 transition group-hover:opacity-100 group-hover:text-amber-400">Copy</span>
                       </button>
                     </td>
                     <td className="px-5 py-3.5 text-center">
-                      {u.user_id === currentUser?.id ? (
-                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${ROLE_COLORS[u.role]}`}>{ROLE_LABELS[u.role]}</span>
+                      {user.user_id === currentUser?.id ? (
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${ROLE_COLORS[user.role]}`}>{ROLE_LABELS[user.role]}</span>
                       ) : (
-                        <div className="relative inline-flex items-center">
-                          <select value={u.role} disabled={updating === u.user_id}
-                            onChange={e => updateRole(u.user_id, e.target.value)}
-                            className={`text-xs px-2.5 py-1 rounded-full font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-400 ${ROLE_COLORS[u.role]}`}>
-                            {ROLE_OPTIONS.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-                          </select>
-                        </div>
+                        <select
+                          value={user.role}
+                          disabled={updating === user.user_id}
+                          onChange={e => updateRole(user.user_id, e.target.value)}
+                          className={`cursor-pointer rounded-full border-0 px-2.5 py-1 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 ${ROLE_COLORS[user.role]}`}
+                        >
+                          {ROLE_OPTIONS.map(role => <option key={role} value={role}>{ROLE_LABELS[role]}</option>)}
+                        </select>
                       )}
                     </td>
                     <td className="px-5 py-3.5 text-center">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                        {u.is_active ? '啟用' : '停用'}
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                        {user.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-gray-400 text-xs hidden lg:table-cell">{formatDate(u.created_at)}</td>
+                    <td className="hidden px-5 py-3.5 text-xs text-gray-400 lg:table-cell">{formatDate(user.created_at)}</td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => openDetail(u)} className="p-2 rounded-xl transition text-xs font-medium hover:bg-amber-50 text-amber-600" title="查看資料">
-                          <Eye className="w-4 h-4" />
+                        <button onClick={() => openDetail(user)} className="rounded-xl p-2 text-amber-600 transition hover:bg-amber-50" title="View detail">
+                          <Eye className="h-4 w-4" />
                         </button>
-                        {u.user_id !== currentUser?.id && (
-                          <button onClick={() => toggleActive(u.user_id, u.is_active)} disabled={updating === u.user_id}
-                            className={`p-2 rounded-xl transition text-xs font-medium disabled:opacity-50 ${u.is_active ? 'hover:bg-red-50 text-red-500' : 'hover:bg-green-50 text-green-600'}`}
-                            title={u.is_active ? '停用帳號' : '啟用帳號'}>
-                            {updating === u.user_id ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : u.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                        {user.user_id !== currentUser?.id && (
+                          <button
+                            onClick={() => toggleActive(user.user_id, user.is_active)}
+                            disabled={updating === user.user_id}
+                            className={`rounded-xl p-2 transition disabled:opacity-50 ${user.is_active ? 'text-red-500 hover:bg-red-50' : 'text-green-600 hover:bg-green-50'}`}
+                            title={user.is_active ? 'Deactivate' : 'Activate'}
+                          >
+                            {updating === user.user_id ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : user.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                           </button>
                         )}
                       </div>
@@ -333,81 +376,76 @@ const SuperAdminUsers: React.FC = () => {
         )}
       </div>
 
-      {/* User Detail Modal */}
       <AnimatePresence>
         {viewUser && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setViewUser(null)}>
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} onClick={e => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
-              {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setViewUser(null)}>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} onClick={e => e.stopPropagation()} className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl">
+              <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-100 px-6 py-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${ROLE_COLORS[viewUser.role] || 'bg-gray-100 text-gray-600'}`}>
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${ROLE_COLORS[viewUser.role] || 'bg-gray-100 text-gray-600'}`}>
                     {viewUser.display_name?.[0] || '?'}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">{viewUser.display_name || '（未設定）'}</h3>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ROLE_COLORS[viewUser.role]}`}>{ROLE_LABELS[viewUser.role]}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${viewUser.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>{viewUser.is_active ? '啟用' : '停用'}</span>
+                    <h3 className="font-semibold text-gray-900">{viewUser.display_name || 'Unnamed user'}</h3>
+                    <div className="mt-0.5 flex items-center gap-2">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_COLORS[viewUser.role]}`}>{ROLE_LABELS[viewUser.role]}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${viewUser.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>{viewUser.is_active ? 'Active' : 'Inactive'}</span>
                     </div>
                   </div>
                 </div>
-                <button onClick={() => setViewUser(null)} className="p-1.5 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-400" /></button>
+                <button onClick={() => setViewUser(null)} className="rounded-lg p-1.5 hover:bg-gray-100"><X className="h-5 w-5 text-gray-400" /></button>
               </div>
 
-              {/* Tabs */}
-              <div className="flex border-b border-gray-100 px-6 flex-shrink-0">
+              <div className="flex flex-shrink-0 border-b border-gray-100 px-6">
                 {([
-                  { key: 'profile', label: '個人資料', icon: <Users className="w-3.5 h-3.5" /> },
-                  { key: 'bookings', label: '訂房紀錄', icon: <BedDouble className="w-3.5 h-3.5" /> },
-                  { key: 'orders', label: '訂單紀錄', icon: <ShoppingBag className="w-3.5 h-3.5" /> },
-                  { key: 'points', label: '點數紀錄', icon: <Award className="w-3.5 h-3.5" /> },
+                  { key: 'profile', label: 'Profile', icon: <Users className="h-3.5 w-3.5" /> },
+                  { key: 'bookings', label: 'Bookings', icon: <BedDouble className="h-3.5 w-3.5" /> },
+                  { key: 'orders', label: 'Orders', icon: <ShoppingBag className="h-3.5 w-3.5" /> },
+                  { key: 'points', label: 'Points', icon: <Award className="h-3.5 w-3.5" /> },
                 ] as const).map(tab => (
-                  <button key={tab.key} onClick={() => setDetailTab(tab.key)}
-                    className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition ${detailTab === tab.key ? 'border-amber-500 text-amber-700' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
-                    {tab.icon}{tab.label}
+                  <button
+                    key={tab.key}
+                    onClick={() => setDetailTab(tab.key)}
+                    className={`flex items-center gap-1.5 border-b-2 px-4 py-3 text-sm font-medium transition ${detailTab === tab.key ? 'border-amber-500 text-amber-700' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                  >
+                    {tab.icon}
+                    {tab.label}
                   </button>
                 ))}
               </div>
 
-              {/* Content */}
               <div className="flex-1 overflow-y-auto p-6">
                 {detailLoading ? (
-                  <div className="flex justify-center py-12"><div className="w-7 h-7 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" /></div>
+                  <div className="flex justify-center py-12"><div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" /></div>
                 ) : !detail ? null : detailTab === 'profile' ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                      <InfoItem icon={<Mail className="w-4 h-4" />} label="帳號（信箱）" value={viewUser.email || '—'} />
-                      <InfoItem icon={<Calendar className="w-4 h-4" />} label="建立時間" value={formatDateTime(viewUser.created_at)} />
+                      <InfoItem icon={<Mail className="h-4 w-4" />} label="Email" value={viewUser.email || '-'} />
+                      <InfoItem icon={<Calendar className="h-4 w-4" />} label="Created at" value={formatDateTime(viewUser.created_at)} />
                       <div className="col-span-2">
-                        <InfoItem icon={<FileText className="w-4 h-4" />} label="User ID" value={viewUser.user_id} mono />
+                        <InfoItem icon={<FileText className="h-4 w-4" />} label="User ID" value={viewUser.user_id} mono />
                       </div>
                     </div>
                     {detail.profile ? (
                       <>
                         <div className="grid grid-cols-2 gap-4">
-                          <InfoItem icon={<Users className="w-4 h-4" />} label="顯示名稱" value={detail.profile.display_name || '—'} />
-                          <InfoItem icon={<Phone className="w-4 h-4" />} label="電話" value={detail.profile.phone || '—'} />
-                          <InfoItem icon={<Globe className="w-4 h-4" />} label="國籍" value={detail.profile.nationality || '—'} />
-                          <InfoItem icon={<Globe className="w-4 h-4" />} label="偏好語言" value={detail.profile.preferred_language || '—'} />
+                          <InfoItem icon={<Users className="h-4 w-4" />} label="Display name" value={detail.profile.display_name || '-'} />
+                          <InfoItem icon={<Phone className="h-4 w-4" />} label="Phone" value={detail.profile.phone || '-'} />
+                          <InfoItem icon={<Globe className="h-4 w-4" />} label="Nationality" value={detail.profile.nationality || '-'} />
+                          <InfoItem icon={<Globe className="h-4 w-4" />} label="Preferred language" value={detail.profile.preferred_language || '-'} />
                           <div className="col-span-2">
-                            <InfoItem icon={<FileText className="w-4 h-4" />} label="個人簡介" value={detail.profile.bio || '—'} />
+                            <InfoItem icon={<FileText className="h-4 w-4" />} label="Bio" value={detail.profile.bio || '-'} />
                           </div>
                         </div>
-
                         {(detail.profile.coffee_profile_label || detail.profile.coffee_profile_summary) && (
                           <div className="mt-4 rounded-2xl border border-[#eadfce] bg-gradient-to-br from-[#fff9f0] to-white p-4">
                             <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#8a5a22]">
-                              <Coffee className="w-4 h-4" />
-                              咖啡偏好輪廓
+                              <Coffee className="h-4 w-4" />
+                              Coffee profile
                             </div>
-                            <p className="text-base font-bold text-[#3b2a19]">{detail.profile.coffee_profile_label || '—'}</p>
-                            {detail.profile.coffee_profile_summary && (
-                              <p className="mt-2 text-sm leading-7 text-gray-700">{detail.profile.coffee_profile_summary}</p>
-                            )}
-                            {detail.profile.coffee_profile_key && (
-                              <p className="mt-3 text-xs text-gray-400">Key: {detail.profile.coffee_profile_key}</p>
-                            )}
+                            <p className="text-base font-bold text-[#3b2a19]">{detail.profile.coffee_profile_label || '-'}</p>
+                            {detail.profile.coffee_profile_summary && <p className="mt-2 text-sm leading-7 text-gray-700">{detail.profile.coffee_profile_summary}</p>}
+                            {detail.profile.coffee_profile_key && <p className="mt-3 text-xs text-gray-400">Key: {detail.profile.coffee_profile_key}</p>}
                             {detail.profile.coffee_profile_scores && Object.keys(detail.profile.coffee_profile_scores).length > 0 && (
                               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                                 {Object.entries(detail.profile.coffee_profile_scores).map(([key, value]) => (
@@ -424,23 +462,23 @@ const SuperAdminUsers: React.FC = () => {
                         )}
                       </>
                     ) : (
-                      <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-400 text-center">尚未建立個人資料</div>
+                      <div className="rounded-xl bg-gray-50 p-4 text-center text-sm text-gray-400">No profile data</div>
                     )}
                   </div>
                 ) : detailTab === 'bookings' ? (
                   detail.bookings.length === 0 ? (
-                    <div className="text-center py-10 text-gray-400"><BedDouble className="w-8 h-8 mx-auto mb-2 opacity-30" /><p className="text-sm">尚無訂房紀錄</p></div>
+                    <div className="py-10 text-center text-gray-400"><BedDouble className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">No bookings</p></div>
                   ) : (
                     <div className="space-y-3">
-                      {detail.bookings.map((b: any) => (
-                        <div key={b.id} className="bg-gray-50 rounded-xl p-4 flex items-center justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 text-sm truncate">{b.tbl_rooms?.name || '房間'}</p>
-                            <p className="text-xs text-gray-500 mt-0.5">{formatDate(b.check_in_date)} ~ {formatDate(b.check_out_date)} / {b.guests} 位</p>
+                      {detail.bookings.map((booking: any) => (
+                        <div key={booking.id} className="flex items-center justify-between gap-4 rounded-xl bg-gray-50 p-4">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-gray-900">{booking.tbl_rooms?.name || 'Room'}</p>
+                            <p className="mt-0.5 text-xs text-gray-500">{formatDate(booking.check_in_date)} ~ {formatDate(booking.check_out_date)} / {booking.guests} guests</p>
                           </div>
-                          <div className="text-right flex-shrink-0">
-                            <p className="font-semibold text-sm text-gray-900">{formatCurrency(b.total_price)}</p>
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getStatusColor(b.status)}`}>{getStatusLabel(b.status)}</span>
+                          <div className="flex-shrink-0 text-right">
+                            <p className="text-sm font-semibold text-gray-900">{formatCurrency(booking.total_price)}</p>
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(booking.status)}`}>{getStatusLabel(booking.status)}</span>
                           </div>
                         </div>
                       ))}
@@ -448,20 +486,20 @@ const SuperAdminUsers: React.FC = () => {
                   )
                 ) : detailTab === 'orders' ? (
                   detail.orders.length === 0 ? (
-                    <div className="text-center py-10 text-gray-400"><ShoppingBag className="w-8 h-8 mx-auto mb-2 opacity-30" /><p className="text-sm">尚無訂單紀錄</p></div>
+                    <div className="py-10 text-center text-gray-400"><ShoppingBag className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">No orders</p></div>
                   ) : (
                     <div className="space-y-3">
-                      {detail.orders.map((o: any) => (
-                        <div key={o.id} className="bg-gray-50 rounded-xl p-4 flex items-center justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 text-sm font-mono">#{o.id.slice(-8).toUpperCase()}</p>
-                            <p className="text-xs text-gray-500 mt-0.5">{formatDateTime(o.created_at)}</p>
+                      {detail.orders.map((order: any) => (
+                        <div key={order.id} className="flex items-center justify-between gap-4 rounded-xl bg-gray-50 p-4">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-mono text-sm font-medium text-gray-900">#{order.id.slice(-8).toUpperCase()}</p>
+                            <p className="mt-0.5 text-xs text-gray-500">{formatDateTime(order.created_at)}</p>
                           </div>
-                          <div className="text-right flex-shrink-0">
-                            <p className="font-semibold text-sm text-gray-900">{formatCurrency(o.total_amount)}</p>
-                            <div className="flex gap-1 mt-0.5 justify-end">
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getStatusColor(o.status)}`}>{getStatusLabel(o.status)}</span>
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getStatusColor(o.payment_status)}`}>{getStatusLabel(o.payment_status)}</span>
+                          <div className="flex-shrink-0 text-right">
+                            <p className="text-sm font-semibold text-gray-900">{formatCurrency(order.total_amount)}</p>
+                            <div className="mt-0.5 flex justify-end gap-1">
+                              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(order.status)}`}>{getStatusLabel(order.status)}</span>
+                              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(order.payment_status)}`}>{getStatusLabel(order.payment_status)}</span>
                             </div>
                           </div>
                         </div>
@@ -470,22 +508,22 @@ const SuperAdminUsers: React.FC = () => {
                   )
                 ) : (
                   <>
-                    <div className="bg-amber-50 rounded-xl p-4 mb-4 flex items-center justify-between">
-                      <span className="text-sm font-medium text-amber-800">目前點數餘額</span>
-                      <span className="text-lg font-bold text-amber-700">{detail.totalPoints.toLocaleString()} 點</span>
+                    <div className="mb-4 flex items-center justify-between rounded-xl bg-amber-50 p-4">
+                      <span className="text-sm font-medium text-amber-800">Total points</span>
+                      <span className="text-lg font-bold text-amber-700">{detail.totalPoints.toLocaleString()}</span>
                     </div>
                     {detail.points.length === 0 ? (
-                      <div className="text-center py-10 text-gray-400"><Award className="w-8 h-8 mx-auto mb-2 opacity-30" /><p className="text-sm">尚無點數紀錄</p></div>
+                      <div className="py-10 text-center text-gray-400"><Award className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">No point records</p></div>
                     ) : (
                       <div className="space-y-2">
-                        {detail.points.map((p: any) => (
-                          <div key={p.id} className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-gray-50">
+                        {detail.points.map((point: any) => (
+                          <div key={point.id} className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-gray-50">
                             <div>
-                              <p className="text-sm text-gray-900">{p.description || '點數異動'}</p>
-                              <p className="text-xs text-gray-400">{formatDateTime(p.created_at)}</p>
+                              <p className="text-sm text-gray-900">{point.description || 'Point record'}</p>
+                              <p className="text-xs text-gray-400">{formatDateTime(point.created_at)}</p>
                             </div>
-                            <span className={`font-semibold text-sm ${p.transaction_type === 'earned' ? 'text-green-600' : p.transaction_type === 'spent' ? 'text-red-500' : 'text-gray-400'}`}>
-                              {p.transaction_type === 'earned' ? '+' : p.transaction_type === 'spent' ? '-' : ''}{p.amount}
+                            <span className={`text-sm font-semibold ${point.transaction_type === 'earned' ? 'text-green-600' : point.transaction_type === 'spent' ? 'text-red-500' : 'text-gray-400'}`}>
+                              {point.transaction_type === 'earned' ? '+' : point.transaction_type === 'spent' ? '-' : ''}{point.amount}
                             </span>
                           </div>
                         ))}
@@ -501,9 +539,9 @@ const SuperAdminUsers: React.FC = () => {
 
       {total > PAGE_SIZE && (
         <div className="flex items-center justify-center gap-2">
-          <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium disabled:opacity-40 hover:bg-gray-50">上一頁</button>
-          <span className="text-sm text-gray-500">第 {page + 1} 頁 / 共 {Math.ceil(total / PAGE_SIZE)} 頁</span>
-          <button disabled={(page + 1) * PAGE_SIZE >= total} onClick={() => setPage(p => p + 1)} className="px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium disabled:opacity-40 hover:bg-gray-50">下一頁</button>
+          <button disabled={page === 0} onClick={() => setPage(current => current - 1)} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Previous</button>
+          <span className="text-sm text-gray-500">Page {page + 1} / {Math.ceil(total / PAGE_SIZE)}</span>
+          <button disabled={(page + 1) * PAGE_SIZE >= total} onClick={() => setPage(current => current + 1)} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Next</button>
         </div>
       )}
     </div>
@@ -511,9 +549,9 @@ const SuperAdminUsers: React.FC = () => {
 };
 
 const InfoItem: React.FC<{ icon: React.ReactNode; label: string; value: string; mono?: boolean }> = ({ icon, label, value, mono }) => (
-  <div className="bg-gray-50 rounded-xl p-3">
-    <div className="flex items-center gap-1.5 text-gray-400 mb-1">{icon}<span className="text-xs">{label}</span></div>
-    <p className={`text-sm text-gray-900 ${mono ? 'font-mono text-xs break-all' : ''}`}>{value}</p>
+  <div className="rounded-xl bg-gray-50 p-3">
+    <div className="mb-1 flex items-center gap-1.5 text-gray-400">{icon}<span className="text-xs">{label}</span></div>
+    <p className={`text-sm text-gray-900 ${mono ? 'break-all font-mono text-xs' : ''}`}>{value}</p>
   </div>
 );
 
