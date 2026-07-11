@@ -72,11 +72,9 @@ export default function SuperAdminProductDetail() {
           className="inline-flex items-center gap-2 text-sm font-medium text-amber-700 hover:text-amber-800"
         >
           <ArrowLeft className="h-4 w-4" />
-          返回列表
+          Back to products
         </button>
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error || 'Load failed'}
-        </div>
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error || 'Load failed'}</div>
       </div>
     );
   }
@@ -96,7 +94,7 @@ export default function SuperAdminProductDetail() {
           className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
         >
           <ArrowLeft className="h-4 w-4" />
-          返回列表
+          Back
         </button>
         <div className="rounded-xl bg-amber-100 p-2">
           <ShoppingBag className="h-6 w-6 text-amber-700" />
@@ -111,7 +109,7 @@ export default function SuperAdminProductDetail() {
           className="ml-auto inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
         >
           <Pencil className="h-4 w-4" />
-          前往編輯
+          Edit
         </button>
       </div>
 
@@ -127,39 +125,25 @@ export default function SuperAdminProductDetail() {
             )}
             <div className="border-t border-gray-100 p-6">
               <div className="flex flex-wrap items-center gap-3">
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                    product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                  }`}
-                >
-                  {product.is_active ? '上架中' : '未上架'}
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                  {product.is_active ? 'Active' : 'Inactive'}
                 </span>
-                <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                  庫存 {product.stock_quantity}
-                </span>
-                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
-                  {formatCurrency(product.price)}
-                </span>
-                {product.roast_date ? (
-                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                    烘焙日 {product.roast_date}
-                  </span>
-                ) : null}
+                <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">Stock {product.stock_quantity}</span>
+                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">{formatCurrency(product.price)}</span>
+                {product.roast_date ? <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Roast {product.roast_date}</span> : null}
               </div>
 
               <div className="mt-4 grid gap-3 md:grid-cols-3">
                 <div className="rounded-xl bg-gray-50 p-4">
-                  <p className="text-xs font-medium text-gray-500">重量</p>
-                  <p className="mt-1 text-lg font-semibold text-gray-900">
-                    {product.weight_grams ? `${product.weight_grams} g` : '-'}
-                  </p>
+                  <p className="text-xs font-medium text-gray-500">Weight</p>
+                  <p className="mt-1 text-lg font-semibold text-gray-900">{product.weight_grams ? `${product.weight_grams} g` : '-'}</p>
                 </div>
                 <div className="rounded-xl bg-gray-50 p-4">
-                  <p className="text-xs font-medium text-gray-500">產地</p>
+                  <p className="text-xs font-medium text-gray-500">Origin</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900">{product.origin || '-'}</p>
                 </div>
                 <div className="rounded-xl bg-gray-50 p-4">
-                  <p className="text-xs font-medium text-gray-500">處理法</p>
+                  <p className="text-xs font-medium text-gray-500">Process</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900">{product.processing_method || '-'}</p>
                 </div>
               </div>
@@ -172,62 +156,57 @@ export default function SuperAdminProductDetail() {
 
           {images.length > 0 && (
             <div className="rounded-2xl bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-lg font-bold text-gray-900">照片</h2>
+              <h2 className="mb-4 text-lg font-bold text-gray-900">Images</h2>
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 {images.map((src, index) => (
-                  <img
-                    key={`${src}-${index}`}
-                    src={src}
-                    alt={`${product.name}-${index + 1}`}
-                    className="h-28 w-full rounded-xl object-cover"
-                  />
+                  <img key={`${src}-${index}`} src={src} alt={`${product.name}-${index + 1}`} className="h-28 w-full rounded-xl object-cover" />
                 ))}
               </div>
             </div>
           )}
 
           <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-bold text-gray-900">風味與標籤</h2>
+            <h2 className="mb-4 text-lg font-bold text-gray-900">Flavor & Tags</h2>
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-medium text-gray-500">風味描述</p>
+                <p className="text-xs font-medium text-gray-500">Flavor notes</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {flavorNotes.length ? (
-                    flavorNotes.map((note) => (
+                    flavorNotes.map(note => (
                       <span key={note} className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
                         {note}
                       </span>
                     ))
                   ) : (
-                    <span className="text-sm text-gray-400">尚未設定風味</span>
+                    <span className="text-sm text-gray-400">No flavor notes</span>
                   )}
                 </div>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500">標籤</p>
+                <p className="text-xs font-medium text-gray-500">Tags</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {tags.length ? (
-                    tags.map((tag) => (
+                    tags.map(tag => (
                       <span key={tag} className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
                         {tag}
                       </span>
                     ))
                   ) : (
-                    <span className="text-sm text-gray-400">尚未設定標籤</span>
+                    <span className="text-sm text-gray-400">No tags</span>
                   )}
                 </div>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500">品種</p>
+                <p className="text-xs font-medium text-gray-500">Variety</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {variety.length ? (
-                    variety.map((item) => (
+                    variety.map(item => (
                       <span key={item} className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
                         {item}
                       </span>
                     ))
                   ) : (
-                    <span className="text-sm text-gray-400">尚未設定品種</span>
+                    <span className="text-sm text-gray-400">No variety data</span>
                   )}
                 </div>
               </div>
@@ -237,15 +216,12 @@ export default function SuperAdminProductDetail() {
 
         <aside className="space-y-6">
           <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-bold text-gray-900">基本資料</h2>
+            <h2 className="mb-4 text-lg font-bold text-gray-900">Meta</h2>
             <div className="space-y-4 text-sm">
               <div>
-                <p className="text-xs font-medium text-gray-500">廠商</p>
+                <p className="text-xs font-medium text-gray-500">Vendor</p>
                 {product.vendors?.id ? (
-                  <Link
-                    to={`/superadmin/vendors/detail/${product.vendors.id}`}
-                    className="mt-1 inline-flex items-center gap-1 font-semibold text-amber-700 hover:underline"
-                  >
+                  <Link to={`/superadmin/vendors/detail/${product.vendors.id}`} className="mt-1 inline-flex items-center gap-1 font-semibold text-amber-700 hover:underline">
                     {product.vendors.name || product.vendors.id}
                     <ExternalLink className="h-3.5 w-3.5" />
                   </Link>
@@ -254,26 +230,21 @@ export default function SuperAdminProductDetail() {
                 )}
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500">分類</p>
+                <p className="text-xs font-medium text-gray-500">Category</p>
                 <p className="mt-1 font-semibold text-gray-900">{product.categories?.name || '-'}</p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500">烘焙程度</p>
+                <p className="text-xs font-medium text-gray-500">Roast level</p>
                 <p className="mt-1 text-gray-700">{product.roast_level || '-'}</p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500">海拔</p>
+                <p className="text-xs font-medium text-gray-500">Altitude</p>
                 <p className="mt-1 text-gray-700">{product.altitude || '-'}</p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500">外部連結</p>
+                <p className="text-xs font-medium text-gray-500">Source URL</p>
                 {product.source_url ? (
-                  <a
-                    href={product.source_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-1 inline-flex items-center gap-1 text-amber-700 hover:underline"
-                  >
+                  <a href={product.source_url} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-amber-700 hover:underline">
                     {product.source_url}
                     <ExternalLink className="h-3.5 w-3.5" />
                   </a>
@@ -282,33 +253,27 @@ export default function SuperAdminProductDetail() {
                 )}
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500">建立時間</p>
+                <p className="text-xs font-medium text-gray-500">Created at</p>
                 <p className="mt-1 text-gray-700">{new Date(product.created_at).toLocaleString()}</p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500">更新時間</p>
+                <p className="text-xs font-medium text-gray-500">Updated at</p>
                 <p className="mt-1 text-gray-700">{new Date(product.updated_at).toLocaleString()}</p>
               </div>
             </div>
           </div>
 
           <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-bold text-gray-900">快速操作</h2>
+            <h2 className="mb-4 text-lg font-bold text-gray-900">Quick actions</h2>
             <div className="space-y-3 text-sm">
               {product.vendors?.id ? (
-                <Link
-                  to={`/superadmin/vendors/detail/${product.vendors.id}`}
-                  className="block rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 font-medium text-gray-800 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800"
-                >
-                  前往廠商頁
+                <Link to={`/superadmin/vendors/detail/${product.vendors.id}`} className="block rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 font-medium text-gray-800 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800">
+                  View vendor
                 </Link>
               ) : null}
               {product.categories?.name ? (
-                <Link
-                  to={`/superadmin/products?q=${encodeURIComponent(product.categories.name)}`}
-                  className="block rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 font-medium text-gray-800 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800"
-                >
-                  查看同分類商品
+                <Link to={`/superadmin/products?q=${encodeURIComponent(product.categories.name)}`} className="block rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 font-medium text-gray-800 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800">
+                  Search same category
                 </Link>
               ) : null}
               <button
@@ -316,7 +281,7 @@ export default function SuperAdminProductDetail() {
                 onClick={() => navigate(`/superadmin/products/${product.id}`)}
                 className="block w-full rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-left font-semibold text-amber-800 transition hover:bg-amber-100"
               >
-                編輯商品
+                Edit product
               </button>
             </div>
           </div>
@@ -324,10 +289,10 @@ export default function SuperAdminProductDetail() {
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
             <div className="flex items-center gap-2 font-semibold">
               <Package className="h-4 w-4" />
-              商品摘要
+              Notes
             </div>
             <p className="mt-2 leading-6">
-              這裡可以快速查看商品的價格、庫存、來源與風味標籤，方便後台做內容維護與推薦判斷。
+              This page keeps the product data and related links intact, while making the detail view readable for admins.
             </p>
           </div>
         </aside>

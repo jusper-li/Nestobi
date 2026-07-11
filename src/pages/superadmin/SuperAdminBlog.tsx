@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Coffee, Plus, Pencil, Trash2, Eye, EyeOff, ExternalLink, Search, Tag, Calendar, FolderOpen } from 'lucide-react';
@@ -42,6 +42,7 @@ const SuperAdminBlog: React.FC = () => {
       .select('id, title, slug, category, status, author_name, tags, published_at, created_at, updated_at, blog_post_category_links(category_id)')
       .order('created_at', { ascending: false });
     setPosts(data || []);
+
     const { data: cats } = await supabase
       .from('blog_categories')
       .select('id,name,slug,parent_id,display_order,is_active')
@@ -51,7 +52,9 @@ const SuperAdminBlog: React.FC = () => {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchPosts(); }, [fetchPosts]);
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const handleToggleStatus = async (post: BlogPost) => {
     setToggling(post.id);
@@ -61,129 +64,138 @@ const SuperAdminBlog: React.FC = () => {
       update.published_at = new Date().toISOString();
     }
     const { error } = await supabase.from('blog_posts').update(update).eq('id', post.id);
-    if (!error) setPosts(ps => ps.map(p => p.id === post.id ? { ...p, status: newStatus } : p));
+    if (!error) {
+      setPosts(current => current.map(item => (item.id === post.id ? { ...item, status: newStatus } : item)));
+    }
     setToggling(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('確定要刪除此文章？此操作無法復原。')) return;
-    setDeleting(id);
-    const { error } = await supabase.from('blog_posts').delete().eq('id', id);
-    if (!error) setPosts(ps => ps.filter(p => p.id !== id));
-    if (!error) await logAdminAction('delete_blog_post', 'blog_posts', id);
+  const handleDelete = async (postId: string) => {
+    if (!confirm('Delete this blog post?')) return;
+    setDeleting(postId);
+    const { error } = await supabase.from('blog_posts').delete().eq('id', postId);
+    if (!error) {
+      setPosts(current => current.filter(item => item.id !== postId));
+      await logAdminAction('delete_blog_post', 'blog_posts', postId);
+    }
     setDeleting(null);
   };
 
-  const categoryIdsByName = new Map<string, string[]>();
-  for (const category of categories) {
-    const ids = categoryIdsByName.get(category.name) || [];
-    ids.push(category.id);
-    categoryIdsByName.set(category.name, ids);
-  }
+  const categoryIdsByName = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const category of categories) {
+      const ids = map.get(category.name) || [];
+      ids.push(category.id);
+      map.set(category.name, ids);
+    }
+    return map;
+  }, [categories]);
+
   const selectedCategoryIds = categoryFilter === 'all' ? null : getDescendantCategoryIds(categories, categoryFilter);
 
-  const filtered = posts.filter(p => {
-    const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.slug.includes(search) || p.category.includes(search);
-    const matchStatus = statusFilter === 'all' || p.status === statusFilter;
-    const postCategoryIds = getBlogPostCategoryIds(p);
-    for (const id of categoryIdsByName.get(p.category) || []) postCategoryIds.add(id);
-    const matchCat = !selectedCategoryIds || [...postCategoryIds].some(id => selectedCategoryIds.has(id));
-    return matchSearch && matchStatus && matchCat;
-  });
+  const filtered = useMemo(() => {
+    return posts.filter(post => {
+      const q = search.toLowerCase();
+      const matchSearch = !search || post.title.toLowerCase().includes(q) || post.slug.includes(search) || post.category.includes(search);
+      const matchStatus = statusFilter === 'all' || post.status === statusFilter;
+      const postCategoryIds = getBlogPostCategoryIds(post);
+      for (const categoryId of categoryIdsByName.get(post.category) || []) postCategoryIds.add(categoryId);
+      const matchCategory = !selectedCategoryIds || [...postCategoryIds].some(id => selectedCategoryIds.has(id));
+      return matchSearch && matchStatus && matchCategory;
+    });
+  }, [posts, search, statusFilter, selectedCategoryIds, categoryIdsByName]);
 
   const formatDate = (iso: string) =>
-    iso ? new Date(iso).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+    iso ? new Date(iso).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric', year: 'numeric' }) : '-';
 
   const stats = {
     total: posts.length,
-    published: posts.filter(p => p.status === 'published').length,
-    draft: posts.filter(p => p.status === 'draft').length,
+    published: posts.filter(post => post.status === 'published').length,
+    draft: posts.filter(post => post.status === 'draft').length,
   };
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center">
-            <Coffee className="w-5 h-5 text-amber-700" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100">
+            <Coffee className="h-5 w-5 text-amber-700" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">文章管理</h1>
-            <p className="text-sm text-gray-500">咖啡旅行家部落格文章</p>
+            <h1 className="text-xl font-bold text-gray-900">Blog Management</h1>
+            <p className="text-sm text-gray-500">Manage posts, publish status, and categories.</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            to="/superadmin/blog-categories"
-            className="flex items-center gap-2 border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-xl font-medium text-sm transition"
-          >
-            <FolderOpen className="w-4 h-4" />分類管理
+          <Link to="/superadmin/blog-categories" className="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
+            <FolderOpen className="h-4 w-4" />
+            Categories
           </Link>
-          <Link
-            to="/superadmin/blog/new"
-            className="flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition shadow-sm"
-          >
-            <Plus className="w-4 h-4" />新增文章
+          <Link to="/superadmin/blog/new" className="flex items-center gap-2 rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-800">
+            <Plus className="h-4 w-4" />
+            New post
           </Link>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-3 gap-4">
         {[
-          { label: '全部文章', value: stats.total, color: 'text-gray-700' },
-          { label: '已發布', value: stats.published, color: 'text-green-700' },
-          { label: '草稿', value: stats.draft, color: 'text-yellow-700' },
-        ].map(s => (
-          <div key={s.label} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-            <p className="text-sm text-gray-500 mb-1">{s.label}</p>
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+          { label: 'Total posts', value: stats.total, color: 'text-gray-700' },
+          { label: 'Published', value: stats.published, color: 'text-green-700' },
+          { label: 'Drafts', value: stats.draft, color: 'text-yellow-700' },
+        ].map(item => (
+          <div key={item.label} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+            <p className="mb-1 text-sm text-gray-500">{item.label}</p>
+            <p className={`text-2xl font-bold ${item.color}`}>{item.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        {/* Filters */}
-        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3">
+      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-gray-100 p-4 sm:flex-row">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="搜尋文章標題、分類..."
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
+              onChange={event => setSearch(event.target.value)}
+              placeholder="Search posts"
+              className="w-full rounded-xl border border-gray-200 py-2 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-amber-400"
             />
           </div>
           <div className="flex flex-wrap gap-2">
-            {(['all', 'published', 'draft'] as const).map(s => (
+            {(['all', 'published', 'draft'] as const).map(value => (
               <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`px-3 py-2 text-xs rounded-lg font-medium transition ${statusFilter === s ? 'bg-amber-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                key={value}
+                onClick={() => setStatusFilter(value)}
+                className={`rounded-lg px-3 py-2 text-xs font-medium transition ${
+                  statusFilter === value ? 'bg-amber-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
               >
-                {s === 'all' ? '全部' : s === 'published' ? '已發布' : '草稿'}
+                {value === 'all' ? 'All' : value === 'published' ? 'Published' : 'Draft'}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Category filter */}
         {categories.length > 0 && (
-          <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 border-b border-gray-100 px-4 py-3">
             <button
               onClick={() => setCategoryFilter('all')}
-              className={`px-3 py-1 text-xs rounded-full font-medium transition border ${categoryFilter === 'all' ? 'bg-amber-700 text-white border-amber-700' : 'border-gray-200 text-gray-500 hover:border-amber-300'}`}
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                categoryFilter === 'all' ? 'border-amber-700 bg-amber-700 text-white' : 'border-gray-200 text-gray-500 hover:border-amber-300'
+              }`}
             >
-              全部分類
+              All categories
             </button>
-            {categories.map(c => (
+            {categories.map(category => (
               <button
-                key={c.id}
-                onClick={() => setCategoryFilter(c.id)}
-                className={`px-3 py-1 text-xs rounded-full font-medium transition border ${categoryFilter === c.id ? 'bg-amber-700 text-white border-amber-700' : 'border-gray-200 text-gray-500 hover:border-amber-300'}`}
+                key={category.id}
+                onClick={() => setCategoryFilter(category.id)}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                  categoryFilter === category.id ? 'border-amber-700 bg-amber-700 text-white' : 'border-gray-200 text-gray-500 hover:border-amber-300'
+                }`}
               >
-                {getCategoryOptionLabel(c, categories)}
+                {getCategoryOptionLabel(category, categories)}
               </button>
             ))}
           </div>
@@ -191,77 +203,77 @@ const SuperAdminBlog: React.FC = () => {
 
         {loading ? (
           <div className="flex justify-center py-16">
-            <div className="w-8 h-8 border-4 border-amber-700 border-t-transparent rounded-full animate-spin" />
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-700 border-t-transparent" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <Coffee className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">暫無文章</p>
+          <div className="py-16 text-center text-gray-400">
+            <Coffee className="mx-auto mb-3 h-12 w-12 opacity-30" />
+            <p className="text-sm">No posts found</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {filtered.map((post, i) => (
+            {filtered.map((post, index) => (
               <motion.div
                 key={post.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.02 }}
-                className="flex items-center gap-4 p-4 hover:bg-gray-50 transition"
+                transition={{ delay: index * 0.02 }}
+                className="flex items-center gap-4 p-4 transition hover:bg-gray-50"
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${post.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                      {post.status === 'published' ? '已發布' : '草稿'}
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${post.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                      {post.status === 'published' ? 'Published' : 'Draft'}
                     </span>
-                    <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">{post.category}</span>
+                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">{post.category}</span>
                   </div>
-                  <h3 className="font-semibold text-gray-900 text-sm truncate">{post.title}</h3>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                  <h3 className="truncate text-sm font-semibold text-gray-900">{post.title}</h3>
+                  <div className="mt-1 flex items-center gap-3 text-xs text-gray-400">
                     <span>{post.author_name}</span>
-                    <span className="flex items-center gap-1"><Tag className="w-3 h-3" />{post.tags?.slice(0, 2).join(', ') || '—'}</span>
-                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{formatDate(post.updated_at)}</span>
+                    <span className="flex items-center gap-1">
+                      <Tag className="h-3 w-3" />
+                      {post.tags?.slice(0, 2).join(', ') || '-'}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {formatDate(post.updated_at)}
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex flex-shrink-0 items-center gap-1">
                   {post.status === 'published' && (
-                    <a
-                      href={`/blog/${post.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 text-gray-400 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition"
-                      title="前往文章"
-                    >
-                      <ExternalLink className="w-4 h-4" />
+                    <a href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer" className="rounded-lg p-2 text-gray-400 transition hover:bg-amber-50 hover:text-amber-700" title="Open post">
+                      <ExternalLink className="h-4 w-4" />
                     </a>
                   )}
                   <button
                     onClick={() => handleToggleStatus(post)}
                     disabled={toggling === post.id}
-                    className={`p-2 rounded-lg transition ${post.status === 'published' ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}
-                    title={post.status === 'published' ? '設為草稿' : '發布'}
+                    className={`rounded-lg p-2 transition ${post.status === 'published' ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}
+                    title={post.status === 'published' ? 'Unpublish' : 'Publish'}
                   >
-                    {toggling === post.id
-                      ? <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                      : post.status === 'published' ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />
-                    }
+                    {toggling === post.id ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
+                    ) : post.status === 'published' ? (
+                      <Eye className="h-4 w-4" />
+                    ) : (
+                      <EyeOff className="h-4 w-4" />
+                    )}
                   </button>
-                  <Link
-                    to={`/superadmin/blog/${post.id}`}
-                    className="p-2 text-gray-400 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition"
-                    title="編輯"
-                  >
-                    <Pencil className="w-4 h-4" />
+                  <Link to={`/superadmin/blog/${post.id}`} className="rounded-lg p-2 text-gray-400 transition hover:bg-amber-50 hover:text-amber-700" title="Edit">
+                    <Pencil className="h-4 w-4" />
                   </Link>
                   <button
                     onClick={() => handleDelete(post.id)}
                     disabled={deleting === post.id}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                    title="刪除"
+                    className="rounded-lg p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                    title="Delete"
                   >
-                    {deleting === post.id
-                      ? <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
-                      : <Trash2 className="w-4 h-4" />
-                    }
+                    {deleting === post.id ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-400 border-t-transparent" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </motion.div>
