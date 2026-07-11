@@ -1,19 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Users, TrendingUp, BarChart2, MessageSquare, Map, Languages } from 'lucide-react';
+import { BarChart2, Brain, Languages, Map, MessageSquare, TrendingUp, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 
-interface UsageRow { user_id: string; feature_type: string; usage_count: number; last_used_at: string; }
-interface FeatureStat { feature: string; total: number; users: number; }
-interface TopUser { user_id: string; total: number; display_name?: string; }
+interface UsageRow {
+  user_id: string;
+  feature_type: string;
+  usage_count: number;
+  last_used_at: string;
+}
+
+interface FeatureStat {
+  feature: string;
+  total: number;
+  users: number;
+}
+
+interface TopUser {
+  user_id: string;
+  total: number;
+  display_name?: string;
+}
 
 const FEATURE_META: Record<string, { label: string; icon: React.ReactNode; color: string; bg: string }> = {
-  itinerary: { label: 'AI 行程規劃', icon: <Map className="w-4 h-4" />, color: 'bg-blue-500', bg: 'bg-blue-50 text-blue-700' },
-  translation: { label: 'AI 翻譯', icon: <Languages className="w-4 h-4" />, color: 'bg-teal-500', bg: 'bg-teal-50 text-teal-700' },
-  chatbot: { label: 'AI 客服', icon: <MessageSquare className="w-4 h-4" />, color: 'bg-sky-500', bg: 'bg-sky-50 text-sky-700' },
+  itinerary: { label: 'AI Itinerary', icon: <Map className="h-4 w-4" />, color: 'bg-blue-500', bg: 'bg-blue-50 text-blue-700' },
+  translation: { label: 'AI Translation', icon: <Languages className="h-4 w-4" />, color: 'bg-teal-500', bg: 'bg-teal-50 text-teal-700' },
+  chatbot: { label: 'AI Support', icon: <MessageSquare className="h-4 w-4" />, color: 'bg-sky-500', bg: 'bg-sky-50 text-sky-700' },
 };
 
 const SuperAdminAIAnalytics: React.FC = () => {
+  const { lang } = useLanguage();
+  const locale = normalizeLang(lang);
+  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
+
   const [featureStats, setFeatureStats] = useState<FeatureStat[]>([]);
   const [topUsers, setTopUsers] = useState<TopUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,88 +47,114 @@ const SuperAdminAIAnalytics: React.FC = () => {
       const rows: UsageRow[] = data || [];
 
       const featureMap: Record<string, { total: number; users: Set<string> }> = {};
-      rows.forEach(r => {
-        if (!featureMap[r.feature_type]) featureMap[r.feature_type] = { total: 0, users: new Set() };
-        featureMap[r.feature_type].total += r.usage_count;
-        featureMap[r.feature_type].users.add(r.user_id);
+      rows.forEach(row => {
+        if (!featureMap[row.feature_type]) featureMap[row.feature_type] = { total: 0, users: new Set() };
+        featureMap[row.feature_type].total += row.usage_count;
+        featureMap[row.feature_type].users.add(row.user_id);
       });
+
       const stats = Object.entries(featureMap)
-        .map(([feature, d]) => ({ feature, total: d.total, users: d.users.size }))
+        .map(([feature, value]) => ({ feature, total: value.total, users: value.users.size }))
         .sort((a, b) => b.total - a.total);
       setFeatureStats(stats);
 
       const userMap: Record<string, number> = {};
-      rows.forEach(r => { userMap[r.user_id] = (userMap[r.user_id] || 0) + r.usage_count; });
-      const sorted = Object.entries(userMap).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([user_id, total]) => ({ user_id, total }));
+      rows.forEach(row => {
+        userMap[row.user_id] = (userMap[row.user_id] || 0) + row.usage_count;
+      });
+      const sorted = Object.entries(userMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([user_id, total]) => ({ user_id, total }));
 
       if (sorted.length > 0) {
-        const { data: profiles } = await supabase.from('tbl_mn5wgzh0').select('user_id, display_name').in('user_id', sorted.map(u => u.user_id));
-        const profileMap = Object.fromEntries((profiles || []).map((p: any) => [p.user_id, p.display_name]));
-        setTopUsers(sorted.map(u => ({ ...u, display_name: profileMap[u.user_id] })));
+        const { data: profiles } = await supabase
+          .from('tbl_mn5wgzh0')
+          .select('user_id, display_name')
+          .in('user_id', sorted.map(item => item.user_id));
+        const profileMap = Object.fromEntries((profiles || []).map((profile: any) => [profile.user_id, profile.display_name]));
+        setTopUsers(sorted.map(item => ({ ...item, display_name: profileMap[item.user_id] })));
       } else {
         setTopUsers([]);
       }
 
-      setTotalUsage(rows.reduce((s, r) => s + r.usage_count, 0));
-      setTotalUsers(new Set(rows.map(r => r.user_id)).size);
+      setTotalUsage(rows.reduce((sum, row) => sum + row.usage_count, 0));
+      setTotalUsers(new Set(rows.map(row => row.user_id)).size);
       setLoading(false);
     };
+
     fetchData();
   }, []);
 
-  const maxTotal = featureStats.length > 0 ? Math.max(...featureStats.map(f => f.total)) : 1;
+  const maxTotal = featureStats.length > 0 ? Math.max(...featureStats.map(feature => feature.total)) : 1;
 
-  if (loading) return (
-    <div className="flex justify-center py-16">
-      <div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="flex justify-center py-16">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-amber-100 rounded-xl"><Brain className="w-6 h-6 text-amber-700" /></div>
+        <div className="rounded-xl bg-amber-100 p-2">
+          <Brain className="h-6 w-6 text-amber-700" />
+        </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">AI 用量分析</h1>
-          <p className="text-sm text-gray-400">全平台 AI 功能使用統計</p>
+          <h1 className="text-2xl font-bold text-gray-900">{pick('AI 分析', 'AI Analytics', 'AI 分析', 'AI 분석')}</h1>
+          <p className="text-sm text-gray-400">{pick('查看 AI 功能使用狀況與熱門用戶排行。', 'Review AI feature usage and top users.', 'AI 機能の利用状況と上位ユーザーを確認します。', 'AI 기능 사용 현황과 상위 사용자를 확인합니다.')}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {[
-          { icon: <TrendingUp className="w-5 h-5 text-amber-600" />, label: '總使用次數', value: totalUsage.toLocaleString(), color: 'bg-amber-50' },
-          { icon: <Users className="w-5 h-5 text-teal-600" />, label: '活躍用戶', value: totalUsers.toLocaleString(), color: 'bg-teal-50' },
-          { icon: <Brain className="w-5 h-5 text-blue-600" />, label: 'AI 功能數', value: featureStats.length, color: 'bg-blue-50' },
-          { icon: <BarChart2 className="w-5 h-5 text-green-600" />, label: '平均次數/人', value: totalUsers > 0 ? (totalUsage / totalUsers).toFixed(1) : '0', color: 'bg-green-50' },
-        ].map((s, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-            className="bg-white rounded-2xl shadow-sm p-5">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${s.color}`}>{s.icon}</div>
-            <p className="text-gray-500 text-sm">{s.label}</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{s.value}</p>
+          { icon: <TrendingUp className="h-5 w-5 text-amber-600" />, label: pick('總使用次數', 'Total usage', '総使用回数', '총 사용 횟수'), value: totalUsage.toLocaleString(), color: 'bg-amber-50' },
+          { icon: <Users className="h-5 w-5 text-teal-600" />, label: pick('使用用戶', 'Active users', '利用ユーザー', '사용자 수'), value: totalUsers.toLocaleString(), color: 'bg-teal-50' },
+          { icon: <Brain className="h-5 w-5 text-blue-600" />, label: pick('功能種類', 'Feature types', '機能種類', '기능 종류'), value: featureStats.length, color: 'bg-blue-50' },
+          { icon: <BarChart2 className="h-5 w-5 text-green-600" />, label: pick('平均每人', 'Per-user average', '1人あたり平均', '1인당 평균'), value: totalUsers > 0 ? (totalUsage / totalUsers).toFixed(1) : '0', color: 'bg-green-50' },
+        ].map((stat, index) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="rounded-2xl bg-white p-5 shadow-sm"
+          >
+            <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${stat.color}`}>{stat.icon}</div>
+            <p className="text-sm text-gray-500">{stat.label}</p>
+            <p className="mt-1 text-2xl font-bold text-gray-900">{stat.value}</p>
           </motion.div>
         ))}
       </div>
 
-      <div className="grid md:grid-cols-3 gap-4">
-        {featureStats.map((stat, i) => {
+      <div className="grid gap-4 md:grid-cols-3">
+        {featureStats.map((stat, index) => {
           const meta = FEATURE_META[stat.feature];
           return (
-            <motion.div key={stat.feature} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-              className="bg-white rounded-2xl shadow-sm p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className={`flex items-center gap-2 text-sm font-medium px-2.5 py-1 rounded-full ${meta?.bg || 'bg-gray-50 text-gray-600'}`}>
+            <motion.div
+              key={stat.feature}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.06 }}
+              className="rounded-2xl bg-white p-5 shadow-sm"
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <div className={`flex items-center gap-2 rounded-full px-2.5 py-1 text-sm font-medium ${meta?.bg || 'bg-gray-50 text-gray-600'}`}>
                   {meta?.icon}
                   {meta?.label || stat.feature}
                 </div>
               </div>
               <p className="text-3xl font-bold text-gray-900">{stat.total}</p>
-              <p className="text-xs text-gray-400 mt-1">次使用 · {stat.users} 位用戶</p>
-              <div className="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden">
+              <p className="mt-1 text-xs text-gray-400">
+                {pick('使用人數', 'Users', '利用人数', '사용자')} <span className="font-semibold text-gray-700">{stat.users}</span>
+              </p>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-100">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${(stat.total / maxTotal) * 100}%` }}
-                  transition={{ delay: i * 0.1 + 0.3, duration: 0.6 }}
+                  transition={{ delay: index * 0.1 + 0.3, duration: 0.6 }}
                   className={`h-full rounded-full ${meta?.color || 'bg-amber-500'}`}
                 />
               </div>
@@ -115,59 +162,61 @@ const SuperAdminAIAnalytics: React.FC = () => {
           );
         })}
         {featureStats.length === 0 && (
-          <div className="col-span-3 bg-white rounded-2xl shadow-sm p-12 text-center text-gray-400">
-            <Brain className="w-12 h-12 mx-auto mb-3 opacity-20" />
-            <p>暫無 AI 使用數據</p>
+          <div className="col-span-3 rounded-2xl bg-white p-12 text-center text-gray-400 shadow-sm">
+            <Brain className="mx-auto mb-3 h-12 w-12 opacity-20" />
+            <p>{pick('目前沒有 AI 使用資料。', 'No AI usage data yet.', 'AI 利用データはまだありません。', '아직 AI 사용 데이터가 없습니다.')}</p>
           </div>
         )}
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Users className="w-5 h-5 text-amber-600" />AI 使用排行榜
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
+            <Users className="h-5 w-5 text-amber-600" />
+            {pick('AI 使用用戶排行', 'Top AI Users', 'AI 利用ユーザー', 'AI 사용자 순위')}
           </h3>
           {topUsers.length === 0 ? (
-            <p className="text-gray-400 text-center py-8 text-sm">暫無數據</p>
+            <p className="py-8 text-center text-sm text-gray-400">{pick('尚無資料', 'No data', 'データがありません', '데이터가 없습니다')}</p>
           ) : (
             <div className="space-y-2">
-              {topUsers.map((u, i) => (
-                <div key={u.user_id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${i === 0 ? 'bg-yellow-400 text-white' : i === 1 ? 'bg-gray-300 text-gray-700' : i === 2 ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                    {i + 1}
+              {topUsers.map((user, index) => (
+                <div key={user.user_id} className="flex items-center gap-3 border-b border-gray-50 py-2 last:border-0">
+                  <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${index === 0 ? 'bg-yellow-400 text-white' : index === 1 ? 'bg-gray-300 text-gray-700' : index === 2 ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                    {index + 1}
                   </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{u.display_name || '用戶'}</p>
-                    <p className="text-xs text-gray-400 font-mono">{u.user_id.slice(-8)}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-gray-900">{user.display_name || pick('未命名用戶', 'Unnamed user', '未設定ユーザー', '이름 없음')}</p>
+                    <p className="font-mono text-xs text-gray-400">{user.user_id.slice(-8)}</p>
                   </div>
-                  <span className="font-bold text-gray-900 text-sm">{u.total} 次</span>
+                  <span className="text-sm font-bold text-gray-900">{user.total}</span>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-amber-600" />各功能用量比較
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
+            <TrendingUp className="h-5 w-5 text-amber-600" />
+            {pick('功能使用排行', 'Feature usage ranking', '機能利用ランキング', '기능 사용 순위')}
           </h3>
           {featureStats.length === 0 ? (
-            <p className="text-gray-400 text-center py-8 text-sm">暫無數據</p>
+            <p className="py-8 text-center text-sm text-gray-400">{pick('尚無資料', 'No data', 'データがありません', '데이터가 없습니다')}</p>
           ) : (
             <div className="space-y-4">
-              {featureStats.map((stat, i) => {
+              {featureStats.map((stat, index) => {
                 const meta = FEATURE_META[stat.feature];
                 return (
-                  <motion.div key={stat.feature} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}>
-                    <div className="flex items-center justify-between mb-1.5">
+                  <motion.div key={stat.feature} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.08 }}>
+                    <div className="mb-1.5 flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-700">{meta?.label || stat.feature}</span>
-                      <span className="text-sm font-bold text-gray-900">{stat.total} 次</span>
+                      <span className="text-sm font-bold text-gray-900">{stat.total}</span>
                     </div>
-                    <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2.5 overflow-hidden rounded-full bg-gray-100">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${(stat.total / maxTotal) * 100}%` }}
-                        transition={{ delay: i * 0.1 + 0.2, duration: 0.6 }}
+                        transition={{ delay: index * 0.1 + 0.2, duration: 0.6 }}
                         className={`h-full rounded-full ${meta?.color || 'bg-amber-500'}`}
                       />
                     </div>

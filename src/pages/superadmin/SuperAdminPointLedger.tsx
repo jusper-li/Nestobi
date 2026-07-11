@@ -34,20 +34,20 @@ interface MemberInfo {
 const PAGE_SIZE = 25;
 
 const SOURCE_LABELS: Record<string, string> = {
-  booking: '訂房',
-  order: '商品訂單',
-  subscription: '定期便',
-  manual: '手動',
-  redemption: '兌點',
-  store_redemption: '門市兌點',
+  booking: 'Booking',
+  order: 'Order',
+  subscription: 'Subscription',
+  manual: 'Manual',
+  redemption: 'Redemption',
+  store_redemption: 'Store redemption',
 };
 
 const TRANSACTION_LABELS: Record<string, string> = {
-  earned: '發放',
-  spent: '扣除',
-  manual: '手動',
-  redemption: '兌點',
-  store_redemption: '門市兌點',
+  earned: 'Earned',
+  spent: 'Spent',
+  manual: 'Manual',
+  redemption: 'Redemption',
+  store_redemption: 'Store redemption',
 };
 
 const SuperAdminPointLedger: React.FC = () => {
@@ -81,6 +81,7 @@ const SuperAdminPointLedger: React.FC = () => {
     if (sourceType !== 'all') query = query.eq('source_type', sourceType);
     if (dateFrom) query = query.gte('created_at', `${dateFrom}T00:00:00`);
     if (dateTo) query = query.lte('created_at', `${dateTo}T23:59:59.999`);
+
     const keyword = search.trim();
     if (keyword) {
       const safeKeyword = keyword.replace(/[%_,]/g, '');
@@ -188,16 +189,16 @@ const SuperAdminPointLedger: React.FC = () => {
     const role = members[row.user_id]?.role;
     if (!role) return '';
     const labels: Record<string, string> = {
-      superadmin: pick('超管', 'Super Admin', 'スーパー管理', '슈퍼관리'),
-      admin: pick('管理員', 'Admin', '管理者', '관리자'),
-      vendor: pick('廠商', 'Vendor', '事業者', '업체'),
-      user: pick('會員', 'User', '会員', '회원'),
+      superadmin: 'Super Admin',
+      admin: 'Admin',
+      vendor: 'Vendor',
+      user: 'User',
     };
     return labels[role] || role;
   };
 
   const sourceLabel = (source: string | null) => {
-    if (!source) return pick('未分類', 'Unassigned', '未設定', '미분류');
+    if (!source) return pick('未指定', 'Unassigned', '未設定', '미지정');
     return SOURCE_LABELS[source] || source;
   };
 
@@ -218,8 +219,8 @@ const SuperAdminPointLedger: React.FC = () => {
           <Coins className="h-6 w-6 text-amber-700" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{pick('點數發放紀錄', 'Points Ledger', 'ポイント履歴', '포인트 내역')}</h1>
-          <p className="text-sm text-gray-500">{pick('查詢每筆點數發放、扣除與來源來源資料。', 'Review every points transaction with source context.', '各ポイント履歴と発生元を確認できます。', '포인트 내역과 발생 원인을 확인할 수 있습니다.')}</p>
+          <h1 className="text-2xl font-bold text-gray-900">{pick('點數明細', 'Points Ledger', 'ポイント履歴', '포인트 내역')}</h1>
+          <p className="text-sm text-gray-500">{pick('查看每一筆點數交易與來源資訊。', 'Review every points transaction with source context.', '各ポイント取引の内容と発生元を確認します。', '각 포인트 거래와 출처를 확인합니다.')}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <button
@@ -236,9 +237,9 @@ const SuperAdminPointLedger: React.FC = () => {
 
       <div className="grid gap-4 md:grid-cols-3">
         {[
-          { label: pick('本頁發放', 'Earned on page', '表示中の付与', '현재 페이지 적립'), value: `+${pageStats.earned}` },
-          { label: pick('本頁扣除', 'Spent on page', '表示中の利用', '현재 페이지 차감'), value: `-${pageStats.spent}` },
-          { label: pick('本頁淨額', 'Net on page', '表示中の純増減', '현재 페이지 순증감'), value: `${pageStats.net >= 0 ? '+' : ''}${pageStats.net}` },
+          { label: pick('本頁收入', 'Earned on page', 'このページの獲得', '현재 페이지 적립'), value: `+${pageStats.earned}` },
+          { label: pick('本頁支出', 'Spent on page', 'このページの消費', '현재 페이지 사용'), value: `-${pageStats.spent}` },
+          { label: pick('本頁淨額', 'Net on page', 'このページの合計', '현재 페이지 순액'), value: `${pageStats.net >= 0 ? '+' : ''}${pageStats.net}` },
         ].map((card, index) => (
           <motion.div
             key={card.label}
@@ -256,7 +257,7 @@ const SuperAdminPointLedger: React.FC = () => {
       <div className="rounded-2xl bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-700">
           <Filter className="h-4 w-4 text-amber-600" />
-          {pick('篩選條件', 'Filters', '絞り込み', '필터')}
+          {pick('篩選', 'Filters', 'フィルター', '필터')}
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
           <div className="relative xl:col-span-2">
@@ -267,10 +268,11 @@ const SuperAdminPointLedger: React.FC = () => {
                 setSearch(e.target.value);
                 setPage(0);
               }}
-              placeholder={pick('搜尋會員、描述、來源 ID', 'Search member, description, source ID', '会員・説明・元IDを検索', '회원, 설명, 원천 ID 검색')}
+              placeholder={pick('搜尋會員、描述、來源 ID', 'Search member, description, source ID', '会員、説明、ソース ID を検索', '회원, 설명, source ID 검색')}
               className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-amber-400"
             />
           </div>
+
           <select
             value={transactionType}
             onChange={e => {
@@ -279,13 +281,14 @@ const SuperAdminPointLedger: React.FC = () => {
             }}
             className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-400"
           >
-            <option value="all">{pick('全部類型', 'All types', 'すべて', '전체 유형')}</option>
-            <option value="earned">{pick('發放', 'Earned', '付与', '적립')}</option>
-            <option value="spent">{pick('扣除', 'Spent', '利用', '차감')}</option>
+            <option value="all">{pick('全部類型', 'All types', 'すべての種類', '모든 유형')}</option>
+            <option value="earned">{pick('收入', 'Earned', '獲得', '적립')}</option>
+            <option value="spent">{pick('支出', 'Spent', '消費', '사용')}</option>
             <option value="manual">{pick('手動', 'Manual', '手動', '수동')}</option>
-            <option value="redemption">{pick('兌點', 'Redemption', '交換', '포인트 사용')}</option>
-            <option value="store_redemption">{pick('門市兌點', 'Store redemption', '店舗利用', '매장 사용')}</option>
+            <option value="redemption">{pick('兌換', 'Redemption', '交換', '교환')}</option>
+            <option value="store_redemption">{pick('門市兌換', 'Store redemption', '店舗交換', '매장 교환')}</option>
           </select>
+
           <select
             value={sourceType}
             onChange={e => {
@@ -294,14 +297,15 @@ const SuperAdminPointLedger: React.FC = () => {
             }}
             className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-400"
           >
-            <option value="all">{pick('全部來源', 'All sources', 'すべて', '전체 출처')}</option>
+            <option value="all">{pick('全部來源', 'All sources', 'すべてのソース', '모든 출처')}</option>
             <option value="booking">{pick('訂房', 'Booking', '宿泊', '예약')}</option>
-            <option value="order">{pick('商品訂單', 'Order', '注文', '주문')}</option>
-            <option value="subscription">{pick('定期便', 'Subscription', '定期便', '정기구독')}</option>
+            <option value="order">{pick('訂單', 'Order', '注文', '주문')}</option>
+            <option value="subscription">{pick('訂閱', 'Subscription', 'サブスクリプション', '구독')}</option>
             <option value="manual">{pick('手動', 'Manual', '手動', '수동')}</option>
-            <option value="redemption">{pick('兌點', 'Redemption', '交換', '포인트 사용')}</option>
-            <option value="store_redemption">{pick('門市兌點', 'Store redemption', '店舗利用', '매장 사용')}</option>
+            <option value="redemption">{pick('兌換', 'Redemption', '交換', '교환')}</option>
+            <option value="store_redemption">{pick('門市兌換', 'Store redemption', '店舗交換', '매장 교환')}</option>
           </select>
+
           <div className="relative">
             <Calendar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
@@ -314,6 +318,7 @@ const SuperAdminPointLedger: React.FC = () => {
               className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-amber-400"
             />
           </div>
+
           <div className="relative">
             <Calendar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
@@ -333,17 +338,15 @@ const SuperAdminPointLedger: React.FC = () => {
             onClick={resetFilters}
             className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
           >
-            {pick('清除篩選', 'Clear filters', '絞り込み解除', '필터 초기화')}
+            {pick('清除篩選', 'Clear filters', 'フィルターをクリア', '필터 초기화')}
           </button>
           <span className="text-sm text-gray-500">
-            {pick('目前查詢結果', 'Current results', '現在の件数', '현재 결과')}: <strong className="text-gray-900">{total}</strong>
+            {pick('目前結果', 'Current results', '現在の結果', '현재 결과')}: <strong className="text-gray-900">{total}</strong>
           </span>
         </div>
       </div>
 
-      {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-      )}
+      {error && <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
       <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
         <div className="overflow-x-auto">
@@ -353,11 +356,11 @@ const SuperAdminPointLedger: React.FC = () => {
                 <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('時間', 'Time', '時間', '시간')}</th>
                 <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('會員', 'Member', '会員', '회원')}</th>
                 <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('點數', 'Points', 'ポイント', '포인트')}</th>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('類型', 'Type', '種別', '유형')}</th>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('來源', 'Source', '元データ', '출처')}</th>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('說明', 'Description', '説明', '설명')}</th>
+                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('類型', 'Type', '種類', '유형')}</th>
+                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('來源', 'Source', 'ソース', '출처')}</th>
+                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('描述', 'Description', '説明', '설명')}</th>
                 <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">Reference</th>
-                <th className="whitespace-nowrap px-4 py-3 text-right font-medium text-gray-500">{pick('動作', 'Action', '操作', '작업')}</th>
+                <th className="whitespace-nowrap px-4 py-3 text-right font-medium text-gray-500">{pick('操作', 'Action', '操作', '작업')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -365,94 +368,92 @@ const SuperAdminPointLedger: React.FC = () => {
                 <tr>
                   <td colSpan={8} className="px-4 py-16 text-center text-gray-400">
                     <Users className="mx-auto mb-2 h-10 w-10 opacity-20" />
-                    {pick('沒有符合條件的點數紀錄', 'No points records match your filters', '条件に合う履歴はありません', '조건에 맞는 포인트 기록이 없습니다')}
+                    {pick('沒有符合條件的點數紀錄', 'No points records match your filters', '条件に一致するポイント履歴はありません', '필터에 맞는 포인트 기록이 없습니다')}
                   </td>
                 </tr>
-              ) : rows.map(row => (
-                <tr
-                  key={row.id}
-                  className="align-top hover:bg-amber-50/30"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => navigate(`/superadmin/points-ledger/${row.id}`)}
-                  onKeyDown={event => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      navigate(`/superadmin/points-ledger/${row.id}`);
-                    }
-                  }}
-                >
-                  <td className="whitespace-nowrap px-4 py-4 text-gray-600">{formatDateTime(row.created_at)}</td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700">
-                        {memberLabel(row).slice(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">{memberLabel(row)}</p>
-                        <p className="text-xs text-gray-400 flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {row.user_id.slice(0, 8).toUpperCase()} {roleLabel(row) ? `· ${roleLabel(row)}` : ''}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className={`whitespace-nowrap px-4 py-4 font-bold ${row.amount >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {row.amount >= 0 ? '+' : ''}
-                    {row.amount}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-4">
-                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
-                      {transactionLabel(row.transaction_type)}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-4">
-                    <div className="flex flex-col gap-1">
-                      <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-                        {sourceLabel(row.source_type)}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {row.vendor_id ? `Vendor: ${row.vendor_id.slice(0, 8).toUpperCase()}` : ''}
-                        {row.store_location_id ? ` ${row.vendor_id ? '· ' : ''}Store: ${row.store_location_id.slice(0, 8).toUpperCase()}` : ''}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="max-w-xs px-4 py-4 text-gray-600">
-                    <p className="line-clamp-2">{row.description || '-'}</p>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-4 text-xs text-gray-500">
-                    <div className="space-y-1">
-                      <div>{row.reference_id || '-'}</div>
-                      {row.source_id && row.source_id !== row.reference_id && <div>{row.source_id}</div>}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-4 text-right">
-                    <button
-                      type="button"
-                      onClick={event => {
-                        event.stopPropagation();
+              ) : (
+                rows.map(row => (
+                  <tr
+                    key={row.id}
+                    className="align-top hover:bg-amber-50/30"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate(`/superadmin/points-ledger/${row.id}`)}
+                    onKeyDown={event => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
                         navigate(`/superadmin/points-ledger/${row.id}`);
-                      }}
-                      className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      {pick('查看', 'View', '詳細', '상세')}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                      }
+                    }}
+                  >
+                    <td className="whitespace-nowrap px-4 py-4 text-gray-600">{formatDateTime(row.created_at)}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700">
+                          {memberLabel(row).slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">{memberLabel(row)}</p>
+                          <p className="flex items-center gap-1 text-xs text-gray-400">
+                            <User className="h-3 w-3" />
+                            {row.user_id.slice(0, 8).toUpperCase()} {roleLabel(row) ? `· ${roleLabel(row)}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className={`whitespace-nowrap px-4 py-4 font-bold ${row.amount >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {row.amount >= 0 ? '+' : ''}
+                      {row.amount}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-4">
+                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">{transactionLabel(row.transaction_type)}</span>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">{sourceLabel(row.source_type)}</span>
+                        <span className="text-xs text-gray-400">
+                          {row.vendor_id ? `Vendor: ${row.vendor_id.slice(0, 8).toUpperCase()}` : ''}
+                          {row.store_location_id ? ` ${row.vendor_id ? '· ' : ''}Store: ${row.store_location_id.slice(0, 8).toUpperCase()}` : ''}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="max-w-xs px-4 py-4 text-gray-600">
+                      <p className="line-clamp-2">{row.description || '-'}</p>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-4 text-xs text-gray-500">
+                      <div className="space-y-1">
+                        <div>{row.reference_id || '-'}</div>
+                        {row.source_id && row.source_id !== row.reference_id && <div>{row.source_id}</div>}
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-4 text-right">
+                      <button
+                        type="button"
+                        onClick={event => {
+                          event.stopPropagation();
+                          navigate(`/superadmin/points-ledger/${row.id}`);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        {pick('查看', 'View', '詳細', '보기')}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4">
           <p className="text-sm text-gray-500">
-            {pick('第', 'Page', 'ページ', '페이지')} {page + 1} / {totalPages} · {pick('每頁', 'per page', '件/ページ', '페이지당')} {PAGE_SIZE} {pick('筆', 'rows', '件', '건')}
+            {pick('第', 'Page', 'ページ', '페이지')} {page + 1} / {totalPages} · {pick('每頁', 'per page', '1ページあたり', '페이지당')} {PAGE_SIZE} {pick('筆', 'rows', '件', '건')}
           </p>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setPage(p => Math.max(0, p - 1))}
+              onClick={() => setPage(prev => Math.max(0, prev - 1))}
               disabled={!canPrev}
               className="inline-flex items-center gap-1 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -461,7 +462,7 @@ const SuperAdminPointLedger: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => setPage(p => p + 1)}
+              onClick={() => setPage(prev => prev + 1)}
               disabled={!canNext}
               className="inline-flex items-center gap-1 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
