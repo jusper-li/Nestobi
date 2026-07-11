@@ -32,7 +32,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { APP_BUILD_LABEL, APP_COMMIT_LONG } from '../../lib/appVersion';
-import { logSystemCheck, recordVersionBaseline } from '../../lib/auditLog';
+import { recordVersionBaseline } from '../../lib/auditLog';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 
 type NavItem = {
@@ -101,16 +101,7 @@ const SuperAdminLayout: React.FC = () => {
       });
     }
 
-    void logSystemCheck(location.pathname, {
-      source: 'superadmin-layout',
-      pathname: location.pathname,
-      page: currentPage?.label || location.pathname,
-      commit: APP_COMMIT_LONG,
-    }, {
-      route: location.pathname,
-      summary: `route check: ${currentPage?.label || location.pathname}`,
-    });
-  }, [currentPage?.label, location.pathname]);
+  }, [location.pathname]);
 
   const Sidebar = () => (
     <div className="flex h-full flex-col">
