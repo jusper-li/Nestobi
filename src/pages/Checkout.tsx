@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, CreditCard, Gift, Lock, MapPin, Truck, User } from 'lucide-react';
+import { ChevronRight, CreditCard, Gift, Lock, MapPin, Receipt, Truck, User } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
 import { trackBeginCheckout, trackPurchase } from '../lib/analytics';
@@ -56,6 +56,11 @@ export default function Checkout() {
     city: '',
     postalCode: '',
     paymentMethod: 'credit_card',
+    invoiceType: 'personal',
+    buyerName: '',
+    buyerIdentifier: '',
+    carrierNumber: '',
+    loveCode: '',
     notes: '',
   });
 
@@ -89,6 +94,28 @@ export default function Checkout() {
     setLoading(true);
 
     try {
+      const buyerEmail = formData.email.trim();
+      const buyerName = formData.buyerName.trim();
+      const buyerIdentifier = formData.buyerIdentifier.trim();
+      const carrierNumber = formData.carrierNumber.trim();
+      const loveCode = formData.loveCode.trim();
+
+      if (!buyerEmail) {
+        throw new Error('buyer_email is required');
+      }
+
+      if (formData.invoiceType === 'company' && !buyerIdentifier) {
+        throw new Error('公司戶統編為必填');
+      }
+
+      if (formData.invoiceType === 'mobile_carrier' && !carrierNumber) {
+        throw new Error('手機條碼載具為必填');
+      }
+
+      if (formData.invoiceType === 'donation' && !loveCode) {
+        throw new Error('捐贈碼為必填');
+      }
+
       trackBeginCheckout({
         value: total,
         items: items.map((item) => ({
@@ -113,11 +140,26 @@ export default function Checkout() {
         payment_status: 'pending',
         shipping_address: {
           name: formData.name,
-          email: formData.email,
+          email: buyerEmail,
           phone: formData.phone,
           address: formData.address,
           city: formData.city,
           postalCode: formData.postalCode,
+          buyer_email: buyerEmail,
+          buyer_name: buyerName,
+          buyer_identifier: buyerIdentifier,
+          carrier_number: carrierNumber,
+          love_code: loveCode,
+          invoice_type: formData.invoiceType,
+          invoice: {
+            invoice_type: formData.invoiceType,
+            buyer_email: buyerEmail,
+            buyer_name: buyerName,
+            buyer_identifier: buyerIdentifier,
+            carrier_number: carrierNumber,
+            love_code: loveCode,
+            tax_type: '1',
+          },
         },
         notes: formData.notes,
       });
@@ -345,86 +387,81 @@ export default function Checkout() {
 
               <section className="rounded-2xl border border-stone-100 bg-white p-6 shadow-sm">
                 <div className="mb-5 flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-amber-500" />
+                  <Receipt className="h-4 w-4 text-amber-500" />
                   <h2 className="text-sm font-medium tracking-[0.1em] text-stone-800">
-                    {t('checkout.shipping.title', '配送地址')}
+                    電子發票資訊
                   </h2>
                 </div>
                 <div className="grid gap-4">
                   <div>
-                    <label className={labelCls}>{t('checkout.shipping.address', '地址')} *</label>
+                    <label className={labelCls}>發票類型 *</label>
+                    <select
+                      name="invoiceType"
+                      value={formData.invoiceType}
+                      onChange={handleChange}
+                      className={inputCls}
+                    >
+                      <option value="personal">個人電子發票</option>
+                      <option value="mobile_carrier">手機條碼載具</option>
+                      <option value="company">公司戶統編</option>
+                      <option value="donation">捐贈發票</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>買受人姓名（選填）</label>
                     <input
                       type="text"
-                      name="address"
-                      value={formData.address}
+                      name="buyerName"
+                      value={formData.buyerName}
                       onChange={handleChange}
-                      required
                       className={inputCls}
-                      placeholder={t('checkout.shipping.addressPlaceholder', '請輸入地址')}
+                      placeholder="未填寫則以會員姓名或收件人為準"
                     />
                   </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  {formData.invoiceType === 'company' && (
                     <div>
-                      <label className={labelCls}>{t('checkout.shipping.city', '城市')} *</label>
+                      <label className={labelCls}>公司統編 *</label>
                       <input
                         type="text"
-                        name="city"
-                        value={formData.city}
+                        name="buyerIdentifier"
+                        value={formData.buyerIdentifier}
                         onChange={handleChange}
-                        required
                         className={inputCls}
-                        placeholder={t('checkout.shipping.cityPlaceholder', '請輸入城市')}
+                        placeholder="請輸入 8 碼統編"
                       />
                     </div>
+                  )}
+                  {formData.invoiceType === 'mobile_carrier' && (
                     <div>
-                      <label className={labelCls}>{t('checkout.shipping.postalCode', '郵遞區號')} *</label>
+                      <label className={labelCls}>手機條碼載具 *</label>
                       <input
                         type="text"
-                        name="postalCode"
-                        value={formData.postalCode}
+                        name="carrierNumber"
+                        value={formData.carrierNumber}
                         onChange={handleChange}
-                        required
                         className={inputCls}
-                        placeholder={t('checkout.shipping.postalPlaceholder', '請輸入郵遞區號')}
+                        placeholder="例如 /ABCD1234"
                       />
                     </div>
-                  </div>
-                </div>
-              </section>
-
-              <section className="rounded-2xl border border-stone-100 bg-white p-6 shadow-sm">
-                <div className="mb-5 flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-amber-500" />
-                  <h2 className="text-sm font-medium tracking-[0.1em] text-stone-800">
-                    {t('checkout.payment.title', '付款方式')}
-                  </h2>
-                </div>
-                <div className="grid gap-3">
-                  {paymentOptions.map((option) => (
-                    <label
-                      key={option.value}
-                      className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
-                        formData.paymentMethod === option.value
-                          ? 'border-amber-300 bg-amber-50'
-                          : 'border-stone-200 bg-white hover:bg-stone-50'
-                      }`}
-                    >
+                  )}
+                  {formData.invoiceType === 'donation' && (
+                    <div>
+                      <label className={labelCls}>愛心碼 *</label>
                       <input
-                        type="radio"
-                        name="paymentMethod"
-                        value={option.value}
-                        checked={formData.paymentMethod === option.value}
+                        type="text"
+                        name="loveCode"
+                        value={formData.loveCode}
                         onChange={handleChange}
-                        className="h-4 w-4 accent-amber-500"
+                        className={inputCls}
+                        placeholder="請輸入捐贈碼"
                       />
-                      <span className="text-sm text-stone-700">{option.label}</span>
-                    </label>
-                  ))}
+                    </div>
+                  )}
+                  <p className="text-xs leading-6 text-stone-500">
+                    發票 email 會直接使用上方聯絡 email。付款成功後才會開立發票。
+                  </p>
                 </div>
               </section>
-
-              <section className="rounded-2xl border border-stone-100 bg-white p-6 shadow-sm">
-                <div className="mb-5 flex items-center gap-2">
                   <Gift className="h-4 w-4 text-amber-500" />
                   <h2 className="text-sm font-medium tracking-[0.1em] text-stone-800">
                     {t('checkout.note.title', '訂單備註')}

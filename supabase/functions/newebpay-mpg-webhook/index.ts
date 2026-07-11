@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createEzpayInvoiceForOrder } from "../_shared/ezpay-invoice.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -234,6 +235,14 @@ Deno.serve(async (req: Request) => {
 
     if (tradeStatus === "SUCCESS") {
       if (order.newebpay_status === "success") {
+        try {
+          const duplicateInvoiceResult = await createEzpayInvoiceForOrder(supabase, order.id);
+          if (!duplicateInvoiceResult.success && duplicateInvoiceResult.error) {
+            console.warn("[newebpay-mpg-webhook] Invoice retry failed:", duplicateInvoiceResult.error);
+          }
+        } catch (invoiceError) {
+          console.warn("[newebpay-mpg-webhook] Invoice retry failed:", invoiceError);
+        }
         return okResponse();
       }
 
@@ -302,6 +311,15 @@ Deno.serve(async (req: Request) => {
           order.merchant_order_no,
           "paid",
         );
+      }
+
+      try {
+        const invoiceResult = await createEzpayInvoiceForOrder(supabase, order.id);
+        if (!invoiceResult.success && invoiceResult.error) {
+          console.warn("[newebpay-mpg-webhook] Invoice creation failed:", invoiceResult.error);
+        }
+      } catch (invoiceError) {
+        console.warn("[newebpay-mpg-webhook] Invoice creation failed:", invoiceError);
       }
 
       return okResponse();

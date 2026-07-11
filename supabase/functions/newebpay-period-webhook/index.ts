@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createEzpayInvoiceForOrder } from "../_shared/ezpay-invoice.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -406,6 +407,15 @@ Deno.serve(async (req: Request) => {
           vendor_id: subscription.vendor_id || null,
           description: "Subscription reward points",
         });
+      }
+
+      try {
+        const invoiceResult = await createEzpayInvoiceForOrder(supabase, order.id);
+        if (!invoiceResult.success && invoiceResult.error) {
+          console.warn("[newebpay-period-webhook] Invoice creation failed:", invoiceResult.error);
+        }
+      } catch (invoiceError) {
+        console.warn("[newebpay-period-webhook] Invoice creation failed:", invoiceError);
       }
 
       return okResponse();

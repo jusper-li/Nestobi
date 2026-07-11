@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -128,6 +128,32 @@ interface ShopOrderDetail {
   }> | null;
 }
 
+interface InvoiceDetail {
+  id: string;
+  order_id: string;
+  user_id: string;
+  invoice_status: string;
+  invoice_number?: string | null;
+  invoice_random_number?: string | null;
+  invoice_date?: string | null;
+  buyer_name?: string | null;
+  buyer_email?: string | null;
+  buyer_identifier?: string | null;
+  carrier_type?: string | null;
+  carrier_number?: string | null;
+  love_code?: string | null;
+  tax_type?: string | null;
+  sales_amount?: number | string | null;
+  tax_amount?: number | string | null;
+  total_amount?: number | string | null;
+  ezpay_trade_no?: string | null;
+  ezpay_raw_request?: Record<string, unknown> | null;
+  ezpay_raw_response?: Record<string, unknown> | null;
+  error_message?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
 interface BookingOrderDetail {
   id: string;
   user_id: string;
@@ -211,23 +237,23 @@ const STATUS_COLORS: Record<string, string> = {
 
 const PAGE_LABELS = {
   title: '訂單管理',
-  subtitle: '查看商品訂單與訂房訂單，並直接進入完整明細。',
-  tabShop: '商品訂單',
-  tabBooking: '訂房訂單',
-  searchShop: '搜尋訂單號 / 訂購人 / 商品',
-  searchBooking: '搜尋訂單號 / 訂房人 / 房型',
-  emptyShop: '暫無商品訂單',
-  emptyBooking: '暫無訂房訂單',
-  detailTitle: '訂單詳情',
+  subtitle: '查看商店與住宿訂單、付款、發票與配送資訊',
+  tabShop: '商店訂單',
+  tabBooking: '住宿訂單',
+  searchShop: '搜尋商店訂單 / 訂單編號 / 顧客',
+  searchBooking: '搜尋住宿訂單 / 訂單編號 / 顧客',
+  emptyShop: '沒有商店訂單',
+  emptyBooking: '沒有住宿訂單',
+  detailTitle: '訂單明細',
   orderData: '訂單資料',
-  buyerInfo: '訂購人資訊',
+  buyerInfo: '顧客資訊',
   paymentInfo: '付款資料',
-  shippingInfo: '配送 / 送貨資料',
-  communication: '訂單通訊',
-  timeline: '訂單活動紀錄',
-  productDetails: '商品詳情',
-  bookingDetails: '訂房資料',
-  contact: '聯絡方式',
+  shippingInfo: '配送 / 住宿資料',
+  communication: '訂單溝通',
+  timeline: '訂單時間軸',
+  productDetails: '商品明細',
+  bookingDetails: '住宿資料',
+  contact: '聯絡資訊',
   createdAt: '建立時間',
   updatedAt: '更新時間',
 };
@@ -248,14 +274,14 @@ const getPaymentMethodLabel = (method?: string | null) => {
     case 'points_online':
       return '點數 + 線上付款';
     case 'service':
-      return '專人服務';
+      return '服務費';
     case 'online':
       return '線上付款';
     case 'webatm':
       return 'WebATM';
     case 'atm':
     case 'bank_transfer':
-      return 'ATM 轉帳';
+      return 'ATM / 轉帳';
     case 'cvs':
       return '超商代碼';
     default:
@@ -344,6 +370,7 @@ const SuperAdminOrders: React.FC = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
   const [shopDetail, setShopDetail] = useState<ShopOrderDetail | null>(null);
+  const [invoiceDetail, setInvoiceDetail] = useState<InvoiceDetail | null>(null);
   const [bookingDetail, setBookingDetail] = useState<BookingOrderDetail | null>(null);
   const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(null);
   const [customerEmail, setCustomerEmail] = useState('');
@@ -396,11 +423,24 @@ const SuperAdminOrders: React.FC = () => {
     }
   };
 
+  const fetchInvoiceDetail = async (orderId: string) => {
+    const { data } = await supabase
+      .from('invoices')
+      .select(
+        'id,order_id,user_id,invoice_status,invoice_number,invoice_random_number,invoice_date,buyer_name,buyer_email,buyer_identifier,carrier_type,carrier_number,love_code,tax_type,sales_amount,tax_amount,total_amount,ezpay_trade_no,ezpay_raw_request,ezpay_raw_response,error_message,created_at,updated_at',
+      )
+      .eq('order_id', orderId)
+      .maybeSingle();
+
+    setInvoiceDetail((data as InvoiceDetail) || null);
+  };
+
   const openDetail = async (detail: SelectedDetail) => {
     setSelectedDetail(detail);
     setDetailLoading(true);
     setDetailError('');
     setShopDetail(null);
+    setInvoiceDetail(null);
     setBookingDetail(null);
     setCustomerProfile(null);
     setCustomerEmail('');
@@ -431,6 +471,9 @@ const SuperAdminOrders: React.FC = () => {
 
         const shopRow = (orderData as ShopOrderDetail) || null;
         setShopDetail(shopRow);
+        if (shopRow?.id) {
+          void fetchInvoiceDetail(shopRow.id);
+        }
 
         if (shopRow?.user_id) {
           const [profileRes, buyerEmails] = await Promise.all([
@@ -487,7 +530,7 @@ const SuperAdminOrders: React.FC = () => {
         setDetailActivityLogs((logsData || []) as ActivityLog[]);
       }
     } catch (error: any) {
-      setDetailError(error?.message || '讀取訂單明細失敗');
+      setDetailError(error?.message || '載入訂單明細失敗');
     } finally {
       setDetailLoading(false);
     }
@@ -497,6 +540,7 @@ const SuperAdminOrders: React.FC = () => {
     setSelectedDetail(null);
     setDetailError('');
     setShopDetail(null);
+    setInvoiceDetail(null);
     setBookingDetail(null);
     setCustomerProfile(null);
     setCustomerEmail('');
@@ -536,6 +580,76 @@ const SuperAdminOrders: React.FC = () => {
 
   const createdAt = activeDetail?.created_at ? formatDateTime(activeDetail.created_at) : '-';
   const updatedAt = activeDetail?.updated_at ? formatDateTime(activeDetail.updated_at) : '-';
+  const currentInvoice = selectedDetail?.type === 'shop' ? invoiceDetail : null;
+
+  const refreshInvoiceDetail = async () => {
+    if (!shopDetail?.id) return;
+    await fetchInvoiceDetail(shopDetail.id);
+  };
+
+  const handleReissueInvoice = async () => {
+    if (!shopDetail?.id) return;
+
+    setDetailLoading(true);
+    setDetailError('');
+    try {
+      const { data, error } = await supabase.functions.invoke('ezpay-invoice-create', {
+        body: { order_id: shopDetail.id },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.success === false && data?.error) {
+        throw new Error(data.error);
+      }
+
+      await refreshInvoiceDetail();
+    } catch (error: any) {
+      setDetailError(error?.message || '無法重新開立發票');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const handleVoidInvoiceAction = async () => {
+    if (!shopDetail?.id) return;
+
+    setDetailLoading(true);
+    setDetailError('');
+    try {
+      const { data, error } = await supabase.functions.invoke('ezpay-invoice-void', {
+        body: { order_id: shopDetail.id, reason: 'Requested by admin' },
+      });
+      if (error) throw error;
+      if (data?.success === false && data?.error) throw new Error(data.error);
+      await refreshInvoiceDetail();
+    } catch (error: any) {
+      setDetailError(error?.message || '無法作廢發票');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const handleQueryInvoiceAction = async () => {
+    if (!shopDetail?.id) return;
+
+    setDetailLoading(true);
+    setDetailError('');
+    try {
+      const { data, error } = await supabase.functions.invoke('ezpay-invoice-query', {
+        body: { order_id: shopDetail.id },
+      });
+      if (error) throw error;
+      if (data?.success === false && data?.error) throw new Error(data.error);
+      await refreshInvoiceDetail();
+    } catch (error: any) {
+      setDetailError(error?.message || '無法查詢發票狀態');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
 
   const timeline = useMemo(() => {
     if (!selectedDetail || !activeDetail) return [];
@@ -543,26 +657,26 @@ const SuperAdminOrders: React.FC = () => {
     if (detailActivityLogs.length > 0) {
       return detailActivityLogs.map((log) => ({
         label: log.action.replace(/_/g, ' '),
-        value: `${formatDateTime(log.created_at)}${log.details && Object.keys(log.details).length > 0 ? ` · ${JSON.stringify(log.details)}` : ''}`,
+        value: `${formatDateTime(log.created_at)}${log.details && Object.keys(log.details).length > 0 ? ` 繚 ${JSON.stringify(log.details)}` : ''}`,
       }));
     }
 
     if (selectedDetail.type === 'shop') {
       const order = activeDetail as ShopOrderDetail;
       return [
-        { label: '建立訂單', value: formatDateTime(order.created_at) },
+        { label: '建立時間', value: formatDateTime(order.created_at) },
         { label: '付款狀態', value: PAYMENT_STATUS_LABELS[order.payment_status] || order.payment_status || '-' },
         { label: '訂單狀態', value: formatStatusLabel('shop', order.status) },
-        { label: '最後更新', value: order.updated_at ? formatDateTime(order.updated_at) : '-' },
+        { label: '更新時間', value: order.updated_at ? formatDateTime(order.updated_at) : '-' },
       ];
     }
 
     const booking = activeDetail as BookingOrderDetail;
     return [
-      { label: '建立訂單', value: formatDateTime(booking.created_at) },
+      { label: '建立時間', value: formatDateTime(booking.created_at) },
       { label: '付款狀態', value: PAYMENT_STATUS_LABELS[booking.payment_status || ''] || booking.payment_status || '-' },
-      { label: '訂房狀態', value: formatStatusLabel('booking', booking.status) },
-      { label: '最後更新', value: booking.updated_at ? formatDateTime(booking.updated_at) : '-' },
+      { label: '訂單狀態', value: formatStatusLabel('booking', booking.status) },
+      { label: '更新時間', value: booking.updated_at ? formatDateTime(booking.updated_at) : '-' },
     ];
   }, [activeDetail, detailActivityLogs, selectedDetail]);
 
@@ -580,10 +694,10 @@ const SuperAdminOrders: React.FC = () => {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
-          { icon: <ShoppingBag className="h-5 w-5 text-amber-600" />, label: '商品訂單數', value: shopOrders.length, color: 'bg-amber-50' },
-          { icon: <BedDouble className="h-5 w-5 text-teal-600" />, label: '訂房訂單數', value: bookingOrders.length, color: 'bg-teal-50' },
-          { icon: <DollarSign className="h-5 w-5 text-green-600" />, label: '商品營收', value: formatCurrency(shopRevenue), color: 'bg-green-50' },
-          { icon: <DollarSign className="h-5 w-5 text-blue-600" />, label: '訂房營收', value: formatCurrency(bookingRevenue), color: 'bg-blue-50' },
+          { icon: <ShoppingBag className="h-5 w-5 text-amber-600" />, label: '商店訂單', value: shopOrders.length, color: 'bg-amber-50' },
+          { icon: <BedDouble className="h-5 w-5 text-teal-600" />, label: '住宿訂單', value: bookingOrders.length, color: 'bg-teal-50' },
+          { icon: <DollarSign className="h-5 w-5 text-green-600" />, label: '商店營收', value: formatCurrency(shopRevenue), color: 'bg-green-50' },
+          { icon: <DollarSign className="h-5 w-5 text-blue-600" />, label: '住宿營收', value: formatCurrency(bookingRevenue), color: 'bg-blue-50' },
         ].map((item, index) => (
           <motion.div
             key={item.label}
@@ -635,8 +749,8 @@ const SuperAdminOrders: React.FC = () => {
           <div className="flex flex-wrap gap-1.5">
             {(tab === 'shop' ? shopStatuses : bookingStatuses).map((value) => {
               const labels = tab === 'shop'
-                ? { ...SHOP_STATUS_LABELS, all: '全部' }
-                : { ...BOOKING_STATUS_LABELS, all: '全部' };
+                ? { ...SHOP_STATUS_LABELS, all: '?券' }
+                : { ...BOOKING_STATUS_LABELS, all: '?券' };
               return (
                 <button
                   key={value}
@@ -662,8 +776,8 @@ const SuperAdminOrders: React.FC = () => {
             <table className="w-full text-sm">
               <thead className="border-b border-gray-100 bg-gray-50">
                 <tr>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500">訂單號碼</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">訂購人</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500">訂單編號</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">顧客</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">金額</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">付款</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">狀態</th>
@@ -688,7 +802,7 @@ const SuperAdminOrders: React.FC = () => {
                       <span className="font-mono font-medium text-gray-900">#{order.id.slice(-10).toUpperCase()}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-gray-800">{order.display_name || '未命名會員'}</p>
+                      <p className="font-medium text-gray-800">{order.display_name || '訪客'}</p>
                       <p className="text-xs text-gray-400 font-mono">{order.user_id.slice(-8)}</p>
                     </td>
                     <td className="px-4 py-3 font-semibold text-gray-900">{formatCurrency(order.total_amount)}</td>
@@ -713,12 +827,12 @@ const SuperAdminOrders: React.FC = () => {
             <table className="w-full text-sm">
               <thead className="border-b border-gray-100 bg-gray-50">
                 <tr>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500">訂單號碼</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">訂房人</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500">訂單編號</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">顧客</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">房型</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">入住 / 退房</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">金額</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">狀態</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">建立時間</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -739,7 +853,7 @@ const SuperAdminOrders: React.FC = () => {
                       <span className="font-mono text-xs text-gray-500">#{booking.id.slice(-10).toUpperCase()}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-gray-800">{booking.display_name || '未命名會員'}</p>
+                      <p className="font-medium text-gray-800">{booking.display_name || '訪客'}</p>
                       <p className="text-xs text-gray-400 font-mono">{booking.user_id.slice(-8)}</p>
                     </td>
                     <td className="px-4 py-3 text-gray-700">{booking.room_name || '-'}</td>
@@ -762,7 +876,7 @@ const SuperAdminOrders: React.FC = () => {
       </div>
 
       <p className="text-right text-xs text-gray-400">
-        目前顯示 {tab === 'shop' ? filteredShop.length : filteredBookings.length} 筆
+        ?桀?憿舐內 {tab === 'shop' ? filteredShop.length : filteredBookings.length} 蝑?
       </p>
 
       <AnimatePresence>
@@ -798,7 +912,7 @@ const SuperAdminOrders: React.FC = () => {
                     #{selectedDetail.id.slice(-10).toUpperCase()}
                   </h2>
                   <p className="mt-1 text-sm text-gray-500">
-                    {selectedDetail.type === 'shop' ? '商品訂單' : '訂房訂單'} · {createdAt}
+                    {selectedDetail.type === 'shop' ? '??閮' : '閮閮'} 繚 {createdAt}
                   </p>
                 </div>
                 <button
@@ -826,29 +940,29 @@ const SuperAdminOrders: React.FC = () => {
                         <SummaryCard label="總金額" value={selectedDetail.type === 'shop' ? formatCurrency((activeDetail as ShopOrderDetail).total_amount) : formatCurrency((activeDetail as BookingOrderDetail).total_price)} accent />
                         <SummaryCard label="付款狀態" value={PAYMENT_STATUS_LABELS[(activeDetail as any).payment_status] || (activeDetail as any).payment_status || '-'} />
                         <SummaryCard label="訂單狀態" value={formatStatusLabel(selectedDetail.type, (activeDetail as any).status)} />
-                        <SummaryCard label="支付方式" value={getPaymentMethodLabel((activeDetail as any).payment_method)} />
+                        <SummaryCard label="付款方式" value={getPaymentMethodLabel((activeDetail as any).payment_method)} />
                       </div>
 
                       <CardSection title={PAGE_LABELS.orderData} icon={<Receipt className="h-4 w-4" />}>
                         {selectedDetail.type === 'shop' ? (
                           <div className="grid gap-4 md:grid-cols-2">
-                            <InfoItem label="訂單編號" value={`#${shopDetail?.id?.slice(-10).toUpperCase() || '-'}`} mono />
+                            <InfoItem label="閮蝺刻?" value={`#${shopDetail?.id?.slice(-10).toUpperCase() || '-'}`} mono />
                             <InfoItem label="Merchant Order No." value={shopDetail?.merchant_order_no || '-'} mono />
-                            <InfoItem label="建立時間" value={createdAt} />
-                            <InfoItem label="最後更新" value={updatedAt} />
+                            <InfoItem label="撱箇???" value={createdAt} />
+                            <InfoItem label="更新時間" value={updatedAt} />
                             <InfoItem label="Subtotal" value={formatCurrency(shopDetail?.subtotal_amount || 0)} />
                             <InfoItem label="Points Discount" value={formatCurrency(shopDetail?.points_discount || 0)} />
                             <InfoItem label="NewebPay 狀態" value={shopDetail?.newebpay_status || '-'} />
-                            <InfoItem label="交易完成時間" value={shopDetail?.newebpay_paid_at ? formatDateTime(shopDetail.newebpay_paid_at) : '-'} />
+                            <InfoItem label="鈭斗?摰???" value={shopDetail?.newebpay_paid_at ? formatDateTime(shopDetail.newebpay_paid_at) : '-'} />
                           </div>
                         ) : (
                           <div className="grid gap-4 md:grid-cols-2">
-                            <InfoItem label="訂房編號" value={`#${bookingDetail?.id?.slice(-10).toUpperCase() || '-'}`} mono />
-                            <InfoItem label="建立時間" value={createdAt} />
-                            <InfoItem label="最後更新" value={updatedAt} />
-                            <InfoItem label="入住日期" value={bookingDetail ? formatDate(bookingDetail.check_in_date) : '-'} />
+                            <InfoItem label="閮蝺刻?" value={`#${bookingDetail?.id?.slice(-10).toUpperCase() || '-'}`} mono />
+                            <InfoItem label="撱箇???" value={createdAt} />
+                            <InfoItem label="更新時間" value={updatedAt} />
+                            <InfoItem label="?乩??交?" value={bookingDetail ? formatDate(bookingDetail.check_in_date) : '-'} />
                             <InfoItem label="退房日期" value={bookingDetail ? formatDate(bookingDetail.check_out_date) : '-'} />
-                            <InfoItem label="入住人數" value={String(bookingDetail?.guests || '-')} />
+                            <InfoItem label="?乩?鈭箸" value={String(bookingDetail?.guests || '-')} />
                             <InfoItem label="Subtotal" value={formatCurrency(bookingDetail?.subtotal_price || 0)} />
                             <InfoItem label="Points Discount" value={formatCurrency(bookingDetail?.points_discount || 0)} />
                           </div>
@@ -857,12 +971,12 @@ const SuperAdminOrders: React.FC = () => {
 
                       <CardSection title={PAGE_LABELS.buyerInfo} icon={<Users className="h-4 w-4" />}>
                         <div className="grid gap-4 md:grid-cols-2">
-                          <InfoItem label="會員名稱" value={customerProfile?.display_name || '-'} />
-                          <InfoItem label="電話" value={customerProfile?.phone || '-'} />
+                          <InfoItem label="??迂" value={customerProfile?.display_name || '-'} />
+                          <InfoItem label="?餉店" value={customerProfile?.phone || '-'} />
                           <InfoItem label="Email" value={customerEmail || '-'} />
                           <InfoItem label="User ID" value={(activeDetail as any).user_id || '-'} mono />
-                          <InfoItem label="國籍" value={customerProfile?.nationality || '-'} />
-                          <InfoItem label="語言" value={customerProfile?.preferred_language || '-'} />
+                          <InfoItem label="??" value={customerProfile?.nationality || '-'} />
+                          <InfoItem label="隤?" value={customerProfile?.preferred_language || '-'} />
                         </div>
                       </CardSection>
 
@@ -870,7 +984,7 @@ const SuperAdminOrders: React.FC = () => {
                         <CardSection title={PAGE_LABELS.productDetails} icon={<ShoppingBag className="h-4 w-4" />}>
                           <div className="space-y-3">
                             {(shopDetail?.purchase_records || []).length === 0 ? (
-                              <p className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-500">沒有商品明細</p>
+                              <p className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-500">瘝????敦</p>
                             ) : (
                               shopDetail?.purchase_records?.map((item) => (
                                 <div key={item.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -894,8 +1008,8 @@ const SuperAdminOrders: React.FC = () => {
                                       </div>
                                       <p className="mt-1 text-xs text-gray-400">{item.products?.sku || item.id}</p>
                                       <p className="mt-1 text-sm text-gray-600">
-                                        {item.products?.vendors?.name || '未知供應商'}
-                                        {item.products?.vendors?.contact_phone ? ` · ${item.products.vendors.contact_phone}` : ''}
+                                        {item.products?.vendors?.name || '未命名供應商'}
+                                        {item.products?.vendors?.contact_phone ? ` 繚 ${item.products.vendors.contact_phone}` : ''}
                                       </p>
                                     </div>
                                     <div className="text-right">
@@ -959,15 +1073,61 @@ const SuperAdminOrders: React.FC = () => {
                           <InfoItem label="卡號" value={shopDetail?.newebpay_card_no || '-'} mono />
                           <InfoItem label="回應代碼" value={shopDetail?.newebpay_respond_code || '-'} mono />
                           <InfoItem label="付款類型" value={shopDetail?.newebpay_payment_type || '-'} />
-                          <InfoItem label="付款完成時間" value={shopDetail?.newebpay_paid_at ? formatDateTime(shopDetail.newebpay_paid_at) : '-'} />
+                          <InfoItem label="付款時間" value={shopDetail?.newebpay_paid_at ? formatDateTime(shopDetail.newebpay_paid_at) : '-'} />
                         </div>
                       </CardSection>
 
+                      {selectedDetail.type === 'shop' && (
+                        <CardSection title="電子發票" icon={<Receipt className="h-4 w-4" />}>
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <InfoItem label="發票狀態" value={currentInvoice?.invoice_status || 'pending'} />
+                            <InfoItem label="發票號碼" value={currentInvoice?.invoice_number || '-'} mono />
+                            <InfoItem label="隨機碼" value={currentInvoice?.invoice_random_number || '-'} mono />
+                            <InfoItem label="開立時間" value={currentInvoice?.invoice_date ? formatDateTime(currentInvoice.invoice_date) : '-'} />
+                            <InfoItem label="買受人統編" value={currentInvoice?.buyer_identifier || '-'} mono />
+                            <InfoItem
+                              label="載具"
+                              value={[currentInvoice?.carrier_type || '', currentInvoice?.carrier_number || ''].filter(Boolean).join(' / ') || '-'}
+                              mono
+                            />
+                            <InfoItem label="愛心碼" value={currentInvoice?.love_code || '-'} mono />
+                            <InfoItem label="ezPay 交易序號" value={currentInvoice?.ezpay_trade_no || '-'} mono />
+                          </div>
+                          {currentInvoice?.error_message && (
+                            <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm leading-6 text-red-700">
+                              {currentInvoice.error_message}
+                            </div>
+                          )}
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => void handleReissueInvoice()}
+                              className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-500"
+                            >
+                              重新補開發票
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleVoidInvoiceAction()}
+                              className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50"
+                            >
+                              作廢發票
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleQueryInvoiceAction()}
+                              className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50"
+                            >
+                              查詢發票狀態
+                            </button>
+                          </div>
+                        </CardSection>
+                      )}
                       <CardSection title={PAGE_LABELS.shippingInfo} icon={<MapPin className="h-4 w-4" />}>
                         {selectedDetail.type === 'shop' ? (
                           <div className="space-y-3">
                             {getShippingEntries(shopDetail?.shipping_address || null).length === 0 ? (
-                              <p className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-500">沒有配送資料</p>
+                              <p className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-500">沒有可顯示的配送資料</p>
                             ) : (
                               getShippingEntries(shopDetail?.shipping_address || null).map(([key, value]) => (
                                 <InfoItem key={key} label={key} value={value} />
@@ -976,32 +1136,33 @@ const SuperAdminOrders: React.FC = () => {
                           </div>
                         ) : (
                           <div className="grid gap-4 md:grid-cols-2">
-                            <InfoItem label="接待聯絡人" value={bookingDetail?.tbl_rooms?.vendors?.name || bookingDetail?.tbl_rooms?.hotels?.name || '-'} />
-                            <InfoItem label="聯絡電話" value={bookingDetail?.tbl_rooms?.vendors?.contact_phone || bookingDetail?.tbl_rooms?.hotels?.phone || '-'} />
-                            <InfoItem label="聯絡 Email" value={bookingDetail?.tbl_rooms?.vendors?.contact_email || bookingDetail?.tbl_rooms?.hotels?.email || '-'} />
+                            <InfoItem label="供應商名稱" value={bookingDetail?.tbl_rooms?.vendors?.name || bookingDetail?.tbl_rooms?.hotels?.name || '-'} />
+                            <InfoItem label="供應商電話" value={bookingDetail?.tbl_rooms?.vendors?.contact_phone || bookingDetail?.tbl_rooms?.hotels?.phone || '-'} />
+                            <InfoItem label="供應商 Email" value={bookingDetail?.tbl_rooms?.vendors?.contact_email || bookingDetail?.tbl_rooms?.hotels?.email || '-'} />
                             <InfoItem label="地址" value={bookingDetail?.tbl_rooms?.vendors?.address || bookingDetail?.tbl_rooms?.hotels?.address || bookingDetail?.tbl_rooms?.location || '-'} />
                           </div>
                         )}
                       </CardSection>
+
                     </section>
 
                     <aside className="space-y-6">
                       <CardSection title={PAGE_LABELS.contact} icon={<MessageSquare className="h-4 w-4" />}>
                         <div className="grid gap-3">
-                          <InfoItem label="電話" value={contactPhone || '-'} />
+                          <InfoItem label="?餉店" value={contactPhone || '-'} />
                           <InfoItem label="Email" value={contactEmail || '-'} />
                         </div>
                         <div className="mt-4 flex flex-wrap gap-2">
                           {contactPhone && (
                             <a href={`tel:${contactPhone}`} className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
                               <Phone className="h-4 w-4" />
-                              撥打
+                              ?交?
                             </a>
                           )}
                           {contactEmail && (
                             <a href={`mailto:${contactEmail}`} className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
                               <Mail className="h-4 w-4" />
-                              寄信
+                              撖縑
                             </a>
                           )}
                         </div>
@@ -1023,17 +1184,17 @@ const SuperAdminOrders: React.FC = () => {
                               ))
                             ) : (
                               <>
-                                <NoteBlock label="訂單備註" value={shopDetail?.shipping_address?.note || shopDetail?.discount_code || '-'} />
-                                <NoteBlock label="收件備註" value={shopDetail?.shipping_address?.delivery_note || shopDetail?.shipping_address?.note || '-'} />
-                                <NoteBlock label="聯絡資訊" value={contactPhone || contactEmail || '-'} />
+                                <NoteBlock label="閮?酉" value={shopDetail?.shipping_address?.note || shopDetail?.discount_code || '-'} />
+                                <NoteBlock label="?嗡辣?酉" value={shopDetail?.shipping_address?.delivery_note || shopDetail?.shipping_address?.note || '-'} />
+                                <NoteBlock label="?舐窗鞈?" value={contactPhone || contactEmail || '-'} />
                               </>
                             )}
                           </div>
                         ) : (
                           <div className="space-y-3">
-                            <NoteBlock label="顧客留言" value={bookingDetail?.special_requests || '-'} />
-                            <NoteBlock label="入住備註" value={bookingDetail?.tbl_rooms?.hotels?.address || bookingDetail?.tbl_rooms?.vendors?.address || '-'} />
-                            <NoteBlock label="聯絡資訊" value={contactPhone || contactEmail || '-'} />
+                            <NoteBlock label="憿批恥??" value={bookingDetail?.special_requests || '-'} />
+                            <NoteBlock label="?乩??酉" value={bookingDetail?.tbl_rooms?.hotels?.address || bookingDetail?.tbl_rooms?.vendors?.address || '-'} />
+                            <NoteBlock label="?舐窗鞈?" value={contactPhone || contactEmail || '-'} />
                           </div>
                         )}
                       </CardSection>
@@ -1042,7 +1203,7 @@ const SuperAdminOrders: React.FC = () => {
                         <div className="space-y-3">
                           {timeline.map((step) => (
                             <div key={step.label} className="flex items-start gap-3 rounded-2xl bg-white p-3 shadow-sm">
-                              <div className="mt-0.5 h-8 w-8 flex-shrink-0 rounded-full bg-amber-100 text-center text-xs font-bold leading-8 text-amber-700">•</div>
+                              <div className="mt-0.5 h-8 w-8 flex-shrink-0 rounded-full bg-amber-100 text-center text-xs font-bold leading-8 text-amber-700">→</div>
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold text-gray-900">{step.label}</p>
                                 <p className="mt-1 text-sm text-gray-500">{step.value}</p>
@@ -1103,3 +1264,5 @@ function NoteBlock({ label, value }: { label: string; value: string }) {
 }
 
 export default SuperAdminOrders;
+
+

@@ -190,6 +190,32 @@ export interface Order {
   purchase_records?: PurchaseRecord[];
 }
 
+export interface Invoice {
+  id: string;
+  order_id: string;
+  user_id: string;
+  invoice_status: 'pending' | 'issued' | 'failed' | 'cancelled' | 'allowance';
+  invoice_number?: string | null;
+  invoice_random_number?: string | null;
+  invoice_date?: string | null;
+  buyer_name?: string | null;
+  buyer_email?: string | null;
+  buyer_identifier?: string | null;
+  carrier_type?: string | null;
+  carrier_number?: string | null;
+  love_code?: string | null;
+  tax_type?: string | null;
+  sales_amount?: number | null;
+  tax_amount?: number | null;
+  total_amount?: number | null;
+  ezpay_trade_no?: string | null;
+  ezpay_raw_request?: Record<string, unknown> | null;
+  ezpay_raw_response?: Record<string, unknown> | null;
+  error_message?: string | null;
+  created_at: string;
+  updated_at?: string;
+}
+
 export interface ProductSubscription {
   id: string;
   user_id: string;

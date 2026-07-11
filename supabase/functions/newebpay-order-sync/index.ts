@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createEzpayInvoiceForOrder } from "../_shared/ezpay-invoice.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -118,6 +119,15 @@ Deno.serve(async (req: Request) => {
     }
 
     if (String(order.payment_status || "").toLowerCase() === "paid" && String(order.newebpay_status || "").toLowerCase() === "success") {
+      try {
+        const invoiceResult = await createEzpayInvoiceForOrder(supabase, order.id);
+        if (!invoiceResult.success && invoiceResult.error) {
+          console.warn("[newebpay-order-sync] Invoice creation failed:", invoiceResult.error);
+        }
+      } catch (invoiceError) {
+        console.warn("[newebpay-order-sync] Invoice creation failed:", invoiceError);
+      }
+
       return jsonResponse({ success: true, synced: false, reason: "already_paid" });
     }
 
@@ -212,6 +222,15 @@ Deno.serve(async (req: Request) => {
           description: "NewebPay payment sync reward points",
         });
       }
+    }
+
+    try {
+      const invoiceResult = await createEzpayInvoiceForOrder(supabase, order.id);
+      if (!invoiceResult.success && invoiceResult.error) {
+        console.warn("[newebpay-order-sync] Invoice creation failed:", invoiceResult.error);
+      }
+    } catch (invoiceError) {
+      console.warn("[newebpay-order-sync] Invoice creation failed:", invoiceError);
     }
 
     return jsonResponse({

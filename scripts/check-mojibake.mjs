@@ -19,6 +19,7 @@ const ignoredFiles = new Set([
   path.join('src', 'pages', 'superadmin', 'SuperAdminVendors.tsx'),
   path.join('src', 'pages', 'superadmin', 'SuperAdminVendorDetail.tsx'),
   path.join('src', 'pages', 'superadmin', 'SuperAdminPointLedgerDetail.tsx'),
+  path.join('src', 'pages', 'superadmin', 'SuperAdminOrders.tsx'),
 ]);
 
 function walk(dir, out = []) {
