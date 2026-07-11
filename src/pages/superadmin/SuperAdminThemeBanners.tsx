@@ -152,7 +152,7 @@ export default function SuperAdminThemeBanners() {
       link_url: payload.link_url,
       display_order: payload.display_order,
     });
-    setMessage(t('Banner ???', 'Banner saved.', 'Banner ?????????', '??? ???????.'));
+    setMessage(t('Banner 已儲存', 'Banner saved.', 'Banner を保存しました。', '배너가 저장되었습니다.'));
     setEditingId(null);
     setForm(EMPTY_FORM);
     await loadItems();

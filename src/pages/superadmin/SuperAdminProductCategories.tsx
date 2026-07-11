@@ -138,7 +138,7 @@ export default function SuperAdminProductCategories() {
         slug: payload.slug,
         parent_id: payload.parent_id,
       });
-      setMessage(editingId ? '?????' : '?????');
+      setMessage(editingId ? '分類已更新' : '分類已新增');
       setEditingId(null);
       setForm(emptyForm);
       await loadData();

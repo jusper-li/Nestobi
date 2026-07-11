@@ -164,11 +164,11 @@ const SuperAdminDashboard: React.FC = () => {
 
       <div className="bg-white rounded-2xl shadow-sm p-6">
         <div className="flex items-center justify-between gap-3 mb-4">
-          <h3 className="font-semibold text-gray-900 flex items-center gap-2"><Activity className="w-5 h-5 text-green-600" />??????</h3>
-          <button type="button" onClick={fetchData} className="text-sm font-medium text-green-700 hover:text-green-800">????</button>
+          <h3 className="font-semibold text-gray-900 flex items-center gap-2"><Activity className="w-5 h-5 text-green-600" />最近紀錄</h3>
+          <button type="button" onClick={fetchData} className="text-sm font-medium text-green-700 hover:text-green-800">重新整理</button>
         </div>
         {recentLogs.length === 0 ? (
-          <p className="py-4 text-center text-sm text-gray-400">??????</p>
+          <p className="py-4 text-center text-sm text-gray-400">目前沒有紀錄</p>
         ) : (
           <div className="space-y-3">
             {recentLogs.map(log => (
