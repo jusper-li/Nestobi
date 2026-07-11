@@ -6,7 +6,6 @@ import {
   ChevronRight,
   Clock3,
   Database,
-  Filter,
   Search,
   ShieldCheck,
   Tag,
@@ -34,30 +33,30 @@ type AdminProfile = {
 };
 
 const actionLabels: Record<string, string> = {
-  create_vendor: '建立廠商',
-  update_vendor: '更新廠商',
-  delete_vendor: '刪除廠商',
-  link_vendor_user: '綁定廠商帳號',
-  unlink_vendor_user: '解除廠商帳號',
-  promote_admin: '升級管理員',
-  update_admin_permissions: '更新權限',
+  create_vendor: '建立供應商',
+  update_vendor: '更新供應商',
+  delete_vendor: '刪除供應商',
+  link_vendor_user: '綁定供應商帳號',
+  unlink_vendor_user: '解除供應商帳號',
+  promote_admin: '提升管理員',
+  update_admin_permissions: '更新管理員權限',
   revoke_admin: '撤銷管理員',
   update_order_status: '更新訂單狀態',
   delete_blog_post: '刪除文章',
   delete_blog_category: '刪除文章分類',
   delete_faq: '刪除 FAQ',
-  update_point_reward_rule: '更新點數回饋規則',
+  update_point_reward_rule: '更新點數獎勵規則',
 };
 
 const entityLabels: Record<string, string> = {
-  vendors: '廠商',
+  vendors: '供應商',
   orders: '訂單',
-  tbl_user_auth: '管理員帳號',
+  tbl_user_auth: '會員',
   user_permissions: '權限',
   blog_posts: '文章',
   blog_categories: '文章分類',
   faqs: 'FAQ',
-  point_reward_rules: '點數回饋',
+  point_reward_rules: '點數獎勵',
 };
 
 const SuperAdminActivityLogs: React.FC = () => {
@@ -75,21 +74,32 @@ const SuperAdminActivityLogs: React.FC = () => {
   const [selectedLog, setSelectedLog] = useState<AdminActivityLog | null>(null);
 
   const labels = {
-    title: pick('管理員操作紀錄', 'Admin Activity Logs', '管理者操作履歴', '관리자 작업 기록'),
-    subtitle: pick('查看所有超級管理員與管理員在系統中的操作軌跡。', 'Review every action performed by superadmins and admins across the system.', 'スーパー管理者と管理者の操作履歴を確認できます。', '슈퍼관리자와 관리자의 시스템 작업 내역을 확인합니다.'),
-    search: pick('搜尋 action / entity / ID / 詳細', 'Search action / entity / ID / details', 'action / entity / ID / 詳細を検索', 'action / entity / ID / 상세 검색'),
-    all: pick('全部', 'All', 'すべて', '전체'),
-    actor: pick('操作者', 'Actor', '実行者', '작업자'),
-    action: pick('動作', 'Action', '操作', '작업'),
-    entity: pick('資料類型', 'Entity', '対象', '대상'),
-    entityId: pick('資料 ID', 'Entity ID', 'ID', 'ID'),
-    details: pick('詳細', 'Details', '詳細', '상세'),
-    createdAt: pick('建立時間', 'Created at', '作成日時', '생성 시간'),
-    today: pick('今天', 'Today', '今日', '오늘'),
-    total: pick('總紀錄', 'Total logs', '総件数', '총 기록'),
-    actors: pick('操作者數', 'Actors', '実行者数', '작업자 수'),
-    empty: pick('目前沒有符合條件的操作紀錄。', 'No activity logs match your filters yet.', '条件に一致する履歴はありません。', '조건에 맞는 기록이 없습니다.'),
-    loadFailed: pick('操作紀錄載入失敗，請稍後再試。', 'Failed to load activity logs. Please try again later.', '履歴の読み込みに失敗しました。後でもう一度お試しください。', '기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'),
+    title: pick('活動紀錄', 'Activity Logs', 'Activity Logs', 'Activity Logs'),
+    subtitle: pick('檢視超級管理員與管理員在系統內的所有操作。', 'Review every action performed by superadmins and admins across the system.', 'Review every action performed by superadmins and admins across the system.', 'Review every action performed by superadmins and admins across the system.'),
+    search: pick('搜尋 action / entity / ID / 詳細資料', 'Search action / entity / ID / details', 'Search action / entity / ID / details', 'Search action / entity / ID / details'),
+    all: pick('全部', 'All', 'All', 'All'),
+    actor: pick('操作者', 'Actor', 'Actor', 'Actor'),
+    action: pick('動作', 'Action', 'Action', 'Action'),
+    entity: pick('資料表', 'Entity', 'Entity', 'Entity'),
+    entityId: pick('資料 ID', 'Entity ID', 'Entity ID', 'Entity ID'),
+    details: pick('詳細資料', 'Details', 'Details', 'Details'),
+    createdAt: pick('建立時間', 'Created at', 'Created at', 'Created at'),
+    today: pick('今日', 'Today', 'Today', 'Today'),
+    total: pick('總數', 'Total logs', 'Total logs', 'Total logs'),
+    actors: pick('操作者數', 'Actors', 'Actors', 'Actors'),
+    empty: pick('目前沒有符合篩選條件的活動紀錄。', 'No activity logs match your filters yet.', 'No activity logs match your filters yet.', 'No activity logs match your filters yet.'),
+    loadFailed: pick('載入活動紀錄失敗，請稍後再試。', 'Failed to load activity logs. Please try again later.', 'Failed to load activity logs. Please try again later.', 'Failed to load activity logs. Please try again later.'),
+    refresh: pick('重新整理', 'Refresh', 'Refresh', 'Refresh'),
+    loading: pick('載入活動紀錄中...', 'Loading activity logs...', 'Loading activity logs...', 'Loading activity logs...'),
+    detailsTitle: pick('紀錄明細', 'Log Details', 'Log Details', 'Log Details'),
+    detailHint: pick('請從左側選擇一筆紀錄查看詳細內容。', 'Select any record on the left to inspect details.', 'Select any record on the left to inspect details.', 'Select any record on the left to inspect details.'),
+    notesTitle: pick('備註', 'Notes', 'Notes', 'Notes'),
+    notesBody: pick(
+      '新增或修改任何管理員功能時，請記得呼叫 logAdminAction，才能保留完整稽核軌跡。',
+      'These records come from superadmin actions that already call logAdminAction. Add logAdminAction to any new admin feature to keep the trail complete.',
+      'These records come from superadmin actions that already call logAdminAction. Add logAdminAction to any new admin feature to keep the trail complete.',
+      'These records come from superadmin actions that already call logAdminAction. Add logAdminAction to any new admin feature to keep the trail complete.',
+    ),
   };
 
   const actionOptions = useMemo(() => {
@@ -106,9 +116,11 @@ const SuperAdminActivityLogs: React.FC = () => {
     const today = new Date();
     return logs.filter(log => {
       const created = new Date(log.created_at);
-      return created.getFullYear() === today.getFullYear()
-        && created.getMonth() === today.getMonth()
-        && created.getDate() === today.getDate();
+      return (
+        created.getFullYear() === today.getFullYear() &&
+        created.getMonth() === today.getMonth() &&
+        created.getDate() === today.getDate()
+      );
     }).length;
   }, [logs]);
 
@@ -126,7 +138,9 @@ const SuperAdminActivityLogs: React.FC = () => {
         log.entity_id || '',
         log.actor_user_id || '',
         JSON.stringify(log.details || {}),
-      ].join(' ').toLowerCase();
+      ]
+        .join(' ')
+        .toLowerCase();
       return blob.includes(keyword);
     });
   }, [actionFilter, entityFilter, logs, query]);
@@ -193,7 +207,7 @@ const SuperAdminActivityLogs: React.FC = () => {
             className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
           >
             <Activity className="h-4 w-4" />
-            {pick('重新整理', 'Refresh', '更新', '새로고침')}
+            {labels.refresh}
           </button>
         </div>
 
@@ -259,14 +273,12 @@ const SuperAdminActivityLogs: React.FC = () => {
         </div>
       </div>
 
-      {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-      ) : null}
+      {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
       {loading ? (
         <div className="rounded-3xl bg-white p-12 text-center shadow-sm">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
-          <p className="mt-3 text-sm text-gray-500">{pick('載入操作紀錄中...', 'Loading activity logs...', '操作履歴を読み込み中...', '작업 기록을 불러오는 중...')}</p>
+          <p className="mt-3 text-sm text-gray-500">{labels.loading}</p>
         </div>
       ) : filteredLogs.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-gray-200 bg-white p-12 text-center shadow-sm">
@@ -279,6 +291,7 @@ const SuperAdminActivityLogs: React.FC = () => {
             {filteredLogs.map(log => {
               const actor = log.actor_user_id ? profiles[log.actor_user_id] : null;
               const detailText = JSON.stringify(log.details || {});
+
               return (
                 <button
                   key={log.id}
@@ -298,9 +311,7 @@ const SuperAdminActivityLogs: React.FC = () => {
                           {entityLabels[log.entity_type] || log.entity_type}
                         </span>
                       </div>
-                      <p className="mt-2 text-sm font-semibold text-gray-900">
-                        {log.entity_id ? `${log.entity_id}` : '-'}
-                      </p>
+                      <p className="mt-2 text-sm font-semibold text-gray-900">{log.entity_id ? `${log.entity_id}` : '-'}</p>
                       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
                         <span className="inline-flex items-center gap-1.5">
                           <User className="h-3.5 w-3.5" />
@@ -324,17 +335,14 @@ const SuperAdminActivityLogs: React.FC = () => {
 
           <div className="space-y-4">
             <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-              <h2 className="text-base font-bold text-gray-900">{pick('紀錄詳情', 'Log Details', '履歴詳細', '기록 상세')}</h2>
+              <h2 className="text-base font-bold text-gray-900">{labels.detailsTitle}</h2>
               {selectedLog ? (
                 <div className="mt-4 space-y-3">
                   <DetailRow label={labels.action} value={actionLabels[selectedLog.action] || selectedLog.action} />
                   <DetailRow label={labels.entity} value={entityLabels[selectedLog.entity_type] || selectedLog.entity_type} />
                   <DetailRow label={labels.entityId} value={selectedLog.entity_id || '-'} mono />
                   <DetailRow label={labels.actor} value={selectedLog.actor_user_id || '-'} mono />
-                  <DetailRow
-                    label={labels.createdAt}
-                    value={formatDateTime(selectedLog.created_at)}
-                  />
+                  <DetailRow label={labels.createdAt} value={formatDateTime(selectedLog.created_at)} />
                   <div className="rounded-2xl bg-gray-50 p-4">
                     <p className="text-xs font-medium text-gray-400">{labels.details}</p>
                     <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words text-sm leading-6 text-gray-700">
@@ -343,22 +351,13 @@ const SuperAdminActivityLogs: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="mt-4 rounded-2xl bg-gray-50 px-4 py-6 text-sm text-gray-500">
-                  {pick('點選左側任一筆紀錄即可查看詳細內容。', 'Select any record on the left to inspect details.', '左の履歴を選択すると詳細が表示されます。', '왼쪽 기록을 선택하면 상세를 볼 수 있습니다.')}
-                </div>
+                <div className="mt-4 rounded-2xl bg-gray-50 px-4 py-6 text-sm text-gray-500">{labels.detailHint}</div>
               )}
             </div>
 
             <div className="rounded-3xl border border-emerald-100 bg-emerald-50/50 p-5 text-sm text-emerald-900">
-              <p className="font-semibold">{pick('說明', 'Notes', '補足', '안내')}</p>
-              <p className="mt-2 leading-7 text-emerald-900/80">
-                {pick(
-                  '這些紀錄來自系統內已呼叫 logAdminAction 的超級管理員操作。若你要記錄更多動作，只要在對應功能加上 logAdminAction 即可。',
-                  'These records come from superadmin actions that already call logAdminAction. Add logAdminAction to any new admin feature to keep the trail complete.',
-                  'この履歴は logAdminAction を呼び出す管理者操作から取得しています。新しい管理機能にも logAdminAction を追加すると履歴が残ります。',
-                  '이 기록은 logAdminAction을 호출하는 관리자 작업에서 가져옵니다. 새 관리 기능에도 logAdminAction을 추가하면 기록이 남습니다.'
-                )}
-              </p>
+              <p className="font-semibold">{labels.notesTitle}</p>
+              <p className="mt-2 leading-7 text-emerald-900/80">{labels.notesBody}</p>
             </div>
           </div>
         </div>
