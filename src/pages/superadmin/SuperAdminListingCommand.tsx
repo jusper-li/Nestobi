@@ -1,12 +1,39 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal, Send, CheckCircle, AlertCircle, Loader, ChevronDown, ChevronUp, Tag, Building2, BedDouble, ShoppingBag, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  AlertCircle,
+  BedDouble,
+  Building2,
+  CheckCircle,
+  ChevronDown,
+  ChevronUp,
+  Loader,
+  Send,
+  ShoppingBag,
+  Tag,
+  Terminal,
+  X,
+} from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { logAdminAction } from '../../lib/auditLog';
 
-interface Category { id: string; name: string; slug: string; }
-interface Vendor { id: string; name: string; }
-interface Hotel { id: string; name: string; city: string; vendor_id: string; }
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface Vendor {
+  id: string;
+  name: string;
+}
+
+interface Hotel {
+  id: string;
+  name: string;
+  city: string;
+  vendor_id: string;
+}
 
 interface ParsedResult {
   intent: 'product' | 'hotel' | 'room';
@@ -23,36 +50,52 @@ interface HistoryItem {
 }
 
 const ROOM_TYPES = [
-  { value: 'single', label: '單人房' },
-  { value: 'double', label: '雙人房' },
-  { value: 'suite', label: '套房' },
-  { value: 'deluxe', label: '豪華房' },
-  { value: 'family', label: '家庭房' },
-  { value: 'villa', label: '別墅' },
+  { value: 'single', label: 'Single Room' },
+  { value: 'double', label: 'Double Room' },
+  { value: 'suite', label: 'Suite' },
+  { value: 'deluxe', label: 'Deluxe' },
+  { value: 'family', label: 'Family Room' },
+  { value: 'villa', label: 'Villa' },
 ];
 
-function TagEditor({ values, onChange, placeholder }: { values: string[]; onChange: (v: string[]) => void; placeholder?: string }) {
+function TagEditor({
+  values,
+  onChange,
+  placeholder,
+}: {
+  values: string[];
+  onChange: (v: string[]) => void;
+  placeholder?: string;
+}) {
   const [input, setInput] = useState('');
   const add = () => {
-    const v = input.trim();
-    if (v && !values.includes(v)) onChange([...values, v]);
+    const value = input.trim();
+    if (value && !values.includes(value)) onChange([...values, value]);
     setInput('');
   };
+
   return (
-    <div className="border border-gray-200 rounded-xl p-2 flex flex-wrap gap-1.5 min-h-[42px]">
-      {values.map(v => (
-        <span key={v} className="flex items-center gap-1 bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full">
-          {v}
-          <button type="button" onClick={() => onChange(values.filter(x => x !== v))}><X className="w-3 h-3" /></button>
+    <div className="flex min-h-[42px] flex-wrap gap-1.5 rounded-xl border border-gray-200 p-2">
+      {values.map(value => (
+        <span key={value} className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+          {value}
+          <button type="button" onClick={() => onChange(values.filter(item => item !== value))}>
+            <X className="h-3 w-3" />
+          </button>
         </span>
       ))}
       <input
         value={input}
         onChange={e => setInput(e.target.value)}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(); } }}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            add();
+          }
+        }}
         onBlur={add}
-        placeholder={placeholder || '輸入後按 Enter 新增'}
-        className="flex-1 min-w-[120px] text-sm outline-none bg-transparent"
+        placeholder={placeholder || 'Type and press Enter'}
+        className="min-w-[120px] flex-1 bg-transparent text-sm outline-none"
       />
     </div>
   );
@@ -61,14 +104,14 @@ function TagEditor({ values, onChange, placeholder }: { values: string[]; onChan
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
+      <label className="mb-1 block text-xs font-medium text-gray-500">{label}</label>
       {children}
     </div>
   );
 }
 
-const inputCls = "w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400";
-const selectCls = "w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-400";
+const inputCls = 'w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400';
+const selectCls = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400';
 
 const SuperAdminListingCommand: React.FC = () => {
   const [command, setCommand] = useState('');
@@ -108,32 +151,31 @@ const SuperAdminListingCommand: React.FC = () => {
     setError('');
     setParsed(null);
     setSavedMsg('');
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-listing`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session?.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ mode: 'command', content: command }),
-        }
-      );
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-listing`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ mode: 'command', content: command }),
+      });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || '解析失敗');
+      if (!res.ok) throw new Error(json.error || 'Parse failed');
+
       const result: ParsedResult = json.result;
       setParsed(result);
-      // Auto-resolve category_id from slug
-      let initialData = { ...result.data };
+
+      const initialData = { ...result.data };
       if (result.intent === 'product' && result.data.category_slug) {
-        const cat = categories.find(c => c.slug === result.data.category_slug);
+        const cat = categories.find(item => item.slug === result.data.category_slug);
         if (cat) initialData.category_id = cat.id;
       }
       setEditData(initialData);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setParsing(false);
     }
@@ -143,6 +185,7 @@ const SuperAdminListingCommand: React.FC = () => {
     if (!parsed) return;
     setSaving(true);
     setError('');
+
     try {
       if (parsed.intent === 'product') {
         const payload: Record<string, any> = {
@@ -168,8 +211,12 @@ const SuperAdminListingCommand: React.FC = () => {
         };
         const { error: dbErr } = await supabase.from('products').insert(payload);
         if (dbErr) throw new Error(dbErr.message);
-        await logAdminAction('create_product', 'products', null, { name: payload.name, vendor_id: payload.vendor_id, source: 'listing_command' });
-        setSavedMsg('商品已成功上架！');
+        await logAdminAction('create_product', 'products', null, {
+          name: payload.name,
+          vendor_id: payload.vendor_id,
+          source: 'listing_command',
+        });
+        setSavedMsg('Product created');
       } else if (parsed.intent === 'hotel') {
         const payload: Record<string, any> = {
           name: editData.name,
@@ -192,8 +239,12 @@ const SuperAdminListingCommand: React.FC = () => {
         };
         const { error: dbErr } = await supabase.from('hotels').insert(payload);
         if (dbErr) throw new Error(dbErr.message);
-        await logAdminAction('create_hotel', 'hotels', null, { name: payload.name, vendor_id: payload.vendor_id, source: 'listing_command' });
-        setSavedMsg('飯店已成功上架！');
+        await logAdminAction('create_hotel', 'hotels', null, {
+          name: payload.name,
+          vendor_id: payload.vendor_id,
+          source: 'listing_command',
+        });
+        setSavedMsg('Hotel created');
       } else if (parsed.intent === 'room') {
         const payload: Record<string, any> = {
           name: editData.name,
@@ -214,8 +265,13 @@ const SuperAdminListingCommand: React.FC = () => {
         };
         const { error: dbErr } = await supabase.from('tbl_rooms').insert(payload);
         if (dbErr) throw new Error(dbErr.message);
-        await logAdminAction('create_room', 'tbl_rooms', null, { name: payload.name, vendor_id: payload.vendor_id, hotel_id: payload.hotel_id, source: 'listing_command' });
-        setSavedMsg('房型已成功上架！');
+        await logAdminAction('create_room', 'tbl_rooms', null, {
+          name: payload.name,
+          vendor_id: payload.vendor_id,
+          hotel_id: payload.hotel_id,
+          source: 'listing_command',
+        });
+        setSavedMsg('Room created');
       }
 
       const item: HistoryItem = {
@@ -231,23 +287,23 @@ const SuperAdminListingCommand: React.FC = () => {
       setParsed(null);
       setEditData({});
       setCommand('');
-    } catch (e: any) {
-      setError(e.message);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setSaving(false);
     }
   };
 
   const intentIcon = (intent: string) => {
-    if (intent === 'hotel') return <Building2 className="w-4 h-4" />;
-    if (intent === 'room') return <BedDouble className="w-4 h-4" />;
-    return <ShoppingBag className="w-4 h-4" />;
+    if (intent === 'hotel') return <Building2 className="h-4 w-4" />;
+    if (intent === 'room') return <BedDouble className="h-4 w-4" />;
+    return <ShoppingBag className="h-4 w-4" />;
   };
 
   const intentLabel = (intent: string) => {
-    if (intent === 'hotel') return '飯店';
-    if (intent === 'room') return '房型';
-    return '商品';
+    if (intent === 'hotel') return 'Hotel';
+    if (intent === 'room') return 'Room';
+    return 'Product';
   };
 
   const intentColor = (intent: string) => {
@@ -256,183 +312,215 @@ const SuperAdminListingCommand: React.FC = () => {
     return 'bg-amber-100 text-amber-700';
   };
 
-  const filteredHotels = editData.vendor_id
-    ? hotels.filter(h => h.vendor_id === editData.vendor_id)
-    : hotels;
+  const filteredHotels = editData.vendor_id ? hotels.filter(hotel => hotel.vendor_id === editData.vendor_id) : hotels;
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="max-w-3xl space-y-6">
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-slate-100 rounded-xl"><Terminal className="w-6 h-6 text-slate-700" /></div>
+        <div className="rounded-xl bg-slate-100 p-2">
+          <Terminal className="h-6 w-6 text-slate-700" />
+        </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">AI 上架指令</h1>
-          <p className="text-sm text-gray-400">輸入自然語言描述，AI 自動解析並填入上架欄位</p>
+          <h1 className="text-2xl font-bold text-gray-900">AI Listing Command</h1>
+          <p className="text-sm text-gray-400">Enter a natural-language command and the system will parse it into a product, hotel, or room draft.</p>
         </div>
       </div>
 
-      {/* Command Input */}
-      <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
-        <label className="block text-sm font-semibold text-gray-700">輸入上架指令</label>
+      <div className="space-y-3 rounded-2xl bg-white p-5 shadow-sm">
+        <label className="block text-sm font-semibold text-gray-700">Command input</label>
         <div className="relative">
           <textarea
             ref={textareaRef}
             value={command}
             onChange={e => setCommand(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleParse(); }}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleParse();
+            }}
             rows={4}
-            placeholder={`範例：\n上架商品：衣索比亞耶加雪菲水洗豆，售價 NT$580，淺烘焙，花香調性，產地海拔1800-2000m\n\n上架飯店：花蓮山海民宿，地址花蓮縣花蓮市海濱路123號，電話0912345678，入住15點\n\n上架房型：雙人海景房，最多2人，每晚3200元，假日3800元，設備WiFi/冷氣/早餐`}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none font-mono"
+            placeholder={`Example:
+Product: Ethiopia Yirgacheffe, NT$580, origin Ethiopia, altitude 1800-2000m.
+
+Hotel: business hotel near Taipei Main Station, phone 0912345678, check-in 15:00.
+
+Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
+            className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
           />
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-400">Ctrl + Enter 送出</p>
+          <p className="text-xs text-gray-400">Ctrl + Enter to run</p>
           <button
             onClick={handleParse}
             disabled={parsing || !command.trim()}
-            className="flex items-center gap-2 bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-700 transition disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-slate-800 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:opacity-50"
           >
-            {parsing ? <Loader className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            {parsing ? 'AI 解析中…' : 'AI 解析'}
+            {parsing ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {parsing ? 'Parsing...' : 'Parse'}
           </button>
         </div>
       </div>
 
-      {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
           {error}
         </div>
       )}
 
-      {/* Saved message */}
       {savedMsg && (
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-xl">
-          <CheckCircle className="w-4 h-4 flex-shrink-0" />
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+        >
+          <CheckCircle className="h-4 w-4 flex-shrink-0" />
           {savedMsg}
         </motion.div>
       )}
 
-      {/* Parsed result editor */}
       <AnimatePresence>
         {parsed && (
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-            className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            {/* Intent header */}
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-              <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold ${intentColor(parsed.intent)}`}>
-                {intentIcon(parsed.intent)}{intentLabel(parsed.intent)}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="overflow-hidden rounded-2xl bg-white shadow-sm"
+          >
+            <div className="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
+              <span className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${intentColor(parsed.intent)}`}>
+                {intentIcon(parsed.intent)}
+                {intentLabel(parsed.intent)}
               </span>
               <span className="text-sm text-gray-400">
-                信心度 <span className="font-semibold text-gray-700">{Math.round(parsed.confidence * 100)}%</span>
+                Confidence <span className="font-semibold text-gray-700">{Math.round(parsed.confidence * 100)}%</span>
               </span>
-              <span className="ml-auto text-xs text-gray-400">確認欄位後按「確認上架」</span>
+              <span className="ml-auto text-xs text-gray-400">Edit fields and save</span>
             </div>
 
-            <div className="p-5 space-y-4">
-              {/* ── Common: name, description, vendor ── */}
-              <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-4 p-5">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <Field label="名稱 *">
+                  <Field label="Name *">
                     <input value={editData.name || ''} onChange={e => set('name', e.target.value)} className={inputCls} />
                   </Field>
                 </div>
                 <div className="sm:col-span-2">
-                  <Field label="描述">
+                  <Field label="Description">
                     <textarea value={editData.description || ''} onChange={e => set('description', e.target.value)} rows={3} className={`${inputCls} resize-none`} />
                   </Field>
                 </div>
                 <div>
-                  <Field label="所屬廠商">
-                    <select value={editData.vendor_id || ''} onChange={e => { set('vendor_id', e.target.value); set('hotel_id', ''); }} className={selectCls}>
-                      <option value="">不指定廠商</option>
-                      {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                  <Field label="Vendor">
+                    <select
+                      value={editData.vendor_id || ''}
+                      onChange={e => {
+                        set('vendor_id', e.target.value);
+                        set('hotel_id', '');
+                      }}
+                      className={selectCls}
+                    >
+                      <option value="">Select vendor</option>
+                      {vendors.map(vendor => (
+                        <option key={vendor.id} value={vendor.id}>
+                          {vendor.name}
+                        </option>
+                      ))}
                     </select>
                   </Field>
                 </div>
                 <div>
-                  <Field label="啟用狀態">
-                    <button type="button" onClick={() => set(parsed.intent === 'room' ? 'is_available' : 'is_active', !(editData.is_active ?? editData.is_available))}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition border ${(editData.is_active ?? editData.is_available) !== false ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-100 border-gray-200 text-gray-500'}`}>
-                      <span className={`w-3 h-3 rounded-full ${(editData.is_active ?? editData.is_available) !== false ? 'bg-green-500' : 'bg-gray-400'}`} />
-                      {(editData.is_active ?? editData.is_available) !== false ? '啟用' : '停用'}
+                  <Field label="Enabled">
+                    <button
+                      type="button"
+                      onClick={() => set(parsed.intent === 'room' ? 'is_available' : 'is_active', !(editData.is_active ?? editData.is_available))}
+                      className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                        (editData.is_active ?? editData.is_available) !== false
+                          ? 'border-green-200 bg-green-50 text-green-700'
+                          : 'border-gray-200 bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      <span className={`h-3 w-3 rounded-full ${(editData.is_active ?? editData.is_available) !== false ? 'bg-green-500' : 'bg-gray-400'}`} />
+                      {(editData.is_active ?? editData.is_available) !== false ? 'Enabled' : 'Disabled'}
                     </button>
                   </Field>
                 </div>
               </div>
 
-              {/* ── PRODUCT fields ── */}
               {parsed.intent === 'product' && (
-                <div className="space-y-4 pt-2 border-t border-gray-100">
-                  <div className="grid sm:grid-cols-3 gap-4">
-                    <Field label="售價 (NT$)">
+                <div className="space-y-4 border-t border-gray-100 pt-2">
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <Field label="Price (NT$)">
                       <input type="number" value={editData.price || 0} onChange={e => set('price', e.target.value)} className={inputCls} />
                     </Field>
-                    <Field label="庫存數量">
+                    <Field label="Stock">
                       <input type="number" value={editData.stock_quantity || 0} onChange={e => set('stock_quantity', e.target.value)} className={inputCls} />
                     </Field>
                     <Field label="SKU">
-                      <input value={editData.sku || ''} onChange={e => set('sku', e.target.value)} placeholder="選填" className={inputCls} />
+                      <input value={editData.sku || ''} onChange={e => set('sku', e.target.value)} placeholder="Optional" className={inputCls} />
                     </Field>
                   </div>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <Field label="分類">
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Category">
                       <select value={editData.category_id || ''} onChange={e => set('category_id', e.target.value)} className={selectCls}>
-                        <option value="">選擇分類</option>
-                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        <option value="">Select category</option>
+                        {categories.map(category => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
                       </select>
                     </Field>
-                    <Field label="圖片 URL">
+                    <Field label="Image URL">
                       <input value={editData.image_url || ''} onChange={e => set('image_url', e.target.value)} placeholder="https://..." className={inputCls} />
                     </Field>
                   </div>
-                  <div className="grid sm:grid-cols-3 gap-4">
-                    <Field label="產地">
-                      <input value={editData.origin || ''} onChange={e => set('origin', e.target.value)} placeholder="例：衣索比亞" className={inputCls} />
+
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <Field label="Origin">
+                      <input value={editData.origin || ''} onChange={e => set('origin', e.target.value)} placeholder="e.g. Ethiopia" className={inputCls} />
                     </Field>
-                    <Field label="烘焙程度">
-                      <input value={editData.roast_level || ''} onChange={e => set('roast_level', e.target.value)} placeholder="淺/中/深烘焙" className={inputCls} />
+                    <Field label="Roast Level">
+                      <input value={editData.roast_level || ''} onChange={e => set('roast_level', e.target.value)} placeholder="e.g. Light roast" className={inputCls} />
                     </Field>
-                    <Field label="處理方式">
-                      <input value={editData.processing_method || ''} onChange={e => set('processing_method', e.target.value)} placeholder="水洗/日曬/蜜處理" className={inputCls} />
+                    <Field label="Process Method">
+                      <input value={editData.processing_method || ''} onChange={e => set('processing_method', e.target.value)} placeholder="e.g. Washed / Natural" className={inputCls} />
                     </Field>
-                    <Field label="海拔高度">
-                      <input value={editData.altitude || ''} onChange={e => set('altitude', e.target.value)} placeholder="例：1800-2000m" className={inputCls} />
+                    <Field label="Altitude">
+                      <input value={editData.altitude || ''} onChange={e => set('altitude', e.target.value)} placeholder="e.g. 1800-2000m" className={inputCls} />
                     </Field>
-                    <Field label="重量 (克)">
-                      <input type="number" value={editData.weight_grams || ''} onChange={e => set('weight_grams', e.target.value)} placeholder="例：200" className={inputCls} />
+                    <Field label="Weight (g)">
+                      <input type="number" value={editData.weight_grams || ''} onChange={e => set('weight_grams', e.target.value)} placeholder="e.g. 200" className={inputCls} />
                     </Field>
-                    <Field label="烘焙日期">
+                    <Field label="Roast Date">
                       <input type="date" value={editData.roast_date || ''} onChange={e => set('roast_date', e.target.value)} className={inputCls} />
                     </Field>
                   </div>
-                  <Field label="品種 (Enter 新增)">
-                    <TagEditor values={Array.isArray(editData.variety) ? editData.variety : []} onChange={v => set('variety', v)} placeholder="輸入品種名稱後按 Enter" />
+
+                  <Field label="Variety (Enter to add)">
+                    <TagEditor values={Array.isArray(editData.variety) ? editData.variety : []} onChange={v => set('variety', v)} placeholder="Type and press Enter" />
                   </Field>
-                  <Field label="風味描述 (Enter 新增)">
-                    <TagEditor values={Array.isArray(editData.flavor_notes) ? editData.flavor_notes : []} onChange={v => set('flavor_notes', v)} placeholder="如：花香、柑橘、蜂蜜" />
+                  <Field label="Flavor Notes (Enter to add)">
+                    <TagEditor values={Array.isArray(editData.flavor_notes) ? editData.flavor_notes : []} onChange={v => set('flavor_notes', v)} placeholder="Type and press Enter" />
                   </Field>
-                  <Field label="標籤 (Enter 新增)">
-                    <TagEditor values={Array.isArray(editData.tags) ? editData.tags : []} onChange={v => set('tags', v)} placeholder="品牌、國家、分類關鍵字" />
+                  <Field label="Tags (Enter to add)">
+                    <TagEditor values={Array.isArray(editData.tags) ? editData.tags : []} onChange={v => set('tags', v)} placeholder="Type and press Enter" />
                   </Field>
-                  <Field label="商品來源網址">
+                  <Field label="Source URL">
                     <input value={editData.source_url || ''} onChange={e => set('source_url', e.target.value)} placeholder="https://..." className={inputCls} />
                   </Field>
                 </div>
               )}
 
-              {/* ── HOTEL fields ── */}
               {parsed.intent === 'hotel' && (
-                <div className="space-y-4 pt-2 border-t border-gray-100">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <Field label="城市">
+                <div className="space-y-4 border-t border-gray-100 pt-2">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="City">
                       <input value={editData.city || ''} onChange={e => set('city', e.target.value)} className={inputCls} />
                     </Field>
-                    <Field label="地址">
+                    <Field label="Address">
                       <input value={editData.address || ''} onChange={e => set('address', e.target.value)} className={inputCls} />
                     </Field>
-                    <Field label="電話">
+                    <Field label="Phone">
                       <input value={editData.phone || ''} onChange={e => set('phone', e.target.value)} className={inputCls} />
                     </Field>
                     <Field label="Email">
@@ -441,97 +529,124 @@ const SuperAdminListingCommand: React.FC = () => {
                     <Field label="LINE ID">
                       <input value={editData.line_id || ''} onChange={e => set('line_id', e.target.value)} className={inputCls} />
                     </Field>
-                    <Field label="Facebook 網址">
+                    <Field label="Facebook">
                       <input value={editData.facebook || ''} onChange={e => set('facebook', e.target.value)} className={inputCls} />
                     </Field>
-                    <Field label="入住時間">
+                    <Field label="Check-in Time">
                       <input value={editData.checkin_time || '15:00'} onChange={e => set('checkin_time', e.target.value)} placeholder="15:00" className={inputCls} />
                     </Field>
-                    <Field label="退房時間">
+                    <Field label="Check-out Time">
                       <input value={editData.checkout_time || '11:00'} onChange={e => set('checkout_time', e.target.value)} placeholder="11:00" className={inputCls} />
                     </Field>
-                    <Field label="星級評等">
+                    <Field label="Stars">
                       <select value={editData.star_rating || 3} onChange={e => set('star_rating', Number(e.target.value))} className={selectCls}>
-                        {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} 星</option>)}
+                        {[1, 2, 3, 4, 5].map(n => (
+                          <option key={n} value={n}>
+                            {n} Stars
+                          </option>
+                        ))}
                       </select>
                     </Field>
-                    <Field label="訂金金額 (NT$)">
+                    <Field label="Deposit (NT$)">
                       <input type="number" value={editData.deposit_amount || 0} onChange={e => set('deposit_amount', e.target.value)} className={inputCls} />
                     </Field>
-                    <Field label="主圖 URL">
+                    <Field label="Image URL">
                       <input value={editData.image_url || ''} onChange={e => set('image_url', e.target.value)} placeholder="https://..." className={inputCls} />
                     </Field>
-                    <Field label="登記字號">
+                    <Field label="Registration No.">
                       <input value={editData.registration_number || ''} onChange={e => set('registration_number', e.target.value)} className={inputCls} />
                     </Field>
                   </div>
-                  <Field label="寵物友善">
-                    <button type="button" onClick={() => set('pet_friendly', !editData.pet_friendly)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition border ${editData.pet_friendly ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-100 border-gray-200 text-gray-500'}`}>
-                      <span className={`w-3 h-3 rounded-full ${editData.pet_friendly ? 'bg-green-500' : 'bg-gray-400'}`} />
-                      {editData.pet_friendly ? '接受寵物' : '不接受寵物'}
+                  <Field label="Pet Friendly">
+                    <button
+                      type="button"
+                      onClick={() => set('pet_friendly', !editData.pet_friendly)}
+                      className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                        editData.pet_friendly ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      <span className={`h-3 w-3 rounded-full ${editData.pet_friendly ? 'bg-green-500' : 'bg-gray-400'}`} />
+                      {editData.pet_friendly ? 'Pet Friendly' : 'Not Pet Friendly'}
                     </button>
                   </Field>
                 </div>
               )}
 
-              {/* ── ROOM fields ── */}
               {parsed.intent === 'room' && (
-                <div className="space-y-4 pt-2 border-t border-gray-100">
-                  <div className="grid sm:grid-cols-3 gap-4">
-                    <Field label="房型類別">
+                <div className="space-y-4 border-t border-gray-100 pt-2">
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <Field label="Room Type">
                       <select value={editData.room_type || 'double'} onChange={e => set('room_type', e.target.value)} className={selectCls}>
-                        {ROOM_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                        {ROOM_TYPES.map(type => (
+                          <option key={type.value} value={type.value}>
+                            {type.label}
+                          </option>
+                        ))}
                       </select>
                     </Field>
-                    <Field label="最少人數">
+                    <Field label="Min Guests">
                       <input type="number" value={editData.min_capacity || 1} onChange={e => set('min_capacity', Number(e.target.value))} min={1} className={inputCls} />
                     </Field>
-                    <Field label="最多人數">
+                    <Field label="Max Guests">
                       <input type="number" value={editData.capacity || 2} onChange={e => set('capacity', Number(e.target.value))} min={1} className={inputCls} />
                     </Field>
-                    <Field label="平日每晚 (NT$)">
+                    <Field label="Weekday Price (NT$)">
                       <input type="number" value={editData.price_per_night || 0} onChange={e => set('price_per_night', Number(e.target.value))} className={inputCls} />
                     </Field>
-                    <Field label="假日每晚 (NT$)">
+                    <Field label="Weekend Price (NT$)">
                       <input type="number" value={editData.weekend_price || 0} onChange={e => set('weekend_price', Number(e.target.value))} className={inputCls} />
                     </Field>
-                    <Field label="樓層">
-                      <input value={editData.floor || ''} onChange={e => set('floor', e.target.value)} placeholder="例：2F" className={inputCls} />
+                    <Field label="Floor">
+                      <input value={editData.floor || ''} onChange={e => set('floor', e.target.value)} placeholder="e.g. 2F" className={inputCls} />
                     </Field>
                     <div className="sm:col-span-2">
-                      <Field label="地點">
+                      <Field label="Location">
                         <input value={editData.location || ''} onChange={e => set('location', e.target.value)} className={inputCls} />
                       </Field>
                     </div>
                     <div>
-                      <Field label="所屬飯店">
+                      <Field label="Hotel">
                         <select value={editData.hotel_id || ''} onChange={e => set('hotel_id', e.target.value)} className={selectCls}>
-                          <option value="">不指定飯店</option>
-                          {filteredHotels.map(h => <option key={h.id} value={h.id}>{h.name}{h.city ? ` (${h.city})` : ''}</option>)}
+                          <option value="">Select hotel</option>
+                          {filteredHotels.map(hotel => (
+                            <option key={hotel.id} value={hotel.id}>
+                              {hotel.name}
+                              {hotel.city ? ` (${hotel.city})` : ''}
+                            </option>
+                          ))}
                         </select>
                       </Field>
                     </div>
                   </div>
-                  <Field label="設施 (Enter 新增)">
-                    <TagEditor values={Array.isArray(editData.amenities) ? editData.amenities : []} onChange={v => set('amenities', v)} placeholder="如：WiFi、停車場、早餐、冷氣" />
+                  <Field label="Amenities (Enter to add)">
+                    <TagEditor values={Array.isArray(editData.amenities) ? editData.amenities : []} onChange={v => set('amenities', v)} placeholder="e.g. WiFi, AC, bathtub" />
                   </Field>
-                  <Field label="房間圖片 URL (Enter 新增)">
-                    <TagEditor values={Array.isArray(editData.images) ? editData.images : []} onChange={v => set('images', v)} placeholder="貼上圖片網址後按 Enter" />
+                  <Field label="Images (Enter to add)">
+                    <TagEditor values={Array.isArray(editData.images) ? editData.images : []} onChange={v => set('images', v)} placeholder="Type and press Enter" />
                   </Field>
                 </div>
               )}
 
-              {/* Action row */}
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => { setParsed(null); setEditData({}); setSavedMsg(''); }}
-                  className="px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
-                  取消
+                <button
+                  type="button"
+                  onClick={() => {
+                    setParsed(null);
+                    setEditData({});
+                    setSavedMsg('');
+                  }}
+                  className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+                >
+                  Cancel
                 </button>
-                <button type="button" onClick={handleSave} disabled={saving || !editData.name}
-                  className="flex-1 flex items-center justify-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-amber-600 transition disabled:opacity-50">
-                  {saving ? <Loader className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                  確認上架
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving || !editData.name}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50"
+                >
+                  {saving ? <Loader className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                  Save Draft
                 </button>
               </div>
             </div>
@@ -539,31 +654,29 @@ const SuperAdminListingCommand: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* History */}
       {history.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <button onClick={() => setHistoryOpen(p => !p)}
-            className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition">
+        <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+          <button onClick={() => setHistoryOpen(prev => !prev)} className="flex w-full items-center justify-between px-5 py-4 transition hover:bg-gray-50">
             <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <Tag className="w-4 h-4 text-gray-400" />
-              上架紀錄
-              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{history.length}</span>
+              <Tag className="h-4 w-4 text-gray-400" />
+              History
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">{history.length}</span>
             </div>
-            {historyOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+            {historyOpen ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
           </button>
           <AnimatePresence>
             {historyOpen && (
-              <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
-                className="overflow-hidden border-t border-gray-100">
-                <div className="p-3 space-y-2">
+              <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden border-t border-gray-100">
+                <div className="space-y-2 p-3">
                   {history.map(item => (
-                    <div key={item.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gray-50 text-sm">
-                      <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${intentColor(item.intent)}`}>
-                        {intentIcon(item.intent)}{intentLabel(item.intent)}
+                    <div key={item.id} className="flex items-center gap-3 rounded-xl bg-gray-50 px-3 py-2.5 text-sm">
+                      <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${intentColor(item.intent)}`}>
+                        {intentIcon(item.intent)}
+                        {intentLabel(item.intent)}
                       </span>
-                      <span className="flex-1 text-gray-700 truncate">{item.command}</span>
-                      <span className="text-xs text-gray-400 flex-shrink-0">{item.savedAt}</span>
-                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      <span className="flex-1 truncate text-gray-700">{item.command}</span>
+                      <span className="flex-shrink-0 text-xs text-gray-400">{item.savedAt}</span>
+                      <CheckCircle className="h-4 w-4 flex-shrink-0 text-green-500" />
                     </div>
                   ))}
                 </div>
