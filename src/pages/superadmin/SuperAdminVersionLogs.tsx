@@ -100,13 +100,13 @@ const SuperAdminVersionLogs: React.FC = () => {
     try {
       const { data, error: fetchError } = await supabase
         .from('admin_activity_logs')
-        .select('id,actor_user_id,action,entity_type,entity_id,details,record_type,status,summary,route,version_label,commit_sha,completed_at,created_at')
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(150);
 
       if (fetchError) throw fetchError;
 
-      const list = (data || []) as SystemRecord[];
+      const list = (data || []).map((row: any) => normalizeSystemRecord(row));
       setRecords(list);
       setSelected(prev => (prev ? list.find(item => item.id === prev.id) || list[0] || null : list[0] || null));
 
@@ -133,6 +133,29 @@ const SuperAdminVersionLogs: React.FC = () => {
     void fetchRecords();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function normalizeSystemRecord(row: any): SystemRecord {
+    return {
+      id: row?.id,
+      actor_user_id: row?.actor_user_id ?? null,
+      action: row?.action ?? '',
+      entity_type: row?.entity_type ?? '',
+      entity_id: row?.entity_id ?? null,
+      details: row?.details ?? null,
+      record_type: row?.record_type === 'baseline' || row?.record_type === 'check' || row?.record_type === 'change'
+        ? row.record_type
+        : 'change',
+      status: row?.status === 'pending' || row?.status === 'completed' || row?.status === 'failed'
+        ? row.status
+        : 'completed',
+      summary: row?.summary ?? null,
+      route: row?.route ?? null,
+      version_label: row?.version_label ?? null,
+      commit_sha: row?.commit_sha ?? null,
+      completed_at: row?.completed_at ?? null,
+      created_at: row?.created_at ?? new Date().toISOString(),
+    };
+  }
 
   const latestBaseline = useMemo(() => records.find(record => record.record_type === 'baseline') || null, [records]);
   const latestCheck = useMemo(() => records.find(record => record.record_type === 'check') || null, [records]);
