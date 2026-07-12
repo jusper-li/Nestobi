@@ -41,7 +41,7 @@ const SuperAdminRevenue: React.FC = () => {
       for (let i = 5; i >= 0; i -= 1) {
         const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const start = date.toISOString().slice(0, 10);
-        const label = `${date.getMonth() + 1}${pick('月', 'mo', '月', '월')}`;
+        const label = `${date.getMonth() + 1}${pick('月', 'mo', 'mo', 'mo')}`;
         months.push({ month: start, label, bookingRevenue: 0, orderRevenue: 0, total: 0 });
       }
 
@@ -122,17 +122,17 @@ const SuperAdminRevenue: React.FC = () => {
           <BarChart2 className="h-6 w-6 text-amber-700" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{pick('營收總覽', 'Revenue Overview', '売上概要', '매출 개요')}</h1>
-          <p className="text-sm text-gray-400">{pick('檢視訂房與訂單的整體營收表現。', 'View overall booking and order revenue performance.', '宿泊と注文の収益状況を確認します。', '숙박과 주문의 매출 현황을 확인합니다.')}</p>
+          <h1 className="text-2xl font-bold text-gray-900">{pick('營收總覽', 'Revenue Overview', 'Revenue Overview', 'Revenue Overview')}</h1>
+          <p className="text-sm text-gray-400">{pick('檢視住宿與商店營收的整體表現。', 'View overall booking and order revenue performance.', 'View overall booking and order revenue performance.', 'View overall booking and order revenue performance.')}</p>
         </div>
       </div>
 
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
-          { icon: <DollarSign className="h-5 w-5 text-amber-600" />, label: pick('總營收', 'Total revenue', '総売上', '총 매출'), value: formatCurrency(totalBookingRevenue + totalOrderRevenue), color: 'bg-amber-50' },
-          { icon: <BedDouble className="h-5 w-5 text-teal-600" />, label: pick('訂房營收', 'Booking revenue', '宿泊売上', '숙박 매출'), value: formatCurrency(totalBookingRevenue), color: 'bg-teal-50' },
-          { icon: <ShoppingBag className="h-5 w-5 text-blue-600" />, label: pick('商店營收', 'Order revenue', '注文売上', '주문 매출'), value: formatCurrency(totalOrderRevenue), color: 'bg-blue-50' },
-          { icon: <TrendingUp className="h-5 w-5 text-green-600" />, label: pick('最近一月', 'Latest month', '直近1か月', '최근 1개월'), value: formatCurrency(monthlyData[monthlyData.length - 1]?.total || 0), color: 'bg-green-50' },
+          { icon: <DollarSign className="h-5 w-5 text-amber-600" />, label: pick('總營收', 'Total revenue', 'Total revenue', 'Total revenue'), value: formatCurrency(totalBookingRevenue + totalOrderRevenue), color: 'bg-amber-50' },
+          { icon: <BedDouble className="h-5 w-5 text-teal-600" />, label: pick('住宿營收', 'Booking revenue', 'Booking revenue', 'Booking revenue'), value: formatCurrency(totalBookingRevenue), color: 'bg-teal-50' },
+          { icon: <ShoppingBag className="h-5 w-5 text-blue-600" />, label: pick('商店營收', 'Order revenue', 'Order revenue', 'Order revenue'), value: formatCurrency(totalOrderRevenue), color: 'bg-blue-50' },
+          { icon: <TrendingUp className="h-5 w-5 text-green-600" />, label: pick('最近月份', 'Latest month', 'Latest month', 'Latest month'), value: formatCurrency(monthlyData[monthlyData.length - 1]?.total || 0), color: 'bg-green-50' },
         ].map((stat, index) => (
           <motion.div
             key={stat.label}
@@ -151,7 +151,7 @@ const SuperAdminRevenue: React.FC = () => {
       <div className="rounded-2xl bg-white p-6 shadow-sm">
         <h3 className="mb-5 flex items-center gap-2 font-semibold text-gray-900">
           <Calendar className="h-5 w-5 text-amber-600" />
-          {pick('近六個月營收趨勢', 'Revenue trend for the last 6 months', '直近6か月の売上推移', '최근 6개월 매출 추이')}
+          {pick('近 6 個月營收趨勢', 'Revenue trend for the last 6 months', 'Revenue trend for the last 6 months', 'Revenue trend for the last 6 months')}
         </h3>
         <div className="flex h-40 items-end gap-3">
           {monthlyData.map((month, index) => (
@@ -180,11 +180,11 @@ const SuperAdminRevenue: React.FC = () => {
         <div className="mt-3 flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <div className="h-3 w-3 rounded-sm bg-amber-400" />
-            <span className="text-xs text-gray-500">{pick('訂房營收', 'Booking revenue', '宿泊売上', '숙박 매출')}</span>
+            <span className="text-xs text-gray-500">{pick('住宿營收', 'Booking revenue', 'Booking revenue', 'Booking revenue')}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="h-3 w-3 rounded-sm bg-blue-400" />
-            <span className="text-xs text-gray-500">{pick('商店營收', 'Order revenue', '注文売上', '주문 매출')}</span>
+            <span className="text-xs text-gray-500">{pick('商店營收', 'Order revenue', 'Order revenue', 'Order revenue')}</span>
           </div>
         </div>
       </div>
@@ -193,22 +193,26 @@ const SuperAdminRevenue: React.FC = () => {
         <div className="rounded-2xl bg-white p-6 shadow-sm">
           <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
             <TrendingUp className="h-5 w-5 text-amber-600" />
-            {pick('合作商家營收排行', 'Top vendors by revenue', '売上上位の提携先', '매출 상위 공급사')}
+            {pick('營收最高供應商', 'Top vendors by revenue', 'Top vendors by revenue', 'Top vendors by revenue')}
           </h3>
           {topVendors.length === 0 ? (
-            <p className="py-6 text-center text-sm text-gray-400">{pick('尚無合作商家資料', 'No vendor data yet', '提携先データがありません', '공급사 데이터가 없습니다')}</p>
+            <p className="py-6 text-center text-sm text-gray-400">{pick('目前沒有供應商營收資料', 'No vendor data yet', 'No vendor data yet', 'No vendor data yet')}</p>
           ) : (
             <div className="space-y-3">
               {topVendors.slice(0, 5).map((vendor, index) => (
                 <div key={vendor.vendor_name} className="flex items-center justify-between border-b border-gray-50 py-2 last:border-0">
                   <div className="flex items-center gap-3">
-                    <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${index === 0 ? 'bg-amber-100 text-amber-700' : index === 1 ? 'bg-gray-100 text-gray-600' : 'bg-orange-50 text-orange-600'}`}>
+                    <span
+                      className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                        index === 0 ? 'bg-amber-100 text-amber-700' : index === 1 ? 'bg-gray-100 text-gray-600' : 'bg-orange-50 text-orange-600'
+                      }`}
+                    >
                       {index + 1}
                     </span>
                     <div>
                       <p className="text-sm font-medium text-gray-900">{vendor.vendor_name}</p>
                       <p className="text-xs text-gray-400">
-                        {vendor.room_count} {pick('間房', 'rooms', '部屋', '개')} · {vendor.booking_count} {pick('筆訂房', 'bookings', '件の予約', '건의 예약')}
+                        {vendor.room_count} {pick('間房', 'rooms', 'rooms', 'rooms')} / {vendor.booking_count} {pick('筆訂單', 'bookings', 'bookings', 'bookings')}
                       </p>
                     </div>
                   </div>
@@ -222,7 +226,7 @@ const SuperAdminRevenue: React.FC = () => {
         <div className="rounded-2xl bg-white p-6 shadow-sm">
           <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
             <ShoppingBag className="h-5 w-5 text-blue-600" />
-            {pick('最近訂單', 'Recent orders', '最近の注文', '최근 주문')}
+            {pick('最近訂單', 'Recent orders', 'Recent orders', 'Recent orders')}
           </h3>
           <div className="space-y-2">
             {recentOrders.map(order => (

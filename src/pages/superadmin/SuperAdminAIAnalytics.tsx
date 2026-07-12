@@ -25,9 +25,9 @@ interface TopUser {
 }
 
 const FEATURE_META: Record<string, { label: string; icon: React.ReactNode; color: string; bg: string }> = {
-  itinerary: { label: 'AI Itinerary', icon: <Map className="h-4 w-4" />, color: 'bg-blue-500', bg: 'bg-blue-50 text-blue-700' },
-  translation: { label: 'AI Translation', icon: <Languages className="h-4 w-4" />, color: 'bg-teal-500', bg: 'bg-teal-50 text-teal-700' },
-  chatbot: { label: 'AI Support', icon: <MessageSquare className="h-4 w-4" />, color: 'bg-sky-500', bg: 'bg-sky-50 text-sky-700' },
+  itinerary: { label: 'AI 行程規劃', icon: <Map className="h-4 w-4" />, color: 'bg-blue-500', bg: 'bg-blue-50 text-blue-700' },
+  translation: { label: 'AI 翻譯', icon: <Languages className="h-4 w-4" />, color: 'bg-teal-500', bg: 'bg-teal-50 text-teal-700' },
+  chatbot: { label: 'AI 客服', icon: <MessageSquare className="h-4 w-4" />, color: 'bg-sky-500', bg: 'bg-sky-50 text-sky-700' },
 };
 
 const SuperAdminAIAnalytics: React.FC = () => {
@@ -103,17 +103,17 @@ const SuperAdminAIAnalytics: React.FC = () => {
           <Brain className="h-6 w-6 text-amber-700" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{pick('AI 分析', 'AI Analytics', 'AI 分析', 'AI 분석')}</h1>
-          <p className="text-sm text-gray-400">{pick('查看 AI 功能使用狀況與熱門用戶排行。', 'Review AI feature usage and top users.', 'AI 機能の利用状況と上位ユーザーを確認します。', 'AI 기능 사용 현황과 상위 사용자를 확인합니다.')}</p>
+          <h1 className="text-2xl font-bold text-gray-900">{pick('AI 分析', 'AI Analytics', 'AI Analytics', 'AI Analytics')}</h1>
+          <p className="text-sm text-gray-400">{pick('檢視 AI 功能使用量與活躍使用者。', 'Review AI feature usage and top users.', 'Review AI feature usage and top users.', 'Review AI feature usage and top users.')}</p>
         </div>
       </div>
 
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
-          { icon: <TrendingUp className="h-5 w-5 text-amber-600" />, label: pick('總使用次數', 'Total usage', '総使用回数', '총 사용 횟수'), value: totalUsage.toLocaleString(), color: 'bg-amber-50' },
-          { icon: <Users className="h-5 w-5 text-teal-600" />, label: pick('使用用戶', 'Active users', '利用ユーザー', '사용자 수'), value: totalUsers.toLocaleString(), color: 'bg-teal-50' },
-          { icon: <Brain className="h-5 w-5 text-blue-600" />, label: pick('功能種類', 'Feature types', '機能種類', '기능 종류'), value: featureStats.length, color: 'bg-blue-50' },
-          { icon: <BarChart2 className="h-5 w-5 text-green-600" />, label: pick('平均每人', 'Per-user average', '1人あたり平均', '1인당 평균'), value: totalUsers > 0 ? (totalUsage / totalUsers).toFixed(1) : '0', color: 'bg-green-50' },
+          { icon: <TrendingUp className="h-5 w-5 text-amber-600" />, label: pick('總使用量', 'Total usage', 'Total usage', 'Total usage'), value: totalUsage.toLocaleString(), color: 'bg-amber-50' },
+          { icon: <Users className="h-5 w-5 text-teal-600" />, label: pick('活躍使用者', 'Active users', 'Active users', 'Active users'), value: totalUsers.toLocaleString(), color: 'bg-teal-50' },
+          { icon: <Brain className="h-5 w-5 text-blue-600" />, label: pick('功能種類', 'Feature types', 'Feature types', 'Feature types'), value: featureStats.length, color: 'bg-blue-50' },
+          { icon: <BarChart2 className="h-5 w-5 text-green-600" />, label: pick('每人平均', 'Per-user average', 'Per-user average', 'Per-user average'), value: totalUsers > 0 ? (totalUsage / totalUsers).toFixed(1) : '0', color: 'bg-green-50' },
         ].map((stat, index) => (
           <motion.div
             key={stat.label}
@@ -148,7 +148,7 @@ const SuperAdminAIAnalytics: React.FC = () => {
               </div>
               <p className="text-3xl font-bold text-gray-900">{stat.total}</p>
               <p className="mt-1 text-xs text-gray-400">
-                {pick('使用人數', 'Users', '利用人数', '사용자')} <span className="font-semibold text-gray-700">{stat.users}</span>
+                {pick('使用者數', 'Users', 'Users', 'Users')} <span className="font-semibold text-gray-700">{stat.users}</span>
               </p>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-100">
                 <motion.div
@@ -164,7 +164,7 @@ const SuperAdminAIAnalytics: React.FC = () => {
         {featureStats.length === 0 && (
           <div className="col-span-3 rounded-2xl bg-white p-12 text-center text-gray-400 shadow-sm">
             <Brain className="mx-auto mb-3 h-12 w-12 opacity-20" />
-            <p>{pick('目前沒有 AI 使用資料。', 'No AI usage data yet.', 'AI 利用データはまだありません。', '아직 AI 사용 데이터가 없습니다.')}</p>
+            <p>{pick('目前沒有 AI 使用資料。', 'No AI usage data yet.', 'No AI usage data yet.', 'No AI usage data yet.')}</p>
           </div>
         )}
       </div>
@@ -173,19 +173,23 @@ const SuperAdminAIAnalytics: React.FC = () => {
         <div className="rounded-2xl bg-white p-6 shadow-sm">
           <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
             <Users className="h-5 w-5 text-amber-600" />
-            {pick('AI 使用用戶排行', 'Top AI Users', 'AI 利用ユーザー', 'AI 사용자 순위')}
+            {pick('AI 使用者排行', 'Top AI Users', 'Top AI Users', 'Top AI Users')}
           </h3>
           {topUsers.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-400">{pick('尚無資料', 'No data', 'データがありません', '데이터가 없습니다')}</p>
+            <p className="py-8 text-center text-sm text-gray-400">{pick('目前沒有資料', 'No data', 'No data', 'No data')}</p>
           ) : (
             <div className="space-y-2">
               {topUsers.map((user, index) => (
                 <div key={user.user_id} className="flex items-center gap-3 border-b border-gray-50 py-2 last:border-0">
-                  <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${index === 0 ? 'bg-yellow-400 text-white' : index === 1 ? 'bg-gray-300 text-gray-700' : index === 2 ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                  <span
+                    className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                      index === 0 ? 'bg-yellow-400 text-white' : index === 1 ? 'bg-gray-300 text-gray-700' : index === 2 ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-500'
+                    }`}
+                  >
                     {index + 1}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-gray-900">{user.display_name || pick('未命名用戶', 'Unnamed user', '未設定ユーザー', '이름 없음')}</p>
+                    <p className="truncate text-sm font-medium text-gray-900">{user.display_name || pick('未命名使用者', 'Unnamed user', 'Unnamed user', 'Unnamed user')}</p>
                     <p className="font-mono text-xs text-gray-400">{user.user_id.slice(-8)}</p>
                   </div>
                   <span className="text-sm font-bold text-gray-900">{user.total}</span>
@@ -198,10 +202,10 @@ const SuperAdminAIAnalytics: React.FC = () => {
         <div className="rounded-2xl bg-white p-6 shadow-sm">
           <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
             <TrendingUp className="h-5 w-5 text-amber-600" />
-            {pick('功能使用排行', 'Feature usage ranking', '機能利用ランキング', '기능 사용 순위')}
+            {pick('功能使用排行', 'Feature usage ranking', 'Feature usage ranking', 'Feature usage ranking')}
           </h3>
           {featureStats.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-400">{pick('尚無資料', 'No data', 'データがありません', '데이터가 없습니다')}</p>
+            <p className="py-8 text-center text-sm text-gray-400">{pick('目前沒有資料', 'No data', 'No data', 'No data')}</p>
           ) : (
             <div className="space-y-4">
               {featureStats.map((stat, index) => {

@@ -86,13 +86,15 @@ const SuperAdminPointLedger: React.FC = () => {
     if (keyword) {
       const safeKeyword = keyword.replace(/[%_,]/g, '');
       if (safeKeyword) {
-        query = query.or([
-          `description.ilike.%${safeKeyword}%`,
-          `user_id.ilike.%${safeKeyword}%`,
-          `reference_id.ilike.%${safeKeyword}%`,
-          `source_id.ilike.%${safeKeyword}%`,
-          `source_type.ilike.%${safeKeyword}%`,
-        ].join(','));
+        query = query.or(
+          [
+            `description.ilike.%${safeKeyword}%`,
+            `user_id.ilike.%${safeKeyword}%`,
+            `reference_id.ilike.%${safeKeyword}%`,
+            `source_id.ilike.%${safeKeyword}%`,
+            `source_type.ilike.%${safeKeyword}%`,
+          ].join(','),
+        );
       }
     }
 
@@ -113,12 +115,8 @@ const SuperAdminPointLedger: React.FC = () => {
     const userIds = Array.from(new Set(rowsData.map(row => row.user_id).filter(Boolean)));
 
     const [profileRes, authRes] = await Promise.all([
-      userIds.length
-        ? supabase.from('tbl_mn5wgzh0').select('user_id,display_name').in('user_id', userIds)
-        : Promise.resolve({ data: [] as any[] }),
-      userIds.length
-        ? supabase.from('tbl_user_auth').select('user_id,role').in('user_id', userIds)
-        : Promise.resolve({ data: [] as any[] }),
+      userIds.length ? supabase.from('tbl_mn5wgzh0').select('user_id,display_name').in('user_id', userIds) : Promise.resolve({ data: [] as any[] }),
+      userIds.length ? supabase.from('tbl_user_auth').select('user_id,role').in('user_id', userIds) : Promise.resolve({ data: [] as any[] }),
     ]);
 
     const memberMap: Record<string, MemberInfo> = {};
@@ -198,7 +196,7 @@ const SuperAdminPointLedger: React.FC = () => {
   };
 
   const sourceLabel = (source: string | null) => {
-    if (!source) return pick('未指定', 'Unassigned', '未設定', '미지정');
+    if (!source) return pick('未分類', 'Unassigned', 'Unassigned', 'Unassigned');
     return SOURCE_LABELS[source] || source;
   };
 
@@ -219,8 +217,8 @@ const SuperAdminPointLedger: React.FC = () => {
           <Coins className="h-6 w-6 text-amber-700" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{pick('點數明細', 'Points Ledger', 'ポイント履歴', '포인트 내역')}</h1>
-          <p className="text-sm text-gray-500">{pick('查看每一筆點數交易與來源資訊。', 'Review every points transaction with source context.', '各ポイント取引の内容と発生元を確認します。', '각 포인트 거래와 출처를 확인합니다.')}</p>
+          <h1 className="text-2xl font-bold text-gray-900">{pick('點數帳本', 'Points Ledger', 'Points Ledger', 'Points Ledger')}</h1>
+          <p className="text-sm text-gray-500">{pick('檢視每一筆點數交易與來源資訊。', 'Review every points transaction with source context.', 'Review every points transaction with source context.', 'Review every points transaction with source context.')}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <button
@@ -230,16 +228,16 @@ const SuperAdminPointLedger: React.FC = () => {
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {pick('重新整理', 'Refresh', '更新', '새로고침')}
+            {pick('重新整理', 'Refresh', 'Refresh', 'Refresh')}
           </button>
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         {[
-          { label: pick('本頁收入', 'Earned on page', 'このページの獲得', '현재 페이지 적립'), value: `+${pageStats.earned}` },
-          { label: pick('本頁支出', 'Spent on page', 'このページの消費', '현재 페이지 사용'), value: `-${pageStats.spent}` },
-          { label: pick('本頁淨額', 'Net on page', 'このページの合計', '현재 페이지 순액'), value: `${pageStats.net >= 0 ? '+' : ''}${pageStats.net}` },
+          { label: pick('本頁累積', 'Earned on page', 'Earned on page', 'Earned on page'), value: `+${pageStats.earned}` },
+          { label: pick('本頁支出', 'Spent on page', 'Spent on page', 'Spent on page'), value: `-${pageStats.spent}` },
+          { label: pick('本頁淨額', 'Net on page', 'Net on page', 'Net on page'), value: `${pageStats.net >= 0 ? '+' : ''}${pageStats.net}` },
         ].map((card, index) => (
           <motion.div
             key={card.label}
@@ -257,7 +255,7 @@ const SuperAdminPointLedger: React.FC = () => {
       <div className="rounded-2xl bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-700">
           <Filter className="h-4 w-4 text-amber-600" />
-          {pick('篩選', 'Filters', 'フィルター', '필터')}
+          {pick('篩選條件', 'Filters', 'Filters', 'Filters')}
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
           <div className="relative xl:col-span-2">
@@ -268,7 +266,7 @@ const SuperAdminPointLedger: React.FC = () => {
                 setSearch(e.target.value);
                 setPage(0);
               }}
-              placeholder={pick('搜尋會員、描述、來源 ID', 'Search member, description, source ID', '会員、説明、ソース ID を検索', '회원, 설명, source ID 검색')}
+              placeholder={pick('搜尋會員、描述、來源 ID', 'Search member, description, source ID', 'Search member, description, source ID', 'Search member, description, source ID')}
               className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-amber-400"
             />
           </div>
@@ -281,12 +279,12 @@ const SuperAdminPointLedger: React.FC = () => {
             }}
             className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-400"
           >
-            <option value="all">{pick('全部類型', 'All types', 'すべての種類', '모든 유형')}</option>
-            <option value="earned">{pick('收入', 'Earned', '獲得', '적립')}</option>
-            <option value="spent">{pick('支出', 'Spent', '消費', '사용')}</option>
-            <option value="manual">{pick('手動', 'Manual', '手動', '수동')}</option>
-            <option value="redemption">{pick('兌換', 'Redemption', '交換', '교환')}</option>
-            <option value="store_redemption">{pick('門市兌換', 'Store redemption', '店舗交換', '매장 교환')}</option>
+            <option value="all">{pick('全部類型', 'All types', 'All types', 'All types')}</option>
+            <option value="earned">{pick('收入', 'Earned', 'Earned', 'Earned')}</option>
+            <option value="spent">{pick('支出', 'Spent', 'Spent', 'Spent')}</option>
+            <option value="manual">{pick('手動', 'Manual', 'Manual', 'Manual')}</option>
+            <option value="redemption">{pick('兌換', 'Redemption', 'Redemption', 'Redemption')}</option>
+            <option value="store_redemption">{pick('門市兌換', 'Store redemption', 'Store redemption', 'Store redemption')}</option>
           </select>
 
           <select
@@ -297,13 +295,13 @@ const SuperAdminPointLedger: React.FC = () => {
             }}
             className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-amber-400"
           >
-            <option value="all">{pick('全部來源', 'All sources', 'すべてのソース', '모든 출처')}</option>
-            <option value="booking">{pick('訂房', 'Booking', '宿泊', '예약')}</option>
-            <option value="order">{pick('訂單', 'Order', '注文', '주문')}</option>
-            <option value="subscription">{pick('訂閱', 'Subscription', 'サブスクリプション', '구독')}</option>
-            <option value="manual">{pick('手動', 'Manual', '手動', '수동')}</option>
-            <option value="redemption">{pick('兌換', 'Redemption', '交換', '교환')}</option>
-            <option value="store_redemption">{pick('門市兌換', 'Store redemption', '店舗交換', '매장 교환')}</option>
+            <option value="all">{pick('全部來源', 'All sources', 'All sources', 'All sources')}</option>
+            <option value="booking">{pick('住宿', 'Booking', 'Booking', 'Booking')}</option>
+            <option value="order">{pick('商店', 'Order', 'Order', 'Order')}</option>
+            <option value="subscription">{pick('訂閱', 'Subscription', 'Subscription', 'Subscription')}</option>
+            <option value="manual">{pick('手動', 'Manual', 'Manual', 'Manual')}</option>
+            <option value="redemption">{pick('兌換', 'Redemption', 'Redemption', 'Redemption')}</option>
+            <option value="store_redemption">{pick('門市兌換', 'Store redemption', 'Store redemption', 'Store redemption')}</option>
           </select>
 
           <div className="relative">
@@ -338,10 +336,10 @@ const SuperAdminPointLedger: React.FC = () => {
             onClick={resetFilters}
             className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
           >
-            {pick('清除篩選', 'Clear filters', 'フィルターをクリア', '필터 초기화')}
+            {pick('清除篩選', 'Clear filters', 'Clear filters', 'Clear filters')}
           </button>
           <span className="text-sm text-gray-500">
-            {pick('目前結果', 'Current results', '現在の結果', '현재 결과')}: <strong className="text-gray-900">{total}</strong>
+            {pick('目前筆數', 'Current results', 'Current results', 'Current results')}: <strong className="text-gray-900">{total}</strong>
           </span>
         </div>
       </div>
@@ -353,14 +351,14 @@ const SuperAdminPointLedger: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-100 text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('時間', 'Time', '時間', '시간')}</th>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('會員', 'Member', '会員', '회원')}</th>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('點數', 'Points', 'ポイント', '포인트')}</th>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('類型', 'Type', '種類', '유형')}</th>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('來源', 'Source', 'ソース', '출처')}</th>
-                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('描述', 'Description', '説明', '설명')}</th>
+                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('時間', 'Time', 'Time', 'Time')}</th>
+                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('會員', 'Member', 'Member', 'Member')}</th>
+                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('點數', 'Points', 'Points', 'Points')}</th>
+                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('類型', 'Type', 'Type', 'Type')}</th>
+                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('來源', 'Source', 'Source', 'Source')}</th>
+                <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">{pick('描述', 'Description', 'Description', 'Description')}</th>
                 <th className="whitespace-nowrap px-4 py-3 text-left font-medium text-gray-500">Reference</th>
-                <th className="whitespace-nowrap px-4 py-3 text-right font-medium text-gray-500">{pick('操作', 'Action', '操作', '작업')}</th>
+                <th className="whitespace-nowrap px-4 py-3 text-right font-medium text-gray-500">{pick('操作', 'Action', 'Action', 'Action')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -368,7 +366,7 @@ const SuperAdminPointLedger: React.FC = () => {
                 <tr>
                   <td colSpan={8} className="px-4 py-16 text-center text-gray-400">
                     <Users className="mx-auto mb-2 h-10 w-10 opacity-20" />
-                    {pick('沒有符合條件的點數紀錄', 'No points records match your filters', '条件に一致するポイント履歴はありません', '필터에 맞는 포인트 기록이 없습니다')}
+                    {pick('目前沒有符合篩選條件的點數紀錄。', 'No points records match your filters', 'No points records match your filters', 'No points records match your filters')}
                   </td>
                 </tr>
               ) : (
@@ -396,7 +394,7 @@ const SuperAdminPointLedger: React.FC = () => {
                           <p className="font-semibold text-gray-900">{memberLabel(row)}</p>
                           <p className="flex items-center gap-1 text-xs text-gray-400">
                             <User className="h-3 w-3" />
-                            {row.user_id.slice(0, 8).toUpperCase()} {roleLabel(row) ? `· ${roleLabel(row)}` : ''}
+                            {row.user_id.slice(0, 8).toUpperCase()} {roleLabel(row) ? ` · ${roleLabel(row)}` : ''}
                           </p>
                         </div>
                       </div>
@@ -413,7 +411,7 @@ const SuperAdminPointLedger: React.FC = () => {
                         <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">{sourceLabel(row.source_type)}</span>
                         <span className="text-xs text-gray-400">
                           {row.vendor_id ? `Vendor: ${row.vendor_id.slice(0, 8).toUpperCase()}` : ''}
-                          {row.store_location_id ? ` ${row.vendor_id ? '· ' : ''}Store: ${row.store_location_id.slice(0, 8).toUpperCase()}` : ''}
+                          {row.store_location_id ? ` ${row.vendor_id ? ' · ' : ''}Store: ${row.store_location_id.slice(0, 8).toUpperCase()}` : ''}
                         </span>
                       </div>
                     </td>
@@ -436,7 +434,7 @@ const SuperAdminPointLedger: React.FC = () => {
                         className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
                       >
                         <Eye className="h-3.5 w-3.5" />
-                        {pick('查看', 'View', '詳細', '보기')}
+                        {pick('查看', 'View', 'View', 'View')}
                       </button>
                     </td>
                   </tr>
@@ -448,7 +446,7 @@ const SuperAdminPointLedger: React.FC = () => {
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-4">
           <p className="text-sm text-gray-500">
-            {pick('第', 'Page', 'ページ', '페이지')} {page + 1} / {totalPages} · {pick('每頁', 'per page', '1ページあたり', '페이지당')} {PAGE_SIZE} {pick('筆', 'rows', '件', '건')}
+            {pick('第', 'Page', 'Page', 'Page')} {page + 1} / {totalPages} {pick('頁，共', 'per page', 'per page', 'per page')} {PAGE_SIZE} {pick('筆', 'rows', 'rows', 'rows')}
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -458,20 +456,27 @@ const SuperAdminPointLedger: React.FC = () => {
               className="inline-flex items-center gap-1 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ChevronLeft className="h-4 w-4" />
-              {pick('上一頁', 'Previous', '前へ', '이전')}
+              {pick('上一頁', 'Previous', 'Previous', 'Previous')}
             </button>
             <button
               type="button"
-              onClick={() => setPage(prev => prev + 1)}
+              onClick={() => setPage(prev => Math.min(totalPages - 1, prev + 1))}
               disabled={!canNext}
               className="inline-flex items-center gap-1 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {pick('下一頁', 'Next', '次へ', '다음')}
+              {pick('下一頁', 'Next', 'Next', 'Next')}
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         </div>
       </div>
+
+      {loading && rows.length > 0 && (
+        <div className="fixed bottom-6 right-6 rounded-full bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-lg">
+          <RefreshCw className="mr-2 inline h-4 w-4 animate-spin text-amber-600" />
+          {pick('更新中', 'Updating', 'Updating', 'Updating')}
+        </div>
+      )}
     </div>
   );
 };
