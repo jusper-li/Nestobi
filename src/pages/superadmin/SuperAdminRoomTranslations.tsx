@@ -59,11 +59,12 @@ export default function SuperAdminRoomTranslations() {
     return rows.filter(row => {
       const roomName = roomNameMap.get(row.entity_id) || '';
       const matchLang = lang === 'all' || row.target_lang === lang;
-      const matchSearch = !q
-        || roomName.toLowerCase().includes(q)
-        || row.field_key.toLowerCase().includes(q)
-        || row.source_text.toLowerCase().includes(q)
-        || row.translated_text.toLowerCase().includes(q);
+      const matchSearch =
+        !q ||
+        roomName.toLowerCase().includes(q) ||
+        row.field_key.toLowerCase().includes(q) ||
+        row.source_text.toLowerCase().includes(q) ||
+        row.translated_text.toLowerCase().includes(q);
       return matchLang && matchSearch;
     });
   }, [rows, roomNameMap, search, lang]);
@@ -87,7 +88,7 @@ export default function SuperAdminRoomTranslations() {
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">住宿翻譯管理</h1>
-        <p className="mt-1 text-sm text-gray-500">僅在前台語系缺資料時才會新增翻譯快取，這裡可手動修正內容。</p>
+        <p className="mt-1 text-sm text-gray-500">檢視並更新住宿相關的多語系翻譯內容。</p>
       </div>
 
       <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -106,10 +107,10 @@ export default function SuperAdminRoomTranslations() {
             onChange={event => setLang(event.target.value)}
             className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-[#C09A6A] focus:outline-none focus:ring-2 focus:ring-[#C09A6A]/20"
           >
-            <option value="all">全部語系</option>
+            <option value="all">全部語言</option>
             <option value="en">English</option>
-            <option value="ja">日本語</option>
-            <option value="ko">한국어</option>
+            <option value="ja">日文</option>
+            <option value="ko">韓文</option>
           </select>
         </div>
       </div>
@@ -121,7 +122,7 @@ export default function SuperAdminRoomTranslations() {
               <tr className="text-left text-xs font-bold uppercase tracking-wide text-gray-500">
                 <th className="px-4 py-3">房型</th>
                 <th className="px-4 py-3">欄位</th>
-                <th className="px-4 py-3">語系</th>
+                <th className="px-4 py-3">語言</th>
                 <th className="px-4 py-3">原文</th>
                 <th className="px-4 py-3">翻譯</th>
                 <th className="px-4 py-3">操作</th>
@@ -129,13 +130,21 @@ export default function SuperAdminRoomTranslations() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">載入中…</td></tr>
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">
+                    載入中...
+                  </td>
+                </tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">目前沒有翻譯資料</td></tr>
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">
+                    目前沒有符合條件的翻譯資料
+                  </td>
+                </tr>
               ) : (
                 filtered.map(row => (
                   <tr key={row.id}>
-                    <td className="px-4 py-3 text-sm font-semibold text-gray-900">{roomNameMap.get(row.entity_id) || '未知房型'}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-gray-900">{roomNameMap.get(row.entity_id) || '未命名房型'}</td>
                     <td className="px-4 py-3 text-xs text-gray-600">{row.field_key}</td>
                     <td className="px-4 py-3 text-xs font-semibold text-[#8B6840]">{row.target_lang}</td>
                     <td className="max-w-xs px-4 py-3 text-xs text-gray-500">{row.source_text}</td>
