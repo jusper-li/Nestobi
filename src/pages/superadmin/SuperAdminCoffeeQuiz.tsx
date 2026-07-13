@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart3, Check, ChevronDown, ChevronUp, Coffee, Plus, Save, Trash2, Upload } from 'lucide-react';
+import { BarChart3, Check, ChevronDown, ChevronUp, Coffee, Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { logAdminAction } from '../../lib/auditLog';
 
 type OptionKey = 'A' | 'B' | 'C' | 'D';
+type ModalMode = 'create' | 'edit' | null;
 
 interface QuestionRow {
   id: string;
@@ -36,13 +37,29 @@ interface OptionDraft {
   score: number;
 }
 
+interface QuestionDraft {
+  question_text: string;
+  image_url: string;
+  display_order: number;
+  is_active: boolean;
+  options: Record<OptionKey, OptionDraft>;
+}
+
 const optionKeys: OptionKey[] = ['A', 'B', 'C', 'D'];
 
-const emptyOptions = (): Record<OptionKey, OptionDraft> => ({
+const createEmptyOptions = (): Record<OptionKey, OptionDraft> => ({
   A: { option_text: '', score: 1 },
   B: { option_text: '', score: 1 },
   C: { option_text: '', score: 1 },
   D: { option_text: '', score: 1 },
+});
+
+const createEmptyDraft = (): QuestionDraft => ({
+  question_text: '',
+  image_url: '',
+  display_order: 1,
+  is_active: true,
+  options: createEmptyOptions(),
 });
 
 export default function SuperAdminCoffeeQuiz() {
@@ -53,13 +70,10 @@ export default function SuperAdminCoffeeQuiz() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [openQuestionId, setOpenQuestionId] = useState<string | null>(null);
-  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
 
-  const [questionText, setQuestionText] = useState('');
-  const [questionOrder, setQuestionOrder] = useState(1);
-  const [questionActive, setQuestionActive] = useState(true);
-  const [questionImage, setQuestionImage] = useState('');
-  const [formOptions, setFormOptions] = useState<Record<OptionKey, OptionDraft>>(emptyOptions());
+  const [modalMode, setModalMode] = useState<ModalMode>(null);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<QuestionDraft>(createEmptyDraft());
 
   const stats = useMemo(() => {
     const byType: Record<string, number> = {};
@@ -88,13 +102,43 @@ export default function SuperAdminCoffeeQuiz() {
     loadAll();
   }, []);
 
-  const resetForm = () => {
+  const closeModal = () => {
+    setModalMode(null);
     setEditingQuestionId(null);
-    setQuestionText('');
-    setQuestionOrder(1);
-    setQuestionActive(true);
-    setQuestionImage('');
-    setFormOptions(emptyOptions());
+    setDraft(createEmptyDraft());
+  };
+
+  const openCreateModal = () => {
+    const nextOrder = questions.length ? Math.max(...questions.map(question => question.display_order || 0)) + 1 : 1;
+    setEditingQuestionId(null);
+    setDraft({
+      ...createEmptyDraft(),
+      display_order: nextOrder,
+    });
+    setModalMode('create');
+    setMsg('');
+  };
+
+  const openEditModal = (question: QuestionRow) => {
+    const mappedOptions = optionKeys.reduce<Record<OptionKey, OptionDraft>>((acc, key) => {
+      const existing = options.find(option => option.question_id === question.id && option.option_key === key);
+      acc[key] = {
+        option_text: existing?.option_text || '',
+        score: existing?.score ?? 1,
+      };
+      return acc;
+    }, createEmptyOptions());
+
+    setEditingQuestionId(question.id);
+    setDraft({
+      question_text: question.question_text,
+      image_url: question.image_url || '',
+      display_order: question.display_order,
+      is_active: question.is_active,
+      options: mappedOptions,
+    });
+    setModalMode('edit');
+    setOpenQuestionId(question.id);
     setMsg('');
   };
 
@@ -113,29 +157,8 @@ export default function SuperAdminCoffeeQuiz() {
     onDone(data.publicUrl);
   };
 
-  const startEditQuestion = (question: QuestionRow) => {
-    const mapped = optionKeys.reduce<Record<OptionKey, OptionDraft>>((acc, key) => {
-      const existing = options.find(option => option.question_id === question.id && option.option_key === key);
-      acc[key] = {
-        option_text: existing?.option_text || '',
-        score: existing?.score ?? 1,
-      };
-      return acc;
-    }, emptyOptions());
-
-    setEditingQuestionId(question.id);
-    setQuestionText(question.question_text);
-    setQuestionOrder(question.display_order);
-    setQuestionActive(question.is_active);
-    setQuestionImage(question.image_url || '');
-    setFormOptions(mapped);
-    setOpenQuestionId(question.id);
-    setMsg(`正在編輯第 ${question.display_order} 題`);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const saveQuestion = async () => {
-    if (!questionText.trim()) {
+    if (!draft.question_text.trim()) {
       setMsg('請先輸入題目。');
       return;
     }
@@ -144,13 +167,13 @@ export default function SuperAdminCoffeeQuiz() {
     setMsg('');
 
     const payload = {
-      question_text: questionText.trim(),
-      image_url: questionImage || null,
-      display_order: questionOrder,
-      is_active: questionActive,
+      question_text: draft.question_text.trim(),
+      image_url: draft.image_url || null,
+      display_order: draft.display_order,
+      is_active: draft.is_active,
     };
 
-    if (editingQuestionId) {
+    if (modalMode === 'edit' && editingQuestionId) {
       const { error } = await supabase
         .from('coffee_quiz_questions')
         .update({ ...payload, updated_at: new Date().toISOString() })
@@ -168,8 +191,8 @@ export default function SuperAdminCoffeeQuiz() {
           const optionPayload = {
             question_id: editingQuestionId,
             option_key: key,
-            option_text: formOptions[key].option_text.trim() || key,
-            score: Number(formOptions[key].score) || 0,
+            option_text: draft.options[key].option_text.trim() || key,
+            score: Number(draft.options[key].score) || 0,
             display_order: index + 1,
           };
 
@@ -185,7 +208,7 @@ export default function SuperAdminCoffeeQuiz() {
       await loadAll();
       setSaving(false);
       setMsg('題目已更新。');
-      resetForm();
+      closeModal();
       return;
     }
 
@@ -205,8 +228,8 @@ export default function SuperAdminCoffeeQuiz() {
     const rows = optionKeys.map((key, index) => ({
       question_id: questionId,
       option_key: key,
-      option_text: formOptions[key].option_text.trim() || key,
-      score: Number(formOptions[key].score) || 0,
+      option_text: draft.options[key].option_text.trim() || key,
+      score: Number(draft.options[key].score) || 0,
       display_order: index + 1,
     }));
 
@@ -218,17 +241,16 @@ export default function SuperAdminCoffeeQuiz() {
     }
 
     await logAdminAction('create_coffee_quiz_question', 'coffee_quiz_questions', questionId, {
-      question_text: questionText.trim(),
-      display_order: questionOrder,
-      image_url: questionImage || null,
+      question_text: draft.question_text.trim(),
+      display_order: draft.display_order,
+      image_url: draft.image_url || null,
     });
 
+    await loadAll();
     setSaving(false);
     setMsg('題目已新增。');
-    await loadAll();
     setOpenQuestionId(questionId);
-    setQuestionOrder(v => v + 1);
-    resetForm();
+    closeModal();
   };
 
   const updateQuestionOption = async (id: string, patch: Partial<OptionRow>) => {
@@ -248,7 +270,7 @@ export default function SuperAdminCoffeeQuiz() {
     await logAdminAction('delete_coffee_quiz_question', 'coffee_quiz_questions', id);
     await loadAll();
     if (openQuestionId === id) setOpenQuestionId(null);
-    if (editingQuestionId === id) resetForm();
+    if (editingQuestionId === id) closeModal();
   };
 
   const groupedQuestions = useMemo(
@@ -272,99 +294,17 @@ export default function SuperAdminCoffeeQuiz() {
           <h1 className="text-2xl font-bold text-gray-900">咖啡 AI 測驗</h1>
           <p className="text-sm text-gray-500">可新增、編輯題目，並以收合列表管理既有題目。</p>
         </div>
+        <button
+          type="button"
+          onClick={openCreateModal}
+          className="ml-auto inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600"
+        >
+          <Plus className="h-4 w-4" />
+          新增題目
+        </button>
       </div>
 
       {msg && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">{msg}</div>}
-
-      <section className="rounded-2xl bg-white p-5 shadow-sm">
-        <h2 className="mb-4 text-lg font-bold text-gray-900">{editingQuestionId ? '編輯題目' : '新增題目'}</h2>
-        <div className="grid gap-3 md:grid-cols-2">
-          <input value={questionText} onChange={e => setQuestionText(e.target.value)} placeholder="題目文字" className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm" />
-          <input type="number" value={questionOrder} onChange={e => setQuestionOrder(Number(e.target.value) || 1)} placeholder="排序" className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm" />
-
-          <div className="md:col-span-2">
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3">
-              <p className="mb-2 text-xs font-semibold text-gray-500">目前圖片</p>
-              {questionImage ? (
-                <div className="flex items-start gap-3">
-                  <img src={questionImage} alt="preview" className="h-20 w-20 rounded-xl object-cover" />
-                  <div className="min-w-0 flex-1">
-                    <input value={questionImage} onChange={e => setQuestionImage(e.target.value)} placeholder="圖片網址" className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm" />
-                    <p className="mt-1 text-xs text-gray-400">可直接貼上圖片網址，或用上傳替換。</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-white text-gray-300">
-                    <Upload className="h-6 w-6" />
-                  </div>
-                  <input value={questionImage} onChange={e => setQuestionImage(e.target.value)} placeholder="圖片網址" className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm" />
-                </div>
-              )}
-            </div>
-          </div>
-
-          <label className="inline-flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-            <Upload className="h-4 w-4" />
-            上傳圖片
-            <input
-              className="hidden"
-              type="file"
-              accept="image/*"
-              onChange={e => {
-                const file = e.target.files?.[0];
-                if (file) void uploadImage(file, setQuestionImage);
-                e.target.value = '';
-              }}
-            />
-          </label>
-
-          <label className="inline-flex items-center gap-2 text-sm text-gray-600">
-            <input type="checkbox" checked={questionActive} onChange={e => setQuestionActive(e.target.checked)} />
-            啟用題目
-          </label>
-        </div>
-
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          {optionKeys.map(key => (
-            <div key={key} className="rounded-xl border border-gray-200 p-3">
-              <p className="mb-2 text-xs font-bold text-gray-500">選項 {key}</p>
-              <input
-                value={formOptions[key].option_text}
-                onChange={e => setFormOptions(prev => ({ ...prev, [key]: { ...prev[key], option_text: e.target.value } }))}
-                placeholder={`選項 ${key} 文字`}
-                className="mb-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-              />
-              <input
-                type="number"
-                value={formOptions[key].score}
-                onChange={e => setFormOptions(prev => ({ ...prev, [key]: { ...prev[key], score: Number(e.target.value) || 0 } }))}
-                placeholder="分數"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-              />
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button onClick={saveQuestion} disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
-            {saving ? <Save className="h-4 w-4 animate-pulse" /> : <Plus className="h-4 w-4" />}
-            {editingQuestionId ? '儲存變更' : '新增題目'}
-          </button>
-          {editingQuestionId && (
-            <button
-              type="button"
-              onClick={() => {
-                resetForm();
-                setMsg('已取消編輯。');
-              }}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700"
-            >
-              取消編輯
-            </button>
-          )}
-        </div>
-      </section>
 
       <section className="rounded-2xl bg-white p-5 shadow-sm">
         <h2 className="mb-4 text-lg font-bold text-gray-900">題目清單</h2>
@@ -423,7 +363,7 @@ export default function SuperAdminCoffeeQuiz() {
                           />
                           啟用
                         </label>
-                        <button type="button" onClick={() => startEditQuestion(question)} className="rounded-lg px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50">
+                        <button type="button" onClick={() => openEditModal(question)} className="rounded-lg px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50">
                           編輯
                         </button>
                         <button type="button" onClick={() => void deleteQuestion(question.id)} className="rounded-lg p-2 text-red-500 hover:bg-red-50" title="刪除題目">
@@ -442,30 +382,6 @@ export default function SuperAdminCoffeeQuiz() {
                         </div>
 
                         <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <input
-                              value={question.image_url || ''}
-                              onChange={e => setQuestions(prev => prev.map(item => (item.id === question.id ? { ...item, image_url: e.target.value || null } : item)))}
-                              onBlur={e => void updateQuestion(question.id, { image_url: e.target.value || null })}
-                              placeholder="圖片網址"
-                              className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                            />
-                            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-                              <Upload className="h-4 w-4" />
-                              變更圖片
-                              <input
-                                className="hidden"
-                                type="file"
-                                accept="image/*"
-                                onChange={e => {
-                                  const file = e.target.files?.[0];
-                                  if (file) void uploadImage(file, url => void updateQuestion(question.id, { image_url: url }));
-                                  e.target.value = '';
-                                }}
-                              />
-                            </label>
-                          </div>
-
                           <div className="grid gap-2 sm:grid-cols-2">
                             {opts.map(opt => (
                               <div key={opt.id} className="rounded-lg border border-gray-100 p-3">
@@ -540,6 +456,142 @@ export default function SuperAdminCoffeeQuiz() {
           </table>
         </div>
       </section>
+
+      {modalMode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="relative w-full max-w-3xl rounded-2xl bg-white shadow-2xl">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="absolute right-4 top-4 rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+              aria-label="關閉"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="border-b border-gray-100 px-6 py-5">
+              <h3 className="text-lg font-bold text-gray-900">{modalMode === 'edit' ? '編輯題目' : '新增題目'}</h3>
+              <p className="mt-1 text-sm text-gray-500">題目、圖片與四個選項都在這裡編輯。</p>
+            </div>
+
+            <div className="max-h-[75vh] overflow-y-auto px-6 py-5">
+              <div className="grid gap-3 md:grid-cols-2">
+                <input
+                  value={draft.question_text}
+                  onChange={e => setDraft(prev => ({ ...prev, question_text: e.target.value }))}
+                  placeholder="題目文字"
+                  className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm"
+                />
+                <input
+                  type="number"
+                  value={draft.display_order}
+                  onChange={e => setDraft(prev => ({ ...prev, display_order: Number(e.target.value) || 1 }))}
+                  placeholder="排序"
+                  className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm"
+                />
+
+                <div className="md:col-span-2">
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3">
+                    <p className="mb-2 text-xs font-semibold text-gray-500">目前圖片</p>
+                    {draft.image_url ? (
+                      <div className="flex items-start gap-3">
+                        <img src={draft.image_url} alt="preview" className="h-20 w-20 rounded-xl object-cover" />
+                        <div className="min-w-0 flex-1">
+                          <input
+                            value={draft.image_url}
+                            onChange={e => setDraft(prev => ({ ...prev, image_url: e.target.value }))}
+                            placeholder="圖片網址"
+                            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm"
+                          />
+                          <p className="mt-1 text-xs text-gray-400">可貼上圖片網址，或用上傳替換。</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-white text-gray-300">
+                          <Upload className="h-6 w-6" />
+                        </div>
+                        <input
+                          value={draft.image_url}
+                          onChange={e => setDraft(prev => ({ ...prev, image_url: e.target.value }))}
+                          placeholder="圖片網址"
+                          className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <label className="inline-flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                  <Upload className="h-4 w-4" />
+                  上傳圖片
+                  <input
+                    className="hidden"
+                    type="file"
+                    accept="image/*"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) void uploadImage(file, url => setDraft(prev => ({ ...prev, image_url: url })));
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+
+                <label className="inline-flex items-center gap-2 text-sm text-gray-600">
+                  <input type="checkbox" checked={draft.is_active} onChange={e => setDraft(prev => ({ ...prev, is_active: e.target.checked }))} />
+                  啟用題目
+                </label>
+              </div>
+
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {optionKeys.map(key => (
+                  <div key={key} className="rounded-xl border border-gray-200 p-3">
+                    <p className="mb-2 text-xs font-bold text-gray-500">選項 {key}</p>
+                    <input
+                      value={draft.options[key].option_text}
+                      onChange={e =>
+                        setDraft(prev => ({
+                          ...prev,
+                          options: { ...prev.options, [key]: { ...prev.options[key], option_text: e.target.value } },
+                        }))
+                      }
+                      placeholder={`選項 ${key} 文字`}
+                      className="mb-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    />
+                    <input
+                      type="number"
+                      value={draft.options[key].score}
+                      onChange={e =>
+                        setDraft(prev => ({
+                          ...prev,
+                          options: { ...prev.options, [key]: { ...prev.options[key], score: Number(e.target.value) || 0 } },
+                        }))
+                      }
+                      placeholder="分數"
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-gray-100 px-6 py-4">
+              <button type="button" onClick={closeModal} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700">
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={saveQuestion}
+                disabled={saving}
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {saving ? <Save className="h-4 w-4 animate-pulse" /> : <Plus className="h-4 w-4" />}
+                {modalMode === 'edit' ? '儲存變更' : '新增題目'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
