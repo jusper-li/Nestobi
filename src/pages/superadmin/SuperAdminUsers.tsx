@@ -26,6 +26,32 @@ interface UserDetail {
   totalPoints: number;
 }
 
+type InvoiceDetail = {
+  id: string;
+  order_id: string;
+  user_id: string;
+  invoice_status: string;
+  invoice_number?: string | null;
+  invoice_random_number?: string | null;
+  invoice_date?: string | null;
+  buyer_name?: string | null;
+  buyer_email?: string | null;
+  buyer_identifier?: string | null;
+  carrier_type?: string | null;
+  carrier_number?: string | null;
+  love_code?: string | null;
+  tax_type?: string | null;
+  sales_amount?: number | null;
+  tax_amount?: number | null;
+  total_amount?: number | null;
+  ezpay_trade_no?: string | null;
+  ezpay_raw_request?: Record<string, unknown> | null;
+  ezpay_raw_response?: Record<string, unknown> | null;
+  error_message?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
 const ROLE_OPTIONS = ['user', 'vendor', 'admin', 'superadmin'] as const;
 const ROLE_LABELS: Record<string, string> = {
   user: '一般會員',
@@ -63,6 +89,7 @@ const SuperAdminUsers: React.FC = () => {
   const [detail, setDetail] = useState<UserDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailTab, setDetailTab] = useState<'profile' | 'bookings' | 'orders' | 'invoices' | 'points'>('profile');
+  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceDetail | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -170,6 +197,7 @@ const SuperAdminUsers: React.FC = () => {
     setDetail(null);
     setDetailLoading(true);
     setDetailTab('profile');
+    setSelectedInvoice(null);
 
     const [profileRes, bookingsRes, ordersRes, invoicesRes, pointsRes] = await Promise.all([
       supabase.from('tbl_mn5wgzh0').select('*').eq('user_id', user.user_id).maybeSingle(),
@@ -177,7 +205,7 @@ const SuperAdminUsers: React.FC = () => {
       supabase.from('orders').select('*').eq('user_id', user.user_id).order('created_at', { ascending: false }).limit(10),
       supabase
         .from('invoices')
-        .select('id,order_id,user_id,invoice_status,invoice_number,invoice_random_number,invoice_date,buyer_name,buyer_email,buyer_identifier,carrier_type,carrier_number,love_code,tax_type,sales_amount,tax_amount,total_amount,ezpay_trade_no,error_message,created_at,updated_at')
+        .select('id,order_id,user_id,invoice_status,invoice_number,invoice_random_number,invoice_date,buyer_name,buyer_email,buyer_identifier,carrier_type,carrier_number,love_code,tax_type,sales_amount,tax_amount,total_amount,ezpay_trade_no,ezpay_raw_request,ezpay_raw_response,error_message,created_at,updated_at')
         .eq('user_id', user.user_id)
         .order('created_at', { ascending: false })
         .limit(20),
@@ -521,7 +549,12 @@ const SuperAdminUsers: React.FC = () => {
                   ) : (
                     <div className="space-y-3">
                       {detail.invoices.map((invoice: any) => (
-                        <div key={invoice.id} className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                        <button
+                          key={invoice.id}
+                          type="button"
+                          onClick={() => setSelectedInvoice(invoice as InvoiceDetail)}
+                          className="w-full rounded-2xl border border-gray-100 bg-gray-50 p-4 text-left transition hover:border-amber-200 hover:bg-amber-50/30"
+                        >
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2">
@@ -569,7 +602,10 @@ const SuperAdminUsers: React.FC = () => {
                               {invoice.error_message}
                             </div>
                           )}
-                        </div>
+                          <div className="mt-4 text-right text-xs font-medium text-amber-700">
+                            點我查看詳細資料
+                          </div>
+                        </button>
                       ))}
                     </div>
                   )
@@ -598,6 +634,78 @@ const SuperAdminUsers: React.FC = () => {
                     )}
                   </>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedInvoice && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+            onClick={() => setSelectedInvoice(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              onClick={event => event.stopPropagation()}
+              className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+            >
+              <div className="flex items-start justify-between border-b border-gray-100 px-6 py-4">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">發票詳細資料</h3>
+                  <p className="mt-1 text-sm text-gray-500">{selectedInvoice.invoice_number || '尚未開立發票號碼'}</p>
+                </div>
+                <button type="button" onClick={() => setSelectedInvoice(null)} className="rounded-lg p-1.5 hover:bg-gray-100" aria-label="關閉">
+                  <X className="h-5 w-5 text-gray-400" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <InfoItem label="發票狀態" value={selectedInvoice.invoice_status || 'pending'} />
+                  <InfoItem label="開立時間" value={selectedInvoice.invoice_date ? formatDateTime(selectedInvoice.invoice_date) : '-'} />
+                  <InfoItem label="發票號碼" value={selectedInvoice.invoice_number || '-'} mono />
+                  <InfoItem label="隨機碼" value={selectedInvoice.invoice_random_number || '-'} mono />
+                  <InfoItem label="買受人姓名" value={selectedInvoice.buyer_name || '-'} />
+                  <InfoItem label="買受人 Email" value={selectedInvoice.buyer_email || '-'} />
+                  <InfoItem label="買受人統編" value={selectedInvoice.buyer_identifier || '-'} mono />
+                  <InfoItem label="載具類型" value={selectedInvoice.carrier_type || '-'} />
+                  <InfoItem label="載具號碼" value={selectedInvoice.carrier_number || '-'} mono />
+                  <InfoItem label="愛心碼" value={selectedInvoice.love_code || '-'} mono />
+                  <InfoItem label="稅別" value={selectedInvoice.tax_type || '-'} />
+                  <InfoItem label="ezPay 交易序號" value={selectedInvoice.ezpay_trade_no || '-'} mono />
+                  <InfoItem label="銷售金額" value={formatCurrency(selectedInvoice.sales_amount || 0)} />
+                  <InfoItem label="稅額" value={formatCurrency(selectedInvoice.tax_amount || 0)} />
+                  <InfoItem label="總金額" value={formatCurrency(selectedInvoice.total_amount || 0)} />
+                  <InfoItem label="建立時間" value={selectedInvoice.created_at ? formatDateTime(selectedInvoice.created_at) : '-'} />
+                </div>
+
+                {selectedInvoice.error_message && (
+                  <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm leading-7 text-red-700">
+                    {selectedInvoice.error_message}
+                  </div>
+                )}
+
+                <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <p className="text-xs font-medium text-gray-400">ezPay Raw Request</p>
+                    <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words text-xs leading-6 text-gray-700">
+                      {JSON.stringify(selectedInvoice.ezpay_raw_request || {}, null, 2)}
+                    </pre>
+                  </div>
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <p className="text-xs font-medium text-gray-400">ezPay Raw Response</p>
+                    <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words text-xs leading-6 text-gray-700">
+                      {JSON.stringify(selectedInvoice.ezpay_raw_response || {}, null, 2)}
+                    </pre>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </motion.div>
