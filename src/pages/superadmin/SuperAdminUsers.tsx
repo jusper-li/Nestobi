@@ -52,6 +52,12 @@ type InvoiceDetail = {
   updated_at?: string | null;
 };
 
+type DetailRecordType = 'booking' | 'order' | 'point' | 'invoice';
+type DetailRecord = {
+  type: DetailRecordType;
+  data: Record<string, any>;
+};
+
 const ROLE_OPTIONS = ['user', 'vendor', 'admin', 'superadmin'] as const;
 const ROLE_LABELS: Record<string, string> = {
   user: '一般會員',
@@ -89,7 +95,7 @@ const SuperAdminUsers: React.FC = () => {
   const [detail, setDetail] = useState<UserDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailTab, setDetailTab] = useState<'profile' | 'bookings' | 'orders' | 'invoices' | 'points'>('profile');
-  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceDetail | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<DetailRecord | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -197,7 +203,7 @@ const SuperAdminUsers: React.FC = () => {
     setDetail(null);
     setDetailLoading(true);
     setDetailTab('profile');
-    setSelectedInvoice(null);
+    setSelectedRecord(null);
 
     const [profileRes, bookingsRes, ordersRes, invoicesRes, pointsRes] = await Promise.all([
       supabase.from('tbl_mn5wgzh0').select('*').eq('user_id', user.user_id).maybeSingle(),
@@ -508,7 +514,13 @@ const SuperAdminUsers: React.FC = () => {
                   ) : (
                     <div className="space-y-3">
                       {detail.bookings.map((booking: any) => (
-                        <div key={booking.id} className="flex items-center justify-between gap-4 rounded-xl bg-gray-50 p-4">
+                        <button
+                          key={booking.id}
+                          type="button"
+                          onClick={() => setSelectedRecord({ type: 'booking', data: booking })}
+                          className="w-full rounded-xl bg-gray-50 p-4 text-left transition hover:bg-amber-50/40"
+                        >
+                          <div className="flex items-center justify-between gap-4">
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-gray-900">{booking.tbl_rooms?.name || 'Room'}</p>
                             <p className="mt-0.5 text-xs text-gray-500">{formatDate(booking.check_in_date)} ~ {formatDate(booking.check_out_date)} / {booking.guests} 位</p>
@@ -517,7 +529,9 @@ const SuperAdminUsers: React.FC = () => {
                             <p className="text-sm font-semibold text-gray-900">{formatCurrency(booking.total_price)}</p>
                             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(booking.status)}`}>{getStatusLabel(booking.status)}</span>
                           </div>
-                        </div>
+                          </div>
+                          <div className="mt-3 text-right text-xs font-medium text-amber-700">點我查看詳細資料</div>
+                        </button>
                       ))}
                     </div>
                   )
@@ -527,7 +541,13 @@ const SuperAdminUsers: React.FC = () => {
                   ) : (
                     <div className="space-y-3">
                       {detail.orders.map((order: any) => (
-                        <div key={order.id} className="flex items-center justify-between gap-4 rounded-xl bg-gray-50 p-4">
+                        <button
+                          key={order.id}
+                          type="button"
+                          onClick={() => setSelectedRecord({ type: 'order', data: order })}
+                          className="w-full rounded-xl bg-gray-50 p-4 text-left transition hover:bg-amber-50/40"
+                        >
+                          <div className="flex items-center justify-between gap-4">
                           <div className="min-w-0 flex-1">
                             <p className="font-mono text-sm font-medium text-gray-900">#{order.id.slice(-8).toUpperCase()}</p>
                             <p className="mt-0.5 text-xs text-gray-500">{formatDateTime(order.created_at)}</p>
@@ -539,7 +559,9 @@ const SuperAdminUsers: React.FC = () => {
                               <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(order.payment_status)}`}>{getStatusLabel(order.payment_status)}</span>
                             </div>
                           </div>
-                        </div>
+                          </div>
+                          <div className="mt-3 text-right text-xs font-medium text-amber-700">點我查看詳細資料</div>
+                        </button>
                       ))}
                     </div>
                   )
@@ -619,8 +641,13 @@ const SuperAdminUsers: React.FC = () => {
                       <div className="py-10 text-center text-gray-400"><Award className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">沒有點數紀錄</p></div>
                     ) : (
                       <div className="space-y-2">
-                        {detail.points.map((point: any) => (
-                          <div key={point.id} className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-gray-50">
+                      {detail.points.map((point: any) => (
+                          <button
+                            key={point.id}
+                            type="button"
+                            onClick={() => setSelectedRecord({ type: 'point', data: point })}
+                            className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition hover:bg-gray-50"
+                          >
                             <div>
                               <p className="text-sm text-gray-900">{point.description || '點數紀錄'}</p>
                               <p className="text-xs text-gray-400">{formatDateTime(point.created_at)}</p>
@@ -628,7 +655,7 @@ const SuperAdminUsers: React.FC = () => {
                             <span className={`text-sm font-semibold ${point.transaction_type === 'earned' ? 'text-green-600' : point.transaction_type === 'spent' ? 'text-red-500' : 'text-gray-400'}`}>
                               {point.transaction_type === 'earned' ? '+' : point.transaction_type === 'spent' ? '-' : ''}{point.amount}
                             </span>
-                          </div>
+                          </button>
                         ))}
                       </div>
                     )}
@@ -641,72 +668,155 @@ const SuperAdminUsers: React.FC = () => {
       </AnimatePresence>
 
       <AnimatePresence>
-        {selectedInvoice && (
+        {selectedRecord && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
-            onClick={() => setSelectedInvoice(null)}
+            onClick={() => setSelectedRecord(null)}
           >
             <motion.div
               initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
               onClick={event => event.stopPropagation()}
-              className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+              className="flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
             >
-              <div className="flex items-start justify-between border-b border-gray-100 px-6 py-4">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">發票詳細資料</h3>
-                  <p className="mt-1 text-sm text-gray-500">{selectedInvoice.invoice_number || '尚未開立發票號碼'}</p>
-                </div>
-                <button type="button" onClick={() => setSelectedInvoice(null)} className="rounded-lg p-1.5 hover:bg-gray-100" aria-label="關閉">
-                  <X className="h-5 w-5 text-gray-400" />
-                </button>
-              </div>
+              {(() => {
+                const record = selectedRecord.data;
+                const titleMap: Record<DetailRecordType, string> = {
+                  booking: '訂房詳細資料',
+                  order: '訂單詳細資料',
+                  point: '點數詳細資料',
+                  invoice: '發票詳細資料',
+                };
+                const subtitleMap: Record<DetailRecordType, string> = {
+                  booking: String(record.id || record.room_id || '-'),
+                  order: String(record.id || record.order_id || '-'),
+                  point: String(record.id || record.reference_id || '-'),
+                  invoice: String(record.invoice_number || record.order_id || '-'),
+                };
 
-              <div className="flex-1 overflow-y-auto p-6">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <InfoItem label="發票狀態" value={selectedInvoice.invoice_status || 'pending'} />
-                  <InfoItem label="開立時間" value={selectedInvoice.invoice_date ? formatDateTime(selectedInvoice.invoice_date) : '-'} />
-                  <InfoItem label="發票號碼" value={selectedInvoice.invoice_number || '-'} mono />
-                  <InfoItem label="隨機碼" value={selectedInvoice.invoice_random_number || '-'} mono />
-                  <InfoItem label="買受人姓名" value={selectedInvoice.buyer_name || '-'} />
-                  <InfoItem label="買受人 Email" value={selectedInvoice.buyer_email || '-'} />
-                  <InfoItem label="買受人統編" value={selectedInvoice.buyer_identifier || '-'} mono />
-                  <InfoItem label="載具類型" value={selectedInvoice.carrier_type || '-'} />
-                  <InfoItem label="載具號碼" value={selectedInvoice.carrier_number || '-'} mono />
-                  <InfoItem label="愛心碼" value={selectedInvoice.love_code || '-'} mono />
-                  <InfoItem label="稅別" value={selectedInvoice.tax_type || '-'} />
-                  <InfoItem label="ezPay 交易序號" value={selectedInvoice.ezpay_trade_no || '-'} mono />
-                  <InfoItem label="銷售金額" value={formatCurrency(selectedInvoice.sales_amount || 0)} />
-                  <InfoItem label="稅額" value={formatCurrency(selectedInvoice.tax_amount || 0)} />
-                  <InfoItem label="總金額" value={formatCurrency(selectedInvoice.total_amount || 0)} />
-                  <InfoItem label="建立時間" value={selectedInvoice.created_at ? formatDateTime(selectedInvoice.created_at) : '-'} />
-                </div>
+                return (
+                  <>
+                    <div className="flex items-start justify-between border-b border-gray-100 px-6 py-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">{titleMap[selectedRecord.type]}</h3>
+                        <p className="mt-1 text-sm text-gray-500">{subtitleMap[selectedRecord.type]}</p>
+                      </div>
+                      <button type="button" onClick={() => setSelectedRecord(null)} className="rounded-lg p-1.5 hover:bg-gray-100" aria-label="關閉">
+                        <X className="h-5 w-5 text-gray-400" />
+                      </button>
+                    </div>
 
-                {selectedInvoice.error_message && (
-                  <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm leading-7 text-red-700">
-                    {selectedInvoice.error_message}
-                  </div>
-                )}
+                    <div className="flex-1 overflow-y-auto p-6">
+                      {selectedRecord.type === 'booking' && (
+                        <div className="space-y-4">
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <InfoItem label="房型 / 房間" value={record.tbl_rooms?.name || record.room_name || '-'} />
+                            <InfoItem label="訂房狀態" value={record.status || '-'} />
+                            <InfoItem label="入住日期" value={record.check_in_date ? formatDate(record.check_in_date) : '-'} />
+                            <InfoItem label="退房日期" value={record.check_out_date ? formatDate(record.check_out_date) : '-'} />
+                            <InfoItem label="入住人數" value={String(record.guests ?? '-')} />
+                            <InfoItem label="總金額" value={formatCurrency(record.total_price || 0)} />
+                            <InfoItem label="付款方式" value={record.payment_method || '-'} />
+                            <InfoItem label="付款狀態" value={record.payment_status || '-'} />
+                            <InfoItem label="建立時間" value={record.created_at ? formatDateTime(record.created_at) : '-'} />
+                            <InfoItem label="更新時間" value={record.updated_at ? formatDateTime(record.updated_at) : '-'} />
+                          </div>
+                          <div className="rounded-2xl bg-gray-50 p-4">
+                            <p className="text-xs font-medium text-gray-400">特殊需求</p>
+                            <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-gray-700">{record.special_requests || '-'}</p>
+                          </div>
+                        </div>
+                      )}
 
-                <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-2xl bg-gray-50 p-4">
-                    <p className="text-xs font-medium text-gray-400">ezPay Raw Request</p>
-                    <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words text-xs leading-6 text-gray-700">
-                      {JSON.stringify(selectedInvoice.ezpay_raw_request || {}, null, 2)}
-                    </pre>
-                  </div>
-                  <div className="rounded-2xl bg-gray-50 p-4">
-                    <p className="text-xs font-medium text-gray-400">ezPay Raw Response</p>
-                    <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words text-xs leading-6 text-gray-700">
-                      {JSON.stringify(selectedInvoice.ezpay_raw_response || {}, null, 2)}
-                    </pre>
-                  </div>
-                </div>
-              </div>
+                      {selectedRecord.type === 'order' && (
+                        <div className="space-y-4">
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <InfoItem label="訂單編號" value={record.id || '-'} mono />
+                            <InfoItem label="訂單狀態" value={record.status || '-'} />
+                            <InfoItem label="付款狀態" value={record.payment_status || '-'} />
+                            <InfoItem label="付款方式" value={record.payment_method || '-'} />
+                            <InfoItem label="總金額" value={formatCurrency(record.total_amount || 0)} />
+                            <InfoItem label="建立時間" value={record.created_at ? formatDateTime(record.created_at) : '-'} />
+                            <InfoItem label="更新時間" value={record.updated_at ? formatDateTime(record.updated_at) : '-'} />
+                            <InfoItem label="會員 ID" value={record.user_id || '-'} mono />
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedRecord.type === 'point' && (
+                        <div className="space-y-4">
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <InfoItem label="點數類型" value={record.transaction_type || '-'} />
+                            <InfoItem label="點數數量" value={String(record.amount ?? '-')} />
+                            <InfoItem label="描述" value={record.description || '-'} />
+                            <InfoItem label="來源類型" value={record.source_type || '-'} />
+                            <InfoItem label="來源 ID" value={record.source_id || '-'} mono />
+                            <InfoItem label="Reference ID" value={record.reference_id || '-'} mono />
+                            <InfoItem label="供應商 ID" value={record.vendor_id || '-'} mono />
+                            <InfoItem label="門市 ID" value={record.store_location_id || '-'} mono />
+                            <InfoItem label="建立時間" value={record.created_at ? formatDateTime(record.created_at) : '-'} />
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedRecord.type === 'invoice' && (
+                        <div className="space-y-4">
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <InfoItem label="發票狀態" value={record.invoice_status || 'pending'} />
+                            <InfoItem label="開立時間" value={record.invoice_date ? formatDateTime(record.invoice_date) : '-'} />
+                            <InfoItem label="發票號碼" value={record.invoice_number || '-'} mono />
+                            <InfoItem label="隨機碼" value={record.invoice_random_number || '-'} mono />
+                            <InfoItem label="買受人姓名" value={record.buyer_name || '-'} />
+                            <InfoItem label="買受人 Email" value={record.buyer_email || '-'} />
+                            <InfoItem label="買受人統編" value={record.buyer_identifier || '-'} mono />
+                            <InfoItem label="載具類型" value={record.carrier_type || '-'} />
+                            <InfoItem label="載具號碼" value={record.carrier_number || '-'} mono />
+                            <InfoItem label="愛心碼" value={record.love_code || '-'} mono />
+                            <InfoItem label="稅別" value={record.tax_type || '-'} />
+                            <InfoItem label="ezPay 交易序號" value={record.ezpay_trade_no || '-'} mono />
+                            <InfoItem label="銷售金額" value={formatCurrency(record.sales_amount || 0)} />
+                            <InfoItem label="稅額" value={formatCurrency(record.tax_amount || 0)} />
+                            <InfoItem label="總金額" value={formatCurrency(record.total_amount || 0)} />
+                            <InfoItem label="建立時間" value={record.created_at ? formatDateTime(record.created_at) : '-'} />
+                          </div>
+
+                          {record.error_message && (
+                            <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm leading-7 text-red-700">
+                              {record.error_message}
+                            </div>
+                          )}
+
+                          <div className="grid gap-4 lg:grid-cols-2">
+                            <div className="rounded-2xl bg-gray-50 p-4">
+                              <p className="text-xs font-medium text-gray-400">ezPay Raw Request</p>
+                              <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words text-xs leading-6 text-gray-700">
+                                {JSON.stringify(record.ezpay_raw_request || {}, null, 2)}
+                              </pre>
+                            </div>
+                            <div className="rounded-2xl bg-gray-50 p-4">
+                              <p className="text-xs font-medium text-gray-400">ezPay Raw Response</p>
+                              <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words text-xs leading-6 text-gray-700">
+                                {JSON.stringify(record.ezpay_raw_response || {}, null, 2)}
+                              </pre>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-4 rounded-2xl bg-gray-50 p-4">
+                        <p className="text-xs font-medium text-gray-400">原始資料</p>
+                        <pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-words text-xs leading-6 text-gray-700">
+                          {JSON.stringify(record, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
             </motion.div>
           </motion.div>
         )}
