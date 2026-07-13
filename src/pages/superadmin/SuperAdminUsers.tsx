@@ -58,6 +58,20 @@ type DetailRecord = {
   data: Record<string, any>;
 };
 
+type ProfileDraft = {
+  display_name: string;
+  phone: string;
+  nationality: string;
+  preferred_language: string;
+  bio: string;
+  coffee_profile_label: string;
+  coffee_profile_summary: string;
+  coffee_profile_key: string;
+  coffee_profile_scores: string;
+};
+
+type RecordDraft = Record<string, string>;
+
 const ROLE_OPTIONS = ['user', 'vendor', 'admin', 'superadmin'] as const;
 const ROLE_LABELS: Record<string, string> = {
   user: '一般會員',
@@ -96,6 +110,22 @@ const SuperAdminUsers: React.FC = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailTab, setDetailTab] = useState<'profile' | 'bookings' | 'orders' | 'invoices' | 'points'>('profile');
   const [selectedRecord, setSelectedRecord] = useState<DetailRecord | null>(null);
+  const [profileEditing, setProfileEditing] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileDraft, setProfileDraft] = useState<ProfileDraft>({
+    display_name: '',
+    phone: '',
+    nationality: '',
+    preferred_language: '',
+    bio: '',
+    coffee_profile_label: '',
+    coffee_profile_summary: '',
+    coffee_profile_key: '',
+    coffee_profile_scores: '',
+  });
+  const [recordEditing, setRecordEditing] = useState(false);
+  const [recordSaving, setRecordSaving] = useState(false);
+  const [recordDraft, setRecordDraft] = useState<RecordDraft>({});
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -122,6 +152,96 @@ const SuperAdminUsers: React.FC = () => {
     } catch {
       return {};
     }
+  };
+
+  const toText = (value: unknown) => (value === null || value === undefined ? '' : String(value));
+  const toNullableText = (value: string) => {
+    const trimmed = value.trim();
+    return trimmed ? trimmed : null;
+  };
+  const toNullableNumber = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = Number(trimmed);
+    if (Number.isNaN(parsed)) throw new Error('數值格式不正確');
+    return parsed;
+  };
+  const toNullableIsoDate = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = new Date(trimmed);
+    if (Number.isNaN(parsed.getTime())) throw new Error('日期格式不正確');
+    return parsed.toISOString();
+  };
+  const toDateInputValue = (value?: string | null) => (value ? String(value).slice(0, 10) : '');
+  const toDateTimeInputValue = (value?: string | null) => (value ? String(value).slice(0, 16) : '');
+
+  const buildProfileDraft = (profile: any): ProfileDraft => ({
+    display_name: toText(profile?.display_name),
+    phone: toText(profile?.phone),
+    nationality: toText(profile?.nationality),
+    preferred_language: toText(profile?.preferred_language),
+    bio: toText(profile?.bio),
+    coffee_profile_label: toText(profile?.coffee_profile_label),
+    coffee_profile_summary: toText(profile?.coffee_profile_summary),
+    coffee_profile_key: toText(profile?.coffee_profile_key),
+    coffee_profile_scores: profile?.coffee_profile_scores ? JSON.stringify(profile.coffee_profile_scores, null, 2) : '',
+  });
+
+  const buildRecordDraft = (type: DetailRecordType, record: Record<string, any>): RecordDraft => {
+    if (type === 'booking') {
+      return {
+        status: toText(record.status),
+        special_requests: toText(record.special_requests),
+        guests: toText(record.guests),
+        total_price: toText(record.total_price),
+        payment_method: toText(record.payment_method),
+        payment_status: toText(record.payment_status),
+        check_in_date: toDateInputValue(record.check_in_date),
+        check_out_date: toDateInputValue(record.check_out_date),
+      };
+    }
+
+    if (type === 'order') {
+      return {
+        status: toText(record.status),
+        payment_status: toText(record.payment_status),
+        payment_method: toText(record.payment_method),
+        total_amount: toText(record.total_amount),
+      };
+    }
+
+    if (type === 'point') {
+      return {
+        transaction_type: toText(record.transaction_type),
+        amount: toText(record.amount),
+        description: toText(record.description),
+        source_type: toText(record.source_type),
+        source_id: toText(record.source_id),
+        reference_id: toText(record.reference_id),
+        vendor_id: toText(record.vendor_id),
+        store_location_id: toText(record.store_location_id),
+      };
+    }
+
+    return {
+      invoice_status: toText(record.invoice_status),
+      invoice_number: toText(record.invoice_number),
+      invoice_random_number: toText(record.invoice_random_number),
+      invoice_date: toDateTimeInputValue(record.invoice_date),
+      buyer_name: toText(record.buyer_name),
+      buyer_email: toText(record.buyer_email),
+      buyer_identifier: toText(record.buyer_identifier),
+      carrier_type: toText(record.carrier_type),
+      carrier_number: toText(record.carrier_number),
+      love_code: toText(record.love_code),
+      tax_type: toText(record.tax_type),
+      sales_amount: toText(record.sales_amount),
+      tax_amount: toText(record.tax_amount),
+      total_amount: toText(record.total_amount),
+      ezpay_trade_no: toText(record.ezpay_trade_no),
+      error_message: toText(record.error_message),
+    };
   };
 
   const fetchUsers = async () => {
@@ -204,6 +324,8 @@ const SuperAdminUsers: React.FC = () => {
     setDetailLoading(true);
     setDetailTab('profile');
     setSelectedRecord(null);
+    setProfileEditing(false);
+    setRecordEditing(false);
 
     const [profileRes, bookingsRes, ordersRes, invoicesRes, pointsRes] = await Promise.all([
       supabase.from('tbl_mn5wgzh0').select('*').eq('user_id', user.user_id).maybeSingle(),
@@ -229,6 +351,160 @@ const SuperAdminUsers: React.FC = () => {
       totalPoints,
     });
     setDetailLoading(false);
+    setProfileDraft(buildProfileDraft(profileRes.data));
+  };
+
+  const openRecordDetail = (type: DetailRecordType, data: Record<string, any>) => {
+    setSelectedRecord({ type, data });
+    setRecordDraft(buildRecordDraft(type, data));
+    setRecordEditing(true);
+  };
+
+  const startProfileEdit = () => {
+    if (!detail?.profile) return;
+    setProfileDraft(buildProfileDraft(detail.profile));
+    setProfileEditing(true);
+  };
+
+  const cancelProfileEdit = () => {
+    setProfileEditing(false);
+    setProfileDraft(buildProfileDraft(detail?.profile));
+  };
+
+  const cancelRecordEdit = () => {
+    if (!selectedRecord) return;
+    setRecordEditing(false);
+    setRecordDraft(buildRecordDraft(selectedRecord.type, selectedRecord.data));
+  };
+
+  const saveProfileChanges = async () => {
+    if (!viewUser) return;
+
+    setProfileSaving(true);
+    try {
+      let coffeeProfileScores: Record<string, unknown> | null = null;
+      if (profileDraft.coffee_profile_scores.trim()) {
+        const parsed = JSON.parse(profileDraft.coffee_profile_scores);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          coffeeProfileScores = parsed;
+        } else {
+          throw new Error('咖啡輪廓分數必須是物件 JSON');
+        }
+      }
+
+      const patch = {
+        user_id: viewUser.user_id,
+        display_name: toNullableText(profileDraft.display_name),
+        phone: toNullableText(profileDraft.phone),
+        nationality: toNullableText(profileDraft.nationality),
+        preferred_language: toNullableText(profileDraft.preferred_language),
+        bio: toNullableText(profileDraft.bio),
+        coffee_profile_label: toNullableText(profileDraft.coffee_profile_label),
+        coffee_profile_summary: toNullableText(profileDraft.coffee_profile_summary),
+        coffee_profile_key: toNullableText(profileDraft.coffee_profile_key),
+        coffee_profile_scores: coffeeProfileScores,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase.from('tbl_mn5wgzh0').upsert(patch, { onConflict: 'user_id' });
+      if (error) throw error;
+
+      await logAdminAction('update_member_profile', 'tbl_mn5wgzh0', viewUser.user_id, patch);
+      setProfileEditing(false);
+      await openDetail(viewUser);
+    } catch (error: any) {
+      alert(error?.message || '會員資料更新失敗');
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  const saveSelectedRecord = async () => {
+    if (!viewUser || !selectedRecord) return;
+
+    setRecordSaving(true);
+    try {
+      const now = new Date().toISOString();
+      let table = '';
+      let payload: Record<string, unknown> = {};
+      const record = selectedRecord.data;
+
+      if (selectedRecord.type === 'booking') {
+        table = 'tbl_bookings';
+        payload = {
+          status: toNullableText(recordDraft.status),
+          special_requests: toNullableText(recordDraft.special_requests),
+          guests: toNullableNumber(recordDraft.guests),
+          total_price: toNullableNumber(recordDraft.total_price),
+          payment_method: toNullableText(recordDraft.payment_method),
+          payment_status: toNullableText(recordDraft.payment_status),
+          check_in_date: toNullableIsoDate(recordDraft.check_in_date),
+          check_out_date: toNullableIsoDate(recordDraft.check_out_date),
+          updated_at: now,
+        };
+      }
+
+      if (selectedRecord.type === 'order') {
+        table = 'orders';
+        payload = {
+          status: toNullableText(recordDraft.status),
+          payment_status: toNullableText(recordDraft.payment_status),
+          payment_method: toNullableText(recordDraft.payment_method),
+          total_amount: toNullableNumber(recordDraft.total_amount),
+          updated_at: now,
+        };
+      }
+
+      if (selectedRecord.type === 'point') {
+        table = 'points';
+        payload = {
+          transaction_type: toNullableText(recordDraft.transaction_type),
+          amount: toNullableNumber(recordDraft.amount),
+          description: toNullableText(recordDraft.description),
+          source_type: toNullableText(recordDraft.source_type),
+          source_id: toNullableText(recordDraft.source_id),
+          reference_id: toNullableText(recordDraft.reference_id),
+          vendor_id: toNullableText(recordDraft.vendor_id),
+          store_location_id: toNullableText(recordDraft.store_location_id),
+          updated_at: now,
+        };
+      }
+
+      if (selectedRecord.type === 'invoice') {
+        table = 'invoices';
+        payload = {
+          invoice_status: toNullableText(recordDraft.invoice_status) || 'pending',
+          invoice_number: toNullableText(recordDraft.invoice_number),
+          invoice_random_number: toNullableText(recordDraft.invoice_random_number),
+          invoice_date: recordDraft.invoice_date ? toNullableIsoDate(recordDraft.invoice_date) : null,
+          buyer_name: toNullableText(recordDraft.buyer_name),
+          buyer_email: toNullableText(recordDraft.buyer_email),
+          buyer_identifier: toNullableText(recordDraft.buyer_identifier),
+          carrier_type: toNullableText(recordDraft.carrier_type),
+          carrier_number: toNullableText(recordDraft.carrier_number),
+          love_code: toNullableText(recordDraft.love_code),
+          tax_type: toNullableText(recordDraft.tax_type),
+          sales_amount: toNullableNumber(recordDraft.sales_amount),
+          tax_amount: toNullableNumber(recordDraft.tax_amount),
+          total_amount: toNullableNumber(recordDraft.total_amount),
+          ezpay_trade_no: toNullableText(recordDraft.ezpay_trade_no),
+          error_message: toNullableText(recordDraft.error_message),
+          updated_at: now,
+        };
+      }
+
+      const { error } = await supabase.from(table).update(payload).eq('id', record.id);
+      if (error) throw error;
+
+      await logAdminAction(`update_${selectedRecord.type}`, table, record.id, payload);
+      setRecordEditing(false);
+      setSelectedRecord(null);
+      await openDetail(viewUser);
+    } catch (error: any) {
+      alert(error?.message || '資料更新失敗');
+    } finally {
+      setRecordSaving(false);
+    }
   };
 
   const updateRole = async (userId: string, role: string) => {
@@ -462,6 +738,37 @@ const SuperAdminUsers: React.FC = () => {
                   <div className="flex justify-center py-12"><div className="h-7 w-7 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" /></div>
                 ) : !detail ? null : detailTab === 'profile' ? (
                   <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-medium text-gray-500">會員資料與偏好設定</div>
+                      {detail.profile && (
+                        profileEditing ? (
+                          <div className="flex items-center gap-2">
+                            <button type="button" onClick={cancelProfileEdit} className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50">取消</button>
+                            <button type="button" onClick={() => void saveProfileChanges()} disabled={profileSaving} className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50">
+                              {profileSaving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Save className="h-4 w-4" />}
+                              儲存變更
+                            </button>
+                          </div>
+                        ) : (
+                          <button type="button" onClick={startProfileEdit} className="rounded-xl bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100">編輯會員資料</button>
+                        )
+                      )}
+                    </div>
+                    {profileEditing && detail.profile && (
+                      <div className="rounded-2xl border border-amber-100 bg-amber-50/30 p-4">
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <EditableField label="顯示名稱" value={profileDraft.display_name} onChange={value => setProfileDraft(current => ({ ...current, display_name: value }))} />
+                          <EditableField label="手機" value={profileDraft.phone} onChange={value => setProfileDraft(current => ({ ...current, phone: value }))} />
+                          <EditableField label="國籍" value={profileDraft.nationality} onChange={value => setProfileDraft(current => ({ ...current, nationality: value }))} />
+                          <EditableField label="偏好語言" value={profileDraft.preferred_language} onChange={value => setProfileDraft(current => ({ ...current, preferred_language: value }))} />
+                          <div className="md:col-span-2"><EditableField label="簡介" value={profileDraft.bio} onChange={value => setProfileDraft(current => ({ ...current, bio: value }))} textarea rows={4} /></div>
+                          <EditableField label="咖啡輪廓標籤" value={profileDraft.coffee_profile_label} onChange={value => setProfileDraft(current => ({ ...current, coffee_profile_label: value }))} />
+                          <EditableField label="咖啡輪廓代碼" value={profileDraft.coffee_profile_key} onChange={value => setProfileDraft(current => ({ ...current, coffee_profile_key: value }))} />
+                          <div className="md:col-span-2"><EditableField label="咖啡輪廓摘要" value={profileDraft.coffee_profile_summary} onChange={value => setProfileDraft(current => ({ ...current, coffee_profile_summary: value }))} textarea rows={4} /></div>
+                          <div className="md:col-span-2"><EditableField label="咖啡輪廓分數 JSON" value={profileDraft.coffee_profile_scores} onChange={value => setProfileDraft(current => ({ ...current, coffee_profile_scores: value }))} textarea rows={8} mono placeholder='{"sweetness": 80}' /></div>
+                        </div>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-4">
                       <InfoItem icon={<Mail className="h-4 w-4" />} label="電子郵件" value={viewUser.email || '-'} />
                       <InfoItem icon={<Calendar className="h-4 w-4" />} label="建立時間" value={formatDateTime(viewUser.created_at)} />
@@ -517,7 +824,7 @@ const SuperAdminUsers: React.FC = () => {
                         <button
                           key={booking.id}
                           type="button"
-                          onClick={() => setSelectedRecord({ type: 'booking', data: booking })}
+                          onClick={() => openRecordDetail('booking', booking)}
                           className="w-full rounded-xl bg-gray-50 p-4 text-left transition hover:bg-amber-50/40"
                         >
                           <div className="flex items-center justify-between gap-4">
@@ -544,7 +851,7 @@ const SuperAdminUsers: React.FC = () => {
                         <button
                           key={order.id}
                           type="button"
-                          onClick={() => setSelectedRecord({ type: 'order', data: order })}
+                          onClick={() => openRecordDetail('order', order)}
                           className="w-full rounded-xl bg-gray-50 p-4 text-left transition hover:bg-amber-50/40"
                         >
                           <div className="flex items-center justify-between gap-4">
@@ -574,7 +881,7 @@ const SuperAdminUsers: React.FC = () => {
                         <button
                           key={invoice.id}
                           type="button"
-                          onClick={() => setSelectedInvoice(invoice as InvoiceDetail)}
+                          onClick={() => openRecordDetail('invoice', invoice)}
                           className="w-full rounded-2xl border border-gray-100 bg-gray-50 p-4 text-left transition hover:border-amber-200 hover:bg-amber-50/30"
                         >
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -645,7 +952,7 @@ const SuperAdminUsers: React.FC = () => {
                           <button
                             key={point.id}
                             type="button"
-                            onClick={() => setSelectedRecord({ type: 'point', data: point })}
+                            onClick={() => openRecordDetail('point', point)}
                             className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition hover:bg-gray-50"
                           >
                             <div>
@@ -711,6 +1018,74 @@ const SuperAdminUsers: React.FC = () => {
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-6">
+                      {recordEditing && (
+                        <div className="mb-6 space-y-4 rounded-2xl border border-amber-100 bg-amber-50/30 p-4">
+                          <div className="text-sm font-semibold text-amber-800">編輯模式</div>
+                          {selectedRecord.type === 'booking' && (
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <EditableField label="狀態" value={recordDraft.status || ''} onChange={value => setRecordDraft(current => ({ ...current, status: value }))} />
+                              <EditableField label="付款狀態" value={recordDraft.payment_status || ''} onChange={value => setRecordDraft(current => ({ ...current, payment_status: value }))} />
+                              <EditableField label="付款方式" value={recordDraft.payment_method || ''} onChange={value => setRecordDraft(current => ({ ...current, payment_method: value }))} />
+                              <EditableField label="人數" value={recordDraft.guests || ''} onChange={value => setRecordDraft(current => ({ ...current, guests: value }))} type="number" />
+                              <EditableField label="總金額" value={recordDraft.total_price || ''} onChange={value => setRecordDraft(current => ({ ...current, total_price: value }))} type="number" />
+                              <EditableField label="入住日" value={recordDraft.check_in_date || ''} onChange={value => setRecordDraft(current => ({ ...current, check_in_date: value }))} type="date" />
+                              <EditableField label="退房日" value={recordDraft.check_out_date || ''} onChange={value => setRecordDraft(current => ({ ...current, check_out_date: value }))} type="date" />
+                              <div className="md:col-span-2">
+                                <EditableField label="特殊需求" value={recordDraft.special_requests || ''} onChange={value => setRecordDraft(current => ({ ...current, special_requests: value }))} textarea rows={4} />
+                              </div>
+                            </div>
+                          )}
+                          {selectedRecord.type === 'order' && (
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <EditableField label="訂單狀態" value={recordDraft.status || ''} onChange={value => setRecordDraft(current => ({ ...current, status: value }))} />
+                              <EditableField label="付款狀態" value={recordDraft.payment_status || ''} onChange={value => setRecordDraft(current => ({ ...current, payment_status: value }))} />
+                              <EditableField label="付款方式" value={recordDraft.payment_method || ''} onChange={value => setRecordDraft(current => ({ ...current, payment_method: value }))} />
+                              <EditableField label="總金額" value={recordDraft.total_amount || ''} onChange={value => setRecordDraft(current => ({ ...current, total_amount: value }))} type="number" />
+                            </div>
+                          )}
+                          {selectedRecord.type === 'point' && (
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <EditableField label="交易類型" value={recordDraft.transaction_type || ''} onChange={value => setRecordDraft(current => ({ ...current, transaction_type: value }))} />
+                              <EditableField label="點數" value={recordDraft.amount || ''} onChange={value => setRecordDraft(current => ({ ...current, amount: value }))} type="number" />
+                              <EditableField label="說明" value={recordDraft.description || ''} onChange={value => setRecordDraft(current => ({ ...current, description: value }))} textarea rows={3} />
+                              <EditableField label="來源類型" value={recordDraft.source_type || ''} onChange={value => setRecordDraft(current => ({ ...current, source_type: value }))} />
+                              <EditableField label="來源 ID" value={recordDraft.source_id || ''} onChange={value => setRecordDraft(current => ({ ...current, source_id: value }))} mono />
+                              <EditableField label="Reference ID" value={recordDraft.reference_id || ''} onChange={value => setRecordDraft(current => ({ ...current, reference_id: value }))} mono />
+                              <EditableField label="Vendor ID" value={recordDraft.vendor_id || ''} onChange={value => setRecordDraft(current => ({ ...current, vendor_id: value }))} mono />
+                              <EditableField label="門市 ID" value={recordDraft.store_location_id || ''} onChange={value => setRecordDraft(current => ({ ...current, store_location_id: value }))} mono />
+                            </div>
+                          )}
+                          {selectedRecord.type === 'invoice' && (
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <EditableField label="發票狀態" value={recordDraft.invoice_status || ''} onChange={value => setRecordDraft(current => ({ ...current, invoice_status: value }))} />
+                              <EditableField label="開立時間" value={recordDraft.invoice_date || ''} onChange={value => setRecordDraft(current => ({ ...current, invoice_date: value }))} type="datetime-local" />
+                              <EditableField label="發票號碼" value={recordDraft.invoice_number || ''} onChange={value => setRecordDraft(current => ({ ...current, invoice_number: value }))} mono />
+                              <EditableField label="隨機碼" value={recordDraft.invoice_random_number || ''} onChange={value => setRecordDraft(current => ({ ...current, invoice_random_number: value }))} mono />
+                              <EditableField label="買受人姓名" value={recordDraft.buyer_name || ''} onChange={value => setRecordDraft(current => ({ ...current, buyer_name: value }))} />
+                              <EditableField label="買受人 Email" value={recordDraft.buyer_email || ''} onChange={value => setRecordDraft(current => ({ ...current, buyer_email: value }))} type="email" />
+                              <EditableField label="買受人統編" value={recordDraft.buyer_identifier || ''} onChange={value => setRecordDraft(current => ({ ...current, buyer_identifier: value }))} mono />
+                              <EditableField label="載具類型" value={recordDraft.carrier_type || ''} onChange={value => setRecordDraft(current => ({ ...current, carrier_type: value }))} />
+                              <EditableField label="載具號碼" value={recordDraft.carrier_number || ''} onChange={value => setRecordDraft(current => ({ ...current, carrier_number: value }))} mono />
+                              <EditableField label="愛心碼" value={recordDraft.love_code || ''} onChange={value => setRecordDraft(current => ({ ...current, love_code: value }))} mono />
+                              <EditableField label="稅別" value={recordDraft.tax_type || ''} onChange={value => setRecordDraft(current => ({ ...current, tax_type: value }))} />
+                              <EditableField label="銷售金額" value={recordDraft.sales_amount || ''} onChange={value => setRecordDraft(current => ({ ...current, sales_amount: value }))} type="number" />
+                              <EditableField label="稅額" value={recordDraft.tax_amount || ''} onChange={value => setRecordDraft(current => ({ ...current, tax_amount: value }))} type="number" />
+                              <EditableField label="總金額" value={recordDraft.total_amount || ''} onChange={value => setRecordDraft(current => ({ ...current, total_amount: value }))} type="number" />
+                              <EditableField label="ezPay Trade No" value={recordDraft.ezpay_trade_no || ''} onChange={value => setRecordDraft(current => ({ ...current, ezpay_trade_no: value }))} mono />
+                              <div className="md:col-span-2">
+                                <EditableField label="錯誤訊息" value={recordDraft.error_message || ''} onChange={value => setRecordDraft(current => ({ ...current, error_message: value }))} textarea rows={4} />
+                              </div>
+                            </div>
+                          )}
+                          <div className="flex justify-end gap-2">
+                            <button type="button" onClick={cancelRecordEdit} className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-white">取消</button>
+                            <button type="button" onClick={() => void saveSelectedRecord()} disabled={recordSaving} className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50">
+                              {recordSaving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Save className="h-4 w-4" />}
+                              儲存變更
+                            </button>
+                          </div>
+                        </div>
+                      )}
                       {selectedRecord.type === 'booking' && (
                         <div className="space-y-4">
                           <div className="grid gap-4 md:grid-cols-2">
@@ -838,6 +1213,38 @@ const InfoItem: React.FC<{ icon: React.ReactNode; label: string; value: string; 
     <div className="mb-1 flex items-center gap-1.5 text-gray-400">{icon}<span className="text-xs">{label}</span></div>
     <p className={`text-sm text-gray-900 ${mono ? 'break-all font-mono text-xs' : ''}`}>{value}</p>
   </div>
+);
+
+const EditableField: React.FC<{
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+  placeholder?: string;
+  rows?: number;
+  mono?: boolean;
+  textarea?: boolean;
+}> = ({ label, value, onChange, type = 'text', placeholder, rows = 3, mono, textarea }) => (
+  <label className="block rounded-xl bg-gray-50 p-3">
+    <span className="mb-2 block text-xs font-medium text-gray-400">{label}</span>
+    {textarea ? (
+      <textarea
+        value={value}
+        onChange={event => onChange(event.target.value)}
+        rows={rows}
+        placeholder={placeholder}
+        className={`w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400/40 ${mono ? 'font-mono text-xs' : ''}`}
+      />
+    ) : (
+      <input
+        type={type}
+        value={value}
+        onChange={event => onChange(event.target.value)}
+        placeholder={placeholder}
+        className={`w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400/40 ${mono ? 'font-mono text-xs' : ''}`}
+      />
+    )}
+  </label>
 );
 
 export default SuperAdminUsers;
