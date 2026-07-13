@@ -27,10 +27,10 @@ interface UserDetail {
 
 const ROLE_OPTIONS = ['user', 'vendor', 'admin', 'superadmin'] as const;
 const ROLE_LABELS: Record<string, string> = {
-  user: 'User',
-  vendor: 'Vendor',
-  admin: 'Admin',
-  superadmin: 'Super Admin',
+  user: '一般會員',
+  vendor: '商家',
+  admin: '管理員',
+  superadmin: '超級管理員',
 };
 const ROLE_COLORS: Record<string, string> = {
   superadmin: 'bg-amber-100 text-amber-700',
@@ -133,11 +133,11 @@ const SuperAdminUsers: React.FC = () => {
 
   const handleCreateUser = async () => {
     if (!createForm.email || !createForm.password) {
-      setCreateError('Please enter email and password');
+      setCreateError('請輸入電子郵件與密碼');
       return;
     }
     if (createForm.password.length < 6) {
-      setCreateError('Password must be at least 6 characters');
+      setCreateError('密碼至少需要 6 個字元');
       return;
     }
     setCreating(true);
@@ -153,12 +153,12 @@ const SuperAdminUsers: React.FC = () => {
         body: JSON.stringify(createForm),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Create user failed');
+      if (!res.ok) throw new Error(data.error || '建立會員失敗');
       setShowCreate(false);
       setCreateForm({ email: '', password: '', display_name: '', role: 'user' });
       fetchUsers();
     } catch (err: any) {
-      setCreateError(err.message || 'Create user failed');
+      setCreateError(err.message || '建立會員失敗');
     } finally {
       setCreating(false);
     }
@@ -191,7 +191,7 @@ const SuperAdminUsers: React.FC = () => {
 
   const updateRole = async (userId: string, role: string) => {
     if (userId === currentUser?.id) return;
-    if (!window.confirm(`Change role to ${role}?`)) return;
+    if (!window.confirm(`確定要將角色改為「${ROLE_LABELS[role] || role}」嗎？`)) return;
     setUpdating(userId);
     await supabase.from('tbl_user_auth').update({ role, updated_at: new Date().toISOString() }).eq('user_id', userId);
     await logAdminAction('update_user_role', 'tbl_user_auth', userId, { role });
@@ -201,7 +201,7 @@ const SuperAdminUsers: React.FC = () => {
 
   const toggleActive = async (userId: string, current: boolean) => {
     if (userId === currentUser?.id) return;
-    if (!window.confirm(`Are you sure you want to ${current ? 'deactivate' : 'activate'} this user?`)) return;
+    if (!window.confirm(`確定要${current ? '停用' : '啟用'}這位會員嗎？`)) return;
     setUpdating(userId);
     await supabase.from('tbl_user_auth').update({ is_active: !current, updated_at: new Date().toISOString() }).eq('user_id', userId);
     await logAdminAction(current ? 'deactivate_user' : 'activate_user', 'tbl_user_auth', userId);
@@ -215,12 +215,12 @@ const SuperAdminUsers: React.FC = () => {
     <div className="space-y-6">
       <div className="mb-2 flex items-center gap-3">
         <div className="rounded-xl bg-amber-100 p-2"><Users className="h-6 w-6 text-amber-700" /></div>
-        <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-        <span className="ml-1 text-sm text-gray-400">Total {total}</span>
+        <h1 className="text-2xl font-bold text-gray-900">會員管理</h1>
+        <span className="ml-1 text-sm text-gray-400">共 {total} 筆</span>
         <div className="flex-1" />
         <button onClick={() => { setShowCreate(true); setCreateError(''); }} className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600">
           <Plus className="h-4 w-4" />
-          New user
+          新增會員
         </button>
       </div>
 
@@ -229,40 +229,40 @@ const SuperAdminUsers: React.FC = () => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
               <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-                <h3 className="font-semibold text-gray-900">Create user</h3>
+                <h3 className="font-semibold text-gray-900">新增會員</h3>
                 <button onClick={() => setShowCreate(false)} className="rounded-lg p-1 hover:bg-gray-100"><X className="h-5 w-5 text-gray-400" /></button>
               </div>
               <div className="space-y-4 p-6">
                 {createError && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{createError}</div>}
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">電子郵件</label>
                   <input type="email" value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} placeholder="user@example.com" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Password</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">密碼</label>
                   <div className="relative">
-                    <input type={showPw ? 'text' : 'password'} value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} placeholder="At least 6 characters" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40" />
+                    <input type={showPw ? 'text' : 'password'} value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} placeholder="至少 6 個字元" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40" />
                     <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                       {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Display name</label>
-                  <input type="text" value={createForm.display_name} onChange={e => setCreateForm({ ...createForm, display_name: e.target.value })} placeholder="Optional" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40" />
+                  <label className="mb-1 block text-sm font-medium text-gray-700">顯示名稱</label>
+                  <input type="text" value={createForm.display_name} onChange={e => setCreateForm({ ...createForm, display_name: e.target.value })} placeholder="可留空" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Role</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">角色</label>
                   <select value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40">
                     {ROLE_OPTIONS.map(role => <option key={role} value={role}>{ROLE_LABELS[role]}</option>)}
                   </select>
                 </div>
               </div>
               <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
-                <button onClick={() => setShowCreate(false)} className="rounded-xl px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100">Cancel</button>
+                <button onClick={() => setShowCreate(false)} className="rounded-xl px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100">取消</button>
                 <button onClick={handleCreateUser} disabled={creating} className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50">
                   {creating ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Save className="h-4 w-4" />}
-                  Create
+                  建立
                 </button>
               </div>
             </motion.div>
@@ -276,12 +276,12 @@ const SuperAdminUsers: React.FC = () => {
           <input
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(0); }}
-            placeholder="Search by name, email, or user ID"
+            placeholder="搜尋姓名、電子郵件或會員 ID"
             className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
           />
         </div>
         <select value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(0); }} className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
-          <option value="all">All roles</option>
+          <option value="all">所有角色</option>
           {ROLE_OPTIONS.map(role => <option key={role} value={role}>{ROLE_LABELS[role]}</option>)}
         </select>
       </div>
@@ -290,18 +290,18 @@ const SuperAdminUsers: React.FC = () => {
         {loading ? (
           <div className="flex justify-center py-16"><div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" /></div>
         ) : users.length === 0 ? (
-          <div className="py-16 text-center text-gray-400"><Users className="mx-auto mb-2 h-10 w-10 opacity-20" /><p className="text-sm">No users found</p></div>
+          <div className="py-16 text-center text-gray-400"><Users className="mx-auto mb-2 h-10 w-10 opacity-20" /><p className="text-sm">找不到符合條件的會員</p></div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="px-5 py-3 text-left font-medium text-gray-500">User</th>
-                  <th className="hidden px-5 py-3 text-left font-medium text-gray-500 md:table-cell">User ID</th>
-                  <th className="px-5 py-3 text-center font-medium text-gray-500">Role</th>
-                  <th className="px-5 py-3 text-center font-medium text-gray-500">Status</th>
-                  <th className="hidden px-5 py-3 text-left font-medium text-gray-500 lg:table-cell">Created at</th>
-                  <th className="px-5 py-3 text-right font-medium text-gray-500">Actions</th>
+                  <th className="px-5 py-3 text-left font-medium text-gray-500">會員</th>
+                  <th className="hidden px-5 py-3 text-left font-medium text-gray-500 md:table-cell">會員 ID</th>
+                  <th className="px-5 py-3 text-center font-medium text-gray-500">角色</th>
+                  <th className="px-5 py-3 text-center font-medium text-gray-500">狀態</th>
+                  <th className="hidden px-5 py-3 text-left font-medium text-gray-500 lg:table-cell">建立時間</th>
+                  <th className="px-5 py-3 text-right font-medium text-gray-500">操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -319,16 +319,16 @@ const SuperAdminUsers: React.FC = () => {
                           {user.display_name?.[0] || '?'}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-medium text-gray-900">{user.display_name || 'Unnamed user'}</p>
+                          <p className="font-medium text-gray-900">{user.display_name || '未命名會員'}</p>
                           {user.email && <p className="truncate text-xs text-gray-400">{user.email}</p>}
-                          {user.user_id === currentUser?.id && <span className="text-xs text-amber-600">(You)</span>}
+                          {user.user_id === currentUser?.id && <span className="text-xs text-amber-600">(你)</span>}
                         </div>
                       </div>
                     </td>
                     <td className="hidden px-5 py-3.5 md:table-cell">
-                      <button onClick={() => navigator.clipboard.writeText(user.user_id)} title="Copy user ID" className="group flex items-center gap-1 transition hover:text-amber-600">
+                      <button onClick={() => navigator.clipboard.writeText(user.user_id)} title="複製會員 ID" className="group flex items-center gap-1 transition hover:text-amber-600">
                         <code className="font-mono text-xs text-gray-400 group-hover:text-amber-600">{user.user_id.slice(-12)}</code>
-                        <span className="text-xs text-gray-300 opacity-0 transition group-hover:opacity-100 group-hover:text-amber-400">Copy</span>
+                        <span className="text-xs text-gray-300 opacity-0 transition group-hover:opacity-100 group-hover:text-amber-400">複製</span>
                       </button>
                     </td>
                     <td className="px-5 py-3.5 text-center">
@@ -347,13 +347,13 @@ const SuperAdminUsers: React.FC = () => {
                     </td>
                     <td className="px-5 py-3.5 text-center">
                       <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                        {user.is_active ? 'Active' : 'Inactive'}
+                        {user.is_active ? '啟用' : '停用'}
                       </span>
                     </td>
                     <td className="hidden px-5 py-3.5 text-xs text-gray-400 lg:table-cell">{formatDate(user.created_at)}</td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => openDetail(user)} className="rounded-xl p-2 text-amber-600 transition hover:bg-amber-50" title="View detail">
+                        <button onClick={() => openDetail(user)} className="rounded-xl p-2 text-amber-600 transition hover:bg-amber-50" title="查看詳情">
                           <Eye className="h-4 w-4" />
                         </button>
                         {user.user_id !== currentUser?.id && (
@@ -361,7 +361,7 @@ const SuperAdminUsers: React.FC = () => {
                             onClick={() => toggleActive(user.user_id, user.is_active)}
                             disabled={updating === user.user_id}
                             className={`rounded-xl p-2 transition disabled:opacity-50 ${user.is_active ? 'text-red-500 hover:bg-red-50' : 'text-green-600 hover:bg-green-50'}`}
-                            title={user.is_active ? 'Deactivate' : 'Activate'}
+                            title={user.is_active ? '停用' : '啟用'}
                           >
                             {updating === user.user_id ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : user.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                           </button>
@@ -386,10 +386,10 @@ const SuperAdminUsers: React.FC = () => {
                     {viewUser.display_name?.[0] || '?'}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">{viewUser.display_name || 'Unnamed user'}</h3>
+                    <h3 className="font-semibold text-gray-900">{viewUser.display_name || '未命名會員'}</h3>
                     <div className="mt-0.5 flex items-center gap-2">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_COLORS[viewUser.role]}`}>{ROLE_LABELS[viewUser.role]}</span>
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${viewUser.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>{viewUser.is_active ? 'Active' : 'Inactive'}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${viewUser.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>{viewUser.is_active ? '啟用' : '停用'}</span>
                     </div>
                   </div>
                 </div>
@@ -398,10 +398,10 @@ const SuperAdminUsers: React.FC = () => {
 
               <div className="flex flex-shrink-0 border-b border-gray-100 px-6">
                 {([
-                  { key: 'profile', label: 'Profile', icon: <Users className="h-3.5 w-3.5" /> },
-                  { key: 'bookings', label: 'Bookings', icon: <BedDouble className="h-3.5 w-3.5" /> },
-                  { key: 'orders', label: 'Orders', icon: <ShoppingBag className="h-3.5 w-3.5" /> },
-                  { key: 'points', label: 'Points', icon: <Award className="h-3.5 w-3.5" /> },
+                  { key: 'profile', label: '會員資料', icon: <Users className="h-3.5 w-3.5" /> },
+                  { key: 'bookings', label: '訂房紀錄', icon: <BedDouble className="h-3.5 w-3.5" /> },
+                  { key: 'orders', label: '訂單紀錄', icon: <ShoppingBag className="h-3.5 w-3.5" /> },
+                  { key: 'points', label: '點數紀錄', icon: <Award className="h-3.5 w-3.5" /> },
                 ] as const).map(tab => (
                   <button
                     key={tab.key}
@@ -420,32 +420,32 @@ const SuperAdminUsers: React.FC = () => {
                 ) : !detail ? null : detailTab === 'profile' ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                      <InfoItem icon={<Mail className="h-4 w-4" />} label="Email" value={viewUser.email || '-'} />
-                      <InfoItem icon={<Calendar className="h-4 w-4" />} label="Created at" value={formatDateTime(viewUser.created_at)} />
+                      <InfoItem icon={<Mail className="h-4 w-4" />} label="電子郵件" value={viewUser.email || '-'} />
+                      <InfoItem icon={<Calendar className="h-4 w-4" />} label="建立時間" value={formatDateTime(viewUser.created_at)} />
                       <div className="col-span-2">
-                        <InfoItem icon={<FileText className="h-4 w-4" />} label="User ID" value={viewUser.user_id} mono />
+                        <InfoItem icon={<FileText className="h-4 w-4" />} label="會員 ID" value={viewUser.user_id} mono />
                       </div>
                     </div>
                     {detail.profile ? (
                       <>
                         <div className="grid grid-cols-2 gap-4">
-                          <InfoItem icon={<Users className="h-4 w-4" />} label="Display name" value={detail.profile.display_name || '-'} />
-                          <InfoItem icon={<Phone className="h-4 w-4" />} label="Phone" value={detail.profile.phone || '-'} />
-                          <InfoItem icon={<Globe className="h-4 w-4" />} label="Nationality" value={detail.profile.nationality || '-'} />
-                          <InfoItem icon={<Globe className="h-4 w-4" />} label="Preferred language" value={detail.profile.preferred_language || '-'} />
+                          <InfoItem icon={<Users className="h-4 w-4" />} label="顯示名稱" value={detail.profile.display_name || '-'} />
+                          <InfoItem icon={<Phone className="h-4 w-4" />} label="手機" value={detail.profile.phone || '-'} />
+                          <InfoItem icon={<Globe className="h-4 w-4" />} label="國籍" value={detail.profile.nationality || '-'} />
+                          <InfoItem icon={<Globe className="h-4 w-4" />} label="偏好語言" value={detail.profile.preferred_language || '-'} />
                           <div className="col-span-2">
-                            <InfoItem icon={<FileText className="h-4 w-4" />} label="Bio" value={detail.profile.bio || '-'} />
+                            <InfoItem icon={<FileText className="h-4 w-4" />} label="簡介" value={detail.profile.bio || '-'} />
                           </div>
                         </div>
                         {(detail.profile.coffee_profile_label || detail.profile.coffee_profile_summary) && (
                           <div className="mt-4 rounded-2xl border border-[#eadfce] bg-gradient-to-br from-[#fff9f0] to-white p-4">
                             <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#8a5a22]">
                               <Coffee className="h-4 w-4" />
-                              Coffee profile
+                              咖啡測驗結果
                             </div>
                             <p className="text-base font-bold text-[#3b2a19]">{detail.profile.coffee_profile_label || '-'}</p>
                             {detail.profile.coffee_profile_summary && <p className="mt-2 text-sm leading-7 text-gray-700">{detail.profile.coffee_profile_summary}</p>}
-                            {detail.profile.coffee_profile_key && <p className="mt-3 text-xs text-gray-400">Key: {detail.profile.coffee_profile_key}</p>}
+                            {detail.profile.coffee_profile_key && <p className="mt-3 text-xs text-gray-400">代號：{detail.profile.coffee_profile_key}</p>}
                             {detail.profile.coffee_profile_scores && Object.keys(detail.profile.coffee_profile_scores).length > 0 && (
                               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                                 {Object.entries(detail.profile.coffee_profile_scores).map(([key, value]) => (
@@ -462,19 +462,19 @@ const SuperAdminUsers: React.FC = () => {
                         )}
                       </>
                     ) : (
-                      <div className="rounded-xl bg-gray-50 p-4 text-center text-sm text-gray-400">No profile data</div>
+                      <div className="rounded-xl bg-gray-50 p-4 text-center text-sm text-gray-400">沒有會員資料</div>
                     )}
                   </div>
                 ) : detailTab === 'bookings' ? (
                   detail.bookings.length === 0 ? (
-                    <div className="py-10 text-center text-gray-400"><BedDouble className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">No bookings</p></div>
+                    <div className="py-10 text-center text-gray-400"><BedDouble className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">沒有訂房紀錄</p></div>
                   ) : (
                     <div className="space-y-3">
                       {detail.bookings.map((booking: any) => (
                         <div key={booking.id} className="flex items-center justify-between gap-4 rounded-xl bg-gray-50 p-4">
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-gray-900">{booking.tbl_rooms?.name || 'Room'}</p>
-                            <p className="mt-0.5 text-xs text-gray-500">{formatDate(booking.check_in_date)} ~ {formatDate(booking.check_out_date)} / {booking.guests} guests</p>
+                            <p className="mt-0.5 text-xs text-gray-500">{formatDate(booking.check_in_date)} ~ {formatDate(booking.check_out_date)} / {booking.guests} 位</p>
                           </div>
                           <div className="flex-shrink-0 text-right">
                             <p className="text-sm font-semibold text-gray-900">{formatCurrency(booking.total_price)}</p>
@@ -486,7 +486,7 @@ const SuperAdminUsers: React.FC = () => {
                   )
                 ) : detailTab === 'orders' ? (
                   detail.orders.length === 0 ? (
-                    <div className="py-10 text-center text-gray-400"><ShoppingBag className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">No orders</p></div>
+                    <div className="py-10 text-center text-gray-400"><ShoppingBag className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">沒有訂單紀錄</p></div>
                   ) : (
                     <div className="space-y-3">
                       {detail.orders.map((order: any) => (
@@ -509,17 +509,17 @@ const SuperAdminUsers: React.FC = () => {
                 ) : (
                   <>
                     <div className="mb-4 flex items-center justify-between rounded-xl bg-amber-50 p-4">
-                      <span className="text-sm font-medium text-amber-800">Total points</span>
+                      <span className="text-sm font-medium text-amber-800">總點數</span>
                       <span className="text-lg font-bold text-amber-700">{detail.totalPoints.toLocaleString()}</span>
                     </div>
                     {detail.points.length === 0 ? (
-                      <div className="py-10 text-center text-gray-400"><Award className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">No point records</p></div>
+                      <div className="py-10 text-center text-gray-400"><Award className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">沒有點數紀錄</p></div>
                     ) : (
                       <div className="space-y-2">
                         {detail.points.map((point: any) => (
                           <div key={point.id} className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-gray-50">
                             <div>
-                              <p className="text-sm text-gray-900">{point.description || 'Point record'}</p>
+                              <p className="text-sm text-gray-900">{point.description || '點數紀錄'}</p>
                               <p className="text-xs text-gray-400">{formatDateTime(point.created_at)}</p>
                             </div>
                             <span className={`text-sm font-semibold ${point.transaction_type === 'earned' ? 'text-green-600' : point.transaction_type === 'spent' ? 'text-red-500' : 'text-gray-400'}`}>
@@ -539,9 +539,9 @@ const SuperAdminUsers: React.FC = () => {
 
       {total > PAGE_SIZE && (
         <div className="flex items-center justify-center gap-2">
-          <button disabled={page === 0} onClick={() => setPage(current => current - 1)} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Previous</button>
-          <span className="text-sm text-gray-500">Page {page + 1} / {Math.ceil(total / PAGE_SIZE)}</span>
-          <button disabled={(page + 1) * PAGE_SIZE >= total} onClick={() => setPage(current => current + 1)} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">Next</button>
+          <button disabled={page === 0} onClick={() => setPage(current => current - 1)} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">上一頁</button>
+          <span className="text-sm text-gray-500">第 {page + 1} 頁 / 共 {Math.ceil(total / PAGE_SIZE)} 頁</span>
+          <button disabled={(page + 1) * PAGE_SIZE >= total} onClick={() => setPage(current => current + 1)} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">下一頁</button>
         </div>
       )}
     </div>
