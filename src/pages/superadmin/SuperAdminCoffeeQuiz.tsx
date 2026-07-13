@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart3, Check, Coffee, Plus, Save, Trash2, Upload } from 'lucide-react';
+import { BarChart3, Check, ChevronDown, ChevronUp, Coffee, Plus, Save, Trash2, Upload } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { logAdminAction } from '../../lib/auditLog';
 
@@ -31,12 +31,19 @@ interface SubmissionRow {
   created_at: string;
 }
 
-const EMPTY_OPTIONS: Record<OptionKey, { option_text: string; score: number }> = {
+interface OptionDraft {
+  option_text: string;
+  score: number;
+}
+
+const EMPTY_OPTIONS: Record<OptionKey, OptionDraft> = {
   A: { option_text: '', score: 1 },
   B: { option_text: '', score: 1 },
   C: { option_text: '', score: 1 },
   D: { option_text: '', score: 1 },
 };
+
+const optionKeys: OptionKey[] = ['A', 'B', 'C', 'D'];
 
 export default function SuperAdminCoffeeQuiz() {
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
@@ -45,12 +52,13 @@ export default function SuperAdminCoffeeQuiz() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  const [openQuestionId, setOpenQuestionId] = useState<string | null>(null);
 
   const [questionText, setQuestionText] = useState('');
   const [questionOrder, setQuestionOrder] = useState(1);
   const [questionActive, setQuestionActive] = useState(true);
   const [questionImage, setQuestionImage] = useState('');
-  const [formOptions, setFormOptions] = useState(EMPTY_OPTIONS);
+  const [formOptions, setFormOptions] = useState<Record<OptionKey, OptionDraft>>(EMPTY_OPTIONS);
 
   const stats = useMemo(() => {
     const byType: Record<string, number> = {};
@@ -63,7 +71,11 @@ export default function SuperAdminCoffeeQuiz() {
     const [qRes, oRes, sRes] = await Promise.all([
       supabase.from('coffee_quiz_questions').select('*').order('display_order', { ascending: true }),
       supabase.from('coffee_quiz_question_options').select('*').order('display_order', { ascending: true }),
-      supabase.from('coffee_quiz_submissions').select('id,member_name,member_phone,member_email,result_type,created_at').order('created_at', { ascending: false }).limit(200),
+      supabase
+        .from('coffee_quiz_submissions')
+        .select('id,member_name,member_phone,member_email,result_type,created_at')
+        .order('created_at', { ascending: false })
+        .limit(200),
     ]);
     setQuestions((qRes.data || []) as QuestionRow[]);
     setOptions((oRes.data || []) as OptionRow[]);
@@ -75,17 +87,27 @@ export default function SuperAdminCoffeeQuiz() {
     loadAll();
   }, []);
 
-  const uploadImage = async (file: File) => {
+  const uploadImage = async (file: File, onDone: (url: string) => void) => {
     const ext = file.name.split('.').pop() || 'jpg';
     const path = `coffee-quiz/question-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('site-assets').upload(path, file, { upsert: true, contentType: file.type || undefined });
-    if (error) return;
+    const { error } = await supabase.storage.from('site-assets').upload(path, file, {
+      upsert: true,
+      contentType: file.type || undefined,
+    });
+    if (error) {
+      setMsg(`圖片上傳失敗：${error.message}`);
+      return;
+    }
     const { data } = supabase.storage.from('site-assets').getPublicUrl(path);
-    setQuestionImage(data.publicUrl);
+    onDone(data.publicUrl);
   };
 
   const createQuestion = async () => {
-    if (!questionText.trim()) return;
+    if (!questionText.trim()) {
+      setMsg('請先輸入題目。');
+      return;
+    }
+
     setSaving(true);
     setMsg('');
 
@@ -102,37 +124,40 @@ export default function SuperAdminCoffeeQuiz() {
 
     if (error || !data) {
       setSaving(false);
-      setMsg(`建立失敗：${error?.message || 'unknown error'}`);
+      setMsg(`建立題目失敗：${error?.message || 'unknown error'}`);
       return;
     }
-    const questionId = data.id;
 
-    const rows = (Object.keys(formOptions) as OptionKey[]).map((key, index) => ({
-      question_id: data.id,
+    const questionId = data.id as string;
+    const rows = optionKeys.map((key, index) => ({
+      question_id: questionId,
       option_key: key,
       option_text: formOptions[key].option_text.trim() || key,
       score: Number(formOptions[key].score) || 0,
       display_order: index + 1,
     }));
+
     const { error: optionError } = await supabase.from('coffee_quiz_question_options').insert(rows);
     if (optionError) {
       setSaving(false);
-      setMsg(`選項建立失敗：${optionError.message}`);
+      setMsg(`建立選項失敗：${optionError.message}`);
       return;
     }
 
     await logAdminAction('create_coffee_quiz_question', 'coffee_quiz_questions', questionId, {
       question_text: questionText.trim(),
       display_order: questionOrder,
+      image_url: questionImage || null,
     });
 
     setQuestionText('');
-    setQuestionOrder((v) => v + 1);
+    setQuestionOrder(v => v + 1);
     setQuestionImage('');
     setFormOptions(EMPTY_OPTIONS);
     setSaving(false);
-    setMsg('題目已新增');
+    setMsg('題目已新增。');
     await loadAll();
+    setOpenQuestionId(questionId);
   };
 
   const updateQuestionOption = async (id: string, patch: Partial<OptionRow>) => {
@@ -143,22 +168,37 @@ export default function SuperAdminCoffeeQuiz() {
   const updateQuestion = async (id: string, patch: Partial<QuestionRow>) => {
     await supabase.from('coffee_quiz_questions').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id);
     await logAdminAction('update_coffee_quiz_question', 'coffee_quiz_questions', id, patch as Record<string, unknown>);
+    setQuestions(prev => prev.map(item => (item.id === id ? { ...item, ...patch } : item)));
   };
 
   const deleteQuestion = async (id: string) => {
-    if (!window.confirm('確定刪除這題？')) return;
+    if (!window.confirm('確定要刪除這題嗎？')) return;
     await supabase.from('coffee_quiz_questions').delete().eq('id', id);
     await logAdminAction('delete_coffee_quiz_question', 'coffee_quiz_questions', id);
     await loadAll();
+    if (openQuestionId === id) setOpenQuestionId(null);
   };
+
+  const groupedQuestions = useMemo(
+    () =>
+      questions.map(question => ({
+        question,
+        opts: options
+          .filter(option => option.question_id === question.id)
+          .sort((a, b) => a.display_order - b.display_order),
+      })),
+    [questions, options],
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <div className="rounded-xl bg-amber-100 p-2 text-amber-700"><Coffee className="h-6 w-6" /></div>
+        <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
+          <Coffee className="h-6 w-6" />
+        </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">AI咖啡尋豆師管理</h1>
-          <p className="text-sm text-gray-500">題目編輯、分數設定、圖片上傳、測驗結果統計</p>
+          <h1 className="text-2xl font-bold text-gray-900">咖啡 AI 測驗</h1>
+          <p className="text-sm text-gray-500">可新增題目、替換圖片，並用收合列表管理既有題目。</p>
         </div>
       </div>
 
@@ -167,12 +207,63 @@ export default function SuperAdminCoffeeQuiz() {
       <section className="rounded-2xl bg-white p-5 shadow-sm">
         <h2 className="mb-4 text-lg font-bold text-gray-900">新增題目</h2>
         <div className="grid gap-3 md:grid-cols-2">
-          <input value={questionText} onChange={e => setQuestionText(e.target.value)} placeholder="題目內容" className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm" />
-          <input type="number" value={questionOrder} onChange={e => setQuestionOrder(Number(e.target.value) || 1)} placeholder="順序" className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm" />
-          <input value={questionImage} onChange={e => setQuestionImage(e.target.value)} placeholder="題目圖片 URL" className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm md:col-span-2" />
+          <input
+            value={questionText}
+            onChange={e => setQuestionText(e.target.value)}
+            placeholder="題目文字"
+            className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm"
+          />
+          <input
+            type="number"
+            value={questionOrder}
+            onChange={e => setQuestionOrder(Number(e.target.value) || 1)}
+            placeholder="排序"
+            className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm"
+          />
+          <div className="md:col-span-2">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3">
+              <p className="mb-2 text-xs font-semibold text-gray-500">目前圖片</p>
+              {questionImage ? (
+                <div className="flex items-start gap-3">
+                  <img src={questionImage} alt="preview" className="h-20 w-20 rounded-xl object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <input
+                      value={questionImage}
+                      onChange={e => setQuestionImage(e.target.value)}
+                      placeholder="圖片網址"
+                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm"
+                    />
+                    <p className="mt-1 text-xs text-gray-400">你也可以貼上圖片網址或改用上傳。</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-white text-gray-300">
+                    <Upload className="h-6 w-6" />
+                  </div>
+                  <input
+                    value={questionImage}
+                    onChange={e => setQuestionImage(e.target.value)}
+                    placeholder="圖片網址"
+                    className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
           <label className="inline-flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-            <Upload className="h-4 w-4" /> 上傳圖片
-            <input className="hidden" type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f); e.target.value = ''; }} />
+            <Upload className="h-4 w-4" />
+            上傳圖片
+            <input
+              className="hidden"
+              type="file"
+              accept="image/*"
+              onChange={e => {
+                const f = e.target.files?.[0];
+                if (f) void uploadImage(f, setQuestionImage);
+                e.target.value = '';
+              }}
+            />
           </label>
           <label className="inline-flex items-center gap-2 text-sm text-gray-600">
             <input type="checkbox" checked={questionActive} onChange={e => setQuestionActive(e.target.checked)} />
@@ -180,46 +271,166 @@ export default function SuperAdminCoffeeQuiz() {
           </label>
         </div>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          {(Object.keys(formOptions) as OptionKey[]).map((key) => (
+          {optionKeys.map(key => (
             <div key={key} className="rounded-xl border border-gray-200 p-3">
               <p className="mb-2 text-xs font-bold text-gray-500">選項 {key}</p>
-              <input value={formOptions[key].option_text} onChange={e => setFormOptions(prev => ({ ...prev, [key]: { ...prev[key], option_text: e.target.value } }))} placeholder={`選項${key}文字`} className="mb-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm" />
-              <input type="number" value={formOptions[key].score} onChange={e => setFormOptions(prev => ({ ...prev, [key]: { ...prev[key], score: Number(e.target.value) || 0 } }))} placeholder="分數" className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm" />
+              <input
+                value={formOptions[key].option_text}
+                onChange={e => setFormOptions(prev => ({ ...prev, [key]: { ...prev[key], option_text: e.target.value } }))}
+                placeholder={`選項 ${key} 文字`}
+                className="mb-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                value={formOptions[key].score}
+                onChange={e => setFormOptions(prev => ({ ...prev, [key]: { ...prev[key], score: Number(e.target.value) || 0 } }))}
+                placeholder="分數"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              />
             </div>
           ))}
         </div>
-        <button onClick={createQuestion} disabled={saving} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
-          {saving ? <Save className="h-4 w-4 animate-pulse" /> : <Plus className="h-4 w-4" />} 新增題目
+        <button
+          onClick={createQuestion}
+          disabled={saving}
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+        >
+          {saving ? <Save className="h-4 w-4 animate-pulse" /> : <Plus className="h-4 w-4" />}
+          新增題目
         </button>
       </section>
 
       <section className="rounded-2xl bg-white p-5 shadow-sm">
         <h2 className="mb-4 text-lg font-bold text-gray-900">題目清單</h2>
-        {loading ? <p className="text-sm text-gray-500">讀取中...</p> : (
-          <div className="space-y-4">
-            {questions.map(q => {
-              const opts = options.filter(o => o.question_id === q.id).sort((a, b) => a.display_order - b.display_order);
+        {loading ? (
+          <p className="text-sm text-gray-500">載入中...</p>
+        ) : (
+          <div className="space-y-3">
+            {groupedQuestions.map(({ question, opts }) => {
+              const isOpen = openQuestionId === question.id;
               return (
-                <div key={q.id} className="rounded-xl border border-gray-200 p-4">
-                  <div className="mb-3 flex flex-wrap items-center gap-2">
-                    <input value={q.display_order} type="number" onChange={e => setQuestions(prev => prev.map(item => item.id === q.id ? { ...item, display_order: Number(e.target.value) || 0 } : item))} onBlur={e => updateQuestion(q.id, { display_order: Number(e.target.value) || 0 })} className="w-16 rounded-lg border border-gray-200 px-2 py-1.5 text-sm" />
-                    <input value={q.question_text} onChange={e => setQuestions(prev => prev.map(item => item.id === q.id ? { ...item, question_text: e.target.value } : item))} onBlur={e => updateQuestion(q.id, { question_text: e.target.value })} className="min-w-[280px] flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm" />
-                    <label className="inline-flex items-center gap-1 text-xs text-gray-600">
-                      <input type="checkbox" checked={q.is_active} onChange={e => { const v = e.target.checked; setQuestions(prev => prev.map(item => item.id === q.id ? { ...item, is_active: v } : item)); updateQuestion(q.id, { is_active: v }); }} />
-                      啟用
-                    </label>
-                    <button onClick={() => deleteQuestion(q.id)} className="ml-auto rounded-lg p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
-                  </div>
-                  <input value={q.image_url || ''} onChange={e => setQuestions(prev => prev.map(item => item.id === q.id ? { ...item, image_url: e.target.value } : item))} onBlur={e => updateQuestion(q.id, { image_url: e.target.value || null })} placeholder="題目圖片 URL" className="mb-3 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm" />
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {opts.map(opt => (
-                      <div key={opt.id} className="rounded-lg border border-gray-100 p-2">
-                        <div className="mb-1 text-xs font-bold text-gray-500">{opt.option_key}</div>
-                        <input value={opt.option_text} onChange={e => setOptions(prev => prev.map(row => row.id === opt.id ? { ...row, option_text: e.target.value } : row))} onBlur={e => updateQuestionOption(opt.id, { option_text: e.target.value })} className="mb-1 w-full rounded border border-gray-200 px-2 py-1.5 text-sm" />
-                        <input type="number" value={opt.score} onChange={e => setOptions(prev => prev.map(row => row.id === opt.id ? { ...row, score: Number(e.target.value) || 0 } : row))} onBlur={e => updateQuestionOption(opt.id, { score: Number(e.target.value) || 0 })} className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm" />
+                <div key={question.id} className="overflow-hidden rounded-xl border border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setOpenQuestionId(prev => (prev === question.id ? null : question.id))}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-gray-50"
+                  >
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-sm font-bold text-amber-700">
+                      {question.display_order}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-gray-900">{question.question_text}</p>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                        <span className={`rounded-full px-2 py-0.5 font-semibold ${question.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                          {question.is_active ? '啟用' : '停用'}
+                        </span>
+                        <span>{opts.length} 個選項</span>
+                        {question.image_url ? <span>有圖片</span> : <span>無圖片</span>}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                    {isOpen ? <ChevronUp className="h-5 w-5 text-gray-400" /> : <ChevronDown className="h-5 w-5 text-gray-400" />}
+                  </button>
+
+                  {isOpen && (
+                    <div className="border-t border-gray-100 bg-white p-4">
+                      <div className="mb-3 flex flex-wrap items-center gap-2">
+                        <input
+                          value={question.display_order}
+                          type="number"
+                          onChange={e =>
+                            setQuestions(prev => prev.map(item => (item.id === question.id ? { ...item, display_order: Number(e.target.value) || 0 } : item)))
+                          }
+                          onBlur={e => void updateQuestion(question.id, { display_order: Number(e.target.value) || 0 })}
+                          className="w-20 rounded-lg border border-gray-200 px-2 py-1.5 text-sm"
+                        />
+                        <input
+                          value={question.question_text}
+                          onChange={e =>
+                            setQuestions(prev => prev.map(item => (item.id === question.id ? { ...item, question_text: e.target.value } : item)))
+                          }
+                          onBlur={e => void updateQuestion(question.id, { question_text: e.target.value })}
+                          className="min-w-[280px] flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm"
+                        />
+                        <label className="inline-flex items-center gap-1 text-xs text-gray-600">
+                          <input
+                            type="checkbox"
+                            checked={question.is_active}
+                            onChange={e => {
+                              const next = e.target.checked;
+                              setQuestions(prev => prev.map(item => (item.id === question.id ? { ...item, is_active: next } : item)));
+                              void updateQuestion(question.id, { is_active: next });
+                            }}
+                          />
+                          啟用
+                        </label>
+                        <button type="button" onClick={() => void deleteQuestion(question.id)} className="ml-auto rounded-lg p-2 text-red-500 hover:bg-red-50" title="刪除題目">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="grid gap-3 md:grid-cols-[160px_1fr]">
+                        <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                          <p className="mb-2 text-xs font-semibold text-gray-500">目前圖片</p>
+                          {question.image_url ? (
+                            <img src={question.image_url} alt={question.question_text} className="h-32 w-full rounded-xl object-cover" />
+                          ) : (
+                            <div className="flex h-32 items-center justify-center rounded-xl bg-white text-gray-300">
+                              沒有圖片
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <input
+                              value={question.image_url || ''}
+                              onChange={e =>
+                                setQuestions(prev => prev.map(item => (item.id === question.id ? { ...item, image_url: e.target.value || null } : item)))
+                              }
+                              onBlur={e => void updateQuestion(question.id, { image_url: e.target.value || null })}
+                              placeholder="圖片網址"
+                              className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                            />
+                            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                              <Upload className="h-4 w-4" />
+                              變更圖片
+                              <input
+                                className="hidden"
+                                type="file"
+                                accept="image/*"
+                                onChange={e => {
+                                  const f = e.target.files?.[0];
+                                  if (f) void uploadImage(f, url => void updateQuestion(question.id, { image_url: url }));
+                                  e.target.value = '';
+                                }}
+                              />
+                            </label>
+                          </div>
+
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            {opts.map(opt => (
+                              <div key={opt.id} className="rounded-lg border border-gray-100 p-3">
+                                <div className="mb-1 text-xs font-bold text-gray-500">{opt.option_key}</div>
+                                <input
+                                  value={opt.option_text}
+                                  onChange={e => setOptions(prev => prev.map(row => (row.id === opt.id ? { ...row, option_text: e.target.value } : row)))}
+                                  onBlur={e => void updateQuestionOption(opt.id, { option_text: e.target.value })}
+                                  className="mb-1 w-full rounded border border-gray-200 px-2 py-1.5 text-sm"
+                                />
+                                <input
+                                  type="number"
+                                  value={opt.score}
+                                  onChange={e => setOptions(prev => prev.map(row => (row.id === opt.id ? { ...row, score: Number(e.target.value) || 0 } : row)))}
+                                  onBlur={e => void updateQuestionOption(opt.id, { score: Number(e.target.value) || 0 })}
+                                  className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -228,7 +439,10 @@ export default function SuperAdminCoffeeQuiz() {
       </section>
 
       <section className="rounded-2xl bg-white p-5 shadow-sm">
-        <h2 className="mb-4 inline-flex items-center gap-2 text-lg font-bold text-gray-900"><BarChart3 className="h-5 w-5" />測驗結果統計</h2>
+        <h2 className="mb-4 inline-flex items-center gap-2 text-lg font-bold text-gray-900">
+          <BarChart3 className="h-5 w-5" />
+          參與統計
+        </h2>
         <div className="mb-4 grid gap-3 sm:grid-cols-4">
           {Object.entries(stats).map(([k, v]) => (
             <div key={k} className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-center">
@@ -241,7 +455,11 @@ export default function SuperAdminCoffeeQuiz() {
           <table className="w-full text-sm">
             <thead className="text-left text-xs text-gray-500">
               <tr>
-                <th className="py-2">時間</th><th className="py-2">會員</th><th className="py-2">電話</th><th className="py-2">Email</th><th className="py-2">結果</th>
+                <th className="py-2">時間</th>
+                <th className="py-2">姓名</th>
+                <th className="py-2">電話</th>
+                <th className="py-2">Email</th>
+                <th className="py-2">結果</th>
               </tr>
             </thead>
             <tbody>
@@ -251,7 +469,12 @@ export default function SuperAdminCoffeeQuiz() {
                   <td className="py-2">{s.member_name}</td>
                   <td className="py-2">{s.member_phone}</td>
                   <td className="py-2">{s.member_email || '-'}</td>
-                  <td className="py-2"><span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700"><Check className="h-3 w-3" />{s.result_type}</span></td>
+                  <td className="py-2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">
+                      <Check className="h-3 w-3" />
+                      {s.result_type}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
