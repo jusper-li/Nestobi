@@ -50,11 +50,11 @@ interface HistoryItem {
 }
 
 const ROOM_TYPES = [
-  { value: 'single', label: 'Single Room' },
-  { value: 'double', label: 'Double Room' },
-  { value: 'suite', label: 'Suite' },
-  { value: 'deluxe', label: 'Deluxe' },
-  { value: 'family', label: 'Family Room' },
+  { value: 'single', label: '單人房' },
+  { value: 'double', label: '雙人房' },
+  { value: 'suite', label: '套房' },
+  { value: 'deluxe', label: '豪華房' },
+  { value: 'family', label: '家庭房' },
   { value: 'villa', label: 'Villa' },
 ];
 
@@ -163,7 +163,7 @@ const SuperAdminListingCommand: React.FC = () => {
         body: JSON.stringify({ mode: 'command', content: command }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Parse failed');
+      if (!res.ok) throw new Error(json.error || '解析失敗');
 
       const result: ParsedResult = json.result;
       setParsed(result);
@@ -216,7 +216,7 @@ const SuperAdminListingCommand: React.FC = () => {
           vendor_id: payload.vendor_id,
           source: 'listing_command',
         });
-        setSavedMsg('Product created');
+        setSavedMsg('商品已建立');
       } else if (parsed.intent === 'hotel') {
         const payload: Record<string, any> = {
           name: editData.name,
@@ -244,7 +244,7 @@ const SuperAdminListingCommand: React.FC = () => {
           vendor_id: payload.vendor_id,
           source: 'listing_command',
         });
-        setSavedMsg('Hotel created');
+        setSavedMsg('飯店已建立');
       } else if (parsed.intent === 'room') {
         const payload: Record<string, any> = {
           name: editData.name,
@@ -271,7 +271,7 @@ const SuperAdminListingCommand: React.FC = () => {
           hotel_id: payload.hotel_id,
           source: 'listing_command',
         });
-        setSavedMsg('Room created');
+        setSavedMsg('房型已建立');
       }
 
       const item: HistoryItem = {
@@ -301,9 +301,9 @@ const SuperAdminListingCommand: React.FC = () => {
   };
 
   const intentLabel = (intent: string) => {
-    if (intent === 'hotel') return 'Hotel';
-    if (intent === 'room') return 'Room';
-    return 'Product';
+    if (intent === 'hotel') return '飯店';
+    if (intent === 'room') return '房型';
+    return '商品';
   };
 
   const intentColor = (intent: string) => {
@@ -321,13 +321,13 @@ const SuperAdminListingCommand: React.FC = () => {
           <Terminal className="h-6 w-6 text-slate-700" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">AI Listing Command</h1>
-          <p className="text-sm text-gray-400">Enter a natural-language command and the system will parse it into a product, hotel, or room draft.</p>
+          <h1 className="text-2xl font-bold text-gray-900">AI 上架指令</h1>
+          <p className="text-sm text-gray-400">輸入自然語言指令，系統會自動解析成商品、飯店或房型草稿。</p>
         </div>
       </div>
 
       <div className="space-y-3 rounded-2xl bg-white p-5 shadow-sm">
-        <label className="block text-sm font-semibold text-gray-700">Command input</label>
+        <label className="block text-sm font-semibold text-gray-700">指令輸入</label>
         <div className="relative">
           <textarea
             ref={textareaRef}
@@ -337,24 +337,24 @@ const SuperAdminListingCommand: React.FC = () => {
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleParse();
             }}
             rows={4}
-            placeholder={`Example:
-Product: Ethiopia Yirgacheffe, NT$580, origin Ethiopia, altitude 1800-2000m.
+            placeholder={`例如：
+商品：衣索比亞耶加雪菲，NT$580，產地衣索比亞，海拔 1800-2000m。
 
-Hotel: business hotel near Taipei Main Station, phone 0912345678, check-in 15:00.
+飯店：台北車站附近商務飯店，電話 0912345678，入住時間 15:00。
 
-Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
+房型：雙人房，平日 3200，假日 3800，設施 WiFi / 冷氣 / 浴缸。`}
             className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
           />
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-400">Ctrl + Enter to run</p>
+          <p className="text-xs text-gray-400">Ctrl + Enter 執行</p>
           <button
             onClick={handleParse}
             disabled={parsing || !command.trim()}
             className="flex items-center gap-2 rounded-xl bg-slate-800 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:opacity-50"
           >
             {parsing ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            {parsing ? 'Parsing...' : 'Parse'}
+            {parsing ? '解析中…' : '解析'}
           </button>
         </div>
       </div>
@@ -391,25 +391,25 @@ Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
                 {intentLabel(parsed.intent)}
               </span>
               <span className="text-sm text-gray-400">
-                Confidence <span className="font-semibold text-gray-700">{Math.round(parsed.confidence * 100)}%</span>
+                信心值 <span className="font-semibold text-gray-700">{Math.round(parsed.confidence * 100)}%</span>
               </span>
-              <span className="ml-auto text-xs text-gray-400">Edit fields and save</span>
+              <span className="ml-auto text-xs text-gray-400">可直接編輯後儲存</span>
             </div>
 
             <div className="space-y-4 p-5">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <Field label="Name *">
+                  <Field label="名稱 *">
                     <input value={editData.name || ''} onChange={e => set('name', e.target.value)} className={inputCls} />
                   </Field>
                 </div>
                 <div className="sm:col-span-2">
-                  <Field label="Description">
+                  <Field label="描述">
                     <textarea value={editData.description || ''} onChange={e => set('description', e.target.value)} rows={3} className={`${inputCls} resize-none`} />
                   </Field>
                 </div>
                 <div>
-                  <Field label="Vendor">
+                  <Field label="供應商">
                     <select
                       value={editData.vendor_id || ''}
                       onChange={e => {
@@ -418,7 +418,7 @@ Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
                       }}
                       className={selectCls}
                     >
-                      <option value="">Select vendor</option>
+                      <option value="">選擇供應商</option>
                       {vendors.map(vendor => (
                         <option key={vendor.id} value={vendor.id}>
                           {vendor.name}
@@ -428,7 +428,7 @@ Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
                   </Field>
                 </div>
                 <div>
-                  <Field label="Enabled">
+                  <Field label="啟用狀態">
                     <button
                       type="button"
                       onClick={() => set(parsed.intent === 'room' ? 'is_available' : 'is_active', !(editData.is_active ?? editData.is_available))}
@@ -439,7 +439,7 @@ Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
                       }`}
                     >
                       <span className={`h-3 w-3 rounded-full ${(editData.is_active ?? editData.is_available) !== false ? 'bg-green-500' : 'bg-gray-400'}`} />
-                      {(editData.is_active ?? editData.is_available) !== false ? 'Enabled' : 'Disabled'}
+                      {(editData.is_active ?? editData.is_available) !== false ? '啟用' : '停用'}
                     </button>
                   </Field>
                 </div>
@@ -448,21 +448,21 @@ Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
               {parsed.intent === 'product' && (
                 <div className="space-y-4 border-t border-gray-100 pt-2">
                   <div className="grid gap-4 sm:grid-cols-3">
-                    <Field label="Price (NT$)">
+                    <Field label="價格（NT$）">
                       <input type="number" value={editData.price || 0} onChange={e => set('price', e.target.value)} className={inputCls} />
                     </Field>
-                    <Field label="Stock">
+                    <Field label="庫存">
                       <input type="number" value={editData.stock_quantity || 0} onChange={e => set('stock_quantity', e.target.value)} className={inputCls} />
                     </Field>
                     <Field label="SKU">
-                      <input value={editData.sku || ''} onChange={e => set('sku', e.target.value)} placeholder="Optional" className={inputCls} />
+                      <input value={editData.sku || ''} onChange={e => set('sku', e.target.value)} placeholder="可選" className={inputCls} />
                     </Field>
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Category">
+                    <Field label="分類">
                       <select value={editData.category_id || ''} onChange={e => set('category_id', e.target.value)} className={selectCls}>
-                        <option value="">Select category</option>
+                        <option value="">選擇分類</option>
                         {categories.map(category => (
                           <option key={category.id} value={category.id}>
                             {category.name}
@@ -470,42 +470,42 @@ Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
                         ))}
                       </select>
                     </Field>
-                    <Field label="Image URL">
+                    <Field label="圖片網址">
                       <input value={editData.image_url || ''} onChange={e => set('image_url', e.target.value)} placeholder="https://..." className={inputCls} />
                     </Field>
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-3">
-                    <Field label="Origin">
-                      <input value={editData.origin || ''} onChange={e => set('origin', e.target.value)} placeholder="e.g. Ethiopia" className={inputCls} />
+                    <Field label="產地">
+                      <input value={editData.origin || ''} onChange={e => set('origin', e.target.value)} placeholder="例如：衣索比亞" className={inputCls} />
                     </Field>
-                    <Field label="Roast Level">
-                      <input value={editData.roast_level || ''} onChange={e => set('roast_level', e.target.value)} placeholder="e.g. Light roast" className={inputCls} />
+                    <Field label="烘焙程度">
+                      <input value={editData.roast_level || ''} onChange={e => set('roast_level', e.target.value)} placeholder="例如：淺焙" className={inputCls} />
                     </Field>
-                    <Field label="Process Method">
-                      <input value={editData.processing_method || ''} onChange={e => set('processing_method', e.target.value)} placeholder="e.g. Washed / Natural" className={inputCls} />
+                    <Field label="處理法">
+                      <input value={editData.processing_method || ''} onChange={e => set('processing_method', e.target.value)} placeholder="例如：水洗 / 日曬" className={inputCls} />
                     </Field>
-                    <Field label="Altitude">
-                      <input value={editData.altitude || ''} onChange={e => set('altitude', e.target.value)} placeholder="e.g. 1800-2000m" className={inputCls} />
+                    <Field label="海拔">
+                      <input value={editData.altitude || ''} onChange={e => set('altitude', e.target.value)} placeholder="例如：1800-2000m" className={inputCls} />
                     </Field>
-                    <Field label="Weight (g)">
-                      <input type="number" value={editData.weight_grams || ''} onChange={e => set('weight_grams', e.target.value)} placeholder="e.g. 200" className={inputCls} />
+                    <Field label="重量（g）">
+                      <input type="number" value={editData.weight_grams || ''} onChange={e => set('weight_grams', e.target.value)} placeholder="例如：200" className={inputCls} />
                     </Field>
-                    <Field label="Roast Date">
+                    <Field label="烘焙日期">
                       <input type="date" value={editData.roast_date || ''} onChange={e => set('roast_date', e.target.value)} className={inputCls} />
                     </Field>
                   </div>
 
-                  <Field label="Variety (Enter to add)">
-                    <TagEditor values={Array.isArray(editData.variety) ? editData.variety : []} onChange={v => set('variety', v)} placeholder="Type and press Enter" />
+                  <Field label="品種（Enter 新增）">
+                    <TagEditor values={Array.isArray(editData.variety) ? editData.variety : []} onChange={v => set('variety', v)} placeholder="輸入後按 Enter" />
                   </Field>
-                  <Field label="Flavor Notes (Enter to add)">
-                    <TagEditor values={Array.isArray(editData.flavor_notes) ? editData.flavor_notes : []} onChange={v => set('flavor_notes', v)} placeholder="Type and press Enter" />
+                  <Field label="風味描述（Enter 新增）">
+                    <TagEditor values={Array.isArray(editData.flavor_notes) ? editData.flavor_notes : []} onChange={v => set('flavor_notes', v)} placeholder="輸入後按 Enter" />
                   </Field>
-                  <Field label="Tags (Enter to add)">
-                    <TagEditor values={Array.isArray(editData.tags) ? editData.tags : []} onChange={v => set('tags', v)} placeholder="Type and press Enter" />
+                  <Field label="標籤（Enter 新增）">
+                    <TagEditor values={Array.isArray(editData.tags) ? editData.tags : []} onChange={v => set('tags', v)} placeholder="輸入後按 Enter" />
                   </Field>
-                  <Field label="Source URL">
+                  <Field label="來源網址">
                     <input value={editData.source_url || ''} onChange={e => set('source_url', e.target.value)} placeholder="https://..." className={inputCls} />
                   </Field>
                 </div>
@@ -514,13 +514,13 @@ Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
               {parsed.intent === 'hotel' && (
                 <div className="space-y-4 border-t border-gray-100 pt-2">
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="City">
+                    <Field label="城市">
                       <input value={editData.city || ''} onChange={e => set('city', e.target.value)} className={inputCls} />
                     </Field>
-                    <Field label="Address">
+                    <Field label="地址">
                       <input value={editData.address || ''} onChange={e => set('address', e.target.value)} className={inputCls} />
                     </Field>
-                    <Field label="Phone">
+                    <Field label="電話">
                       <input value={editData.phone || ''} onChange={e => set('phone', e.target.value)} className={inputCls} />
                     </Field>
                     <Field label="Email">
@@ -532,32 +532,32 @@ Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
                     <Field label="Facebook">
                       <input value={editData.facebook || ''} onChange={e => set('facebook', e.target.value)} className={inputCls} />
                     </Field>
-                    <Field label="Check-in Time">
+                    <Field label="入住時間">
                       <input value={editData.checkin_time || '15:00'} onChange={e => set('checkin_time', e.target.value)} placeholder="15:00" className={inputCls} />
                     </Field>
-                    <Field label="Check-out Time">
+                    <Field label="退房時間">
                       <input value={editData.checkout_time || '11:00'} onChange={e => set('checkout_time', e.target.value)} placeholder="11:00" className={inputCls} />
                     </Field>
-                    <Field label="Stars">
+                    <Field label="星級">
                       <select value={editData.star_rating || 3} onChange={e => set('star_rating', Number(e.target.value))} className={selectCls}>
                         {[1, 2, 3, 4, 5].map(n => (
                           <option key={n} value={n}>
-                            {n} Stars
+                            {n} 星
                           </option>
                         ))}
                       </select>
                     </Field>
-                    <Field label="Deposit (NT$)">
+                    <Field label="訂金（NT$）">
                       <input type="number" value={editData.deposit_amount || 0} onChange={e => set('deposit_amount', e.target.value)} className={inputCls} />
                     </Field>
-                    <Field label="Image URL">
+                    <Field label="圖片網址">
                       <input value={editData.image_url || ''} onChange={e => set('image_url', e.target.value)} placeholder="https://..." className={inputCls} />
                     </Field>
-                    <Field label="Registration No.">
+                    <Field label="登記字號">
                       <input value={editData.registration_number || ''} onChange={e => set('registration_number', e.target.value)} className={inputCls} />
                     </Field>
                   </div>
-                  <Field label="Pet Friendly">
+                  <Field label="可攜寵物">
                     <button
                       type="button"
                       onClick={() => set('pet_friendly', !editData.pet_friendly)}
@@ -566,7 +566,7 @@ Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
                       }`}
                     >
                       <span className={`h-3 w-3 rounded-full ${editData.pet_friendly ? 'bg-green-500' : 'bg-gray-400'}`} />
-                      {editData.pet_friendly ? 'Pet Friendly' : 'Not Pet Friendly'}
+                      {editData.pet_friendly ? '可攜寵物' : '不可攜寵物'}
                     </button>
                   </Field>
                 </div>
@@ -575,7 +575,7 @@ Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
               {parsed.intent === 'room' && (
                 <div className="space-y-4 border-t border-gray-100 pt-2">
                   <div className="grid gap-4 sm:grid-cols-3">
-                    <Field label="Room Type">
+                    <Field label="房型">
                       <select value={editData.room_type || 'double'} onChange={e => set('room_type', e.target.value)} className={selectCls}>
                         {ROOM_TYPES.map(type => (
                           <option key={type.value} value={type.value}>
@@ -584,30 +584,30 @@ Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
                         ))}
                       </select>
                     </Field>
-                    <Field label="Min Guests">
+                    <Field label="最少人數">
                       <input type="number" value={editData.min_capacity || 1} onChange={e => set('min_capacity', Number(e.target.value))} min={1} className={inputCls} />
                     </Field>
-                    <Field label="Max Guests">
+                    <Field label="最多人數">
                       <input type="number" value={editData.capacity || 2} onChange={e => set('capacity', Number(e.target.value))} min={1} className={inputCls} />
                     </Field>
-                    <Field label="Weekday Price (NT$)">
+                    <Field label="平日價格（NT$）">
                       <input type="number" value={editData.price_per_night || 0} onChange={e => set('price_per_night', Number(e.target.value))} className={inputCls} />
                     </Field>
-                    <Field label="Weekend Price (NT$)">
+                    <Field label="假日價格（NT$）">
                       <input type="number" value={editData.weekend_price || 0} onChange={e => set('weekend_price', Number(e.target.value))} className={inputCls} />
                     </Field>
-                    <Field label="Floor">
-                      <input value={editData.floor || ''} onChange={e => set('floor', e.target.value)} placeholder="e.g. 2F" className={inputCls} />
+                    <Field label="樓層">
+                      <input value={editData.floor || ''} onChange={e => set('floor', e.target.value)} placeholder="例如：2F" className={inputCls} />
                     </Field>
                     <div className="sm:col-span-2">
-                      <Field label="Location">
+                      <Field label="位置">
                         <input value={editData.location || ''} onChange={e => set('location', e.target.value)} className={inputCls} />
                       </Field>
                     </div>
                     <div>
-                      <Field label="Hotel">
+                      <Field label="飯店">
                         <select value={editData.hotel_id || ''} onChange={e => set('hotel_id', e.target.value)} className={selectCls}>
-                          <option value="">Select hotel</option>
+                          <option value="">選擇飯店</option>
                           {filteredHotels.map(hotel => (
                             <option key={hotel.id} value={hotel.id}>
                               {hotel.name}
@@ -618,11 +618,11 @@ Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
                       </Field>
                     </div>
                   </div>
-                  <Field label="Amenities (Enter to add)">
-                    <TagEditor values={Array.isArray(editData.amenities) ? editData.amenities : []} onChange={v => set('amenities', v)} placeholder="e.g. WiFi, AC, bathtub" />
+                  <Field label="設施（Enter 新增）">
+                    <TagEditor values={Array.isArray(editData.amenities) ? editData.amenities : []} onChange={v => set('amenities', v)} placeholder="例如：WiFi、冷氣、浴缸" />
                   </Field>
-                  <Field label="Images (Enter to add)">
-                    <TagEditor values={Array.isArray(editData.images) ? editData.images : []} onChange={v => set('images', v)} placeholder="Type and press Enter" />
+                  <Field label="圖片（Enter 新增）">
+                    <TagEditor values={Array.isArray(editData.images) ? editData.images : []} onChange={v => set('images', v)} placeholder="輸入後按 Enter" />
                   </Field>
                 </div>
               )}
@@ -637,7 +637,7 @@ Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
                   }}
                   className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
                 >
-                  Cancel
+                  取消
                 </button>
                 <button
                   type="button"
@@ -646,7 +646,7 @@ Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50"
                 >
                   {saving ? <Loader className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                  Save Draft
+                  儲存草稿
                 </button>
               </div>
             </div>
@@ -659,7 +659,7 @@ Room: double room, weekday 3200, weekend 3800, amenities WiFi / AC / bathtub.`}
           <button onClick={() => setHistoryOpen(prev => !prev)} className="flex w-full items-center justify-between px-5 py-4 transition hover:bg-gray-50">
             <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
               <Tag className="h-4 w-4 text-gray-400" />
-              History
+              歷史紀錄
               <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">{history.length}</span>
             </div>
             {historyOpen ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}

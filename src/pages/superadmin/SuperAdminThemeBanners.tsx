@@ -203,7 +203,7 @@ export default function SuperAdminThemeBanners() {
         </div>
 
         {loading ? (
-          <div className="py-10 text-center text-sm text-gray-500">Loading...</div>
+          <div className="py-10 text-center text-sm text-gray-500">載入中...</div>
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
             {filteredItems.map(item => (

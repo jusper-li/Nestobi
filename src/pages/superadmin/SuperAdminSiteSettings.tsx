@@ -75,35 +75,35 @@ interface FieldGroup {
 
 const FIELD_GROUPS: FieldGroup[] = [
   {
-    title: 'Branding',
+    title: '品牌設定',
     icon: Globe,
     fields: [
-      { key: 'site_name', label: 'Site name', placeholder: 'Nestobi', type: 'text' },
-      { key: 'site_slogan', label: 'Site slogan', placeholder: 'Your friendly travel companion', type: 'text' },
-      { key: 'site_description', label: 'Site description', placeholder: 'Short description used for SEO', type: 'textarea' },
+      { key: 'site_name', label: '網站名稱', placeholder: 'Nestobi', type: 'text' },
+      { key: 'site_slogan', label: '網站標語', placeholder: '你的旅遊好夥伴', type: 'text' },
+      { key: 'site_description', label: '網站描述', placeholder: '供 SEO 使用的簡短描述', type: 'textarea' },
     ],
   },
   {
-    title: 'Assets',
+    title: '資產設定',
     icon: Image,
     fields: [
-      { key: 'site_icon_url', label: 'Favicon URL', placeholder: '/20260407_nestobi_logo.svg', type: 'text' },
-      { key: 'og_image_url', label: 'OG image URL', placeholder: 'https://nestobi.netlify.app/og-nestobi-logo.png', type: 'text' },
+      { key: 'site_icon_url', label: '網站圖示網址', placeholder: '/20260407_nestobi_logo.svg', type: 'text' },
+      { key: 'og_image_url', label: 'OG 圖片網址', placeholder: 'https://nestobi.netlify.app/og-nestobi-logo.png', type: 'text' },
     ],
   },
   {
     title: 'SEO',
     icon: Search,
     fields: [
-      { key: 'meta_keywords', label: 'Meta keywords', placeholder: 'Nestobi, travel, AI, coffee', type: 'textarea' },
-      { key: 'theme_color', label: 'Theme color', placeholder: '#C09A6A', type: 'color' },
+      { key: 'meta_keywords', label: 'Meta 關鍵字', placeholder: 'Nestobi, travel, AI, coffee', type: 'textarea' },
+      { key: 'theme_color', label: '主題色', placeholder: '#C09A6A', type: 'color' },
     ],
   },
   {
-    title: 'AI summary',
+    title: 'AI 摘要',
     icon: Bot,
     fields: [
-      { key: 'ai_site_summary', label: 'AI site summary', placeholder: 'Short summary for AI assistants', type: 'textarea' },
+      { key: 'ai_site_summary', label: 'AI 網站摘要', placeholder: '提供給 AI 助手的簡短摘要', type: 'textarea' },
     ],
   },
   {
@@ -114,32 +114,32 @@ const FIELD_GROUPS: FieldGroup[] = [
     ],
   },
   {
-    title: 'Contact',
+    title: '聯絡資訊',
     icon: Phone,
     fields: [
-      { key: 'contact_phone', label: 'Phone', placeholder: '02-27565663', type: 'text' },
+      { key: 'contact_phone', label: '電話', placeholder: '02-27565663', type: 'text' },
       { key: 'contact_email', label: 'Email', placeholder: 'service@dlalshop.com', type: 'text' },
-      { key: 'company_no', label: 'Company no.', placeholder: '83122492', type: 'text' },
-      { key: 'company_name', label: 'Company name', placeholder: 'Company legal name', type: 'text' },
-      { key: 'headquarters_address', label: 'Headquarters address', placeholder: 'Address', type: 'text' },
+      { key: 'company_no', label: '公司統編', placeholder: '83122492', type: 'text' },
+      { key: 'company_name', label: '公司名稱', placeholder: '公司登記名稱', type: 'text' },
+      { key: 'headquarters_address', label: '總部地址', placeholder: '地址', type: 'text' },
     ],
   },
   {
-    title: 'Notification emails',
+    title: '通知信箱',
     icon: Mail,
     fields: [
-      { key: 'support_notification_emails', label: 'Support', placeholder: 'service@dlalshop.com, support@nestobi.com', type: 'textarea' },
-      { key: 'booking_notification_emails', label: 'Booking', placeholder: 'booking@nestobi.com', type: 'textarea' },
-      { key: 'order_notification_emails', label: 'Orders', placeholder: 'orders@nestobi.com, finance@nestobi.com', type: 'textarea' },
-      { key: 'system_notification_emails', label: 'System', placeholder: 'ops@nestobi.com', type: 'textarea' },
-      { key: 'payment_failed_notification_emails', label: 'Payment failed', placeholder: 'finance@nestobi.com', type: 'textarea' },
-      { key: 'refund_notification_emails', label: 'Refund', placeholder: 'finance@nestobi.com, service@nestobi.com', type: 'textarea' },
-      { key: 'member_notification_emails', label: 'Member', placeholder: 'crm@nestobi.com', type: 'textarea' },
-      { key: 'alert_notification_emails', label: 'Alerts', placeholder: 'ops@nestobi.com, dev@nestobi.com', type: 'textarea' },
+      { key: 'support_notification_emails', label: '客服', placeholder: 'service@dlalshop.com, support@nestobi.com', type: 'textarea' },
+      { key: 'booking_notification_emails', label: '訂房', placeholder: 'booking@nestobi.com', type: 'textarea' },
+      { key: 'order_notification_emails', label: '訂單', placeholder: 'orders@nestobi.com, finance@nestobi.com', type: 'textarea' },
+      { key: 'system_notification_emails', label: '系統', placeholder: 'ops@nestobi.com', type: 'textarea' },
+      { key: 'payment_failed_notification_emails', label: '付款失敗', placeholder: 'finance@nestobi.com', type: 'textarea' },
+      { key: 'refund_notification_emails', label: '退款', placeholder: 'finance@nestobi.com, service@nestobi.com', type: 'textarea' },
+      { key: 'member_notification_emails', label: '會員', placeholder: 'crm@nestobi.com', type: 'textarea' },
+      { key: 'alert_notification_emails', label: '警示', placeholder: 'ops@nestobi.com, dev@nestobi.com', type: 'textarea' },
     ],
   },
   {
-    title: 'Social links',
+    title: '社群連結',
     icon: Share2,
     fields: [
       { key: 'social_facebook', label: 'Facebook', placeholder: 'https://www.facebook.com/...', type: 'text' },
@@ -214,8 +214,8 @@ const SuperAdminSiteSettings: React.FC = () => {
     <div className="mx-auto max-w-4xl">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Site Settings</h1>
-          <p className="mt-0.5 text-sm text-gray-500">Manage brand, SEO, contact, notifications, and AI metadata.</p>
+          <h1 className="text-2xl font-bold text-gray-900">網站設定</h1>
+          <p className="mt-0.5 text-sm text-gray-500">管理品牌、SEO、聯絡資訊、通知與 AI 中繼資料。</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -223,7 +223,7 @@ const SuperAdminSiteSettings: React.FC = () => {
             className={`flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-medium transition ${showPreview ? 'border-sky-200 bg-sky-50 text-sky-700' : 'border-gray-200 bg-white text-gray-600 hover:border-sky-200'}`}
           >
             <Eye className="h-4 w-4" />
-            {showPreview ? 'Hide preview' : 'Show preview'}
+            {showPreview ? '隱藏預覽' : '顯示預覽'}
           </button>
           <button
             onClick={handleSave}
@@ -231,7 +231,7 @@ const SuperAdminSiteSettings: React.FC = () => {
             className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60"
           >
             {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-            {saved ? 'Saved' : 'Save changes'}
+            {saved ? '已儲存' : '儲存變更'}
           </button>
         </div>
       </div>
@@ -240,11 +240,11 @@ const SuperAdminSiteSettings: React.FC = () => {
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-6 rounded-2xl border border-slate-200 bg-white p-6">
           <div className="mb-4 flex items-center gap-2">
             <Search className="h-4 w-4 text-gray-400" />
-            <p className="text-sm font-semibold text-gray-700">Search preview</p>
+            <p className="text-sm font-semibold text-gray-700">搜尋預覽</p>
           </div>
           <div className="space-y-4 rounded-xl bg-slate-50 p-5">
             <div>
-              <p className="mb-1 text-xs text-gray-500">Google result</p>
+              <p className="mb-1 text-xs text-gray-500">Google 搜尋結果</p>
               <div className="mb-1 flex items-center gap-2">
                 {form.site_icon_url && <img src={form.site_icon_url} alt="" className="h-5 w-5 rounded" onError={e => (e.currentTarget.style.display = 'none')} />}
                 <span className="text-sm text-gray-600">{PUBLIC_SITE_HOST}</span>
@@ -253,7 +253,7 @@ const SuperAdminSiteSettings: React.FC = () => {
               <p className="mt-0.5 text-sm leading-relaxed text-gray-600">{previewDesc || 'No description'}</p>
             </div>
             <div className="border-t border-gray-200 pt-4">
-              <p className="mb-2 text-xs text-gray-500">OG preview</p>
+              <p className="mb-2 text-xs text-gray-500">OG 預覽</p>
               <div className="max-w-sm overflow-hidden rounded-lg border border-gray-200">
                 {form.og_image_url && (
                   <div className="flex h-36 items-center justify-center bg-gray-100">
@@ -270,7 +270,7 @@ const SuperAdminSiteSettings: React.FC = () => {
             <div className="border-t border-gray-200 pt-4">
               <p className="mb-2 flex items-center gap-1 text-xs text-gray-500">
                 <Bot className="h-3.5 w-3.5" />
-                AI summary
+                AI 摘要
               </p>
               <div className="rounded-lg bg-blue-50 p-3 text-xs leading-relaxed text-blue-800">{previewSummary}</div>
             </div>
@@ -330,7 +330,7 @@ const SuperAdminSiteSettings: React.FC = () => {
                           />
                           <label className="flex flex-shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-700 transition hover:bg-amber-100">
                             {uploading === field.key ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                            Upload
+                            上傳
                             <input
                               type="file"
                               accept="image/*"
@@ -366,7 +366,7 @@ const SuperAdminSiteSettings: React.FC = () => {
                     )}
                     {field.key === 'ga_measurement_id' && (
                       <p className="mt-1.5 text-xs leading-relaxed text-gray-500">
-                        This Measurement ID is used for Google Tag and page_view tracking.
+                        這個 Measurement ID 會用於 Google Tag 與 page_view 追蹤。
                       </p>
                     )}
                   </div>
@@ -383,8 +383,8 @@ const SuperAdminSiteSettings: React.FC = () => {
             <BarChart3 className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-gray-900">Google Tag status</h2>
-            <p className="mt-0.5 text-xs text-gray-500">This panel shows whether gtag is loaded and whether page_view events are being sent.</p>
+            <h2 className="text-sm font-semibold text-gray-900">Google Tag 狀態</h2>
+            <p className="mt-0.5 text-xs text-gray-500">這裡會顯示 gtag 是否載入，以及 page_view 是否有送出。</p>
           </div>
           <button type="button" onClick={() => setGaStatus(readGoogleTagStatus())} className="ml-auto inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 transition hover:bg-gray-50">
             <RefreshCw className="h-3.5 w-3.5" />
@@ -396,42 +396,42 @@ const SuperAdminSiteSettings: React.FC = () => {
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
                 {gaStatus?.scriptLoaded ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <AlertTriangle className="h-4 w-4 text-amber-500" />}
-                Script loaded
+                腳本已載入
               </div>
-              <p className="mt-2 text-sm font-semibold text-slate-900">{gaStatus?.scriptLoaded ? 'gtag.js loaded' : 'Not loaded yet'}</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">{gaStatus?.scriptLoaded ? 'gtag.js 已載入' : '尚未載入'}</p>
               <p className="mt-1 break-all text-xs text-slate-500">{gaStatus?.measurementId || form.ga_measurement_id || 'G-9JDDRD8P1X'}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
                 {gaStatus?.consentGranted ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <AlertTriangle className="h-4 w-4 text-amber-500" />}
-                Consent
+                同意狀態
               </div>
-              <p className="mt-2 text-sm font-semibold text-slate-900">{gaStatus?.consentGranted ? 'analytics_storage granted' : 'analytics_storage not granted'}</p>
-              <p className="mt-1 text-xs text-slate-500">This depends on cookie consent and your tracking configuration.</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">{gaStatus?.consentGranted ? '已允許 analytics_storage' : '尚未允許 analytics_storage'}</p>
+              <p className="mt-1 text-xs text-slate-500">這取決於 Cookie 同意與追蹤設定。</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
                 {gaStatus?.lastPageViewAt ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <AlertTriangle className="h-4 w-4 text-amber-500" />}
                 page_view
               </div>
-              <p className="mt-2 text-sm font-semibold text-slate-900">{gaStatus?.lastPageViewAt ? 'Latest page view sent' : 'No page_view yet'}</p>
-              <p className="mt-1 text-xs text-slate-500">{gaStatus?.lastPageViewAt || 'No page_view has been recorded yet'}</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">{gaStatus?.lastPageViewAt ? '已送出最新 page_view' : '尚未送出 page_view'}</p>
+              <p className="mt-1 text-xs text-slate-500">{gaStatus?.lastPageViewAt || '目前尚無 page_view 紀錄'}</p>
             </div>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <p className="text-xs font-semibold text-slate-500">Last page_view path</p>
-              <p className="mt-2 text-sm font-semibold text-slate-900">{gaStatus?.lastPageViewPath || 'No path recorded'}</p>
-              <p className="mt-1 text-xs text-slate-500">{gaStatus?.lastPageViewTitle || 'No title recorded'}</p>
+              <p className="text-xs font-semibold text-slate-500">最後 page_view 路徑</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">{gaStatus?.lastPageViewPath || '尚未記錄路徑'}</p>
+              <p className="mt-1 text-xs text-slate-500">{gaStatus?.lastPageViewTitle || '尚未記錄標題'}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <p className="text-xs font-semibold text-slate-500">Last sync time</p>
-              <p className="mt-2 text-sm font-semibold text-slate-900">{gaStatus?.lastSyncAt ? new Date(gaStatus.lastSyncAt).toLocaleString('zh-TW') : 'No sync yet'}</p>
-              <p className="mt-1 text-xs text-slate-500">Updated whenever the GA status storage entry changes.</p>
+              <p className="text-xs font-semibold text-slate-500">最後同步時間</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">{gaStatus?.lastSyncAt ? new Date(gaStatus.lastSyncAt).toLocaleString('zh-TW') : '尚未同步'}</p>
+              <p className="mt-1 text-xs text-slate-500">每次 GA 狀態儲存項目變更時都會更新。</p>
             </div>
           </div>
           <div className="rounded-2xl border border-dashed border-sky-200 bg-sky-50/60 p-4 text-sm leading-relaxed text-sky-900">
-            Make sure your public site uses the correct measurement ID, and that consent logic allows analytics_storage before you expect page_view events to appear.
+            請確認正式站使用正確的 measurement ID，且同意機制已允許 analytics_storage，這樣 page_view 才會正常出現。
           </div>
         </div>
       </motion.div>
@@ -441,17 +441,17 @@ const SuperAdminSiteSettings: React.FC = () => {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-100 text-green-700">
             <FileText className="h-4 w-4" />
           </div>
-          <h2 className="text-sm font-semibold text-gray-900">SEO checklist</h2>
+          <h2 className="text-sm font-semibold text-gray-900">SEO 檢查清單</h2>
         </div>
         <div className="p-6">
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { ok: !!form.site_name, label: 'Site name set' },
-              { ok: !!form.site_description, label: 'Description set' },
-              { ok: !!form.site_icon_url, label: 'Favicon set' },
-              { ok: !!form.og_image_url, label: 'OG image set' },
-              { ok: !!form.meta_keywords, label: 'Keywords set' },
-              { ok: !!form.ga_measurement_id, label: 'GA measurement ID set' },
+              { ok: !!form.site_name, label: '已設定網站名稱' },
+              { ok: !!form.site_description, label: '已設定網站描述' },
+              { ok: !!form.site_icon_url, label: '已設定網站圖示' },
+              { ok: !!form.og_image_url, label: '已設定 OG 圖片' },
+              { ok: !!form.meta_keywords, label: '已設定關鍵字' },
+              { ok: !!form.ga_measurement_id, label: '已設定 GA Measurement ID' },
             ].map(item => (
               <div key={item.label} className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${item.ok ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-50 text-gray-500'}`}>
                 {item.ok ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}

@@ -67,7 +67,7 @@ const SuperAdminFAQ: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this FAQ?')) return;
+    if (!window.confirm('確定要刪除這則 FAQ 嗎？')) return;
     await supabase.from('faqs').delete().eq('id', id);
     await logAdminAction('delete_faq', 'faqs', id);
     fetchFaqs();
@@ -96,12 +96,12 @@ const SuperAdminFAQ: React.FC = () => {
     <div className="mx-auto max-w-4xl">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">FAQ Management</h1>
-          <p className="mt-0.5 text-sm text-gray-500">Edit common questions and control whether they are published.</p>
+          <h1 className="text-2xl font-bold text-gray-900">FAQ 管理</h1>
+          <p className="mt-0.5 text-sm text-gray-500">編輯常見問題並控制是否公開顯示。</p>
         </div>
         <button onClick={startNew} className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600">
           <Plus className="h-4 w-4" />
-          New FAQ
+          新增 FAQ
         </button>
       </div>
 
@@ -112,7 +112,7 @@ const SuperAdminFAQ: React.FC = () => {
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search questions or answers"
+            placeholder="搜尋問題或答案"
             className="w-full rounded-xl border border-gray-200 py-2 pl-9 pr-4 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
           />
         </div>
@@ -123,7 +123,7 @@ const SuperAdminFAQ: React.FC = () => {
               onClick={() => setFilterCat(category)}
               className={`rounded-xl border px-3 py-2 text-xs font-medium transition ${filterCat === category ? 'border-amber-500 bg-amber-500 text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-amber-300'}`}
             >
-              {category === 'all' ? 'All' : category}
+              {category === 'all' ? '全部' : category}
             </button>
           ))}
         </div>
@@ -136,19 +136,19 @@ const SuperAdminFAQ: React.FC = () => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
               <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-                <h3 className="font-semibold text-gray-900">{isNew ? 'Create FAQ' : 'Edit FAQ'}</h3>
+                <h3 className="font-semibold text-gray-900">{isNew ? '新增 FAQ' : '編輯 FAQ'}</h3>
                 <button onClick={() => { setEditing(null); setIsNew(false); }} className="rounded-lg p-1 hover:bg-gray-100">
                   <X className="h-5 w-5 text-gray-400" />
                 </button>
               </div>
               <div className="space-y-4 p-6">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Category</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">分類</label>
                   <input
                     type="text"
                     value={editing.category}
                     onChange={e => setEditing({ ...editing, category: e.target.value })}
-                    placeholder="e.g. Booking / Payment / Account"
+                    placeholder="例如：訂房 / 付款 / 帳號"
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
                     list="faq-categories"
                   />
@@ -159,28 +159,28 @@ const SuperAdminFAQ: React.FC = () => {
                   </datalist>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Question</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">問題</label>
                   <input
                     type="text"
                     value={editing.question}
                     onChange={e => setEditing({ ...editing, question: e.target.value })}
-                    placeholder="Enter question"
+                    placeholder="請輸入問題"
                     className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Answer</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">答案</label>
                   <textarea
                     value={editing.answer}
                     onChange={e => setEditing({ ...editing, answer: e.target.value })}
-                    placeholder="Enter answer"
+                    placeholder="請輸入答案"
                     rows={5}
                     className="w-full resize-none rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
                   />
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex-1">
-                    <label className="mb-1 block text-sm font-medium text-gray-700">Sort order</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">排序</label>
                     <input
                       type="number"
                       value={editing.sort_order}
@@ -196,20 +196,20 @@ const SuperAdminFAQ: React.FC = () => {
                         onChange={e => setEditing({ ...editing, is_published: e.target.checked })}
                         className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-400"
                       />
-                      <span className="text-sm text-gray-700">Published</span>
+                      <span className="text-sm text-gray-700">已發布</span>
                     </label>
                   </div>
                 </div>
               </div>
               <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
-                <button onClick={() => { setEditing(null); setIsNew(false); }} className="rounded-xl px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100">Cancel</button>
+                <button onClick={() => { setEditing(null); setIsNew(false); }} className="rounded-xl px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100">取消</button>
                 <button
                   onClick={handleSave}
                   disabled={saving || !editing.question.trim() || !editing.answer.trim()}
                   className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50"
                 >
                   {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Save className="h-4 w-4" />}
-                  Save
+                  儲存
                 </button>
               </div>
             </motion.div>
@@ -224,13 +224,13 @@ const SuperAdminFAQ: React.FC = () => {
             <div className="min-w-0 flex-1">
               <div className="mb-1 flex items-center gap-2">
                 <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">{faq.category}</span>
-                {!faq.is_published && <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-600">Hidden</span>}
+                {!faq.is_published && <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-600">隱藏</span>}
               </div>
               <p className="text-sm font-medium text-gray-900">{faq.question}</p>
               <p className="mt-1 line-clamp-2 text-xs text-gray-500">{faq.answer}</p>
             </div>
             <div className="flex flex-shrink-0 items-center gap-1">
-              <button onClick={() => togglePublish(faq)} className="rounded-lg p-1.5 transition hover:bg-gray-100" title={faq.is_published ? 'Unpublish' : 'Publish'}>
+              <button onClick={() => togglePublish(faq)} className="rounded-lg p-1.5 transition hover:bg-gray-100" title={faq.is_published ? '取消發布' : '發布'}>
                 {faq.is_published ? <Eye className="h-4 w-4 text-green-500" /> : <EyeOff className="h-4 w-4 text-gray-400" />}
               </button>
               <button onClick={() => { setEditing(faq); setIsNew(false); }} className="rounded-lg p-1.5 transition hover:bg-gray-100">
@@ -244,7 +244,7 @@ const SuperAdminFAQ: React.FC = () => {
         ))}
         {filtered.length === 0 && (
           <div className="py-16 text-center text-sm text-gray-400">
-            {search || filterCat !== 'all' ? 'No matching FAQ items.' : 'No FAQ items yet.'}
+            {search || filterCat !== 'all' ? '找不到符合條件的 FAQ。' : '目前尚無 FAQ。'}
           </div>
         )}
       </div>

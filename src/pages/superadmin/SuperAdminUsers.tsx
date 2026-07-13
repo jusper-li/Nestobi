@@ -75,10 +75,10 @@ type RecordDraft = Record<string, string>;
 
 const ROLE_OPTIONS = ['user', 'vendor', 'admin', 'superadmin'] as const;
 const ROLE_LABELS: Record<string, string> = {
-  user: '??蟡???,
-  vendor: '??',
-  admin: '?????,
-  superadmin: '???????,
+  user: '\u4e00\u822c\u6703\u54e1',
+  vendor: '\u5546\u5bb6',
+  admin: '\u7ba1\u7406\u54e1',
+  superadmin: '\u8d85\u7d1a\u7ba1\u7406\u54e1',
 };
 const ROLE_COLORS: Record<string, string> = {
   superadmin: 'bg-amber-100 text-amber-700',
@@ -100,12 +100,22 @@ const formatShippingAddress = (value: any) => {
   return String(value);
 };
 
+const getShippingField = (shipping: any, keys: string[]) => {
+  if (!shipping || typeof shipping !== 'object') return null;
+  for (const key of keys) {
+    const value = shipping[key];
+    if (value !== undefined && value !== null && String(value).trim() !== '') return String(value);
+  }
+  return null;
+}
+
+
 const summarizeOrderItems = (items: any[]) => {
-  if (!items.length) return '瘝?閮??';
+  if (!items.length) return '\u6c92\u6709\u8a02\u55ae\u54c1\u9805';
   return items
     .slice(0, 3)
-    .map(item => `${item.product_name || '??'} ? ${item.quantity || 1}`)
-    .join('??);
+    .map(item => `${item.product_name || '\u5546\u54c1'} × ${item.quantity || 1}`)
+    .join('、');
 };
 
 
@@ -194,14 +204,14 @@ const SuperAdminUsers: React.FC = () => {
     const trimmed = value.trim();
     if (!trimmed) return null;
     const parsed = Number(trimmed);
-    if (Number.isNaN(parsed)) throw new Error('?閰阬瞏叟僱??????);
+    if (Number.isNaN(parsed)) throw new Error('\u6578\u503c\u683c\u5f0f\u4e0d\u6b63\u78ba');
     return parsed;
   };
   const toNullableIsoDate = (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return null;
     const parsed = new Date(trimmed);
-    if (Number.isNaN(parsed.getTime())) throw new Error('?鈭??瞉???餈方?);
+    if (Number.isNaN(parsed.getTime())) throw new Error('\u65e5\u671f\u683c\u5f0f\u4e0d\u6b63\u78ba');
     return parsed.toISOString();
   };
   const toDateInputValue = (value?: string | null) => (value ? String(value).slice(0, 10) : '');
@@ -318,11 +328,11 @@ const SuperAdminUsers: React.FC = () => {
 
   const handleCreateUser = async () => {
     if (!createForm.email || !createForm.password) {
-      setCreateError('?ｇ???隞遴迤?殉?????????);
+      setCreateError('\u8acb\u8f38\u5165\u96fb\u5b50\u90f5\u4ef6\u8207\u5bc6\u78bc');
       return;
     }
     if (createForm.password.length < 6) {
-      setCreateError('??????????6 ?????);
+      setCreateError('\u5bc6\u78bc\u81f3\u5c11\u9700\u8981 6 \u500b\u5b57\u5143');
       return;
     }
     setCreating(true);
@@ -338,12 +348,12 @@ const SuperAdminUsers: React.FC = () => {
         body: JSON.stringify(createForm),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '?梁????蛔?剜??');
+      if (!res.ok) throw new Error(data.error || '建立會員失敗');
       setShowCreate(false);
       setCreateForm({ email: '', password: '', display_name: '', role: 'user' });
       fetchUsers();
     } catch (err: any) {
-      setCreateError(err.message || '?梁????蛔?剜??');
+      setCreateError(err.message || '建立會員失敗');
     } finally {
       setCreating(false);
     }
@@ -435,7 +445,7 @@ const SuperAdminUsers: React.FC = () => {
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
           coffeeProfileScores = parsed;
         } else {
-          throw new Error('?謘澗??????對?????JSON');
+          throw new Error('咖啡分數 JSON 格式不正確');
         }
       }
 
@@ -548,7 +558,7 @@ const SuperAdminUsers: React.FC = () => {
       setSelectedRecord(null);
       await openDetail(viewUser);
     } catch (error: any) {
-      alert(error?.message || '???皝??剜??');
+      alert(error?.message || '\u8cc7\u6599\u66f4\u65b0\u5931\u6557');
     } finally {
       setRecordSaving(false);
     }
@@ -556,7 +566,7 @@ const SuperAdminUsers: React.FC = () => {
 
   const updateRole = async (userId: string, role: string) => {
     if (userId === currentUser?.id) return;
-    if (!window.confirm(`?????秋撒??恃???撖抆冪??{ROLE_LABELS[role] || role}?????)) return;
+    if (!window.confirm(`\u78ba\u5b9a\u8981\u5c07\u89d2\u8272\u6539\u70ba\u300c${ROLE_LABELS[role] || role}\u300d\u55ce\uff1f`)) return;
     setUpdating(userId);
     await supabase.from('tbl_user_auth').update({ role, updated_at: new Date().toISOString() }).eq('user_id', userId);
     await logAdminAction('update_user_role', 'tbl_user_auth', userId, { role });
@@ -566,7 +576,7 @@ const SuperAdminUsers: React.FC = () => {
 
   const toggleActive = async (userId: string, current: boolean) => {
     if (userId === currentUser?.id) return;
-    if (!window.confirm(`??????{current ? '?謚秋?' : '?賹?'}?謕???蛔???`)) return;
+    if (!window.confirm(`\u78ba\u5b9a\u8981${current ? '\u505c\u7528' : '\u555f\u7528'}\u9019\u4f4d\u6703\u54e1\u55ce\uff1f`)) return;
     setUpdating(userId);
     await supabase.from('tbl_user_auth').update({ is_active: !current, updated_at: new Date().toISOString() }).eq('user_id', userId);
     await logAdminAction(current ? 'deactivate_user' : 'activate_user', 'tbl_user_auth', userId);
@@ -580,12 +590,12 @@ const SuperAdminUsers: React.FC = () => {
     <div className="space-y-6">
       <div className="mb-2 flex items-center gap-3">
         <div className="rounded-xl bg-amber-100 p-2"><Users className="h-6 w-6 text-amber-700" /></div>
-        <h1 className="text-2xl font-bold text-gray-900">??蛔???</h1>
-        <span className="ml-1 text-sm text-gray-400">??{total} ??/span>
+        <h1 className="text-2xl font-bold text-gray-900">會員管理</h1>
+        <span className="ml-1 text-sm text-gray-400">共 {total} 筆</span>
         <div className="flex-1" />
         <button onClick={() => { setShowCreate(true); setCreateError(''); }} className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600">
           <Plus className="h-4 w-4" />
-          ?????蛔
+          新增會員
         </button>
       </div>
 
@@ -594,40 +604,52 @@ const SuperAdminUsers: React.FC = () => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
               <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-                <h3 className="font-semibold text-gray-900">?????蛔</h3>
+                <h3 className="font-semibold text-gray-900">新增會員</h3>
                 <button onClick={() => setShowCreate(false)} className="rounded-lg p-1 hover:bg-gray-100"><X className="h-5 w-5 text-gray-400" /></button>
               </div>
               <div className="space-y-4 p-6">
                 {createError && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{createError}</div>}
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">?擗???麾</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">電子郵件</label>
                   <input type="email" value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} placeholder="user@example.com" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">????/label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">密碼</label>
                   <div className="relative">
-                    <input type={showPw ? 'text' : 'password'} value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} placeholder="??? 6 ????? className="w-full rounded-xl border border-gray-200 px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40" />
+                    <input
+                      type={showPw ? 'text' : 'password'}
+                      value={createForm.password}
+                      onChange={e => setCreateForm({ ...createForm, password: e.target.value })}
+                      placeholder="至少 6 個字元"
+                      className="w-full rounded-xl border border-gray-200 px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                    />
                     <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                       {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">?輯?????</label>
-                  <input type="text" value={createForm.display_name} onChange={e => setCreateForm({ ...createForm, display_name: e.target.value })} placeholder="????? className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40" />
+                  <label className="mb-1 block text-sm font-medium text-gray-700">顯示名稱</label>
+                  <input
+                    type="text"
+                    value={createForm.display_name}
+                    onChange={e => setCreateForm({ ...createForm, display_name: e.target.value })}
+                    placeholder="選填顯示名稱"
+                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                  />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">?恃???/label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">角色</label>
                   <select value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40">
                     {ROLE_OPTIONS.map(role => <option key={role} value={role}>{ROLE_LABELS[role]}</option>)}
                   </select>
                 </div>
               </div>
               <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
-                <button onClick={() => setShowCreate(false)} className="rounded-xl px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100">?謘?</button>
+                <button onClick={() => setShowCreate(false)} className="rounded-xl px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100">取消</button>
                 <button onClick={handleCreateUser} disabled={creating} className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50">
                   {creating ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Save className="h-4 w-4" />}
-                  ?梁??
+                  建立
                 </button>
               </div>
             </motion.div>
@@ -641,12 +663,12 @@ const SuperAdminUsers: React.FC = () => {
           <input
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(0); }}
-            placeholder="?謚??軋??蹓遴迤?殉???????蛔 ID"
+            placeholder="搜尋姓名、電子郵件或會員 ID"
             className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
           />
         </div>
         <select value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(0); }} className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
-          <option value="all">???????/option>
+          <option value="all">所有角色</option>
           {ROLE_OPTIONS.map(role => <option key={role} value={role}>{ROLE_LABELS[role]}</option>)}
         </select>
       </div>
@@ -655,18 +677,18 @@ const SuperAdminUsers: React.FC = () => {
         {loading ? (
           <div className="flex justify-center py-16"><div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" /></div>
         ) : users.length === 0 ? (
-          <div className="py-16 text-center text-gray-400"><Users className="mx-auto mb-2 h-10 w-10 opacity-20" /><p className="text-sm">?????陬???????蛔</p></div>
+          <div className="py-16 text-center text-gray-400"><Users className="mx-auto mb-2 h-10 w-10 opacity-20" /><p className="text-sm">目前沒有符合條件的會員</p></div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="px-5 py-3 text-left font-medium text-gray-500">??蛔</th>
-                  <th className="hidden px-5 py-3 text-left font-medium text-gray-500 md:table-cell">??蛔 ID</th>
-                  <th className="px-5 py-3 text-center font-medium text-gray-500">?恃???/th>
-                  <th className="px-5 py-3 text-center font-medium text-gray-500">????/th>
-                  <th className="hidden px-5 py-3 text-left font-medium text-gray-500 lg:table-cell">?梁???蹇?</th>
-                  <th className="px-5 py-3 text-right font-medium text-gray-500">???</th>
+                  <th className="px-5 py-3 text-left font-medium text-gray-500">會員</th>
+                  <th className="hidden px-5 py-3 text-left font-medium text-gray-500 md:table-cell">會員 ID</th>
+                  <th className="px-5 py-3 text-center font-medium text-gray-500">角色</th>
+                  <th className="px-5 py-3 text-center font-medium text-gray-500">狀態</th>
+                  <th className="hidden px-5 py-3 text-left font-medium text-gray-500 lg:table-cell">建立時間</th>
+                  <th className="px-5 py-3 text-right font-medium text-gray-500">操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -684,16 +706,16 @@ const SuperAdminUsers: React.FC = () => {
                           {user.display_name?.[0] || '?'}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-medium text-gray-900">{user.display_name || '??賃??????}</p>
+                          <p className="font-medium text-gray-900">{user.display_name || '會員'}</p>
                           {user.email && <p className="truncate text-xs text-gray-400">{user.email}</p>}
-                          {user.user_id === currentUser?.id && <span className="text-xs text-amber-600">(??</span>}
+                          {user.user_id === currentUser?.id && <span className="text-xs text-amber-600">(你)</span>}
                         </div>
                       </div>
                     </td>
                     <td className="hidden px-5 py-3.5 md:table-cell">
-                      <button onClick={() => navigator.clipboard.writeText(user.user_id)} title="?湛???蛔 ID" className="group flex items-center gap-1 transition hover:text-amber-600">
+                      <button onClick={() => navigator.clipboard.writeText(user.user_id)} title="複製會員 ID" className="group flex items-center gap-1 transition hover:text-amber-600">
                         <code className="font-mono text-xs text-gray-400 group-hover:text-amber-600">{user.user_id.slice(-12)}</code>
-                        <span className="text-xs text-gray-300 opacity-0 transition group-hover:opacity-100 group-hover:text-amber-400">?湛?</span>
+                        <span className="text-xs text-gray-300 opacity-0 transition group-hover:opacity-100 group-hover:text-amber-400">複製</span>
                       </button>
                     </td>
                     <td className="px-5 py-3.5 text-center">
@@ -712,13 +734,13 @@ const SuperAdminUsers: React.FC = () => {
                     </td>
                     <td className="px-5 py-3.5 text-center">
                       <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                        {user.is_active ? '?賹?' : '?謚秋?'}
+                        {user.is_active ? '啟用' : '停用'}
                       </span>
                     </td>
                     <td className="hidden px-5 py-3.5 text-xs text-gray-400 lg:table-cell">{formatDate(user.created_at)}</td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => openDetail(user)} className="rounded-xl p-2 text-amber-600 transition hover:bg-amber-50" title="?鈭??啣?">
+                        <button onClick={() => openDetail(user)} className="rounded-xl p-2 text-amber-600 transition hover:bg-amber-50" title="查看詳情">
                           <Eye className="h-4 w-4" />
                         </button>
                         {user.user_id !== currentUser?.id && (
@@ -726,7 +748,7 @@ const SuperAdminUsers: React.FC = () => {
                             onClick={() => toggleActive(user.user_id, user.is_active)}
                             disabled={updating === user.user_id}
                             className={`rounded-xl p-2 transition disabled:opacity-50 ${user.is_active ? 'text-red-500 hover:bg-red-50' : 'text-green-600 hover:bg-green-50'}`}
-                            title={user.is_active ? '?謚秋?' : '?賹?'}
+                            title={user.is_active ? '停用' : '啟用'}
                           >
                             {updating === user.user_id ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : user.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                           </button>
@@ -751,10 +773,10 @@ const SuperAdminUsers: React.FC = () => {
                     {viewUser.display_name?.[0] || '?'}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">{viewUser.display_name || '??賃??????}</h3>
+                    <h3 className="font-semibold text-gray-900">{viewUser.display_name || '會員'}</h3>
                     <div className="mt-0.5 flex items-center gap-2">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_COLORS[viewUser.role]}`}>{ROLE_LABELS[viewUser.role]}</span>
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${viewUser.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>{viewUser.is_active ? '?賹?' : '?謚秋?'}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${viewUser.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>{viewUser.is_active ? '啟用' : '停用'}</span>
                     </div>
                   </div>
                 </div>
@@ -763,11 +785,11 @@ const SuperAdminUsers: React.FC = () => {
 
               <div className="flex flex-shrink-0 border-b border-gray-100 px-6">
                 {([
-                  { key: 'profile', label: '??蛔??', icon: <Users className="h-3.5 w-3.5" /> },
-                  { key: 'bookings', label: '?殉??????, icon: <BedDouble className="h-3.5 w-3.5" /> },
-                  { key: 'orders', label: '?殉?謘????, icon: <ShoppingBag className="h-3.5 w-3.5" /> },
-                  { key: 'invoices', label: '?瞏楊???, icon: <FileText className="h-3.5 w-3.5" /> },
-                  { key: 'points', label: '?綜等?脰????, icon: <Award className="h-3.5 w-3.5" /> },
+                  { key: 'profile', label: '會員資料', icon: <Users className="h-3.5 w-3.5" /> },
+                  { key: 'bookings', label: '訂房紀錄', icon: <BedDouble className="h-3.5 w-3.5" /> },
+                  { key: 'orders', label: '訂單紀錄', icon: <ShoppingBag className="h-3.5 w-3.5" /> },
+                  { key: 'invoices', label: '發票紀錄', icon: <FileText className="h-3.5 w-3.5" /> },
+                  { key: 'points', label: '點數紀錄', icon: <Award className="h-3.5 w-3.5" /> },
                 ] as const).map(tab => (
                   <button
                     key={tab.key}
@@ -786,63 +808,81 @@ const SuperAdminUsers: React.FC = () => {
                 ) : !detail ? null : detailTab === 'profile' ? (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between gap-3">
-                      <div className="text-sm font-medium text-gray-500">??蛔??????釭頨急?/div>
+                      <div className="text-sm font-medium text-gray-500">會員資料與編輯</div>
                       {detail.profile && (
                         profileEditing ? (
-                          <div className="flex items-center gap-2">
-                            <button type="button" onClick={cancelProfileEdit} className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50">?謘?</button>
-                            <button type="button" onClick={() => void saveProfileChanges()} disabled={profileSaving} className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50">
-                              {profileSaving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Save className="h-4 w-4" />}
-                              ?????謆?
-                            </button>
-                          </div>
+                            <div className="flex items-center gap-2">
+                              <button type="button" onClick={cancelProfileEdit} className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50">取消</button>
+                              <button type="button" onClick={() => void saveProfileChanges()} disabled={profileSaving} className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50">
+                                {profileSaving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Save className="h-4 w-4" />}
+                                儲存
+                              </button>
+                            </div>
                         ) : (
-                          <button type="button" onClick={startProfileEdit} className="rounded-xl bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100">?箏???蛔??</button>
+                          <button type="button" onClick={startProfileEdit} className="rounded-xl bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100">編輯會員資料</button>
                         )
                       )}
                     </div>
                     {profileEditing && detail.profile && (
                       <div className="rounded-2xl border border-amber-100 bg-amber-50/30 p-4">
                         <div className="grid gap-4 md:grid-cols-2">
-                          <EditableField label="?輯?????" value={profileDraft.display_name} onChange={value => setProfileDraft(current => ({ ...current, display_name: value }))} />
-                          <EditableField label="???" value={profileDraft.phone} onChange={value => setProfileDraft(current => ({ ...current, phone: value }))} />
-                          <EditableField label="???" value={profileDraft.nationality} onChange={value => setProfileDraft(current => ({ ...current, nationality: value }))} />
-                          <EditableField label="??望?止筆?" value={profileDraft.preferred_language} onChange={value => setProfileDraft(current => ({ ...current, preferred_language: value }))} />
-                          <div className="md:col-span-2"><EditableField label="?芬?" value={profileDraft.bio} onChange={value => setProfileDraft(current => ({ ...current, bio: value }))} textarea rows={4} /></div>
-                          <EditableField label="?謘澗??????? value={profileDraft.coffee_profile_label} onChange={value => setProfileDraft(current => ({ ...current, coffee_profile_label: value }))} />
-                          <EditableField label="?謘澗??????? value={profileDraft.coffee_profile_key} onChange={value => setProfileDraft(current => ({ ...current, coffee_profile_key: value }))} />
-                          <div className="md:col-span-2"><EditableField label="?謘澗????謢?" value={profileDraft.coffee_profile_summary} onChange={value => setProfileDraft(current => ({ ...current, coffee_profile_summary: value }))} textarea rows={4} /></div>
-                          <div className="md:col-span-2"><EditableField label="?謘澗????? JSON" value={profileDraft.coffee_profile_scores} onChange={value => setProfileDraft(current => ({ ...current, coffee_profile_scores: value }))} textarea rows={8} mono placeholder='{"sweetness": 80}' /></div>
+                          <EditableField label="顯示名稱" value={profileDraft.display_name} onChange={value => setProfileDraft(current => ({ ...current, display_name: value }))} />
+                          <EditableField label="手機" value={profileDraft.phone} onChange={value => setProfileDraft(current => ({ ...current, phone: value }))} />
+                          <EditableField label="國籍" value={profileDraft.nationality} onChange={value => setProfileDraft(current => ({ ...current, nationality: value }))} />
+                          <EditableField label="偏好語言" value={profileDraft.preferred_language} onChange={value => setProfileDraft(current => ({ ...current, preferred_language: value }))} />
+                          <div className="md:col-span-2"><EditableField label="簡介" value={profileDraft.bio} onChange={value => setProfileDraft(current => ({ ...current, bio: value }))} textarea rows={4} /></div>
+                          <EditableField label="咖啡標籤" value={profileDraft.coffee_profile_label} onChange={value => setProfileDraft(current => ({ ...current, coffee_profile_label: value }))} />
+                          <EditableField label="咖啡代碼" value={profileDraft.coffee_profile_key} onChange={value => setProfileDraft(current => ({ ...current, coffee_profile_key: value }))} />
+                          <div className="md:col-span-2"><EditableField label="咖啡摘要" value={profileDraft.coffee_profile_summary} onChange={value => setProfileDraft(current => ({ ...current, coffee_profile_summary: value }))} textarea rows={4} /></div>
+                          <div className="md:col-span-2"><EditableField label="咖啡分數 JSON" value={profileDraft.coffee_profile_scores} onChange={value => setProfileDraft(current => ({ ...current, coffee_profile_scores: value }))} textarea rows={8} mono placeholder='{"sweetness": 80}' /></div>
                         </div>
                       </div>
                     )}
                     <div className="grid grid-cols-2 gap-4">
-                      <InfoItem icon={<Mail className="h-4 w-4" />} label="?擗???麾" value={viewUser.email || '-'} />
-                      <InfoItem icon={<Calendar className="h-4 w-4" />} label="?梁???蹇?" value={formatDateTime(viewUser.created_at)} />
+                      <InfoItem icon={<Mail className="h-4 w-4" />} label="電子郵件" value={viewUser.email || '-'} />
+                      <InfoItem icon={<Calendar className="h-4 w-4" />} label="建立時間" value={formatDateTime(viewUser.created_at)} />
                       <div className="col-span-2">
-                        <InfoItem icon={<FileText className="h-4 w-4" />} label="??蛔 ID" value={viewUser.user_id} mono />
+                        <InfoItem icon={<FileText className="h-4 w-4" />} label="會員 ID" value={viewUser.user_id} mono />
+                      </div>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-4">
+                      <div className="rounded-2xl bg-gray-50 p-4">
+                        <p className="text-xs font-medium text-gray-400">訂房紀錄</p>
+                        <p className="mt-1 text-2xl font-bold text-gray-900">{detail.bookings.length}</p>
+                      </div>
+                      <div className="rounded-2xl bg-gray-50 p-4">
+                        <p className="text-xs font-medium text-gray-400">訂單紀錄</p>
+                        <p className="mt-1 text-2xl font-bold text-gray-900">{detail.orders.length}</p>
+                      </div>
+                      <div className="rounded-2xl bg-gray-50 p-4">
+                        <p className="text-xs font-medium text-gray-400">發票紀錄</p>
+                        <p className="mt-1 text-2xl font-bold text-gray-900">{detail.invoices.length}</p>
+                      </div>
+                      <div className="rounded-2xl bg-gradient-to-br from-amber-50 to-white p-4">
+                        <p className="text-xs font-medium text-amber-700">點數餘額</p>
+                        <p className="mt-1 text-2xl font-bold text-gray-900">{detail.totalPoints}</p>
                       </div>
                     </div>
                     {detail.profile ? (
                       <>
                         <div className="grid grid-cols-2 gap-4">
-                          <InfoItem icon={<Users className="h-4 w-4" />} label="?輯?????" value={detail.profile.display_name || '-'} />
-                          <InfoItem icon={<Phone className="h-4 w-4" />} label="???" value={detail.profile.phone || '-'} />
-                          <InfoItem icon={<Globe className="h-4 w-4" />} label="???" value={detail.profile.nationality || '-'} />
-                          <InfoItem icon={<Globe className="h-4 w-4" />} label="??望?止筆?" value={detail.profile.preferred_language || '-'} />
+                          <InfoItem icon={<Users className="h-4 w-4" />} label="顯示名稱" value={detail.profile.display_name || '-'} />
+                          <InfoItem icon={<Phone className="h-4 w-4" />} label="手機" value={detail.profile.phone || '-'} />
+                          <InfoItem icon={<Globe className="h-4 w-4" />} label="國籍" value={detail.profile.nationality || '-'} />
+                          <InfoItem icon={<Globe className="h-4 w-4" />} label="偏好語言" value={detail.profile.preferred_language || '-'} />
                           <div className="col-span-2">
-                            <InfoItem icon={<FileText className="h-4 w-4" />} label="?芬?" value={detail.profile.bio || '-'} />
+                            <InfoItem icon={<FileText className="h-4 w-4" />} label="簡介" value={detail.profile.bio || '-'} />
                           </div>
                         </div>
                         {(detail.profile.coffee_profile_label || detail.profile.coffee_profile_summary) && (
                           <div className="mt-4 rounded-2xl border border-[#eadfce] bg-gradient-to-br from-[#fff9f0] to-white p-4">
                             <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#8a5a22]">
                               <Coffee className="h-4 w-4" />
-                              ?謘澗?????荒??
+                              咖啡測驗摘要
                             </div>
                             <p className="text-base font-bold text-[#3b2a19]">{detail.profile.coffee_profile_label || '-'}</p>
                             {detail.profile.coffee_profile_summary && <p className="mt-2 text-sm leading-7 text-gray-700">{detail.profile.coffee_profile_summary}</p>}
-                            {detail.profile.coffee_profile_key && <p className="mt-3 text-xs text-gray-400">????爸detail.profile.coffee_profile_key}</p>}
+                            {detail.profile.coffee_profile_key && <p className="mt-3 text-xs text-gray-400">{detail.profile.coffee_profile_key}</p>}
                             {detail.profile.coffee_profile_scores && Object.keys(detail.profile.coffee_profile_scores).length > 0 && (
                               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                                 {Object.entries(detail.profile.coffee_profile_scores).map(([key, value]) => (
@@ -859,12 +899,12 @@ const SuperAdminUsers: React.FC = () => {
                         )}
                       </>
                     ) : (
-                      <div className="rounded-xl bg-gray-50 p-4 text-center text-sm text-gray-400">?????蛔??</div>
+                      <div className="rounded-xl bg-gray-50 p-4 text-center text-sm text-gray-400">尚無會員資料</div>
                     )}
                   </div>
                 ) : detailTab === 'bookings' ? (
                   detail.bookings.length === 0 ? (
-                    <div className="py-10 text-center text-gray-400"><BedDouble className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">????殉??????/p></div>
+                    <div className="py-10 text-center text-gray-400"><BedDouble className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">尚無訂房紀錄</p></div>
                   ) : (
                     <div className="space-y-3">
                       {detail.bookings.map((booking: any) => (
@@ -875,23 +915,23 @@ const SuperAdminUsers: React.FC = () => {
                           className="w-full rounded-xl bg-gray-50 p-4 text-left transition hover:bg-amber-50/40"
                         >
                           <div className="flex items-center justify-between gap-4">
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-gray-900">{booking.tbl_rooms?.name || 'Room'}</p>
-                            <p className="mt-0.5 text-xs text-gray-500">{formatDate(booking.check_in_date)} ~ {formatDate(booking.check_out_date)} / {booking.guests} ??/p>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-gray-900">{booking.tbl_rooms?.name || '房型'}</p>
+                              <p className="mt-0.5 text-xs text-gray-500">{formatDate(booking.check_in_date)} ~ {formatDate(booking.check_out_date)} / {booking.guests} 人</p>
+                            </div>
+                            <div className="flex-shrink-0 text-right">
+                              <p className="text-sm font-semibold text-gray-900">{formatCurrency(booking.total_price)}</p>
+                              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(booking.status)}`}>{getStatusLabel(booking.status)}</span>
+                            </div>
                           </div>
-                          <div className="flex-shrink-0 text-right">
-                            <p className="text-sm font-semibold text-gray-900">{formatCurrency(booking.total_price)}</p>
-                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(booking.status)}`}>{getStatusLabel(booking.status)}</span>
-                          </div>
-                          </div>
-                          <div className="mt-3 text-right text-xs font-medium text-amber-700">?綜等??鈭??啣??阡???</div>
+                          <div className="mt-3 text-right text-xs font-medium text-amber-700">點我查看詳細資料</div>
                         </button>
                       ))}
                     </div>
                   )
                 ) : detailTab === 'orders' ? (
                   detail.orders.length === 0 ? (
-                    <div className="py-10 text-center text-gray-400"><ShoppingBag className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">????殉?謘????/p></div>
+                    <div className="py-10 text-center text-gray-400"><ShoppingBag className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">尚無訂單紀錄</p></div>
                   ) : (
                     <div className="space-y-3">
                       {detail.orders.map((order: any) => {
@@ -938,7 +978,6 @@ const SuperAdminUsers: React.FC = () => {
                               </div>
                             )}
                           </div>
-                          <div className="mt-3 text-right text-xs font-medium text-amber-700">點我查看完整訂單內容</div>
                         </button>
                         );
                       })}
@@ -946,7 +985,7 @@ const SuperAdminUsers: React.FC = () => {
                   )
                 ) : detailTab === 'invoices' ? (
                   detail.invoices.length === 0 ? (
-                    <div className="py-10 text-center text-gray-400"><FileText className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">????瞏楊???/p></div>
+                    <div className="py-10 text-center text-gray-400"><FileText className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">尚無發票紀錄</p></div>
                   ) : (
                     <div className="space-y-3">
                       {detail.invoices.map((invoice: any) => (
@@ -969,15 +1008,15 @@ const SuperAdminUsers: React.FC = () => {
                                         ? 'bg-blue-100 text-blue-700'
                                         : 'bg-amber-100 text-amber-700'
                                 }`}>
-                                  {invoice.invoice_status || 'pending'}
+                                  {invoice.invoice_status === 'pending' ? '待處理' : invoice.invoice_status || '-'}
                                 </span>
                                 <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-gray-500">
-                                  {invoice.tax_type || '???}
+                                  {invoice.tax_type || '未分類'}
                                 </span>
                               </div>
-                              <p className="mt-3 text-sm font-semibold text-gray-900">{invoice.invoice_number || '?垮謓????瞏楊?賹'}</p>
+                              <p className="mt-3 text-sm font-semibold text-gray-900">{invoice.invoice_number || '尚未開立'}</p>
                               <p className="mt-1 text-xs text-gray-500">
-                                {invoice.invoice_date ? formatDateTime(invoice.invoice_date) : '?????}
+                                {invoice.invoice_date ? formatDateTime(invoice.invoice_date) : '尚未開立時間'}
                               </p>
                             </div>
                             <div className="text-right">
@@ -987,15 +1026,15 @@ const SuperAdminUsers: React.FC = () => {
                           </div>
 
                           <div className="mt-4 grid gap-3 md:grid-cols-2">
-                            <InfoItem icon={<FileText className="h-4 w-4" />} label="????剔?蝯? value={invoice.buyer_identifier || '-'} mono />
+                            <InfoItem icon={<FileText className="h-4 w-4" />} label="買受人統編" value={invoice.buyer_identifier || '-'} mono />
                             <InfoItem
                               icon={<FileText className="h-4 w-4" />}
-                              label="???/ ?謜???
+                              label="載具 / 愛心碼"
                               value={[invoice.carrier_type || '', invoice.carrier_number || '', invoice.love_code || ''].filter(Boolean).join(' / ') || '-'}
                               mono
                             />
-                            <InfoItem icon={<FileText className="h-4 w-4" />} label="ezPay ?剜???制?" value={invoice.ezpay_trade_no || '-'} mono />
-                            <InfoItem icon={<FileText className="h-4 w-4" />} label="??????" value={`${formatCurrency(invoice.sales_amount || 0)} / ?? ${formatCurrency(invoice.tax_amount || 0)}`} />
+                            <InfoItem icon={<FileText className="h-4 w-4" />} label="ezPay 交易號" value={invoice.ezpay_trade_no || '-'} mono />
+                            <InfoItem icon={<FileText className="h-4 w-4" />} label="銷售金額 / 稅額" value={`${formatCurrency(invoice.sales_amount || 0)} / ${formatCurrency(invoice.tax_amount || 0)}`} />
                           </div>
 
                           {invoice.error_message && (
@@ -1004,7 +1043,7 @@ const SuperAdminUsers: React.FC = () => {
                             </div>
                           )}
                           <div className="mt-4 text-right text-xs font-medium text-amber-700">
-                            ?綜等??鈭??啣??阡???
+                            點我查看發票詳情
                           </div>
                         </button>
                       ))}
@@ -1013,11 +1052,10 @@ const SuperAdminUsers: React.FC = () => {
                 ) : (
                   <>
                     <div className="mb-4 flex items-center justify-between rounded-xl bg-amber-50 p-4">
-                      <span className="text-sm font-medium text-amber-800">?株部???/span>
-                      <span className="text-lg font-bold text-amber-700">{detail.totalPoints.toLocaleString()}</span>
+                      <span className="text-sm font-medium text-amber-800">點數總覽</span>
                     </div>
                     {detail.points.length === 0 ? (
-                      <div className="py-10 text-center text-gray-400"><Award className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">????綜等?脰????/p></div>
+                      <div className="py-10 text-center text-gray-400"><Award className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">尚無點數紀錄</p></div>
                     ) : (
                       <div className="space-y-2">
                       {detail.points.map((point: any) => (
@@ -1028,7 +1066,7 @@ const SuperAdminUsers: React.FC = () => {
                             className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition hover:bg-gray-50"
                           >
                             <div>
-                              <p className="text-sm text-gray-900">{point.description || '?綜等?脰????}</p>
+                              <p className="text-sm text-gray-900">{point.description || '點數紀錄'}</p>
                               <p className="text-xs text-gray-400">{formatDateTime(point.created_at)}</p>
                             </div>
                             <span className={`text-sm font-semibold ${point.transaction_type === 'earned' ? 'text-green-600' : point.transaction_type === 'spent' ? 'text-red-500' : 'text-gray-400'}`}>
@@ -1065,10 +1103,10 @@ const SuperAdminUsers: React.FC = () => {
               {(() => {
                 const record = selectedRecord.data;
                 const titleMap: Record<DetailRecordType, string> = {
-                  booking: '?殉?????',
-                  order: '?殉?謘???',
-                  point: '?綜等?脤???',
-                  invoice: '?瞏楊?啣??阡???',
+                  booking: '訂房詳細資料',
+                  order: '訂單詳細資料',
+                  point: '點數詳細資料',
+                  invoice: '發票詳細資料',
                 };
                 const subtitleMap: Record<DetailRecordType, string> = {
                   booking: String(record.id || record.room_id || '-'),
@@ -1084,7 +1122,7 @@ const SuperAdminUsers: React.FC = () => {
                         <h3 className="text-lg font-bold text-gray-900">{titleMap[selectedRecord.type]}</h3>
                         <p className="mt-1 text-sm text-gray-500">{subtitleMap[selectedRecord.type]}</p>
                       </div>
-                      <button type="button" onClick={() => setSelectedRecord(null)} className="rounded-lg p-1.5 hover:bg-gray-100" aria-label="?謚?">
+                      <button type="button" onClick={() => setSelectedRecord(null)} className="rounded-lg p-1.5 hover:bg-gray-100" aria-label="關閉">
                         <X className="h-5 w-5 text-gray-400" />
                       </button>
                     </div>
@@ -1092,68 +1130,68 @@ const SuperAdminUsers: React.FC = () => {
                     <div className="flex-1 overflow-y-auto p-6">
                       {recordEditing && (
                         <div className="mb-6 space-y-4 rounded-2xl border border-amber-100 bg-amber-50/30 p-4">
-                          <div className="text-sm font-semibold text-amber-800">?箏?拍???</div>
+                          <div className="text-sm font-semibold text-amber-800">編輯記錄</div>
                           {selectedRecord.type === 'booking' && (
                             <div className="grid gap-4 md:grid-cols-2">
-                              <EditableField label="???? value={recordDraft.status || ''} onChange={value => setRecordDraft(current => ({ ...current, status: value }))} />
-                              <EditableField label="?朵????? value={recordDraft.payment_status || ''} onChange={value => setRecordDraft(current => ({ ...current, payment_status: value }))} />
-                              <EditableField label="?朵??摮?" value={recordDraft.payment_method || ''} onChange={value => setRecordDraft(current => ({ ...current, payment_method: value }))} />
-                              <EditableField label="?剔捂?? value={recordDraft.guests || ''} onChange={value => setRecordDraft(current => ({ ...current, guests: value }))} type="number" />
-                              <EditableField label="?株部??? value={recordDraft.total_price || ''} onChange={value => setRecordDraft(current => ({ ...current, total_price: value }))} type="number" />
-                              <EditableField label="?銋??? value={recordDraft.check_in_date || ''} onChange={value => setRecordDraft(current => ({ ...current, check_in_date: value }))} type="date" />
-                              <EditableField label="???頦蛔?" value={recordDraft.check_out_date || ''} onChange={value => setRecordDraft(current => ({ ...current, check_out_date: value }))} type="date" />
+                              <EditableField label="狀態" value={recordDraft.status || ''} onChange={value => setRecordDraft(current => ({ ...current, status: value }))} />
+                              <EditableField label="付款狀態" value={recordDraft.payment_status || ''} onChange={value => setRecordDraft(current => ({ ...current, payment_status: value }))} />
+                              <EditableField label="付款方式" value={recordDraft.payment_method || ''} onChange={value => setRecordDraft(current => ({ ...current, payment_method: value }))} />
+                              <EditableField label="入住人數" value={recordDraft.guests || ''} onChange={value => setRecordDraft(current => ({ ...current, guests: value }))} type="number" />
+                              <EditableField label="總金額" value={recordDraft.total_price || ''} onChange={value => setRecordDraft(current => ({ ...current, total_price: value }))} type="number" />
+                              <EditableField label="入住日期" value={recordDraft.check_in_date || ''} onChange={value => setRecordDraft(current => ({ ...current, check_in_date: value }))} type="date" />
+                              <EditableField label="退房日期" value={recordDraft.check_out_date || ''} onChange={value => setRecordDraft(current => ({ ...current, check_out_date: value }))} type="date" />
                               <div className="md:col-span-2">
-                                <EditableField label="?撖????? value={recordDraft.special_requests || ''} onChange={value => setRecordDraft(current => ({ ...current, special_requests: value }))} textarea rows={4} />
+                                <EditableField label="特殊需求" value={recordDraft.special_requests || ''} onChange={value => setRecordDraft(current => ({ ...current, special_requests: value }))} textarea rows={4} />
                               </div>
                             </div>
                           )}
                           {selectedRecord.type === 'order' && (
                             <div className="grid gap-4 md:grid-cols-2">
-                              <EditableField label="?殉?謘???? value={recordDraft.status || ''} onChange={value => setRecordDraft(current => ({ ...current, status: value }))} />
-                              <EditableField label="?朵????? value={recordDraft.payment_status || ''} onChange={value => setRecordDraft(current => ({ ...current, payment_status: value }))} />
-                              <EditableField label="?朵??摮?" value={recordDraft.payment_method || ''} onChange={value => setRecordDraft(current => ({ ...current, payment_method: value }))} />
-                              <EditableField label="?株部??? value={recordDraft.total_amount || ''} onChange={value => setRecordDraft(current => ({ ...current, total_amount: value }))} type="number" />
+                              <EditableField label="狀態" value={recordDraft.status || ''} onChange={value => setRecordDraft(current => ({ ...current, status: value }))} />
+                              <EditableField label="付款狀態" value={recordDraft.payment_status || ''} onChange={value => setRecordDraft(current => ({ ...current, payment_status: value }))} />
+                              <EditableField label="付款方式" value={recordDraft.payment_method || ''} onChange={value => setRecordDraft(current => ({ ...current, payment_method: value }))} />
+                              <EditableField label="總金額" value={recordDraft.total_amount || ''} onChange={value => setRecordDraft(current => ({ ...current, total_amount: value }))} type="number" />
                             </div>
                           )}
                           {selectedRecord.type === 'point' && (
                             <div className="grid gap-4 md:grid-cols-2">
-                              <EditableField label="?剜???遴竣?" value={recordDraft.transaction_type || ''} onChange={value => setRecordDraft(current => ({ ...current, transaction_type: value }))} />
-                              <EditableField label="?綜等?? value={recordDraft.amount || ''} onChange={value => setRecordDraft(current => ({ ...current, amount: value }))} type="number" />
-                              <EditableField label="?方?" value={recordDraft.description || ''} onChange={value => setRecordDraft(current => ({ ...current, description: value }))} textarea rows={3} />
-                              <EditableField label="????遴竣?" value={recordDraft.source_type || ''} onChange={value => setRecordDraft(current => ({ ...current, source_type: value }))} />
-                              <EditableField label="??? ID" value={recordDraft.source_id || ''} onChange={value => setRecordDraft(current => ({ ...current, source_id: value }))} mono />
-                              <EditableField label="Reference ID" value={recordDraft.reference_id || ''} onChange={value => setRecordDraft(current => ({ ...current, reference_id: value }))} mono />
-                              <EditableField label="Vendor ID" value={recordDraft.vendor_id || ''} onChange={value => setRecordDraft(current => ({ ...current, vendor_id: value }))} mono />
-                              <EditableField label="????ID" value={recordDraft.store_location_id || ''} onChange={value => setRecordDraft(current => ({ ...current, store_location_id: value }))} mono />
+                              <EditableField label="點數類型" value={recordDraft.transaction_type || ''} onChange={value => setRecordDraft(current => ({ ...current, transaction_type: value }))} />
+                              <EditableField label="點數數量" value={recordDraft.amount || ''} onChange={value => setRecordDraft(current => ({ ...current, amount: value }))} type="number" />
+                              <EditableField label="描述" value={recordDraft.description || ''} onChange={value => setRecordDraft(current => ({ ...current, description: value }))} textarea rows={3} />
+                              <EditableField label="來源類型" value={recordDraft.source_type || ''} onChange={value => setRecordDraft(current => ({ ...current, source_type: value }))} />
+                              <EditableField label="來源 ID" value={recordDraft.source_id || ''} onChange={value => setRecordDraft(current => ({ ...current, source_id: value }))} mono />
+                              <EditableField label="參考 ID" value={recordDraft.reference_id || ''} onChange={value => setRecordDraft(current => ({ ...current, reference_id: value }))} mono />
+                              <EditableField label="供應商 ID" value={recordDraft.vendor_id || ''} onChange={value => setRecordDraft(current => ({ ...current, vendor_id: value }))} mono />
+                              <EditableField label="門市 ID" value={recordDraft.store_location_id || ''} onChange={value => setRecordDraft(current => ({ ...current, store_location_id: value }))} mono />
                             </div>
                           )}
                           {selectedRecord.type === 'invoice' && (
                             <div className="grid gap-4 md:grid-cols-2">
-                              <EditableField label="?瞏楊???? value={recordDraft.invoice_status || ''} onChange={value => setRecordDraft(current => ({ ...current, invoice_status: value }))} />
-                              <EditableField label="????蹇?" value={recordDraft.invoice_date || ''} onChange={value => setRecordDraft(current => ({ ...current, invoice_date: value }))} type="datetime-local" />
-                              <EditableField label="?瞏楊?賹" value={recordDraft.invoice_number || ''} onChange={value => setRecordDraft(current => ({ ...current, invoice_number: value }))} mono />
-                              <EditableField label="????? value={recordDraft.invoice_random_number || ''} onChange={value => setRecordDraft(current => ({ ...current, invoice_random_number: value }))} mono />
-                              <EditableField label="????剔???? value={recordDraft.buyer_name || ''} onChange={value => setRecordDraft(current => ({ ...current, buyer_name: value }))} />
-                              <EditableField label="?????Email" value={recordDraft.buyer_email || ''} onChange={value => setRecordDraft(current => ({ ...current, buyer_email: value }))} type="email" />
-                              <EditableField label="????剔?蝯? value={recordDraft.buyer_identifier || ''} onChange={value => setRecordDraft(current => ({ ...current, buyer_identifier: value }))} mono />
-                              <EditableField label="??豯?" value={recordDraft.carrier_type || ''} onChange={value => setRecordDraft(current => ({ ...current, carrier_type: value }))} />
-                              <EditableField label="???賹" value={recordDraft.carrier_number || ''} onChange={value => setRecordDraft(current => ({ ...current, carrier_number: value }))} mono />
-                              <EditableField label="?謜??? value={recordDraft.love_code || ''} onChange={value => setRecordDraft(current => ({ ...current, love_code: value }))} mono />
-                              <EditableField label="??? value={recordDraft.tax_type || ''} onChange={value => setRecordDraft(current => ({ ...current, tax_type: value }))} />
-                              <EditableField label="??????" value={recordDraft.sales_amount || ''} onChange={value => setRecordDraft(current => ({ ...current, sales_amount: value }))} type="number" />
-                              <EditableField label="??" value={recordDraft.tax_amount || ''} onChange={value => setRecordDraft(current => ({ ...current, tax_amount: value }))} type="number" />
-                              <EditableField label="?株部??? value={recordDraft.total_amount || ''} onChange={value => setRecordDraft(current => ({ ...current, total_amount: value }))} type="number" />
+                              <EditableField label="發票狀態" value={recordDraft.invoice_status || ''} onChange={value => setRecordDraft(current => ({ ...current, invoice_status: value }))} />
+                              <EditableField label="開立時間" value={recordDraft.invoice_date || ''} onChange={value => setRecordDraft(current => ({ ...current, invoice_date: value }))} type="datetime-local" />
+                              <EditableField label="發票號碼" value={recordDraft.invoice_number || ''} onChange={value => setRecordDraft(current => ({ ...current, invoice_number: value }))} mono />
+                              <EditableField label="隨機碼" value={recordDraft.invoice_random_number || ''} onChange={value => setRecordDraft(current => ({ ...current, invoice_random_number: value }))} mono />
+                              <EditableField label="買受人姓名" value={recordDraft.buyer_name || ''} onChange={value => setRecordDraft(current => ({ ...current, buyer_name: value }))} />
+                              <EditableField label="買受人電子郵件" value={recordDraft.buyer_email || ''} onChange={value => setRecordDraft(current => ({ ...current, buyer_email: value }))} type="email" />
+                              <EditableField label="買受人統編" value={recordDraft.buyer_identifier || ''} onChange={value => setRecordDraft(current => ({ ...current, buyer_identifier: value }))} mono />
+                              <EditableField label="載具類型" value={recordDraft.carrier_type || ''} onChange={value => setRecordDraft(current => ({ ...current, carrier_type: value }))} />
+                              <EditableField label="載具號碼" value={recordDraft.carrier_number || ''} onChange={value => setRecordDraft(current => ({ ...current, carrier_number: value }))} mono />
+                              <EditableField label="愛心碼" value={recordDraft.love_code || ''} onChange={value => setRecordDraft(current => ({ ...current, love_code: value }))} mono />
+                              <EditableField label="稅別" value={recordDraft.tax_type || ''} onChange={value => setRecordDraft(current => ({ ...current, tax_type: value }))} />
+                              <EditableField label="銷售金額" value={recordDraft.sales_amount || ''} onChange={value => setRecordDraft(current => ({ ...current, sales_amount: value }))} type="number" />
+                              <EditableField label="稅額" value={recordDraft.tax_amount || ''} onChange={value => setRecordDraft(current => ({ ...current, tax_amount: value }))} type="number" />
+                              <EditableField label="總金額" value={recordDraft.total_amount || ''} onChange={value => setRecordDraft(current => ({ ...current, total_amount: value }))} type="number" />
                               <EditableField label="ezPay Trade No" value={recordDraft.ezpay_trade_no || ''} onChange={value => setRecordDraft(current => ({ ...current, ezpay_trade_no: value }))} mono />
                               <div className="md:col-span-2">
-                                <EditableField label="??芰??殷?蹓? value={recordDraft.error_message || ''} onChange={value => setRecordDraft(current => ({ ...current, error_message: value }))} textarea rows={4} />
+                                <EditableField label="錯誤訊息" value={recordDraft.error_message || ''} onChange={value => setRecordDraft(current => ({ ...current, error_message: value }))} textarea rows={4} />
                               </div>
                             </div>
                           )}
                           <div className="flex justify-end gap-2">
-                            <button type="button" onClick={cancelRecordEdit} className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-white">?謘?</button>
+                            <button type="button" onClick={cancelRecordEdit} className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-white">取消</button>
                             <button type="button" onClick={() => void saveSelectedRecord()} disabled={recordSaving} className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50">
                               {recordSaving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Save className="h-4 w-4" />}
-                              ?????謆?
+                              儲存
                             </button>
                           </div>
                         </div>
@@ -1206,11 +1244,6 @@ const SuperAdminUsers: React.FC = () => {
                               <InfoItem label="訂單號" value={record.order_number || record.merchant_order_no || '-'} mono />
                               <InfoItem label="收件資訊" value={formatShippingAddress(record.shipping_address)} />
                             </div>
-
-                            <div className="rounded-2xl bg-gray-50 p-4">
-                              <p className="text-xs font-medium text-gray-400">特殊需求</p>
-                              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-gray-700">{record.special_requests || '-'}</p>
-                            </div>
                           </div>
                         );
                       })()}
@@ -1221,6 +1254,14 @@ const SuperAdminUsers: React.FC = () => {
                         const tax = Number(record.tax ?? 0);
                         const shipping = Number(record.shipping ?? 0);
                         const itemCount = orderItems.reduce((sum: number, item: any) => sum + (Number(item.quantity) || 0), 0);
+                        const shippingAddress = record.shipping_address;
+                        const recipientName = getShippingField(shippingAddress, ['recipient_name', 'name', 'buyer_name']);
+                        const recipientPhone = getShippingField(shippingAddress, ['recipient_phone', 'phone']);
+                        const recipientEmail = getShippingField(shippingAddress, ['recipient_email', 'email', 'buyer_email']);
+                        const postalCode = getShippingField(shippingAddress, ['postalCode', 'postal_code', 'zip', 'zipcode']);
+                        const city = getShippingField(shippingAddress, ['city', 'recipient_city']);
+                        const address = getShippingField(shippingAddress, ['recipient_address', 'shipping_address', 'address']);
+                        const addressDisplay = [postalCode, city, address].filter(Boolean).join(' ');
                         return (
                           <div className="space-y-4">
                             <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm">
@@ -1263,7 +1304,11 @@ const SuperAdminUsers: React.FC = () => {
                               <InfoItem label="運費" value={formatCurrency(shipping)} />
                               <InfoItem label="總金額" value={formatCurrency(record.total_amount || 0)} />
                               <InfoItem label="商品數量" value={String(itemCount)} />
-                              <InfoItem label="收件資訊" value={formatShippingAddress(record.shipping_address)} />
+                              <InfoItem label="收件人姓名" value={recipientName || '-'} />
+                              <InfoItem label="聯絡電話" value={recipientPhone || '-'} />
+                              <InfoItem label="電子郵件" value={recipientEmail || '-'} />
+                              <InfoItem label="郵遞區號" value={postalCode || '-'} mono />
+                              <InfoItem label="送貨地址" value={addressDisplay || formatShippingAddress(shippingAddress)} />
                             </div>
 
                             <div className="rounded-2xl bg-gray-50 p-4">
@@ -1295,42 +1340,96 @@ const SuperAdminUsers: React.FC = () => {
                         );
                       })()}
 
-                      {selectedRecord.type === 'point' && (
-                        <div className="space-y-4">
-                          <div className="grid gap-4 md:grid-cols-2">
-                            <InfoItem label="點數類型" value={record.transaction_type || '-'} />
-                            <InfoItem label="點數數量" value={String(record.amount ?? '-')} />
-                            <InfoItem label="描述" value={record.description || '-'} />
-                            <InfoItem label="來源類型" value={record.source_type || '-'} />
-                            <InfoItem label="來源 ID" value={record.source_id || '-'} mono />
-                            <InfoItem label="Reference ID" value={record.reference_id || '-'} mono />
-                            <InfoItem label="Vendor ID" value={record.vendor_id || '-'} mono />
-                            <InfoItem label="門市 ID" value={record.store_location_id || '-'} mono />
-                            <InfoItem label="建立時間" value={record.created_at ? formatDateTime(record.created_at) : '-'} />
+                      {selectedRecord.type === 'point' && (() => {
+                        const pointLabel = record.transaction_type === 'earned' ? '收入點數' : record.transaction_type === 'spent' ? '扣除點數' : '點數紀錄';
+                        const pointSign = record.transaction_type === 'earned' ? '+' : record.transaction_type === 'spent' ? '-' : '';
+                        return (
+                          <div className="space-y-4">
+                            <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm">
+                              <div className="flex flex-wrap items-start justify-between gap-4">
+                                <div>
+                                  <p className="text-xs font-medium text-amber-700">點數摘要</p>
+                                  <h4 className="mt-1 text-lg font-bold text-gray-900">{pointLabel}</h4>
+                                  <p className="mt-1 text-sm text-gray-600">
+                                    {record.description || '沒有描述'}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className={`text-2xl font-bold ${record.transaction_type === 'spent' ? 'text-red-600' : 'text-gray-900'}`}>
+                                    {pointSign}{record.amount || 0}
+                                  </p>
+                                  <p className="mt-1 text-xs text-gray-500">{record.source_type || '-'} · {record.created_at ? formatDateTime(record.created_at) : '-'}</p>
+                                </div>
+                              </div>
+                              <div className="mt-4 flex flex-wrap gap-2">
+                                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-gray-600">{record.transaction_type || '-'}</span>
+                                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-gray-600">{record.source_type || '-'}</span>
+                                {record.reference_id && <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-gray-600">參考 {String(record.reference_id).slice(-8)}</span>}
+                              </div>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <InfoItem label="點數類型" value={record.transaction_type || '-'} />
+                              <InfoItem label="點數數量" value={String(record.amount ?? '-')} />
+                              <InfoItem label="描述" value={record.description || '-'} />
+                              <InfoItem label="來源類型" value={record.source_type || '-'} />
+                              <InfoItem label="來源 ID" value={record.source_id || '-'} mono />
+                              <InfoItem label="參考 ID" value={record.reference_id || '-'} mono />
+                              <InfoItem label="供應商 ID" value={record.vendor_id || '-'} mono />
+                              <InfoItem label="門市 ID" value={record.store_location_id || '-'} mono />
+                              <InfoItem label="建立時間" value={record.created_at ? formatDateTime(record.created_at) : '-'} />
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       {selectedRecord.type === 'invoice' && (() => {
                         const invoiceOrderItems = detail.orderItemsByOrderId?.[record.order_id] || [];
+                        const invoiceAmount = Number(record.total_amount || 0);
+                        const salesAmount = Number(record.sales_amount || 0);
+                        const taxAmount = Number(record.tax_amount || 0);
                         return (
                           <div className="space-y-4">
+                            <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm">
+                              <div className="flex flex-wrap items-start justify-between gap-4">
+                                <div>
+                                  <p className="text-xs font-medium text-amber-700">發票摘要</p>
+                                  <h4 className="mt-1 text-lg font-bold text-gray-900">{record.invoice_number || '尚未開立'}</h4>
+                                  <p className="mt-1 text-sm text-gray-600">
+                                    {record.buyer_name || '未填寫買受人'}
+                                    {record.buyer_email ? ` · ${record.buyer_email}` : ''}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(invoiceAmount)}</p>
+                                  <p className="mt-1 text-xs text-gray-500">{record.invoice_status === 'pending' ? '待處理' : record.invoice_status || '-'} · {record.tax_type || '-'}</p>
+                                </div>
+                              </div>
+                              <div className="mt-4 flex flex-wrap gap-2">
+                                <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${record.invoice_status === 'issued' ? 'bg-green-100 text-green-700' : record.invoice_status === 'failed' ? 'bg-red-100 text-red-600' : record.invoice_status === 'cancelled' ? 'bg-gray-200 text-gray-600' : record.invoice_status === 'allowance' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                                  {record.invoice_status === 'pending' ? '待處理' : record.invoice_status || '-'}
+                                </span>
+                                {record.buyer_identifier && <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-gray-600">統編 {record.buyer_identifier}</span>}
+                                {record.carrier_type && <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-gray-600">{record.carrier_type}</span>}
+                              </div>
+                            </div>
+
                             <div className="grid gap-4 md:grid-cols-2">
-                              <InfoItem label="發票狀態" value={record.invoice_status || 'pending'} />
+                              <InfoItem label="發票狀態" value={record.invoice_status === 'pending' ? '待處理' : record.invoice_status || '-'} />
                               <InfoItem label="開立時間" value={record.invoice_date ? formatDateTime(record.invoice_date) : '-'} />
                               <InfoItem label="發票號碼" value={record.invoice_number || '-'} mono />
                               <InfoItem label="隨機碼" value={record.invoice_random_number || '-'} mono />
                               <InfoItem label="買受人姓名" value={record.buyer_name || '-'} />
-                              <InfoItem label="買受人 Email" value={record.buyer_email || '-'} />
+                              <InfoItem label="買受人電子郵件" value={record.buyer_email || '-'} />
                               <InfoItem label="買受人統編" value={record.buyer_identifier || '-'} mono />
                               <InfoItem label="載具類型" value={record.carrier_type || '-'} />
                               <InfoItem label="載具號碼" value={record.carrier_number || '-'} mono />
                               <InfoItem label="愛心碼" value={record.love_code || '-'} mono />
                               <InfoItem label="稅別" value={record.tax_type || '-'} />
-                              <InfoItem label="ezPay 交易序號" value={record.ezpay_trade_no || '-'} mono />
-                              <InfoItem label="銷售金額" value={formatCurrency(record.sales_amount || 0)} />
-                              <InfoItem label="稅額" value={formatCurrency(record.tax_amount || 0)} />
-                              <InfoItem label="總金額" value={formatCurrency(record.total_amount || 0)} />
+                              <InfoItem label="ezPay 交易號" value={record.ezpay_trade_no || '-'} mono />
+                              <InfoItem label="銷售金額" value={formatCurrency(salesAmount)} />
+                              <InfoItem label="稅額" value={formatCurrency(taxAmount)} />
+                              <InfoItem label="總金額" value={formatCurrency(invoiceAmount)} />
                               <InfoItem label="會員 ID" value={record.user_id || '-'} mono />
                               <InfoItem label="關聯訂單 ID" value={record.order_id || '-'} mono />
                               <InfoItem label="建立時間" value={record.created_at ? formatDateTime(record.created_at) : '-'} />
@@ -1393,14 +1492,15 @@ const SuperAdminUsers: React.FC = () => {
                 );
               })()}
           </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
       {total > PAGE_SIZE && (
         <div className="flex items-center justify-center gap-2">
-          <button disabled={page === 0} onClick={() => setPage(current => current - 1)} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">????/button>
-          <span className="text-sm text-gray-500">??{page + 1} ??/ ??{Math.ceil(total / PAGE_SIZE)} ??/span>
-          <button disabled={(page + 1) * PAGE_SIZE >= total} onClick={() => setPage(current => current + 1)} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">?????/button>
+          <button disabled={page === 0} onClick={() => setPage(current => current - 1)} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">上一頁</button>
+          <span className="text-sm text-gray-500">第 {page + 1} 頁 / 共 {Math.ceil(total / PAGE_SIZE)} 頁</span>
+          <button disabled={(page + 1) * PAGE_SIZE >= total} onClick={() => setPage(current => current + 1)} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium transition hover:bg-gray-50 disabled:opacity-40">下一頁</button>
         </div>
       )}
     </div>

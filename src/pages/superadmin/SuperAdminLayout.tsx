@@ -70,7 +70,7 @@ const SuperAdminLayout: React.FC = () => {
       { to: '/superadmin/chatbot', icon: <MessageSquare className="h-5 w-5" />, label: 'AI 客服' },
       { to: '/superadmin/static-pages', icon: <FileText className="h-5 w-5" />, label: '靜態頁面' },
       { to: '/superadmin/permissions', icon: <Shield className="h-5 w-5" />, label: '權限管理' },
-      { to: '/superadmin/faq', icon: <HelpCircle className="h-5 w-5" />, label: 'FAQ' },
+      { to: '/superadmin/faq', icon: <HelpCircle className="h-5 w-5" />, label: '常見問題' },
       { to: '/superadmin/site-settings', icon: <Settings className="h-5 w-5" />, label: '網站設定' },
       { to: '/superadmin/theme-banners', icon: <Image className="h-5 w-5" />, label: '橫幅管理' },
       { to: '/superadmin/listing-command', icon: <Terminal className="h-5 w-5" />, label: 'AI 上架指令' },
