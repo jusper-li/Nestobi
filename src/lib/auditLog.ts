@@ -15,6 +15,19 @@ type AuditMeta = {
   completedAt?: string | null;
 };
 
+function getBaselineStorageKey(label: string) {
+  return `superadmin-baseline:${label}`;
+}
+
+function getBrowserStorage() {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
 async function insertAuditRecord(payload: Record<string, unknown>) {
   const { error } = await supabase.from('admin_activity_logs').insert(payload);
   if (error) throw error;
@@ -121,8 +134,17 @@ export async function recordVersionBaseline(
   details: AuditDetails = {},
   meta: Pick<AuditMeta, 'route' | 'summary' | 'versionLabel' | 'commitSha'> = {}
 ) {
+  const storage = getBrowserStorage();
+  const storageKey = getBaselineStorageKey(label);
+
   try {
     if (!(await hasActiveSession())) return;
+    if (storage) {
+      const current = storage.getItem(storageKey);
+      if (current === '1' || current === 'pending') return;
+      storage.setItem(storageKey, 'pending');
+    }
+
     await insertWithFallback(buildAuditPayload(
       'version_baseline',
       'system',
@@ -135,7 +157,9 @@ export async function recordVersionBaseline(
         summary: meta.summary || `version baseline: ${label}`,
       }
     ));
+    if (storage) storage.setItem(storageKey, '1');
   } catch (error: any) {
+    if (storage) storage.removeItem(storageKey);
     if (error?.code === '23505') return;
     console.warn('Version baseline was not recorded:', error);
   }

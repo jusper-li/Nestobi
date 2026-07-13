@@ -92,9 +92,9 @@ const SuperAdminLayout: React.FC = () => {
       && !loading
       && user
       && (role === 'admin' || role === 'superadmin')
-      && !window.sessionStorage.getItem(baselineKey)
+      && !window.localStorage.getItem(baselineKey)
     ) {
-      window.sessionStorage.setItem(baselineKey, '1');
+      window.localStorage.setItem(baselineKey, '1');
       void recordVersionBaseline(
         APP_BUILD_LABEL,
         {
