@@ -36,14 +36,14 @@ interface OptionDraft {
   score: number;
 }
 
-const EMPTY_OPTIONS: Record<OptionKey, OptionDraft> = {
+const optionKeys: OptionKey[] = ['A', 'B', 'C', 'D'];
+
+const emptyOptions = (): Record<OptionKey, OptionDraft> => ({
   A: { option_text: '', score: 1 },
   B: { option_text: '', score: 1 },
   C: { option_text: '', score: 1 },
   D: { option_text: '', score: 1 },
-};
-
-const optionKeys: OptionKey[] = ['A', 'B', 'C', 'D'];
+});
 
 export default function SuperAdminCoffeeQuiz() {
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
@@ -53,12 +53,13 @@ export default function SuperAdminCoffeeQuiz() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [openQuestionId, setOpenQuestionId] = useState<string | null>(null);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
 
   const [questionText, setQuestionText] = useState('');
   const [questionOrder, setQuestionOrder] = useState(1);
   const [questionActive, setQuestionActive] = useState(true);
   const [questionImage, setQuestionImage] = useState('');
-  const [formOptions, setFormOptions] = useState<Record<OptionKey, OptionDraft>>(EMPTY_OPTIONS);
+  const [formOptions, setFormOptions] = useState<Record<OptionKey, OptionDraft>>(emptyOptions());
 
   const stats = useMemo(() => {
     const byType: Record<string, number> = {};
@@ -87,6 +88,16 @@ export default function SuperAdminCoffeeQuiz() {
     loadAll();
   }, []);
 
+  const resetForm = () => {
+    setEditingQuestionId(null);
+    setQuestionText('');
+    setQuestionOrder(1);
+    setQuestionActive(true);
+    setQuestionImage('');
+    setFormOptions(emptyOptions());
+    setMsg('');
+  };
+
   const uploadImage = async (file: File, onDone: (url: string) => void) => {
     const ext = file.name.split('.').pop() || 'jpg';
     const path = `coffee-quiz/question-${Date.now()}.${ext}`;
@@ -102,7 +113,28 @@ export default function SuperAdminCoffeeQuiz() {
     onDone(data.publicUrl);
   };
 
-  const createQuestion = async () => {
+  const startEditQuestion = (question: QuestionRow) => {
+    const mapped = optionKeys.reduce<Record<OptionKey, OptionDraft>>((acc, key) => {
+      const existing = options.find(option => option.question_id === question.id && option.option_key === key);
+      acc[key] = {
+        option_text: existing?.option_text || '',
+        score: existing?.score ?? 1,
+      };
+      return acc;
+    }, emptyOptions());
+
+    setEditingQuestionId(question.id);
+    setQuestionText(question.question_text);
+    setQuestionOrder(question.display_order);
+    setQuestionActive(question.is_active);
+    setQuestionImage(question.image_url || '');
+    setFormOptions(mapped);
+    setOpenQuestionId(question.id);
+    setMsg(`正在編輯第 ${question.display_order} 題`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const saveQuestion = async () => {
     if (!questionText.trim()) {
       setMsg('請先輸入題目。');
       return;
@@ -111,14 +143,55 @@ export default function SuperAdminCoffeeQuiz() {
     setSaving(true);
     setMsg('');
 
+    const payload = {
+      question_text: questionText.trim(),
+      image_url: questionImage || null,
+      display_order: questionOrder,
+      is_active: questionActive,
+    };
+
+    if (editingQuestionId) {
+      const { error } = await supabase
+        .from('coffee_quiz_questions')
+        .update({ ...payload, updated_at: new Date().toISOString() })
+        .eq('id', editingQuestionId);
+
+      if (error) {
+        setSaving(false);
+        setMsg(`更新題目失敗：${error.message}`);
+        return;
+      }
+
+      await Promise.all(
+        optionKeys.map(async (key, index) => {
+          const existing = options.find(option => option.question_id === editingQuestionId && option.option_key === key);
+          const optionPayload = {
+            question_id: editingQuestionId,
+            option_key: key,
+            option_text: formOptions[key].option_text.trim() || key,
+            score: Number(formOptions[key].score) || 0,
+            display_order: index + 1,
+          };
+
+          if (existing) {
+            await supabase.from('coffee_quiz_question_options').update({ ...optionPayload, updated_at: new Date().toISOString() }).eq('id', existing.id);
+          } else {
+            await supabase.from('coffee_quiz_question_options').insert(optionPayload);
+          }
+        }),
+      );
+
+      await logAdminAction('update_coffee_quiz_question', 'coffee_quiz_questions', editingQuestionId, payload as Record<string, unknown>);
+      await loadAll();
+      setSaving(false);
+      setMsg('題目已更新。');
+      resetForm();
+      return;
+    }
+
     const { data, error } = await supabase
       .from('coffee_quiz_questions')
-      .insert({
-        question_text: questionText.trim(),
-        image_url: questionImage || null,
-        display_order: questionOrder,
-        is_active: questionActive,
-      })
+      .insert(payload)
       .select('id')
       .single();
 
@@ -150,14 +223,12 @@ export default function SuperAdminCoffeeQuiz() {
       image_url: questionImage || null,
     });
 
-    setQuestionText('');
-    setQuestionOrder(v => v + 1);
-    setQuestionImage('');
-    setFormOptions(EMPTY_OPTIONS);
     setSaving(false);
     setMsg('題目已新增。');
     await loadAll();
     setOpenQuestionId(questionId);
+    setQuestionOrder(v => v + 1);
+    resetForm();
   };
 
   const updateQuestionOption = async (id: string, patch: Partial<OptionRow>) => {
@@ -177,6 +248,7 @@ export default function SuperAdminCoffeeQuiz() {
     await logAdminAction('delete_coffee_quiz_question', 'coffee_quiz_questions', id);
     await loadAll();
     if (openQuestionId === id) setOpenQuestionId(null);
+    if (editingQuestionId === id) resetForm();
   };
 
   const groupedQuestions = useMemo(
@@ -198,28 +270,18 @@ export default function SuperAdminCoffeeQuiz() {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">咖啡 AI 測驗</h1>
-          <p className="text-sm text-gray-500">可新增題目、替換圖片，並用收合列表管理既有題目。</p>
+          <p className="text-sm text-gray-500">可新增、編輯題目，並以收合列表管理既有題目。</p>
         </div>
       </div>
 
       {msg && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">{msg}</div>}
 
       <section className="rounded-2xl bg-white p-5 shadow-sm">
-        <h2 className="mb-4 text-lg font-bold text-gray-900">新增題目</h2>
+        <h2 className="mb-4 text-lg font-bold text-gray-900">{editingQuestionId ? '編輯題目' : '新增題目'}</h2>
         <div className="grid gap-3 md:grid-cols-2">
-          <input
-            value={questionText}
-            onChange={e => setQuestionText(e.target.value)}
-            placeholder="題目文字"
-            className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm"
-          />
-          <input
-            type="number"
-            value={questionOrder}
-            onChange={e => setQuestionOrder(Number(e.target.value) || 1)}
-            placeholder="排序"
-            className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm"
-          />
+          <input value={questionText} onChange={e => setQuestionText(e.target.value)} placeholder="題目文字" className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm" />
+          <input type="number" value={questionOrder} onChange={e => setQuestionOrder(Number(e.target.value) || 1)} placeholder="排序" className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm" />
+
           <div className="md:col-span-2">
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3">
               <p className="mb-2 text-xs font-semibold text-gray-500">目前圖片</p>
@@ -227,13 +289,8 @@ export default function SuperAdminCoffeeQuiz() {
                 <div className="flex items-start gap-3">
                   <img src={questionImage} alt="preview" className="h-20 w-20 rounded-xl object-cover" />
                   <div className="min-w-0 flex-1">
-                    <input
-                      value={questionImage}
-                      onChange={e => setQuestionImage(e.target.value)}
-                      placeholder="圖片網址"
-                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm"
-                    />
-                    <p className="mt-1 text-xs text-gray-400">你也可以貼上圖片網址或改用上傳。</p>
+                    <input value={questionImage} onChange={e => setQuestionImage(e.target.value)} placeholder="圖片網址" className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm" />
+                    <p className="mt-1 text-xs text-gray-400">可直接貼上圖片網址，或用上傳替換。</p>
                   </div>
                 </div>
               ) : (
@@ -241,16 +298,12 @@ export default function SuperAdminCoffeeQuiz() {
                   <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-white text-gray-300">
                     <Upload className="h-6 w-6" />
                   </div>
-                  <input
-                    value={questionImage}
-                    onChange={e => setQuestionImage(e.target.value)}
-                    placeholder="圖片網址"
-                    className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm"
-                  />
+                  <input value={questionImage} onChange={e => setQuestionImage(e.target.value)} placeholder="圖片網址" className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm" />
                 </div>
               )}
             </div>
           </div>
+
           <label className="inline-flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
             <Upload className="h-4 w-4" />
             上傳圖片
@@ -259,17 +312,19 @@ export default function SuperAdminCoffeeQuiz() {
               type="file"
               accept="image/*"
               onChange={e => {
-                const f = e.target.files?.[0];
-                if (f) void uploadImage(f, setQuestionImage);
+                const file = e.target.files?.[0];
+                if (file) void uploadImage(file, setQuestionImage);
                 e.target.value = '';
               }}
             />
           </label>
+
           <label className="inline-flex items-center gap-2 text-sm text-gray-600">
             <input type="checkbox" checked={questionActive} onChange={e => setQuestionActive(e.target.checked)} />
             啟用題目
           </label>
         </div>
+
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {optionKeys.map(key => (
             <div key={key} className="rounded-xl border border-gray-200 p-3">
@@ -290,14 +345,25 @@ export default function SuperAdminCoffeeQuiz() {
             </div>
           ))}
         </div>
-        <button
-          onClick={createQuestion}
-          disabled={saving}
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
-        >
-          {saving ? <Save className="h-4 w-4 animate-pulse" /> : <Plus className="h-4 w-4" />}
-          新增題目
-        </button>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button onClick={saveQuestion} disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+            {saving ? <Save className="h-4 w-4 animate-pulse" /> : <Plus className="h-4 w-4" />}
+            {editingQuestionId ? '儲存變更' : '新增題目'}
+          </button>
+          {editingQuestionId && (
+            <button
+              type="button"
+              onClick={() => {
+                resetForm();
+                setMsg('已取消編輯。');
+              }}
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700"
+            >
+              取消編輯
+            </button>
+          )}
+        </div>
       </section>
 
       <section className="rounded-2xl bg-white p-5 shadow-sm">
@@ -315,9 +381,7 @@ export default function SuperAdminCoffeeQuiz() {
                     onClick={() => setOpenQuestionId(prev => (prev === question.id ? null : question.id))}
                     className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-gray-50"
                   >
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-sm font-bold text-amber-700">
-                      {question.display_order}
-                    </span>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-sm font-bold text-amber-700">{question.display_order}</span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-gray-900">{question.question_text}</p>
                       <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
@@ -337,17 +401,13 @@ export default function SuperAdminCoffeeQuiz() {
                         <input
                           value={question.display_order}
                           type="number"
-                          onChange={e =>
-                            setQuestions(prev => prev.map(item => (item.id === question.id ? { ...item, display_order: Number(e.target.value) || 0 } : item)))
-                          }
+                          onChange={e => setQuestions(prev => prev.map(item => (item.id === question.id ? { ...item, display_order: Number(e.target.value) || 0 } : item)))}
                           onBlur={e => void updateQuestion(question.id, { display_order: Number(e.target.value) || 0 })}
                           className="w-20 rounded-lg border border-gray-200 px-2 py-1.5 text-sm"
                         />
                         <input
                           value={question.question_text}
-                          onChange={e =>
-                            setQuestions(prev => prev.map(item => (item.id === question.id ? { ...item, question_text: e.target.value } : item)))
-                          }
+                          onChange={e => setQuestions(prev => prev.map(item => (item.id === question.id ? { ...item, question_text: e.target.value } : item)))}
                           onBlur={e => void updateQuestion(question.id, { question_text: e.target.value })}
                           className="min-w-[280px] flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm"
                         />
@@ -363,7 +423,10 @@ export default function SuperAdminCoffeeQuiz() {
                           />
                           啟用
                         </label>
-                        <button type="button" onClick={() => void deleteQuestion(question.id)} className="ml-auto rounded-lg p-2 text-red-500 hover:bg-red-50" title="刪除題目">
+                        <button type="button" onClick={() => startEditQuestion(question)} className="rounded-lg px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50">
+                          編輯
+                        </button>
+                        <button type="button" onClick={() => void deleteQuestion(question.id)} className="rounded-lg p-2 text-red-500 hover:bg-red-50" title="刪除題目">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -374,9 +437,7 @@ export default function SuperAdminCoffeeQuiz() {
                           {question.image_url ? (
                             <img src={question.image_url} alt={question.question_text} className="h-32 w-full rounded-xl object-cover" />
                           ) : (
-                            <div className="flex h-32 items-center justify-center rounded-xl bg-white text-gray-300">
-                              沒有圖片
-                            </div>
+                            <div className="flex h-32 items-center justify-center rounded-xl bg-white text-gray-300">沒有圖片</div>
                           )}
                         </div>
 
@@ -384,9 +445,7 @@ export default function SuperAdminCoffeeQuiz() {
                           <div className="flex items-center gap-2">
                             <input
                               value={question.image_url || ''}
-                              onChange={e =>
-                                setQuestions(prev => prev.map(item => (item.id === question.id ? { ...item, image_url: e.target.value || null } : item)))
-                              }
+                              onChange={e => setQuestions(prev => prev.map(item => (item.id === question.id ? { ...item, image_url: e.target.value || null } : item)))}
                               onBlur={e => void updateQuestion(question.id, { image_url: e.target.value || null })}
                               placeholder="圖片網址"
                               className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm"
@@ -399,8 +458,8 @@ export default function SuperAdminCoffeeQuiz() {
                                 type="file"
                                 accept="image/*"
                                 onChange={e => {
-                                  const f = e.target.files?.[0];
-                                  if (f) void uploadImage(f, url => void updateQuestion(question.id, { image_url: url }));
+                                  const file = e.target.files?.[0];
+                                  if (file) void uploadImage(file, url => void updateQuestion(question.id, { image_url: url }));
                                   e.target.value = '';
                                 }}
                               />
