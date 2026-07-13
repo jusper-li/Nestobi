@@ -71,7 +71,7 @@ const SuperAdminBlog: React.FC = () => {
   };
 
   const handleDelete = async (postId: string) => {
-    if (!confirm('Delete this blog post?')) return;
+    if (!confirm('確定要刪除這篇文章嗎？')) return;
     setDeleting(postId);
     const { error } = await supabase.from('blog_posts').delete().eq('id', postId);
     if (!error) {
@@ -122,27 +122,27 @@ const SuperAdminBlog: React.FC = () => {
             <Coffee className="h-5 w-5 text-amber-700" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Blog Management</h1>
-            <p className="text-sm text-gray-500">Manage posts, publish status, and categories.</p>
+            <h1 className="text-xl font-bold text-gray-900">部落格管理</h1>
+            <p className="text-sm text-gray-500">管理文章、發佈狀態與分類。</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Link to="/superadmin/blog-categories" className="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
             <FolderOpen className="h-4 w-4" />
-            Categories
+            分類管理
           </Link>
           <Link to="/superadmin/blog/new" className="flex items-center gap-2 rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-800">
             <Plus className="h-4 w-4" />
-            New post
+            新增文章
           </Link>
         </div>
       </div>
 
       <div className="mb-6 grid grid-cols-3 gap-4">
         {[
-          { label: 'Total posts', value: stats.total, color: 'text-gray-700' },
-          { label: 'Published', value: stats.published, color: 'text-green-700' },
-          { label: 'Drafts', value: stats.draft, color: 'text-yellow-700' },
+          { label: '文章總數', value: stats.total, color: 'text-gray-700' },
+          { label: '已發佈', value: stats.published, color: 'text-green-700' },
+          { label: '草稿', value: stats.draft, color: 'text-yellow-700' },
         ].map(item => (
           <div key={item.label} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
             <p className="mb-1 text-sm text-gray-500">{item.label}</p>
@@ -158,7 +158,7 @@ const SuperAdminBlog: React.FC = () => {
             <input
               value={search}
               onChange={event => setSearch(event.target.value)}
-              placeholder="Search posts"
+              placeholder="搜尋文章"
               className="w-full rounded-xl border border-gray-200 py-2 pl-9 pr-4 text-sm outline-none focus:ring-2 focus:ring-amber-400"
             />
           </div>
@@ -171,7 +171,7 @@ const SuperAdminBlog: React.FC = () => {
                   statusFilter === value ? 'bg-amber-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                {value === 'all' ? 'All' : value === 'published' ? 'Published' : 'Draft'}
+                {value === 'all' ? '全部' : value === 'published' ? '已發佈' : '草稿'}
               </button>
             ))}
           </div>
@@ -185,7 +185,7 @@ const SuperAdminBlog: React.FC = () => {
                 categoryFilter === 'all' ? 'border-amber-700 bg-amber-700 text-white' : 'border-gray-200 text-gray-500 hover:border-amber-300'
               }`}
             >
-              All categories
+              全部分類
             </button>
             {categories.map(category => (
               <button
@@ -208,7 +208,7 @@ const SuperAdminBlog: React.FC = () => {
         ) : filtered.length === 0 ? (
           <div className="py-16 text-center text-gray-400">
             <Coffee className="mx-auto mb-3 h-12 w-12 opacity-30" />
-            <p className="text-sm">No posts found</p>
+            <p className="text-sm">找不到符合條件的文章</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
@@ -223,7 +223,7 @@ const SuperAdminBlog: React.FC = () => {
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex flex-wrap items-center gap-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${post.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                      {post.status === 'published' ? 'Published' : 'Draft'}
+                      {post.status === 'published' ? '已發佈' : '草稿'}
                     </span>
                     <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">{post.category}</span>
                   </div>
@@ -242,7 +242,7 @@ const SuperAdminBlog: React.FC = () => {
                 </div>
                 <div className="flex flex-shrink-0 items-center gap-1">
                   {post.status === 'published' && (
-                    <a href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer" className="rounded-lg p-2 text-gray-400 transition hover:bg-amber-50 hover:text-amber-700" title="Open post">
+                    <a href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer" className="rounded-lg p-2 text-gray-400 transition hover:bg-amber-50 hover:text-amber-700" title="開啟文章">
                       <ExternalLink className="h-4 w-4" />
                     </a>
                   )}
@@ -250,7 +250,7 @@ const SuperAdminBlog: React.FC = () => {
                     onClick={() => handleToggleStatus(post)}
                     disabled={toggling === post.id}
                     className={`rounded-lg p-2 transition ${post.status === 'published' ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}
-                    title={post.status === 'published' ? 'Unpublish' : 'Publish'}
+                    title={post.status === 'published' ? '取消發佈' : '發佈'}
                   >
                     {toggling === post.id ? (
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
@@ -260,14 +260,14 @@ const SuperAdminBlog: React.FC = () => {
                       <EyeOff className="h-4 w-4" />
                     )}
                   </button>
-                  <Link to={`/superadmin/blog/${post.id}`} className="rounded-lg p-2 text-gray-400 transition hover:bg-amber-50 hover:text-amber-700" title="Edit">
+                  <Link to={`/superadmin/blog/${post.id}`} className="rounded-lg p-2 text-gray-400 transition hover:bg-amber-50 hover:text-amber-700" title="編輯">
                     <Pencil className="h-4 w-4" />
                   </Link>
                   <button
                     onClick={() => handleDelete(post.id)}
                     disabled={deleting === post.id}
                     className="rounded-lg p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
-                    title="Delete"
+                    title="刪除"
                   >
                     {deleting === post.id ? (
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-400 border-t-transparent" />
