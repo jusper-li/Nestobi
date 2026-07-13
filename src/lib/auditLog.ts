@@ -46,6 +46,11 @@ async function insertWithFallback(payload: Record<string, unknown>) {
   }
 }
 
+async function hasActiveSession() {
+  const { data } = await supabase.auth.getSession();
+  return Boolean(data.session?.user?.id);
+}
+
 function buildAuditPayload(
   action: string,
   entityType: string,
@@ -76,6 +81,7 @@ export async function logAdminAction(
   meta: AuditMeta = {}
 ) {
   try {
+    if (!(await hasActiveSession())) return;
     await insertWithFallback(buildAuditPayload(action, entityType, entityId, details, {
       ...meta,
       recordType: meta.recordType || 'change',
@@ -92,6 +98,7 @@ export async function logSystemCheck(
   meta: Pick<AuditMeta, 'route' | 'summary' | 'versionLabel' | 'commitSha'> = {}
 ) {
   try {
+    if (!(await hasActiveSession())) return;
     await insertWithFallback(buildAuditPayload(
       'system_check',
       'system',
@@ -115,6 +122,7 @@ export async function recordVersionBaseline(
   meta: Pick<AuditMeta, 'route' | 'summary' | 'versionLabel' | 'commitSha'> = {}
 ) {
   try {
+    if (!(await hasActiveSession())) return;
     await insertWithFallback(buildAuditPayload(
       'version_baseline',
       'system',

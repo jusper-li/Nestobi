@@ -41,7 +41,7 @@ type NavItem = {
 };
 
 const SuperAdminLayout: React.FC = () => {
-  const { signOut, user } = useAuth();
+  const { signOut, user, role, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -87,7 +87,13 @@ const SuperAdminLayout: React.FC = () => {
 
   useEffect(() => {
     const baselineKey = `superadmin-baseline:${APP_BUILD_LABEL}`;
-    if (typeof window !== 'undefined' && !window.sessionStorage.getItem(baselineKey)) {
+    if (
+      typeof window !== 'undefined'
+      && !loading
+      && user
+      && (role === 'admin' || role === 'superadmin')
+      && !window.sessionStorage.getItem(baselineKey)
+    ) {
       window.sessionStorage.setItem(baselineKey, '1');
       void recordVersionBaseline(
         APP_BUILD_LABEL,
@@ -102,7 +108,7 @@ const SuperAdminLayout: React.FC = () => {
         },
       );
     }
-  }, [location.pathname]);
+  }, [loading, location.pathname, role, user]);
 
   const Sidebar = () => (
     <div className="flex h-full flex-col">
