@@ -21,6 +21,7 @@ interface UserDetail {
   profile: any;
   bookings: any[];
   orders: any[];
+  invoices: any[];
   points: any[];
   totalPoints: number;
 }
@@ -61,7 +62,7 @@ const SuperAdminUsers: React.FC = () => {
   const [viewUser, setViewUser] = useState<UserRow | null>(null);
   const [detail, setDetail] = useState<UserDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [detailTab, setDetailTab] = useState<'profile' | 'bookings' | 'orders' | 'points'>('profile');
+  const [detailTab, setDetailTab] = useState<'profile' | 'bookings' | 'orders' | 'invoices' | 'points'>('profile');
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -170,10 +171,16 @@ const SuperAdminUsers: React.FC = () => {
     setDetailLoading(true);
     setDetailTab('profile');
 
-    const [profileRes, bookingsRes, ordersRes, pointsRes] = await Promise.all([
+    const [profileRes, bookingsRes, ordersRes, invoicesRes, pointsRes] = await Promise.all([
       supabase.from('tbl_mn5wgzh0').select('*').eq('user_id', user.user_id).maybeSingle(),
       supabase.from('tbl_bookings').select('*, tbl_rooms(name)').eq('user_id', user.user_id).order('created_at', { ascending: false }).limit(10),
       supabase.from('orders').select('*').eq('user_id', user.user_id).order('created_at', { ascending: false }).limit(10),
+      supabase
+        .from('invoices')
+        .select('id,order_id,user_id,invoice_status,invoice_number,invoice_random_number,invoice_date,buyer_name,buyer_email,buyer_identifier,carrier_type,carrier_number,love_code,tax_type,sales_amount,tax_amount,total_amount,ezpay_trade_no,error_message,created_at,updated_at')
+        .eq('user_id', user.user_id)
+        .order('created_at', { ascending: false })
+        .limit(20),
       supabase.from('points').select('*').eq('user_id', user.user_id).order('created_at', { ascending: false }).limit(20),
     ]);
 
@@ -183,6 +190,7 @@ const SuperAdminUsers: React.FC = () => {
       profile: profileRes.data,
       bookings: bookingsRes.data || [],
       orders: ordersRes.data || [],
+      invoices: invoicesRes.data || [],
       points: pts,
       totalPoints,
     });
@@ -401,6 +409,7 @@ const SuperAdminUsers: React.FC = () => {
                   { key: 'profile', label: '會員資料', icon: <Users className="h-3.5 w-3.5" /> },
                   { key: 'bookings', label: '訂房紀錄', icon: <BedDouble className="h-3.5 w-3.5" /> },
                   { key: 'orders', label: '訂單紀錄', icon: <ShoppingBag className="h-3.5 w-3.5" /> },
+                  { key: 'invoices', label: '發票紀錄', icon: <FileText className="h-3.5 w-3.5" /> },
                   { key: 'points', label: '點數紀錄', icon: <Award className="h-3.5 w-3.5" /> },
                 ] as const).map(tab => (
                   <button
@@ -502,6 +511,64 @@ const SuperAdminUsers: React.FC = () => {
                               <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(order.payment_status)}`}>{getStatusLabel(order.payment_status)}</span>
                             </div>
                           </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : detailTab === 'invoices' ? (
+                  detail.invoices.length === 0 ? (
+                    <div className="py-10 text-center text-gray-400"><FileText className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">沒有發票紀錄</p></div>
+                  ) : (
+                    <div className="space-y-3">
+                      {detail.invoices.map((invoice: any) => (
+                        <div key={invoice.id} className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${invoice.invoice_status === 'issued'
+                                  ? 'bg-green-100 text-green-700'
+                                  : invoice.invoice_status === 'failed'
+                                    ? 'bg-red-100 text-red-600'
+                                    : invoice.invoice_status === 'cancelled'
+                                      ? 'bg-gray-200 text-gray-600'
+                                      : invoice.invoice_status === 'allowance'
+                                        ? 'bg-blue-100 text-blue-700'
+                                        : 'bg-amber-100 text-amber-700'
+                                }`}>
+                                  {invoice.invoice_status || 'pending'}
+                                </span>
+                                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-gray-500">
+                                  {invoice.tax_type || '一般'}
+                                </span>
+                              </div>
+                              <p className="mt-3 text-sm font-semibold text-gray-900">{invoice.invoice_number || '尚未開立發票號碼'}</p>
+                              <p className="mt-1 text-xs text-gray-500">
+                                {invoice.invoice_date ? formatDateTime(invoice.invoice_date) : '未開立'}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-semibold text-gray-900">{formatCurrency(invoice.total_amount || 0)}</p>
+                              <p className="text-xs text-gray-500">{invoice.buyer_email || '-'}</p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 grid gap-3 md:grid-cols-2">
+                            <InfoItem icon={<FileText className="h-4 w-4" />} label="買受人統編" value={invoice.buyer_identifier || '-'} mono />
+                            <InfoItem
+                              icon={<FileText className="h-4 w-4" />}
+                              label="載具 / 愛心碼"
+                              value={[invoice.carrier_type || '', invoice.carrier_number || '', invoice.love_code || ''].filter(Boolean).join(' / ') || '-'}
+                              mono
+                            />
+                            <InfoItem icon={<FileText className="h-4 w-4" />} label="ezPay 交易序號" value={invoice.ezpay_trade_no || '-'} mono />
+                            <InfoItem icon={<FileText className="h-4 w-4" />} label="開立金額" value={`${formatCurrency(invoice.sales_amount || 0)} / 稅額 ${formatCurrency(invoice.tax_amount || 0)}`} />
+                          </div>
+
+                          {invoice.error_message && (
+                            <div className="mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
+                              {invoice.error_message}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
