@@ -655,6 +655,7 @@ Deno.serve(async (req) => {
 
   try {
     const { type, to, data = {} } = await req.json();
+    const emailType = String(type || "").trim().replaceAll("_", "-");
     const locale = normalizeLocale((data as Record<string, unknown>).lang);
     let subject = "";
     let html = "";
@@ -663,13 +664,13 @@ Deno.serve(async (req) => {
     const routing = await getNotificationEmailSettings();
     const explicitRecipients = parseEmailList(to);
     const defaultRoute: EmailRoute =
-      type === "contact"
+      emailType === "contact"
         ? "support"
-        : type === "booking-confirmation"
+        : emailType === "booking-confirmation"
           ? "booking"
-          : type === "order-confirmation"
+          : emailType === "order-confirmation"
             ? "order"
-            : type === "notification"
+            : emailType === "notification"
               ? recipientKind || "system"
               : "customer";
     const route = recipientKind || defaultRoute;
@@ -680,15 +681,15 @@ Deno.serve(async (req) => {
     let toRecipients = explicitRecipients.length > 0 ? explicitRecipients : routeRecipients;
     const primaryRecipient = explicitRecipients[0] || String(to || "").trim();
 
-    if (type === "reset-password" && !primaryRecipient) {
+    if (emailType === "reset-password" && !primaryRecipient) {
       return json({ error: "Missing recipient" }, 400);
     }
 
-    if (type === "verification") {
+    if (emailType === "verification") {
       const c = copy(locale);
       subject = c.verificationTitle;
       html = verificationEmail(locale, String((data as Record<string, unknown>).otp || ""), String((data as Record<string, unknown>).displayName || ""));
-    } else if (type === "reset-password") {
+    } else if (emailType === "reset-password") {
       const supabaseUrl = Deno.env.get("SUPABASE_URL");
       const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
       if (!supabaseUrl || !serviceRoleKey) throw new Error("Supabase service key is not configured");
@@ -701,17 +702,17 @@ Deno.serve(async (req) => {
       const siteUrl = String((data as Record<string, unknown>).siteUrl || "http://localhost:5174");
       subject = copy(locale).resetTitle;
       html = resetEmail(locale, `${siteUrl}/auth/new-password?token=${encodeURIComponent(token)}`);
-    } else if (type === "booking-confirmation") {
+    } else if (emailType === "booking-confirmation") {
       subject = copy(locale).bookingTitle;
       html = bookingEmail(locale, data as Record<string, unknown>);
-    } else if (type === "order-confirmation") {
+    } else if (emailType === "order-confirmation") {
       subject = copy(locale).orderTitle;
       html = orderEmail(locale, data as Record<string, unknown>);
-    } else if (type === "contact") {
+    } else if (emailType === "contact") {
       const c = copy(locale);
       subject = `${c.contactTitle}: ${String((data as Record<string, unknown>).subject || "untitled")}`;
       html = contactEmail(locale, data as Record<string, unknown>);
-    } else if (type === "notification") {
+    } else if (emailType === "notification") {
       const c = copy(locale);
       subject = String((data as Record<string, unknown>).subject || c.notificationTitle);
       html = notificationEmail(locale, data as Record<string, unknown>);

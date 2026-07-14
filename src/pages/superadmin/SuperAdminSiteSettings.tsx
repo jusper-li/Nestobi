@@ -130,7 +130,7 @@ const FIELD_GROUPS: FieldGroup[] = [
     fields: [
       { key: 'support_notification_emails', label: '客服', placeholder: 'service@dlalshop.com, support@nestobi.com', type: 'textarea' },
       { key: 'booking_notification_emails', label: '訂房', placeholder: 'booking@nestobi.com', type: 'textarea' },
-      { key: 'order_notification_emails', label: '訂單', placeholder: 'orders@nestobi.com, finance@nestobi.com', type: 'textarea' },
+      { key: 'order_notification_emails', label: '管理者收件MAIL', placeholder: 'orders@nestobi.com, finance@nestobi.com', type: 'textarea' },
       { key: 'system_notification_emails', label: '系統', placeholder: 'ops@nestobi.com', type: 'textarea' },
       { key: 'payment_failed_notification_emails', label: '付款失敗', placeholder: 'finance@nestobi.com', type: 'textarea' },
       { key: 'refund_notification_emails', label: '退款', placeholder: 'finance@nestobi.com, service@nestobi.com', type: 'textarea' },

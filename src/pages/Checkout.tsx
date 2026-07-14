@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronRight, CreditCard, Gift, Lock, MapPin, Receipt, Truck, User } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -71,15 +71,15 @@ export default function Checkout() {
   }, [items, navigate]);
 
   const paymentOptions = [
-    { value: 'credit_card', label: t('checkout.payment.creditCard', '信用卡付款') },
+    { value: 'credit_card', label: t('checkout.payment.creditCard', '信用卡') },
     { value: 'bank_transfer', label: t('checkout.payment.transfer', '銀行轉帳') },
     { value: 'cash_on_delivery', label: t('checkout.payment.cod', '貨到付款') },
   ];
 
   const deliveryPromise = [
-    { icon: Lock, label: t('checkout.promise.secure', '安全加密結帳') },
-    { icon: Truck, label: t('checkout.promise.shipping', '全台免運配送') },
-    { icon: Gift, label: t('checkout.promise.gift', '可備註禮盒需求') },
+    { icon: Lock, label: t('checkout.promise.secure', '安全結帳') },
+    { icon: Truck, label: t('checkout.promise.shipping', '快速出貨') },
+    { icon: Gift, label: t('checkout.promise.gift', '贈禮包裝') },
   ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -105,15 +105,15 @@ export default function Checkout() {
       }
 
       if (formData.invoiceType === 'company' && !buyerIdentifier) {
-        throw new Error('公司戶統編為必填');
+        throw new Error('公司統編為必填欄位');
       }
 
       if (formData.invoiceType === 'mobile_carrier' && !carrierNumber) {
-        throw new Error('手機條碼載具為必填');
+        throw new Error('手機條碼載具為必填欄位');
       }
 
       if (formData.invoiceType === 'donation' && !loveCode) {
-        throw new Error('捐贈碼為必填');
+        throw new Error('愛心碼為必填欄位');
       }
 
       trackBeginCheckout({
@@ -220,7 +220,8 @@ export default function Checkout() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          type: 'order_confirmation',
+          type: 'order-confirmation',
+          to: formData.email,
           data: {
             orderNumber,
             customerName: formData.name,
@@ -229,6 +230,7 @@ export default function Checkout() {
             total,
             address: `${formData.address}, ${formData.city} ${formData.postalCode}`,
             paymentMethod: formData.paymentMethod,
+            recipientKind: 'order',
           },
         }),
       }).catch(() => {});
@@ -250,7 +252,7 @@ export default function Checkout() {
       setOrderSuccess({ orderNumber });
     } catch (error) {
       console.error('Checkout failed:', error);
-      alert(t('checkout.error.failed', '結帳失敗，請稍後再試。'));
+      alert(t('checkout.error.failed', '結帳失敗，請稍後再試'));
     } finally {
       setLoading(false);
     }
@@ -273,15 +275,15 @@ export default function Checkout() {
               {t('checkout.success.tag', 'Order Confirmed')}
             </p>
             <h1 className="mb-3 text-3xl font-light text-stone-800">
-              {t('checkout.success.title', '訂單成立！')}
+              {t('checkout.success.title', '訂單成立')}
             </h1>
-            <p className="mb-2 font-light text-stone-500">{t('checkout.success.subtitle', '感謝您的訂購')}</p>
+            <p className="mb-2 font-light text-stone-500">{t('checkout.success.subtitle', '???函?閮頃')}</p>
             <p className="mb-8 text-sm font-light text-stone-400">
-              {t('checkout.success.description', '訂單確認信已寄送至您的信箱，我們將盡快為您處理。')}
+              {t('checkout.success.description', '我們已收到您的訂單，後續會寄送確認信到您的信箱。')}
             </p>
             <div className="mb-8 inline-block w-full rounded-2xl border border-stone-100 bg-white px-6 py-5">
               <p className="mb-2 text-xs tracking-widest text-stone-400 uppercase">
-                {t('checkout.success.orderNumberLabel', '訂單編號')}
+                {t('checkout.success.orderNumberLabel', '閮蝺刻?')}
               </p>
               <p className="text-lg font-medium tracking-wider text-amber-700">{orderSuccess.orderNumber}</p>
             </div>
@@ -290,13 +292,13 @@ export default function Checkout() {
                 onClick={() => navigate('/shop')}
                 className="rounded-xl bg-stone-800 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-stone-700"
               >
-                {t('checkout.success.continueShopping', '繼續購物')}
+                {t('checkout.success.continueShopping', '蝜潛?鞈潛')}
               </button>
               <button
                 onClick={() => navigate('/')}
                 className="rounded-xl border border-stone-200 bg-white px-6 py-3 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50"
               >
-                {t('checkout.success.backHome', '回到首頁')}
+                {t('checkout.success.backHome', '?擐?')}
               </button>
             </div>
           </div>
@@ -314,17 +316,17 @@ export default function Checkout() {
           <div className="container mx-auto px-6 py-10">
             <div className="mb-5 flex items-center gap-2 text-xs tracking-[0.15em] text-stone-400">
               <Link to="/" className="transition-colors hover:text-stone-600">
-                {t('common.home', '首頁')}
+                {t('common.home', '擐?')}
               </Link>
               <ChevronRight className="h-3 w-3" />
               <Link to="/cart" className="transition-colors hover:text-stone-600">
                 {t('cart.title', '購物車')}
               </Link>
               <ChevronRight className="h-3 w-3" />
-              <span className="text-stone-600">{t('checkout.title', '結帳')}</span>
+              <span className="text-stone-600">{t('checkout.title', '蝯董')}</span>
             </div>
             <h1 className="text-4xl font-light tracking-[0.2em] text-stone-800 md:text-5xl">
-              {t('checkout.title', '結帳')}
+              {t('checkout.title', '蝯董')}
             </h1>
             <div className="mt-5 flex items-center gap-3">
               <div className="h-px w-10 bg-amber-400" />
@@ -342,12 +344,12 @@ export default function Checkout() {
                 <div className="mb-5 flex items-center gap-2">
                   <User className="h-4 w-4 text-amber-500" />
                   <h2 className="text-sm font-medium tracking-[0.1em] text-stone-800">
-                    {t('checkout.contact.title', '聯絡資訊')}
+                    {t('checkout.contact.title', '?舐窗鞈?')}
                   </h2>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className={labelCls}>{t('checkout.contact.name', '姓名')} *</label>
+                    <label className={labelCls}>{t('checkout.contact.name', '憪?')} *</label>
                     <input
                       type="text"
                       name="name"
@@ -359,7 +361,7 @@ export default function Checkout() {
                     />
                   </div>
                   <div>
-                    <label className={labelCls}>{t('checkout.contact.email', '電子郵件')} *</label>
+                    <label className={labelCls}>{t('checkout.contact.email', '?餃??萎辣')} *</label>
                     <input
                       type="email"
                       name="email"
@@ -371,7 +373,7 @@ export default function Checkout() {
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className={labelCls}>{t('checkout.contact.phone', '電話')} *</label>
+                    <label className={labelCls}>{t('checkout.contact.phone', '?餉店')} *</label>
                     <input
                       type="tel"
                       name="phone"
@@ -379,7 +381,7 @@ export default function Checkout() {
                       onChange={handleChange}
                       required
                       className={inputCls}
-                      placeholder={t('checkout.contact.phonePlaceholder', '請輸入電話號碼')}
+                      placeholder={t('checkout.contact.phonePlaceholder', '請輸入電話')}
                     />
                   </div>
                 </div>
@@ -408,14 +410,14 @@ export default function Checkout() {
                     </select>
                   </div>
                   <div>
-                    <label className={labelCls}>買受人姓名（選填）</label>
+                    <label className={labelCls}>買受人姓名</label>
                     <input
                       type="text"
                       name="buyerName"
                       value={formData.buyerName}
                       onChange={handleChange}
                       className={inputCls}
-                      placeholder="未填寫則以會員姓名或收件人為準"
+                      placeholder="可留空，若需抬頭可填入姓名"
                     />
                   </div>
                   {formData.invoiceType === 'company' && (
@@ -427,7 +429,7 @@ export default function Checkout() {
                         value={formData.buyerIdentifier}
                         onChange={handleChange}
                         className={inputCls}
-                        placeholder="請輸入 8 碼統編"
+                        placeholder="請輸入 8 碼統一編號"
                       />
                     </div>
                   )}
@@ -440,7 +442,7 @@ export default function Checkout() {
                         value={formData.carrierNumber}
                         onChange={handleChange}
                         className={inputCls}
-                        placeholder="例如 /ABCD1234"
+                        placeholder="例如：/ABCD1234"
                       />
                     </div>
                   )}
@@ -453,18 +455,21 @@ export default function Checkout() {
                         value={formData.loveCode}
                         onChange={handleChange}
                         className={inputCls}
-                        placeholder="請輸入捐贈碼"
+                        placeholder="請輸入愛心碼"
                       />
                     </div>
                   )}
                   <p className="text-xs leading-6 text-stone-500">
-                    發票 email 會直接使用上方聯絡 email。付款成功後才會開立發票。
+                    發票通知會寄到您填寫的電子郵件，請確認資料正確。
                   </p>
                 </div>
               </section>
+
+              <section className="rounded-2xl border border-stone-100 bg-white p-6 shadow-sm">
+                <div className="mb-5 flex items-center gap-2">
                   <Gift className="h-4 w-4 text-amber-500" />
                   <h2 className="text-sm font-medium tracking-[0.1em] text-stone-800">
-                    {t('checkout.note.title', '訂單備註')}
+                    訂單備註
                   </h2>
                 </div>
                 <textarea
@@ -473,7 +478,7 @@ export default function Checkout() {
                   onChange={handleChange}
                   rows={4}
                   className={`${inputCls} resize-none`}
-                  placeholder={t('checkout.note.placeholder', '如有特殊需求請在此說明')}
+                  placeholder="例如：請協助備註收件時段或特殊需求"
                 />
               </section>
             </div>
@@ -481,7 +486,7 @@ export default function Checkout() {
             <aside className="space-y-6">
               <section className="rounded-2xl border border-stone-100 bg-white p-6 shadow-sm">
                 <h2 className="mb-5 text-xs font-medium tracking-[0.3em] text-stone-400 uppercase">
-                  {t('checkout.summary.title', '訂單明細')}
+                  {t('checkout.summary.title', '訂單摘要')}
                 </h2>
                 <div className="space-y-4">
                   {items.map((item) => (
@@ -518,12 +523,12 @@ export default function Checkout() {
 
                 <div className="mt-6 space-y-3 border-t border-stone-100 pt-4 text-sm">
                   <div className="flex items-center justify-between text-stone-500">
-                    <span>{t('checkout.summary.subtotal', '商品小計')}</span>
+                    <span>{t('checkout.summary.subtotal', '小計')}</span>
                     <span>{formatCurrency(total)}</span>
                   </div>
                   <div className="flex items-center justify-between text-stone-500">
-                    <span>{t('checkout.summary.shipping', '運費')}</span>
-                    <span className="text-amber-600">{t('checkout.summary.free', '免運費')}</span>
+                    <span>{t('checkout.summary.shipping', '?祥')}</span>
+                    <span className="text-amber-600">{t('checkout.summary.free', '免運')}</span>
                   </div>
                   <div className="flex items-center justify-between border-t border-stone-100 pt-3">
                     <span className="text-sm font-medium tracking-wide text-stone-800">
@@ -555,10 +560,10 @@ export default function Checkout() {
                 {loading ? (
                   <>
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    {t('checkout.submitting', '處理中...')}
+                    {t('checkout.submitting', '提交中...')}
                   </>
                 ) : (
-                  t('checkout.submit', '確認訂購')
+                  t('checkout.submit', '蝣箄?閮頃')
                 )}
               </button>
 
