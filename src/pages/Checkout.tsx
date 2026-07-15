@@ -277,13 +277,13 @@ export default function Checkout() {
             <h1 className="mb-3 text-3xl font-light text-stone-800">
               {t('checkout.success.title', '訂單成立')}
             </h1>
-            <p className="mb-2 font-light text-stone-500">{t('checkout.success.subtitle', '???函?閮頃')}</p>
+            <p className="mb-2 font-light text-stone-500">{t('checkout.success.subtitle', '感謝您的訂購')}</p>
             <p className="mb-8 text-sm font-light text-stone-400">
               {t('checkout.success.description', '我們已收到您的訂單，後續會寄送確認信到您的信箱。')}
             </p>
             <div className="mb-8 inline-block w-full rounded-2xl border border-stone-100 bg-white px-6 py-5">
               <p className="mb-2 text-xs tracking-widest text-stone-400 uppercase">
-                {t('checkout.success.orderNumberLabel', '閮蝺刻?')}
+                {t('checkout.success.orderNumberLabel', '訂單編號')}
               </p>
               <p className="text-lg font-medium tracking-wider text-amber-700">{orderSuccess.orderNumber}</p>
             </div>
@@ -292,13 +292,13 @@ export default function Checkout() {
                 onClick={() => navigate('/shop')}
                 className="rounded-xl bg-stone-800 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-stone-700"
               >
-                {t('checkout.success.continueShopping', '蝜潛?鞈潛')}
+                {t('checkout.success.continueShopping', '繼續購物')}
               </button>
               <button
                 onClick={() => navigate('/')}
                 className="rounded-xl border border-stone-200 bg-white px-6 py-3 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50"
               >
-                {t('checkout.success.backHome', '?擐?')}
+                {t('checkout.success.backHome', '回到首頁')}
               </button>
             </div>
           </div>
@@ -316,17 +316,17 @@ export default function Checkout() {
           <div className="container mx-auto px-6 py-10">
             <div className="mb-5 flex items-center gap-2 text-xs tracking-[0.15em] text-stone-400">
               <Link to="/" className="transition-colors hover:text-stone-600">
-                {t('common.home', '擐?')}
+                {t('common.home', '首頁')}
               </Link>
               <ChevronRight className="h-3 w-3" />
               <Link to="/cart" className="transition-colors hover:text-stone-600">
                 {t('cart.title', '購物車')}
               </Link>
               <ChevronRight className="h-3 w-3" />
-              <span className="text-stone-600">{t('checkout.title', '蝯董')}</span>
+              <span className="text-stone-600">{t('checkout.title', '結帳')}</span>
             </div>
             <h1 className="text-4xl font-light tracking-[0.2em] text-stone-800 md:text-5xl">
-              {t('checkout.title', '蝯董')}
+              {t('checkout.title', '結帳')}
             </h1>
             <div className="mt-5 flex items-center gap-3">
               <div className="h-px w-10 bg-amber-400" />
@@ -344,12 +344,12 @@ export default function Checkout() {
                 <div className="mb-5 flex items-center gap-2">
                   <User className="h-4 w-4 text-amber-500" />
                   <h2 className="text-sm font-medium tracking-[0.1em] text-stone-800">
-                    {t('checkout.contact.title', '?舐窗鞈?')}
+                    {t('checkout.contact.title', '聯絡資訊')}
                   </h2>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className={labelCls}>{t('checkout.contact.name', '憪?')} *</label>
+                    <label className={labelCls}>{t('checkout.contact.name', '姓名')} *</label>
                     <input
                       type="text"
                       name="name"
@@ -527,7 +527,7 @@ export default function Checkout() {
                     <span>{formatCurrency(total)}</span>
                   </div>
                   <div className="flex items-center justify-between text-stone-500">
-                    <span>{t('checkout.summary.shipping', '?祥')}</span>
+                    <span>{t('checkout.summary.shipping', '運費')}</span>
                     <span className="text-amber-600">{t('checkout.summary.free', '免運')}</span>
                   </div>
                   <div className="flex items-center justify-between border-t border-stone-100 pt-3">
@@ -563,7 +563,7 @@ export default function Checkout() {
                     {t('checkout.submitting', '提交中...')}
                   </>
                 ) : (
-                  t('checkout.submit', '蝣箄?閮頃')
+                  t('checkout.submit', '確認訂購')
                 )}
               </button>
 

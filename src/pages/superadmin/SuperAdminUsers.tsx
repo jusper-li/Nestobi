@@ -470,7 +470,7 @@ const SuperAdminUsers: React.FC = () => {
       setProfileEditing(false);
       await openDetail(viewUser);
     } catch (error: any) {
-      alert(error?.message || '??蛔???皝??剜??');
+        alert(error?.message || '儲存失敗，請稍後再試');
     } finally {
       setProfileSaving(false);
     }
