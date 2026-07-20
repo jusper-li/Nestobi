@@ -651,7 +651,7 @@ const VendorOrders: React.FC = () => {
         await refundOrder(item.order_id);
         await supabase
           .from('after_sales_requests')
-          .update({ status: 'completed', updated_at: new Date().toISOString() })
+          .update({ status: 'resolved', updated_at: new Date().toISOString() })
           .eq('order_id', item.order_id)
           .eq('request_type', 'refund')
           .eq('status', 'pending');
@@ -670,7 +670,7 @@ const VendorOrders: React.FC = () => {
       if (status === 'cancelled' && hasPendingRefundRequest(item)) {
         await supabase
           .from('after_sales_requests')
-          .update({ status: 'completed', updated_at: new Date().toISOString() })
+          .update({ status: 'resolved', updated_at: new Date().toISOString() })
           .eq('order_id', item.order_id)
           .eq('request_type', 'refund')
           .eq('status', 'pending');
