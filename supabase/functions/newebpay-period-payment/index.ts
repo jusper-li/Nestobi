@@ -134,6 +134,28 @@ function extractSubscriptionPeriods(specifications: unknown): SubscriptionPlanMo
   return unique.length > 0 ? unique : [...DEFAULT_SUBSCRIPTION_PERIODS];
 }
 
+function normalizeSubscriptionPlanAmount(value: unknown): number {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount < 0) return 0;
+  return Math.round(amount);
+}
+
+function extractSubscriptionPlanAmount(plans: unknown, months: SubscriptionPlanMonths, fallbackAmount: number): number {
+  if (!Array.isArray(plans)) return normalizeSubscriptionPlanAmount(fallbackAmount);
+  const normalizedMonths = normalizeSubscriptionPeriodValue(months);
+  if (!normalizedMonths) return normalizeSubscriptionPlanAmount(fallbackAmount);
+
+  for (const entry of plans) {
+    if (!entry || typeof entry !== "object") continue;
+    const candidate = entry as { months?: unknown; period?: unknown; value?: unknown; amount?: unknown; price?: unknown; period_amount?: unknown; periodAmount?: unknown };
+    const entryMonths = normalizeSubscriptionPeriodValue(candidate.months ?? candidate.period ?? candidate.value);
+    if (entryMonths !== normalizedMonths) continue;
+    return normalizeSubscriptionPlanAmount(candidate.amount ?? candidate.price ?? candidate.period_amount ?? candidate.periodAmount ?? fallbackAmount);
+  }
+
+  return normalizeSubscriptionPlanAmount(fallbackAmount);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -166,7 +188,7 @@ Deno.serve(async (req: Request) => {
     const [productRes, profileRes] = await Promise.all([
       supabase
         .from("products")
-        .select("id,name,price,image_url,category_id,vendor_id,is_active,stock_quantity,specifications")
+        .select("id,name,price,image_url,category_id,vendor_id,is_active,stock_quantity,specifications,subscription_plans")
         .eq("id", productId)
         .maybeSingle(),
       supabase
@@ -211,7 +233,12 @@ Deno.serve(async (req: Request) => {
       ? await supabase.from("vendors").select("id,name,contact_email").eq("id", product.vendor_id).maybeSingle()
       : { data: null };
 
-    const monthlyAmount = Math.round(Number(product.price || 0) * quantity);
+    const planAmount = extractSubscriptionPlanAmount(
+      (product as { subscription_plans?: unknown } | null)?.subscription_plans,
+      normalizedRequestedPeriod,
+      Number(product.price || 0),
+    );
+    const monthlyAmount = Math.round(planAmount * quantity);
     const merchantOrderNo = buildMerchantOrderNo(user.id);
     const periodPoint = String(new Date().getDate()).padStart(2, "0");
     const itemDesc = buildItemDesc(String(product.name || "Coffee subscription"), quantity);

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
@@ -31,6 +31,13 @@ import {
   normalizeSubscriptionPeriodValue,
   type SubscriptionPlanMonths,
 } from '../../lib/subscriptionPeriods';
+import {
+  buildDefaultSubscriptionPlans,
+  mergeSubscriptionPlans,
+  normalizeSubscriptionPlans,
+  normalizeSubscriptionPlanAmount,
+  type SubscriptionPlan,
+} from '../../lib/subscriptionPlans';
 import { formatCurrency } from '../../lib/utils';
 
 interface Product {
@@ -54,6 +61,7 @@ interface Product {
   tags?: string[];
   source_url?: string;
   specifications?: Specification[];
+  subscription_plans?: SubscriptionPlan[];
   is_active: boolean;
 }
 
@@ -84,6 +92,7 @@ type ProductForm = {
   source_url: string;
   is_active: boolean;
   specifications: Specification[];
+  subscription_plans: SubscriptionPlan[];
 };
 
 interface Specification {
@@ -117,9 +126,10 @@ const emptyForm: ProductForm = {
   source_url: '',
   is_active: true,
   specifications: [],
+  subscription_plans: buildDefaultSubscriptionPlans(0),
 };
 
-const PRODUCT_SELECT = 'id,category_id,vendor_id,name,description,price,stock_quantity,image_url,images,sku,origin,roast_level,processing_method,altitude,variety,flavor_notes,weight_grams,tags,source_url,specifications,is_active';
+const PRODUCT_SELECT = 'id,category_id,vendor_id,name,description,price,stock_quantity,image_url,images,sku,origin,roast_level,processing_method,altitude,variety,flavor_notes,weight_grams,tags,source_url,specifications,subscription_plans,is_active';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -163,6 +173,8 @@ function rawToForm(raw: Record<string, unknown>, fallbackCategoryId = ''): Produ
         options: Array.isArray(spec?.options) ? spec.options.map(String).filter(Boolean) : [],
       }))
     : [];
+  const fallbackPeriods = extractSubscriptionPeriods(specifications);
+  const subscriptionPlans = normalizeSubscriptionPlans(raw.subscription_plans, Number(raw.price) || 0, fallbackPeriods);
 
   return {
     category_id: String(raw.category_id || fallbackCategoryId || ''),
@@ -183,6 +195,7 @@ function rawToForm(raw: Record<string, unknown>, fallbackCategoryId = ''): Produ
     tags: toStringArray(raw.tags),
     source_url: String(raw.source_url || ''),
     specifications,
+    subscription_plans: subscriptionPlans,
     is_active: raw.is_active !== false,
   };
 }
@@ -355,9 +368,13 @@ export default function VendorProducts() {
     const mergedSpecifications = showSubscriptionSettings || subscriptionSpec
       ? [...baseSpecifications, { name: SUBSCRIPTION_SPEC_NAME, options: finalSubscriptionPeriods.map(String) }]
       : baseSpecifications;
+    const mergedSubscriptionPlans = showSubscriptionSettings
+      ? mergeSubscriptionPlans(finalSubscriptionPeriods, form.subscription_plans, Number(form.price) || 0)
+      : [];
     const payload = {
       ...toProductPayload(form, vendorId),
       specifications: mergedSpecifications,
+      subscription_plans: mergedSubscriptionPlans,
     };
     if (editing) {
       await supabase.from('products').update(payload).eq('id', editing.id).eq('vendor_id', vendorId);
@@ -487,11 +504,23 @@ export default function VendorProducts() {
   const subscriptionSpec = form.specifications.find(spec => spec.name.trim() === SUBSCRIPTION_SPEC_NAME);
   const showSubscriptionSettings = Boolean(subscriptionSpec) || Boolean(selectedCategory?.slug === 'dlal-subscription' || selectedCategory?.slug?.startsWith('subscription-'));
   const toggleSubscriptionPeriod = (period: SubscriptionPlanMonths) => {
-    setSubscriptionPeriods(current => (
-      current.includes(period)
+    setSubscriptionPeriods(current => {
+      const nextPeriods = current.includes(period)
         ? current.filter(item => item !== period)
-        : [...current, period]
-    ));
+        : [...current, period];
+      setForm(currentForm => ({
+        ...currentForm,
+        subscription_plans: mergeSubscriptionPlans(nextPeriods, currentForm.subscription_plans, Number(currentForm.price) || 0),
+      }));
+      return nextPeriods;
+    });
+  };
+  const setSubscriptionPlanAmount = (period: SubscriptionPlanMonths, amount: number) => {
+    const normalizedAmount = normalizeSubscriptionPlanAmount(amount);
+    setForm(current => ({
+      ...current,
+      subscription_plans: current.subscription_plans.map(plan => (plan.months === period ? { ...plan, amount: normalizedAmount } : plan)),
+    }));
   };
 
   if (loading) return <div className="flex justify-center py-16"><div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" /></div>;
@@ -625,42 +654,75 @@ export default function VendorProducts() {
                     <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
-                          <h4 className="text-sm font-bold text-emerald-900">訂閱期數設定</h4>
+                          <h4 className="text-sm font-bold text-emerald-900">訂閱期數與金額</h4>
                           <p className="mt-1 text-xs leading-5 text-emerald-800">
-                            請勾選這個商品允許的期數。此商品的訂閱金額會沿用上方的售價欄位。
+                            可在這裡設定哪些訂閱期數啟用，以及各期數對應的每期金額。
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setSubscriptionPeriods(DEFAULT_SUBSCRIPTION_PERIODS)}
-                          className="rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
-                        >
-                          還原預設
-                        </button>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSubscriptionPeriods(DEFAULT_SUBSCRIPTION_PERIODS)}
+                            className="rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                          >
+                            恢復預設期數
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setForm(current => ({
+                              ...current,
+                              subscription_plans: current.subscription_plans.map(plan => ({
+                                ...plan,
+                                amount: Number(current.price) || 0,
+                              })),
+                            }))}
+                            className="rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                          >
+                            全部套用商品售價
+                          </button>
+                        </div>
                       </div>
-                      <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+                      <div className="mt-4 grid gap-3">
                         {DEFAULT_SUBSCRIPTION_PERIODS.map((period) => {
                           const active = subscriptionPeriods.includes(period);
-                          const label = period === 'NE' ? '月繳' : `${period} 個月`;
+                          const plan = form.subscription_plans.find(item => item.months === period);
+                          const label = period === 'NE' ? '每月自動扣款' : `${period} 個月`;
 
                           return (
-                            <button
+                            <div
                               key={String(period)}
-                              type="button"
-                              onClick={() => toggleSubscriptionPeriod(period)}
-                              className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
-                                active
-                                  ? 'border-emerald-600 bg-emerald-600 text-white'
-                                  : 'border-gray-200 bg-white text-gray-700 hover:border-emerald-300 hover:text-emerald-700'
-                              }`}
+                              className={`rounded-2xl border bg-white p-3 transition ${active ? 'border-emerald-300' : 'border-gray-200 opacity-70'}`}
                             >
-                              {label}
-                            </button>
+                              <div className="flex flex-wrap items-center justify-between gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleSubscriptionPeriod(period)}
+                                  className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                                    active
+                                      ? 'bg-emerald-600 text-white'
+                                      : 'border border-gray-200 bg-white text-gray-700 hover:border-emerald-300 hover:text-emerald-700'
+                                  }`}
+                                >
+                                  {active ? '已啟用' : '未啟用'} / {label}
+                                </button>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-gray-600">每期金額</span>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={plan?.amount ?? 0}
+                                    onChange={(event) => setSubscriptionPlanAmount(period, Number(event.target.value))}
+                                    disabled={!active}
+                                    className="w-36 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-gray-100"
+                                  />
+                                </div>
+                              </div>
+                            </div>
                           );
                         })}
                       </div>
                       <p className="mt-3 text-xs text-gray-600">
-                        如果不設定，前台會預設顯示 3、6、12 個月與月繳。
+                        啟用的期數才會出現在商品頁，未啟用的期數不會開放給消費者選擇。
                       </p>
                     </div>
                   )}

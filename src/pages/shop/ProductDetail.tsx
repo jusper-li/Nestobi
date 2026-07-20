@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ChevronRight, Heart, Minus, Plus, ShoppingCart, Star } from 'lucide-react';
@@ -13,7 +13,8 @@ import { translateCategoriesFromCacheOnly, translateCategoriesOnDemand, translat
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { sanitizeHtml } from '../../lib/security';
 import { createSubscriptionCheckout, submitNewebPayPeriodForm } from '../../lib/subscriptionCheckout';
-import { DEFAULT_SUBSCRIPTION_PERIODS, extractSubscriptionPeriods, type SubscriptionPlanMonths } from '../../lib/subscriptionPeriods';
+import { DEFAULT_SUBSCRIPTION_PERIODS, extractSubscriptionPeriods, normalizeSubscriptionPeriodValue, type SubscriptionPlanMonths } from '../../lib/subscriptionPeriods';
+import { normalizeSubscriptionPlans, type SubscriptionPlan } from '../../lib/subscriptionPlans';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
 
@@ -30,6 +31,7 @@ interface Product {
   roast_level?: string | null;
   processing_method?: string | null;
   specifications?: { name: string; options: string[] }[] | null;
+  subscription_plans?: SubscriptionPlan[] | null;
 }
 
 interface Category {
@@ -244,9 +246,18 @@ export default function ProductDetail() {
   );
 
   const subscriptionOptions = useMemo(() => {
+    const rawPlans = Array.isArray(viewProduct?.subscription_plans) ? viewProduct.subscription_plans : [];
+    const months = rawPlans
+      .map((plan) => normalizeSubscriptionPeriodValue((plan as { months?: unknown; period?: unknown; value?: unknown }).months ?? (plan as { months?: unknown; period?: unknown; value?: unknown }).period ?? (plan as { months?: unknown; period?: unknown; value?: unknown }).value))
+      .filter((plan): plan is SubscriptionPlanMonths => Boolean(plan));
+    if (months.length > 0) return Array.from(new Set(months));
+
     const options = extractSubscriptionPeriods(viewProduct?.specifications);
     return options.length > 0 ? options : DEFAULT_SUBSCRIPTION_PERIODS;
-  }, [viewProduct?.specifications]);
+  }, [viewProduct?.specifications, viewProduct?.subscription_plans]);
+  const subscriptionPlans = useMemo(() => {
+    return normalizeSubscriptionPlans(viewProduct?.subscription_plans, viewProduct?.price || 0, subscriptionOptions);
+  }, [subscriptionOptions, viewProduct?.price, viewProduct?.subscription_plans]);
 
   useEffect(() => {
     if (!isSubscriptionProduct) return;
@@ -268,6 +279,11 @@ export default function ProductDetail() {
       default:
         return String(value);
     }
+  };
+  const getSubscriptionPlanLabel = (value: SubscriptionPlanMonths) => {
+    const plan = subscriptionPlans.find(item => item.months === value);
+    const amount = plan?.amount ?? (viewProduct?.price || 0);
+    return `${subscriptionPeriodLabel(value)} - ${formatCurrency(amount)} / 期`;
   };
 
   const handleAdd = async () => {
@@ -408,10 +424,10 @@ export default function ProductDetail() {
                       className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
                         subscriptionMonths === option
                           ? 'border-[#8B6840] bg-[#8B6840] text-white'
-                          : 'border-gray-200 bg-white text-gray-700 hover:border-[#C09A6A] hover:text-[#8B6840]'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-[#C09A6A] hover:text-[#8B6840]'
                       }`}
                     >
-                      {subscriptionPeriodLabel(option)}
+                      {getSubscriptionPlanLabel(option)}
                     </button>
                   ))}
                 </div>
