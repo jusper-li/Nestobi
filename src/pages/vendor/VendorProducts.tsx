@@ -27,6 +27,7 @@ import { sanitizeHtml, sanitizeText } from '../../lib/security';
 import {
   DEFAULT_SUBSCRIPTION_PERIODS,
   SUBSCRIPTION_SPEC_NAME,
+  buildSubscriptionSpecification,
   extractSubscriptionPeriods,
   normalizeSubscriptionPeriodValue,
   type SubscriptionPlanMonths,
@@ -130,6 +131,8 @@ const emptyForm: ProductForm = {
 };
 
 const PRODUCT_SELECT = 'id,category_id,vendor_id,name,description,price,stock_quantity,image_url,images,sku,origin,roast_level,processing_method,altitude,variety,flavor_notes,weight_grams,tags,source_url,specifications,subscription_plans,is_active';
+
+const formatSubscriptionPeriod = (period: SubscriptionPlanMonths) => (period === 'NE' ? '不限' : `${period} 期`);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -254,6 +257,8 @@ export default function VendorProducts() {
   const [subscriptionPeriods, setSubscriptionPeriods] = useState<SubscriptionPlanMonths[]>(DEFAULT_SUBSCRIPTION_PERIODS);
   const [subscriptionEnabled, setSubscriptionEnabled] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [categoryPickerProduct, setCategoryPickerProduct] = useState<Product | null>(null);
+  const [categoryPickerSaving, setCategoryPickerSaving] = useState(false);
 
   const [showScraper, setShowScraper] = useState(false);
   const [scraperUrl, setScraperUrl] = useState('');
@@ -268,6 +273,17 @@ export default function VendorProducts() {
   const [parserError, setParserError] = useState('');
 
   const categoryById = useMemo(() => new Map(categories.map(category => [category.id, category])), [categories]);
+  const categoryStats = useMemo(() => {
+    const counts = new Map<string, number>();
+    products.forEach((product) => {
+      if (!product.category_id) return;
+      counts.set(product.category_id, (counts.get(product.category_id) || 0) + 1);
+    });
+    return sortCategoriesForTree(categories).map((category) => ({
+      ...category,
+      count: counts.get(category.id) || 0,
+    }));
+  }, [categories, products]);
 
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('id,name,slug,parent_id').order('name', { ascending: true });
@@ -326,6 +342,83 @@ export default function VendorProducts() {
     );
     setDescPreview(false);
     setShowModal(true);
+  };
+
+  const openCategoryPicker = (product: Product) => {
+    setCategoryPickerProduct(product);
+  };
+
+  const updateProductCategory = async (productId: string, categoryId: string | null) => {
+    if (!vendorId) return;
+    setCategoryPickerSaving(true);
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ category_id: categoryId, updated_at: new Date().toISOString() })
+        .eq('id', productId)
+        .eq('vendor_id', vendorId);
+      if (error) throw error;
+
+      await logAdminAction('update_product_category', 'products', productId, {
+        vendor_id: vendorId,
+        category_id: categoryId,
+      });
+
+      await fetchProducts(vendorId);
+      setCategoryPickerProduct(null);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '更新分類失敗');
+    } finally {
+      setCategoryPickerSaving(false);
+    }
+  };
+
+  const toggleSubscriptionSetting = async (product: Product) => {
+    if (!vendorId) return;
+    const subscriptionSpec = Array.isArray(product.specifications)
+      ? product.specifications.find((spec) => spec.name.trim() === SUBSCRIPTION_SPEC_NAME) || null
+      : null;
+    const hasSubscription = Boolean(subscriptionSpec || (Array.isArray(product.subscription_plans) && product.subscription_plans.length > 0));
+    const currentPeriods = subscriptionSpec ? extractSubscriptionPeriods([subscriptionSpec]) : DEFAULT_SUBSCRIPTION_PERIODS;
+    const safePeriods = currentPeriods.length > 0 ? currentPeriods : DEFAULT_SUBSCRIPTION_PERIODS;
+    const baseSpecifications = Array.isArray(product.specifications)
+      ? product.specifications.filter((spec) => spec.name.trim() !== SUBSCRIPTION_SPEC_NAME)
+      : [];
+    const nextSpecifications = hasSubscription
+      ? baseSpecifications
+      : [...baseSpecifications, buildSubscriptionSpecification(safePeriods)];
+    const nextSubscriptionPlans = hasSubscription
+      ? []
+      : mergeSubscriptionPlans(
+          safePeriods,
+          Array.isArray(product.subscription_plans) && product.subscription_plans.length > 0
+            ? product.subscription_plans
+            : buildDefaultSubscriptionPlans(Number(product.price) || 0),
+          Number(product.price) || 0,
+        );
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({
+          specifications: nextSpecifications,
+          subscription_plans: nextSubscriptionPlans,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', product.id)
+        .eq('vendor_id', vendorId);
+      if (error) throw error;
+      await logAdminAction(hasSubscription ? 'disable_subscription_product' : 'enable_subscription_product', 'products', product.id, {
+        vendor_id: vendorId,
+        name: product.name,
+      });
+      await fetchProducts(vendorId);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '切換訂閱設定失敗');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const saveForms = async (forms: ProductForm[]) => {
@@ -623,6 +716,28 @@ export default function VendorProducts() {
         </div>
       </div>
 
+      <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-gray-700">各分類商品數</p>
+          <p className="text-xs text-gray-400">未分類商品也會另外保留在表格中</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {categoryStats.length > 0 ? categoryStats.map((category) => (
+            <button
+              key={category.id}
+              type="button"
+              onClick={() => setCategoryFilter(category.id)}
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${categoryFilter === category.id ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}
+            >
+              <span>{getCategoryOptionLabel(category, categories)}</span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">{category.count}</span>
+            </button>
+          )) : (
+            <p className="text-sm text-gray-400">目前沒有分類資料，請先確認 categories 表是否已有資料。</p>
+          )}
+        </div>
+      </div>
+
       {visibleProducts.length === 0 ? (
         <div className="rounded-2xl bg-white p-12 text-center shadow-sm">
           <Package className="mx-auto mb-3 h-12 w-12 text-gray-200" />
@@ -644,6 +759,7 @@ export default function VendorProducts() {
                 <th className="px-5 py-3 text-left font-medium text-gray-500">分類</th>
                 <th className="px-5 py-3 text-right font-medium text-gray-500">價格</th>
                 <th className="px-5 py-3 text-right font-medium text-gray-500">庫存</th>
+                <th className="px-5 py-3 text-center font-medium text-gray-500">訂閱</th>
                 <th className="px-5 py-3 text-center font-medium text-gray-500">狀態</th>
                 <th className="px-5 py-3 text-right font-medium text-gray-500">操作</th>
               </tr>
@@ -668,20 +784,61 @@ export default function VendorProducts() {
                   </td>
                   <td className="px-5 py-4 text-gray-600">
                     {product.category_id && categoryById.get(product.category_id) ? (
-                      <div className="space-y-1">
-                        <div className="text-sm font-medium text-gray-900">
-                          {categoryById.get(product.category_id)?.name || '-'}
+                      <button
+                        type="button"
+                        onClick={() => openCategoryPicker(product)}
+                        className="group w-full text-left"
+                      >
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium text-gray-900 group-hover:text-emerald-700">
+                            {categoryById.get(product.category_id)?.name || '-'}
+                          </div>
+                          <div className="text-xs leading-5 text-gray-500 group-hover:text-emerald-600">
+                            {getCategoryPath(categoryById.get(product.category_id)!, categories)}
+                          </div>
+                          <div className="text-[11px] font-medium text-emerald-600">點我可直接勾選調整</div>
                         </div>
-                        <div className="text-xs leading-5 text-gray-500">
-                          {getCategoryPath(categoryById.get(product.category_id)!, categories)}
-                        </div>
-                      </div>
+                      </button>
                     ) : (
-                      '-'
+                      <button
+                        type="button"
+                        onClick={() => openCategoryPicker(product)}
+                        className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500 transition hover:bg-emerald-50 hover:text-emerald-700"
+                      >
+                        未分類，點我勾選
+                      </button>
                     )}
                   </td>
                   <td className="px-5 py-4 text-right font-semibold text-gray-900">{formatCurrency(product.price)}</td>
                   <td className="px-5 py-4 text-right text-gray-600">{product.stock_quantity}</td>
+                  <td className="px-5 py-4 text-center">
+                    {(() => {
+                      const subscriptionSpec = Array.isArray(product.specifications)
+                        ? product.specifications.find((spec) => spec.name.trim() === SUBSCRIPTION_SPEC_NAME) || null
+                        : null;
+                      const hasSubscription = Boolean(subscriptionSpec || (Array.isArray(product.subscription_plans) && product.subscription_plans.length > 0));
+                      const periods = subscriptionSpec ? extractSubscriptionPeriods([subscriptionSpec]) : [];
+                      return (
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => void toggleSubscriptionSetting(product)}
+                            disabled={saving}
+                            className={`inline-flex min-w-24 items-center justify-between gap-2 rounded-full px-2 py-1 text-xs font-medium transition disabled:cursor-wait disabled:opacity-60 ${hasSubscription ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                            aria-pressed={hasSubscription}
+                          >
+                            <span>{hasSubscription ? '已啟用' : '已關閉'}</span>
+                            <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition ${hasSubscription ? 'bg-emerald-500' : 'bg-gray-300'}`}>
+                              <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition ${hasSubscription ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                            </span>
+                          </button>
+                          {hasSubscription && periods.length > 0 && (
+                            <p className="mt-1 text-[11px] text-emerald-600">{periods.map(formatSubscriptionPeriod).join('、')}</p>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </td>
                   <td className="px-5 py-4 text-center">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{product.is_active ? '上架' : '停用'}</span>
                   </td>
@@ -845,6 +1002,80 @@ export default function VendorProducts() {
           </motion.div>
         </div>
       )}
+
+      <AnimatePresence>
+        {categoryPickerProduct && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl"
+            >
+              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900">調整商品分類</h3>
+                  <p className="mt-0.5 text-xs text-gray-500">{categoryPickerProduct.name}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCategoryPickerProduct(null)}
+                  className="rounded-xl p-2 hover:bg-gray-100"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="max-h-[70vh] overflow-y-auto p-5">
+                <p className="mb-4 text-sm text-gray-600">直接勾選一個分類，系統會立即更新這個商品的分類。</p>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    disabled={categoryPickerSaving}
+                    onClick={() => void updateProductCategory(categoryPickerProduct.id, null)}
+                    className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${!categoryPickerProduct.category_id ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/60'} disabled:cursor-wait disabled:opacity-60`}
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900">未分類</p>
+                      <p className="text-xs text-gray-500">取消目前分類</p>
+                    </div>
+                    <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full border ${!categoryPickerProduct.category_id ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-gray-300 bg-white'}`}>
+                      {categoryPickerProduct.category_id ? '' : '✓'}
+                    </span>
+                  </button>
+                  {sortCategoriesForTree(categories).map((category) => {
+                    const checked = categoryPickerProduct.category_id === category.id;
+                    return (
+                      <button
+                        key={category.id}
+                        type="button"
+                        disabled={categoryPickerSaving}
+                        onClick={() => void updateProductCategory(categoryPickerProduct.id, category.id)}
+                        className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${checked ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/60'} disabled:cursor-wait disabled:opacity-60`}
+                      >
+                        <div>
+                          <p className="font-medium text-gray-900">{getCategoryOptionLabel(category, categories)}</p>
+                          <p className="text-xs text-gray-500">{getCategoryPath(category, categories) || category.name}</p>
+                        </div>
+                        <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full border ${checked ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-gray-300 bg-white'}`}>
+                          {checked ? '✓' : ''}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {categoryPickerSaving && (
+                  <p className="mt-4 text-sm text-emerald-700">儲存中，請稍候…</p>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showScraper && (

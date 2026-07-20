@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
+import { DEFAULT_SUBSCRIPTION_PERIODS, SUBSCRIPTION_SPEC_NAME, buildSubscriptionSpecification, extractSubscriptionPeriods } from '../../lib/subscriptionPeriods';
 
 interface Product {
   id: string;
@@ -31,11 +32,14 @@ interface Product {
   processing_method?: string | null;
   flavor_notes?: string[] | null;
   tags?: string[] | null;
+  specifications?: { name: string; options: string[] }[] | null;
   vendors?: { name: string } | null;
   categories?: { name: string } | null;
 }
 
 type ProductIssue = '缺圖片' | '缺分類' | '缺供應商' | '缺 SKU' | '無庫存' | '缺風味資料';
+
+const formatSubscriptionPeriod = (period: number | 'NE') => (period === 'NE' ? '不限' : `${period} 期`);
 
 function getProductIssues(product: Product): ProductIssue[] {
   const issues: ProductIssue[] = [];
@@ -76,33 +80,60 @@ export default function SuperAdminProducts() {
   const [stockFilter, setStockFilter] = useState('all');
   const [qualityFilter, setQualityFilter] = useState('all');
   const [error, setError] = useState('');
+  const [updatingSubscriptionId, setUpdatingSubscriptionId] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     setSearch(params.get('q') || '');
   }, [location.search]);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setError('');
-      const { data, error: productsError } = await supabase
-        .from('products')
-        .select('id, name, price, stock_quantity, is_active, image_url, sku, vendor_id, category_id, origin, roast_level, processing_method, flavor_notes, tags, vendors(name), categories!products_category_id_fkey(name)')
-        .order('name');
+  const fetchProducts = async () => {
+    setError('');
+    const { data, error: productsError } = await supabase
+      .from('products')
+      .select('id, name, price, stock_quantity, is_active, image_url, sku, vendor_id, category_id, origin, roast_level, processing_method, flavor_notes, tags, specifications, vendors(name), categories!products_category_id_fkey(name)')
+      .order('name');
 
-      if (productsError) {
-        setError(productsError.message);
-        setProducts([]);
-        setLoading(false);
-        return;
-      }
-
-      setProducts((data || []) as unknown as Product[]);
+    if (productsError) {
+      setError(productsError.message);
+      setProducts([]);
       setLoading(false);
-    };
+      return;
+    }
 
-    fetchProducts();
+    setProducts((data || []) as unknown as Product[]);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    void fetchProducts();
   }, []);
+
+  const toggleSubscriptionSetting = async (product: Product) => {
+    if (updatingSubscriptionId === product.id) return;
+
+    const subscriptionSpec = product.specifications?.find((spec) => spec.name.trim() === SUBSCRIPTION_SPEC_NAME) || null;
+    const currentPeriods = subscriptionSpec ? extractSubscriptionPeriods([subscriptionSpec]) : DEFAULT_SUBSCRIPTION_PERIODS;
+    const nextSpecifications = subscriptionSpec
+      ? (product.specifications || []).filter((spec) => spec.name.trim() !== SUBSCRIPTION_SPEC_NAME)
+      : [...(product.specifications || []).filter((spec) => spec.name.trim() !== SUBSCRIPTION_SPEC_NAME), buildSubscriptionSpecification(currentPeriods)];
+
+    setUpdatingSubscriptionId(product.id);
+
+    const { error: updateError } = await supabase
+      .from('products')
+      .update({ specifications: nextSpecifications })
+      .eq('id', product.id);
+
+    if (updateError) {
+      setError(updateError.message);
+      setUpdatingSubscriptionId(null);
+      return;
+    }
+
+    await fetchProducts();
+    setUpdatingSubscriptionId(null);
+  };
 
   const qualityStats = useMemo(() => {
     const incomplete = products.filter(product => getProductIssues(product).length > 0).length;
@@ -233,6 +264,7 @@ export default function SuperAdminProducts() {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">售價</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">庫存</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">完整度</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">訂閱設定</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">狀態</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500">操作</th>
                 </tr>
@@ -240,6 +272,9 @@ export default function SuperAdminProducts() {
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((product, index) => {
                   const completeness = getCompleteness(product);
+                  const subscriptionSpec = product.specifications?.find((spec) => spec.name.trim() === SUBSCRIPTION_SPEC_NAME) || null;
+                  const subscriptionPeriods = subscriptionSpec ? extractSubscriptionPeriods([subscriptionSpec]) : [];
+                  const subscriptionEnabled = Boolean(subscriptionSpec);
 
                   return (
                     <motion.tr key={product.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: index * 0.015 }} className="hover:bg-amber-50/30">
@@ -296,6 +331,24 @@ export default function SuperAdminProducts() {
                             <p className="mt-1 line-clamp-1 text-xs text-gray-400">{completeness.issues.join('、')}</p>
                           )}
                         </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => void toggleSubscriptionSetting(product)}
+                          disabled={updatingSubscriptionId === product.id}
+                          className={`inline-flex min-w-28 items-center justify-between gap-2 rounded-full px-2 py-1 text-xs font-semibold transition disabled:cursor-wait disabled:opacity-60 ${subscriptionEnabled ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                          aria-pressed={subscriptionEnabled}
+                          aria-label={`${product.name} 訂閱設定 ${subscriptionEnabled ? '已啟用' : '已關閉'}`}
+                        >
+                          <span>{subscriptionEnabled ? '已啟用' : '已關閉'}</span>
+                          <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition ${subscriptionEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}>
+                            <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition ${subscriptionEnabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                          </span>
+                        </button>
+                        {subscriptionEnabled && subscriptionPeriods.length > 0 && (
+                          <p className="mt-1 text-[11px] text-emerald-600">{subscriptionPeriods.map(formatSubscriptionPeriod).join('、')}</p>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>

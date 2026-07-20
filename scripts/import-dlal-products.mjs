@@ -257,7 +257,6 @@ function buildDescription(name, fields, sourceUrl) {
     rows.length
       ? `<ul>${items}</ul>`
       : '<p>此商品由來源頁商品資料建立，保留原始商品網址供後台追蹤。</p>',
-    `<p>商品資料整理自 ${escapeHtml(host)}，已轉為 Nestobi 商品欄位。</p>`,
   ].join('');
 }
 

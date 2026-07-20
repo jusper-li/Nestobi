@@ -494,7 +494,6 @@ function buildProductDescription(name: string, summary: string, fields: Record<s
   return [
     `<p>${escapeHtml(name)}</p>`,
     items ? `<ul>${items}</ul>` : "",
-    host ? `<p>商品資料整理自 ${escapeHtml(host)}，已轉為 Nestobi 商品欄位。</p>` : "",
   ].filter(Boolean).join("");
 }
 
