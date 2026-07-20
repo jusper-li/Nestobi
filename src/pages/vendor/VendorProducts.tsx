@@ -252,6 +252,8 @@ export default function VendorProducts() {
   const [saving, setSaving] = useState(false);
   const [descPreview, setDescPreview] = useState(false);
   const [subscriptionPeriods, setSubscriptionPeriods] = useState<SubscriptionPlanMonths[]>(DEFAULT_SUBSCRIPTION_PERIODS);
+  const [subscriptionEnabled, setSubscriptionEnabled] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('all');
 
   const [showScraper, setShowScraper] = useState(false);
   const [scraperUrl, setScraperUrl] = useState('');
@@ -307,13 +309,21 @@ export default function VendorProducts() {
     setEditing(null);
     resetForm();
     setSubscriptionPeriods(DEFAULT_SUBSCRIPTION_PERIODS);
+    setSubscriptionEnabled(false);
     setShowModal(true);
   };
 
   const openEdit = (product: Product) => {
     setEditing(product);
-    setForm(rawToForm(product as unknown as Record<string, unknown>));
+    const nextForm = rawToForm(product as unknown as Record<string, unknown>);
+    setForm(nextForm);
     setSubscriptionPeriods(extractSubscriptionPeriods((product as unknown as { specifications?: unknown }).specifications));
+    const hasSubscriptionPlans = Array.isArray(product.subscription_plans) && product.subscription_plans.length > 0;
+    setSubscriptionEnabled(
+      hasSubscriptionPlans
+      || Boolean((product as unknown as { specifications?: unknown }).specifications && extractSubscriptionPeriods((product as unknown as { specifications?: unknown }).specifications).length > 0)
+      || Boolean(product.category_id && categories.find(category => category.id === product.category_id && /subscription|訂閱|定期便|週期|period/i.test([category.slug, category.name].join(' '))))
+    );
     setDescPreview(false);
     setShowModal(true);
   };
@@ -365,10 +375,10 @@ export default function VendorProducts() {
     const finalSubscriptionPeriods =
       normalizedPeriods.length > 0 ? Array.from(new Set(normalizedPeriods)) : DEFAULT_SUBSCRIPTION_PERIODS;
     const baseSpecifications = normalizeSpecifications(form.specifications.filter((spec) => spec.name.trim() !== SUBSCRIPTION_SPEC_NAME));
-    const mergedSpecifications = showSubscriptionSettings || subscriptionSpec
+    const mergedSpecifications = subscriptionEnabled || showSubscriptionSettings || subscriptionSpec
       ? [...baseSpecifications, { name: SUBSCRIPTION_SPEC_NAME, options: finalSubscriptionPeriods.map(String) }]
       : baseSpecifications;
-    const mergedSubscriptionPlans = showSubscriptionSettings
+    const mergedSubscriptionPlans = subscriptionEnabled || showSubscriptionSettings
       ? mergeSubscriptionPlans(finalSubscriptionPeriods, form.subscription_plans, Number(form.price) || 0)
       : [];
     const payload = {
@@ -513,7 +523,7 @@ export default function VendorProducts() {
       .toLowerCase();
     return /subscription|訂閱|定期便|週期|period/.test(haystack);
   }, [selectedCategory?.name, selectedCategory?.slug, selectedCategoryPath]);
-  const showSubscriptionSettings = Boolean(subscriptionSpec) || isSubscriptionCategory;
+  const showSubscriptionSettings = subscriptionEnabled || Boolean(subscriptionSpec) || isSubscriptionCategory;
   const toggleSubscriptionPeriod = (period: SubscriptionPlanMonths) => {
     setSubscriptionPeriods(current => {
       const nextPeriods = current.includes(period)
@@ -526,6 +536,16 @@ export default function VendorProducts() {
       return nextPeriods;
     });
   };
+  const visibleProducts = useMemo(() => {
+    if (categoryFilter === 'all') return products;
+    return products.filter((product) => product.category_id === categoryFilter);
+  }, [categoryFilter, products]);
+  const subscriptionProductCount = products.filter((product) => {
+    const specs = Array.isArray(product.specifications) ? product.specifications : [];
+    const plans = Array.isArray(product.subscription_plans) ? product.subscription_plans : [];
+    const names = specs.some(spec => String(spec?.name || '').trim() === SUBSCRIPTION_SPEC_NAME);
+    return names || plans.length > 0;
+  }).length;
   const setSubscriptionPlanAmount = (period: SubscriptionPlanMonths, amount: number) => {
     const normalizedAmount = normalizeSubscriptionPlanAmount(amount);
     setForm(current => ({
@@ -552,7 +572,7 @@ export default function VendorProducts() {
           <div className="rounded-xl bg-emerald-100 p-2"><Package className="h-6 w-6 text-emerald-700" /></div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">商品管理</h1>
-            <p className="text-xs font-medium text-gray-500">支援單品網址與分類列表批次匯入</p>
+            <p className="text-xs font-medium text-gray-500">支援單品網址與分類列表批次匯入，並可依分類快速篩選</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -568,10 +588,49 @@ export default function VendorProducts() {
         </div>
       </div>
 
-      {products.length === 0 ? (
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-600">分類篩選</span>
+          <select
+            value={categoryFilter}
+            onChange={(event) => setCategoryFilter(event.target.value)}
+            className="min-w-56 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          >
+            <option value="all">全部分類</option>
+            {sortCategoriesForTree(categories).map(category => (
+              <option key={category.id} value={category.id}>
+                {getCategoryOptionLabel(category, categories)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs font-medium">
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+            商品 {products.length} 筆
+          </span>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
+            訂閱商品 {subscriptionProductCount} 筆
+          </span>
+          {categoryFilter !== 'all' && (
+            <button
+              type="button"
+              onClick={() => setCategoryFilter('all')}
+              className="rounded-full bg-gray-100 px-3 py-1 text-gray-700 transition hover:bg-gray-200"
+            >
+              清除篩選
+            </button>
+          )}
+        </div>
+      </div>
+
+      {visibleProducts.length === 0 ? (
         <div className="rounded-2xl bg-white p-12 text-center shadow-sm">
           <Package className="mx-auto mb-3 h-12 w-12 text-gray-200" />
-          <p className="mb-4 text-gray-400">目前沒有商品，貼上分類頁即可批次匯入。</p>
+          <p className="mb-4 text-gray-400">
+            {categoryFilter === 'all'
+              ? '目前沒有商品，貼上分類頁即可批次匯入。'
+              : '目前這個分類沒有商品。'}
+          </p>
           <button onClick={openScraper} className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 hover:text-emerald-700">
             <Sparkles className="h-4 w-4" />使用 AI 批次匯入商品<ChevronRight className="h-3.5 w-3.5" />
           </button>
@@ -590,7 +649,7 @@ export default function VendorProducts() {
               </tr>
             </thead>
             <tbody>
-              {products.map((product, index) => (
+              {visibleProducts.map((product, index) => (
                 <motion.tr key={product.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: index * 0.02 }} className="border-b border-gray-50 last:border-0">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
@@ -600,6 +659,9 @@ export default function VendorProducts() {
                         <div className="mt-1 flex flex-wrap gap-1">
                           {product.source_url && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">已連來源</span>}
                           {product.images && product.images.length > 1 && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">{product.images.length} 張圖</span>}
+                          {(product.subscription_plans?.length || product.specifications?.some(spec => spec.name.trim() === SUBSCRIPTION_SPEC_NAME)) ? (
+                            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">訂閱</span>
+                          ) : null}
                         </div>
                       </div>
                     </div>
@@ -674,6 +736,21 @@ export default function VendorProducts() {
               </div>
               <div className="md:col-span-2">
                 <Field label="商品描述">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-gray-50/80 px-4 py-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">訂閱商品設定</p>
+                      <p className="mt-1 text-xs text-gray-500">啟用後可以設定訂閱期數與每期金額。</p>
+                    </div>
+                    <label className="flex cursor-pointer items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-sm font-medium text-emerald-700">
+                      <input
+                        type="checkbox"
+                        checked={subscriptionEnabled}
+                        onChange={(event) => setSubscriptionEnabled(event.target.checked)}
+                        className="h-4 w-4 rounded accent-emerald-600"
+                      />
+                      啟用訂閱設定
+                    </label>
+                  </div>
                   {showSubscriptionSettings && (
                     <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
