@@ -501,8 +501,19 @@ export default function VendorProducts() {
     () => categories.find(category => category.id === form.category_id),
     [categories, form.category_id]
   );
+  const selectedCategoryPath = useMemo(
+    () => (selectedCategory ? getCategoryPath(selectedCategory, categories) : ''),
+    [categories, selectedCategory]
+  );
   const subscriptionSpec = form.specifications.find(spec => spec.name.trim() === SUBSCRIPTION_SPEC_NAME);
-  const showSubscriptionSettings = Boolean(subscriptionSpec) || Boolean(selectedCategory?.slug === 'dlal-subscription' || selectedCategory?.slug?.startsWith('subscription-'));
+  const isSubscriptionCategory = useMemo(() => {
+    const haystack = [selectedCategory?.slug, selectedCategory?.name, selectedCategoryPath]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return /subscription|訂閱|定期便|週期|period/.test(haystack);
+  }, [selectedCategory?.name, selectedCategory?.slug, selectedCategoryPath]);
+  const showSubscriptionSettings = Boolean(subscriptionSpec) || isSubscriptionCategory;
   const toggleSubscriptionPeriod = (period: SubscriptionPlanMonths) => {
     setSubscriptionPeriods(current => {
       const nextPeriods = current.includes(period)
@@ -593,7 +604,20 @@ export default function VendorProducts() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-gray-600">{product.category_id && categoryById.get(product.category_id) ? getCategoryPath(categoryById.get(product.category_id)!, categories) : '-'}</td>
+                  <td className="px-5 py-4 text-gray-600">
+                    {product.category_id && categoryById.get(product.category_id) ? (
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium text-gray-900">
+                          {categoryById.get(product.category_id)?.name || '-'}
+                        </div>
+                        <div className="text-xs leading-5 text-gray-500">
+                          {getCategoryPath(categoryById.get(product.category_id)!, categories)}
+                        </div>
+                      </div>
+                    ) : (
+                      '-'
+                    )}
+                  </td>
                   <td className="px-5 py-4 text-right font-semibold text-gray-900">{formatCurrency(product.price)}</td>
                   <td className="px-5 py-4 text-right text-gray-600">{product.stock_quantity}</td>
                   <td className="px-5 py-4 text-center">
