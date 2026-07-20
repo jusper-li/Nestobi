@@ -320,9 +320,9 @@ Deno.serve(async (req: Request) => {
     }
 
     await sendNotificationEmail(
-      `訂單退款完成：${order.merchant_order_no}`,
+      `訂單退款完成：${order.merchant_order_no || order.id}`,
       [
-        `訂單編號：${order.merchant_order_no}`,
+        `訂單編號：${order.merchant_order_no || "-"}`,
         `訂單 ID：${order.id}`,
         `付款狀態：${nextPaymentStatus}`,
         `退款金額：NT$${orderAmount.toLocaleString("en-US")}`,

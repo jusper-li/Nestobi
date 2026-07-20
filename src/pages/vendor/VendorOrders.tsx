@@ -173,6 +173,9 @@ type VendorOrderItem =
 const PRODUCT_STATUS_FILTERS = ['all', 'pending', 'refund_pending', 'processing', 'shipped', 'completed', 'cancelled', 'refunded'];
 const SUBSCRIPTION_STATUS_FILTERS = ['all', 'pending', 'active', 'paused', 'cancelled', 'expired'];
 const BOOKING_STATUS_FILTERS = ['all', 'pending', 'confirmed', 'completed', 'cancelled'];
+const PRODUCT_STATUS_EDIT_OPTIONS = ['pending', 'processing', 'shipped', 'completed', 'cancelled'];
+const BOOKING_STATUS_EDIT_OPTIONS = ['pending', 'confirmed', 'completed', 'cancelled'];
+const SUBSCRIPTION_STATUS_EDIT_OPTIONS = ['pending', 'active', 'paused', 'cancelled', 'expired'];
 
 const hasPendingAfterSalesRequest = (requests: AfterSalesRequest[] | null | undefined, type: string) => (
   (requests || []).some(request => request.request_type === type && request.status === 'pending')
@@ -248,6 +251,13 @@ const VendorOrders: React.FC = () => {
     refundRequested: pick('客戶已申請退款', 'Customer requested a refund', '顧客が返金を申請しました', '고객이 환불을 요청했습니다'),
     processRefund: pick('處理退款', 'Process refund', '返金処理', '환불 처리'),
     closeRefundRequest: pick('標記已處理', 'Mark handled', '処理済みにする', '처리 완료'),
+    statusManagement: pick('狀態管理', 'Status', 'ステータス管理', '상태 관리'),
+    confirmPaidCancelRefund: pick('這筆訂單已付款，改成已取消會執行藍新退款流程。確定繼續？', 'This order is paid. Setting it to cancelled will run the NewebPay refund flow. Continue?', 'この注文は支払い済みです。キャンセルに変更するとNewebPay返金処理を実行します。続行しますか？', '이 주문은 결제 완료 상태입니다. 취소로 변경하면 NewebPay 환불 절차가 실행됩니다. 계속할까요?'),
+    afterSales: pick('售後申請', 'After-sales request', 'アフターサービス申請', '사후 처리 요청'),
+    afterSalesNextStep: pick('下一步', 'Next step', '次のステップ', '다음 단계'),
+    refundNextStepPaid: pick('按「處理退款」，系統會呼叫藍新退款 API，成功後更新為已退款並關閉申請。', 'Click "Process refund"; the system will call the NewebPay refund API and close the request after success.', '「返金処理」を押すとNewebPay返金APIを呼び出し、成功後に返金済みとして申請を閉じます。', '"환불 처리"를 누르면 NewebPay 환불 API를 호출하고 성공 후 요청을 닫습니다.'),
+    refundNextStepUnpaid: pick('此訂單尚未付款，沒有可退金流；確認後可標記已處理並取消訂單。', 'This order is unpaid, so there is no payment to refund. Mark it handled and cancel the order after review.', 'この注文は未払いのため返金対象の決済はありません。確認後、処理済みにして注文をキャンセルできます。', '미결제 주문이라 환불할 결제가 없습니다. 확인 후 처리 완료 및 주문 취소로 정리하세요.'),
+    handled: pick('已處理', 'Handled', '処理済み', '처리됨'),
   };
 
   const activeStatusFilters = categoryFilter === 'product'
@@ -303,6 +313,20 @@ const VendorOrders: React.FC = () => {
     if (status === 'paid') return labels.paid;
     if (status === 'refunded') return labels.refunded;
     return labels.unpaid;
+  };
+
+  const getAfterSalesTypeLabel = (type?: string | null) => {
+    if (type === 'refund') return pick('退款申請', 'Refund request', '返金申請', '환불 요청');
+    if (type === 'return') return pick('退貨申請', 'Return request', '返品申請', '반품 요청');
+    return type || '-';
+  };
+
+  const getAfterSalesStatusLabel = (status?: string | null) => {
+    if (status === 'pending') return pick('待處理', 'Pending', '未処理', '대기');
+    if (status === 'completed') return labels.handled;
+    if (status === 'approved') return pick('已核准', 'Approved', '承認済み', '승인됨');
+    if (status === 'rejected') return pick('已拒絕', 'Rejected', '拒否済み', '거절됨');
+    return status || '-';
   };
 
   const getShippingAddress = () => {
@@ -607,6 +631,19 @@ const VendorOrders: React.FC = () => {
     setUpdating(null);
   };
 
+  const updateSubscriptionStatus = async (item: SubscriptionOrderLine, status: string) => {
+    setUpdating(`subscription:${item.id}`);
+    const { error } = await supabase
+      .from('product_subscriptions')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', item.id)
+      .eq('vendor_id', vendorId);
+    if (error) setMessage(labels.updateFailed);
+    else await logAdminAction('update_subscription_status', 'product_subscriptions', item.id, { order_id: item.order_id, status, vendor_id: vendorId });
+    await refresh();
+    setUpdating(null);
+  };
+
   const updateProductStatus = async (item: ProductOrderLine, status: string) => {
     setUpdating(`product:${item.id}`);
     try {
@@ -725,6 +762,8 @@ const VendorOrders: React.FC = () => {
                   statusClassName={getSubscriptionStatusColor(item.subscription.status)}
                   customer={customerProfiles[item.subscription.user_id]}
                   paymentLabel={getPaymentLabel(item.subscription.orders?.payment_status)}
+                  statusLabels={subscriptionStatusLabels}
+                  onUpdate={updateSubscriptionStatus}
                   onViewDetail={() => void openDetail(item)}
                 />
               ) : (
@@ -875,17 +914,37 @@ const VendorOrders: React.FC = () => {
                     </div>
 
                     <aside className="space-y-6">
-                      <DetailCard title="訂單通訊" icon={<MessageSquare className="h-4 w-4" />}>
+                      <DetailCard title={labels.afterSales} icon={<MessageSquare className="h-4 w-4" />}>
                         <div className="space-y-3">
                           {detailAfterSales.length === 0 ? (
                             <div className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-500">目前沒有售後留言</div>
                           ) : detailAfterSales.map((req) => (
-                            <div key={req.id} className="rounded-2xl bg-gray-50 p-4">
+                            <div key={req.id} className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
                               <div className="flex items-center justify-between gap-2">
-                                <p className="text-sm font-semibold text-gray-900">{req.request_type}</p>
-                                <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-gray-600">{req.status}</span>
+                                <p className="text-sm font-semibold text-gray-900">{getAfterSalesTypeLabel(req.request_type)}</p>
+                                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${req.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-white text-gray-600'}`}>
+                                  {getAfterSalesStatusLabel(req.status)}
+                                </span>
                               </div>
                               <p className="mt-2 text-sm leading-6 text-gray-700">{req.message || '-'}</p>
+                              {req.request_type === 'refund' && req.status === 'pending' && (
+                                <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                                  <p className="font-semibold">{labels.afterSalesNextStep}</p>
+                                  <p className="mt-1 leading-6">
+                                    {detailShopOrder?.payment_status === 'paid' ? labels.refundNextStepPaid : labels.refundNextStepUnpaid}
+                                  </p>
+                                  {selectedDetail.kind === 'product' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => updateProductStatus(selectedDetail.productOrder, 'cancelled')}
+                                      disabled={updating === `product:${selectedDetail.productOrder.id}`}
+                                      className="mt-3 rounded-xl bg-amber-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-amber-700 disabled:opacity-60"
+                                    >
+                                      {detailShopOrder?.payment_status === 'paid' ? labels.processRefund : labels.closeRefundRequest}
+                                    </button>
+                                  )}
+                                </div>
+                              )}
                               <p className="mt-2 text-xs text-gray-400">{formatDateTime(req.created_at)}</p>
                             </div>
                           ))}
@@ -1131,6 +1190,13 @@ function ProductOrderCard({
   const busy = updating === `product:${item.id}`;
   const refundPending = hasPendingRefundRequest(item);
   const displayedStatus = getProductOrderListStatus(item);
+  const handleStatusChange = (nextStatus: string) => {
+    if (nextStatus === item.status) return;
+    if (nextStatus === 'cancelled' && item.orders?.payment_status === 'paid' && !window.confirm(labels.confirmPaidCancelRefund)) {
+      return;
+    }
+    onUpdate(item, nextStatus);
+  };
   return (
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0 flex-1 space-y-2">
@@ -1164,6 +1230,19 @@ function ProductOrderCard({
       </div>
       <div className="flex flex-col items-end gap-2">
         <p className="text-xl font-bold text-emerald-700">{formatCurrency(item.total_price)}</p>
+        <label className="flex flex-col items-end gap-1 text-xs font-medium text-gray-500">
+          {labels.statusManagement}
+          <select
+            value={item.status}
+            onChange={(event) => handleStatusChange(event.target.value)}
+            disabled={busy}
+            className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:opacity-60"
+          >
+            {PRODUCT_STATUS_EDIT_OPTIONS.map(status => (
+              <option key={status} value={status}>{getStatusLabel(status, locale)}</option>
+            ))}
+          </select>
+        </label>
         {refundPending && item.orders?.payment_status === 'paid' && (
           <button type="button" onClick={() => onUpdate(item, 'cancelled')} disabled={busy} className="rounded-xl bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-700 disabled:opacity-60">
             {busy ? '...' : labels.processRefund}
@@ -1248,6 +1327,19 @@ function BookingCard({
       </div>
       <div className="flex flex-col items-end gap-2">
         <p className="text-xl font-bold text-emerald-700">{formatCurrency(item.total_price)}</p>
+        <label className="flex flex-col items-end gap-1 text-xs font-medium text-gray-500">
+          {labels.statusManagement}
+          <select
+            value={item.status}
+            onChange={(event) => onUpdate(item.id, event.target.value)}
+            disabled={busy}
+            className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:opacity-60"
+          >
+            {BOOKING_STATUS_EDIT_OPTIONS.map(status => (
+              <option key={status} value={status}>{getStatusLabel(status, locale)}</option>
+            ))}
+          </select>
+        </label>
         {item.status === 'pending' && (
           <div className="flex gap-2">
             <button type="button" onClick={() => onUpdate(item.id, 'confirmed')} disabled={busy} className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60">
@@ -1279,6 +1371,8 @@ function SubscriptionCard({
   statusClassName,
   customer,
   paymentLabel,
+  statusLabels,
+  onUpdate,
   onViewDetail,
 }: {
   item: SubscriptionOrderLine;
@@ -1288,6 +1382,8 @@ function SubscriptionCard({
   statusClassName: string;
   customer?: CustomerProfile;
   paymentLabel: string;
+  statusLabels: Record<string, string>;
+  onUpdate: (item: SubscriptionOrderLine, status: string) => void;
   onViewDetail: () => void;
 }) {
   const busy = updating === `subscription:${item.id}`;
@@ -1321,6 +1417,19 @@ function SubscriptionCard({
       </div>
       <div className="flex flex-col items-end gap-2">
         <p className="text-xl font-bold text-cyan-700">{formatCurrency(item.monthly_amount || 0)}</p>
+        <label className="flex flex-col items-end gap-1 text-xs font-medium text-gray-500">
+          {labels.statusManagement}
+          <select
+            value={item.status}
+            onChange={(event) => onUpdate(item, event.target.value)}
+            disabled={busy}
+            className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100 disabled:opacity-60"
+          >
+            {SUBSCRIPTION_STATUS_EDIT_OPTIONS.map(status => (
+              <option key={status} value={status}>{statusLabels[status] || status}</option>
+            ))}
+          </select>
+        </label>
         <button type="button" onClick={onViewDetail} disabled={busy} className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60">
           查看明細
         </button>
