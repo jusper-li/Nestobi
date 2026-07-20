@@ -15,6 +15,7 @@ interface ShopCheckoutRequest {
   name?: string;
   phone?: string;
   address?: string;
+  retryOrderId?: string;
 }
 
 interface NewebPayCredentials {
@@ -105,6 +106,16 @@ function buildItemDesc(items: Array<{ name?: string | null }>) {
   return names.length > 3 ? `${display} and ${names.length - 3} more` : display;
 }
 
+function getShippingField(shippingAddress: unknown, keys: string[]) {
+  if (!shippingAddress || typeof shippingAddress !== "object" || Array.isArray(shippingAddress)) return "";
+  const source = shippingAddress as Record<string, unknown>;
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
 function getSiteUrl(req: Request) {
   const configured = Deno.env.get("SITE_URL")
     || Deno.env.get("PUBLIC_SITE_URL");
@@ -190,34 +201,12 @@ Deno.serve(async (req: Request) => {
     const body: ShopCheckoutRequest = await req.json();
     const pointsToUse = Math.max(0, Math.floor(Number(body.pointsToUse || 0)));
     const paymentMethod = body.paymentMethod || "CREDIT";
-    const shippingName = String(body.name || "").trim();
-    const shippingPhone = String(body.phone || "").trim();
-    const shippingAddress = String(body.address || "").trim();
+    const retryOrderId = String(body.retryOrderId || "").trim();
+    let shippingName = String(body.name || "").trim();
+    let shippingPhone = String(body.phone || "").trim();
+    let shippingAddress = String(body.address || "").trim();
 
-    if (!shippingName || !shippingPhone || !shippingAddress) {
-      return jsonResponse({
-        success: false,
-        error: "Shipping name, phone, and address are required.",
-      }, 400);
-    }
-
-    const merchantOrderNo = buildMerchantOrderNo(user.id);
-    const { data: checkoutResult, error: checkoutError } = await authClient.rpc("create_shop_checkout_order", {
-      p_merchant_order_no: merchantOrderNo,
-      p_shipping_name: shippingName,
-      p_shipping_phone: shippingPhone,
-      p_shipping_address: shippingAddress,
-      p_points_to_use: pointsToUse,
-    });
-
-    if (checkoutError || !checkoutResult?.success) {
-      return jsonResponse({
-        success: false,
-        error: checkoutError?.message || checkoutResult?.error || "Checkout failed.",
-      }, 400);
-    }
-
-    const checkout = checkoutResult as {
+    let checkout: {
       success: true;
       order_id: string;
       merchant_order_no: string;
@@ -231,9 +220,125 @@ Deno.serve(async (req: Request) => {
       items: Array<{ name?: string | null; quantity: number; unit_price: number; total_price: number }>;
     };
 
+    if (retryOrderId) {
+      const serviceClient = createServiceClient();
+      const { data: existingOrder, error: existingOrderError } = await serviceClient
+        .from("orders")
+        .select("id,user_id,total_amount,subtotal_amount,points_discount,status,payment_method,payment_status,merchant_order_no,newebpay_status,shipping_address,currency")
+        .eq("id", retryOrderId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (existingOrderError) {
+        return jsonResponse({ success: false, error: existingOrderError.message }, 500);
+      }
+      if (!existingOrder) {
+        return jsonResponse({ success: false, error: "Order not found." }, 404);
+      }
+      if (String(existingOrder.payment_status || "").toLowerCase() === "paid") {
+        return jsonResponse({ success: false, error: "Order is already paid." }, 400);
+      }
+      if (String(existingOrder.payment_status || "").toLowerCase() === "refunded") {
+        return jsonResponse({ success: false, error: "Refunded orders cannot be paid again." }, 400);
+      }
+
+      const shippingSnapshot = existingOrder.shipping_address || {};
+      shippingName = shippingName || getShippingField(shippingSnapshot, ["name", "recipient_name", "customer_name", "buyer_name"]);
+      shippingPhone = shippingPhone || getShippingField(shippingSnapshot, ["phone", "recipient_phone", "customer_phone", "buyer_phone"]);
+      shippingAddress = shippingAddress || getShippingField(shippingSnapshot, ["address", "shipping_address", "recipient_address", "line1"]);
+
+      const { data: retryItems, error: retryItemsError } = await serviceClient
+        .from("purchase_records")
+        .select("id,quantity,unit_price,total_price,products(name)")
+        .eq("order_id", existingOrder.id);
+
+      if (retryItemsError) {
+        return jsonResponse({ success: false, error: retryItemsError.message }, 500);
+      }
+
+      const nextMerchantOrderNo = buildMerchantOrderNo(user.id);
+      const { error: retryUpdateError } = await serviceClient
+        .from("orders")
+        .update({
+          status: "pending",
+          payment_status: "unpaid",
+          payment_method: Number(existingOrder.points_discount || 0) > 0 ? "points_credit_card" : "credit_card",
+          newebpay_status: "pending",
+          merchant_order_no: nextMerchantOrderNo,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingOrder.id);
+
+      if (retryUpdateError) {
+        return jsonResponse({ success: false, error: retryUpdateError.message }, 500);
+      }
+
+      await serviceClient
+        .from("purchase_records")
+        .update({ status: "pending" })
+        .eq("order_id", existingOrder.id);
+
+      checkout = {
+        success: true,
+        order_id: existingOrder.id,
+        merchant_order_no: nextMerchantOrderNo,
+        subtotal_amount: Number(existingOrder.subtotal_amount || existingOrder.total_amount || 0),
+        points_discount: Number(existingOrder.points_discount || 0),
+        total_amount: Number(existingOrder.total_amount || 0),
+        payment_method: Number(existingOrder.points_discount || 0) > 0 ? "points_credit_card" : "credit_card",
+        payment_status: "unpaid",
+        order_status: "pending",
+        newebpay_status: "pending",
+        items: (retryItems || []).map((item: any) => ({
+          name: String(item.products?.name || ""),
+          quantity: Number(item.quantity || 0),
+          unit_price: Number(item.unit_price || 0),
+          total_price: Number(item.total_price || 0),
+        })),
+      };
+    } else {
+      if (!shippingName || !shippingPhone || !shippingAddress) {
+        return jsonResponse({
+          success: false,
+          error: "Shipping name, phone, and address are required.",
+        }, 400);
+      }
+
+      const merchantOrderNo = buildMerchantOrderNo(user.id);
+      const { data: checkoutResult, error: checkoutError } = await authClient.rpc("create_shop_checkout_order", {
+        p_merchant_order_no: merchantOrderNo,
+        p_shipping_name: shippingName,
+        p_shipping_phone: shippingPhone,
+        p_shipping_address: shippingAddress,
+        p_points_to_use: pointsToUse,
+      });
+
+      if (checkoutError || !checkoutResult?.success) {
+        return jsonResponse({
+          success: false,
+          error: checkoutError?.message || checkoutResult?.error || "Checkout failed.",
+        }, 400);
+      }
+
+      checkout = checkoutResult as {
+        success: true;
+        order_id: string;
+        merchant_order_no: string;
+        subtotal_amount: number;
+        points_discount: number;
+        total_amount: number;
+        payment_method: string;
+        payment_status: string;
+        order_status: string;
+        newebpay_status: string;
+        items: Array<{ name?: string | null; quantity: number; unit_price: number; total_price: number }>;
+      };
+    }
+
     const siteUrl = getSiteUrl(req).replace(/\/$/, "");
-    const returnUrl = `${siteUrl}/member/orders?merchantOrderNo=${encodeURIComponent(checkout.merchant_order_no)}`;
-    const clientBackUrl = returnUrl;
+    const syncUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-order-sync`;
+    const returnUrl = syncUrl;
+    const clientBackUrl = `${siteUrl}/member/orders?merchantOrderNo=${encodeURIComponent(checkout.merchant_order_no)}`;
     const { data: profile } = await createServiceClient()
       .from("tbl_mn5wgzh0")
       .select("display_name, preferred_language")

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AlertCircle, CheckCircle, ChevronDown, ChevronUp, Heart, Headphones, Package, Receipt, RotateCcw, Search, ShoppingBag, Star, Truck } from 'lucide-react';
+import { AlertCircle, CheckCircle, ChevronDown, ChevronUp, CreditCard, Heart, Headphones, Package, Receipt, RotateCcw, Search, ShoppingBag, Star, Truck } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -11,6 +11,7 @@ import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
 import { useSiteSettings } from '../../contexts/SiteSettingsContext';
 import { trackPurchase } from '../../lib/analytics';
+import { submitNewebPayMpgForm } from '../../lib/shopCheckout';
 
 interface PurchaseRecord {
   id: string;
@@ -422,6 +423,42 @@ export default function MemberOrders() {
     }
   };
 
+  const handleRetryPayment = async (order: Order) => {
+    if (!user || order.payment_status === 'paid' || order.payment_status === 'refunded') {
+      showMessage('error', t.actionFailed);
+      return;
+    }
+
+    setBusyAction(`${order.id}:pay`);
+    try {
+      const { data, error } = await supabase.functions.invoke('newebpay-mpg-payment', {
+        body: {
+          retryOrderId: order.id,
+          paymentMethod: 'CREDIT',
+        },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Payment retry failed');
+
+      if (data.mode === 'points') {
+        window.location.href = data.clientBackUrl || `/member/orders?merchantOrderNo=${encodeURIComponent(data.merchantOrderNo || '')}`;
+        return;
+      }
+
+      submitNewebPayMpgForm(
+        data.paymentUrl,
+        data.merchantId,
+        data.tradeInfo,
+        data.tradeSha,
+        data.version || '2.3',
+      );
+    } catch {
+      showMessage('error', t.actionFailed);
+      setBusyAction(null);
+    }
+  };
+
   const contactHref = (orderId: string) => {
     const shortId = orderId.slice(-10).toUpperCase();
     const subject = `${t.contactSubject} #${shortId}`;
@@ -512,12 +549,27 @@ export default function MemberOrders() {
                   </section>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-gray-100 pt-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
                   <p className="text-lg font-bold text-[#2C1F10]">{formatCurrency(order.total_amount, order.currency || 'TWD')}</p>
-                  <button onClick={() => toggleExpand(order.id)} className="flex items-center gap-1 text-sm font-medium text-gray-500 transition hover:text-gray-700">
-                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    {isExpanded ? t.hide : t.view}
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {order.payment_status !== 'paid' && order.payment_status !== 'refunded' && (
+                      <button
+                        type="button"
+                        onClick={() => void handleRetryPayment(order)}
+                        disabled={busyAction === `${order.id}:pay`}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#2C1F10] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#4A3420] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <CreditCard className="h-4 w-4" />
+                        {busyAction === `${order.id}:pay`
+                          ? pick('前往付款中', 'Opening payment', '決済へ移動中', '결제 이동 중')
+                          : pick('再次付款', 'Pay Again', 'もう一度支払う', '다시 결제')}
+                      </button>
+                    )}
+                    <button onClick={() => toggleExpand(order.id)} className="flex items-center gap-1 text-sm font-medium text-gray-500 transition hover:text-gray-700">
+                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {isExpanded ? t.hide : t.view}
+                    </button>
+                  </div>
                 </div>
               </div>
 

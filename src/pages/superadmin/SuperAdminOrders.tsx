@@ -15,6 +15,7 @@ import {
   Phone,
   Search,
   ShoppingBag,
+  Printer,
   Truck,
   User,
   Users,
@@ -95,6 +96,11 @@ interface ShopOrderDetail {
   payment_method: string | null;
   payment_status: PaymentStatus;
   merchant_order_no?: string | null;
+  customer_name?: string | null;
+  customer_email?: string | null;
+  customer_phone?: string | null;
+  recipient_name?: string | null;
+  recipient_phone?: string | null;
   newebpay_status?: string | null;
   newebpay_trade_no?: string | null;
   newebpay_auth_code?: string | null;
@@ -147,6 +153,32 @@ interface InvoiceDetail {
   tax_amount?: number | string | null;
   total_amount?: number | string | null;
   ezpay_trade_no?: string | null;
+  ezpay_raw_request?: Record<string, unknown> | null;
+  ezpay_raw_response?: Record<string, unknown> | null;
+  error_message?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+interface LogisticsDetail {
+  id: string;
+  order_id: string;
+  user_id: string;
+  logistics_status: 'pending' | 'created' | 'failed' | 'cancelled';
+  logistics_type?: string | null;
+  ship_type?: string | null;
+  trade_type?: number | null;
+  merchant_order_no?: string | null;
+  lgs_no?: string | null;
+  store_print_no?: string | null;
+  store_id?: string | null;
+  store_name?: string | null;
+  store_tel?: string | null;
+  store_addr?: string | null;
+  recipient_name?: string | null;
+  recipient_phone?: string | null;
+  recipient_email?: string | null;
+  total_amount?: number | string | null;
   ezpay_raw_request?: Record<string, unknown> | null;
   ezpay_raw_response?: Record<string, unknown> | null;
   error_message?: string | null;
@@ -223,6 +255,31 @@ const PAYMENT_STATUS_LABELS: Record<string, string> = {
   refunded: '已退款',
 };
 
+const LOGISTICS_STATUS_LABELS: Record<string, string> = {
+  pending: '待產製',
+  created: '已產製',
+  failed: '失敗',
+  cancelled: '已取消',
+};
+
+function formatLogisticsTypeLabel(value?: string | null) {
+  if (!value) return '-';
+  if (value === 'C2C') return '超商取貨 (C2C)';
+  if (value === 'B2C') return '宅配 (B2C)';
+  return value;
+}
+
+function formatShipTypeLabel(value?: string | null) {
+  const map: Record<string, string> = {
+    '1': '黑貓宅急便',
+    '2': '全家',
+    '3': '萊爾富',
+    '4': 'OK mart',
+  };
+  if (!value) return '-';
+  return map[value] || value;
+}
+
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-700',
   processing: 'bg-blue-100 text-blue-700',
@@ -248,6 +305,7 @@ const PAGE_LABELS = {
   orderData: '訂單資料',
   buyerInfo: '顧客資訊',
   paymentInfo: '付款資料',
+  logisticsInfo: '物流管理',
   shippingInfo: '配送 / 住宿資料',
   communication: '訂單溝通',
   timeline: '訂單時間軸',
@@ -371,11 +429,13 @@ const SuperAdminOrders: React.FC = () => {
   const [detailError, setDetailError] = useState('');
   const [shopDetail, setShopDetail] = useState<ShopOrderDetail | null>(null);
   const [invoiceDetail, setInvoiceDetail] = useState<InvoiceDetail | null>(null);
+  const [logisticsDetail, setLogisticsDetail] = useState<LogisticsDetail | null>(null);
   const [bookingDetail, setBookingDetail] = useState<BookingOrderDetail | null>(null);
   const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(null);
   const [customerEmail, setCustomerEmail] = useState('');
   const [detailActivityLogs, setDetailActivityLogs] = useState<ActivityLog[]>([]);
   const [detailAfterSales, setDetailAfterSales] = useState<AfterSalesRequest[]>([]);
+  const [detailActionLoading, setDetailActionLoading] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -435,12 +495,25 @@ const SuperAdminOrders: React.FC = () => {
     setInvoiceDetail((data as InvoiceDetail) || null);
   };
 
+  const fetchLogisticsDetail = async (orderId: string) => {
+    const { data } = await supabase
+      .from('logistics_shipments')
+      .select(
+        'id,order_id,user_id,logistics_status,logistics_type,ship_type,trade_type,merchant_order_no,lgs_no,store_print_no,store_id,store_name,store_tel,store_addr,recipient_name,recipient_phone,recipient_email,total_amount,ezpay_raw_request,ezpay_raw_response,error_message,created_at,updated_at',
+      )
+      .eq('order_id', orderId)
+      .maybeSingle();
+
+    setLogisticsDetail((data as LogisticsDetail) || null);
+  };
+
   const openDetail = async (detail: SelectedDetail) => {
     setSelectedDetail(detail);
     setDetailLoading(true);
     setDetailError('');
     setShopDetail(null);
     setInvoiceDetail(null);
+    setLogisticsDetail(null);
     setBookingDetail(null);
     setCustomerProfile(null);
     setCustomerEmail('');
@@ -473,6 +546,7 @@ const SuperAdminOrders: React.FC = () => {
         setShopDetail(shopRow);
         if (shopRow?.id) {
           void fetchInvoiceDetail(shopRow.id);
+          void fetchLogisticsDetail(shopRow.id);
         }
 
         if (shopRow?.user_id) {
@@ -541,6 +615,7 @@ const SuperAdminOrders: React.FC = () => {
     setDetailError('');
     setShopDetail(null);
     setInvoiceDetail(null);
+    setLogisticsDetail(null);
     setBookingDetail(null);
     setCustomerProfile(null);
     setCustomerEmail('');
@@ -581,16 +656,22 @@ const SuperAdminOrders: React.FC = () => {
   const createdAt = activeDetail?.created_at ? formatDateTime(activeDetail.created_at) : '-';
   const updatedAt = activeDetail?.updated_at ? formatDateTime(activeDetail.updated_at) : '-';
   const currentInvoice = selectedDetail?.type === 'shop' ? invoiceDetail : null;
+  const currentLogistics = selectedDetail?.type === 'shop' ? logisticsDetail : null;
 
   const refreshInvoiceDetail = async () => {
     if (!shopDetail?.id) return;
     await fetchInvoiceDetail(shopDetail.id);
   };
 
+  const refreshLogisticsDetail = async () => {
+    if (!shopDetail?.id) return;
+    await fetchLogisticsDetail(shopDetail.id);
+  };
+
   const handleReissueInvoice = async () => {
     if (!shopDetail?.id) return;
 
-    setDetailLoading(true);
+    setDetailActionLoading(true);
     setDetailError('');
     try {
       const { data, error } = await supabase.functions.invoke('ezpay-invoice-create', {
@@ -609,14 +690,14 @@ const SuperAdminOrders: React.FC = () => {
     } catch (error: any) {
       setDetailError(error?.message || '無法重新開立發票');
     } finally {
-      setDetailLoading(false);
+      setDetailActionLoading(false);
     }
   };
 
   const handleVoidInvoiceAction = async () => {
     if (!shopDetail?.id) return;
 
-    setDetailLoading(true);
+    setDetailActionLoading(true);
     setDetailError('');
     try {
       const { data, error } = await supabase.functions.invoke('ezpay-invoice-void', {
@@ -628,14 +709,14 @@ const SuperAdminOrders: React.FC = () => {
     } catch (error: any) {
       setDetailError(error?.message || '無法作廢發票');
     } finally {
-      setDetailLoading(false);
+      setDetailActionLoading(false);
     }
   };
 
   const handleQueryInvoiceAction = async () => {
     if (!shopDetail?.id) return;
 
-    setDetailLoading(true);
+    setDetailActionLoading(true);
     setDetailError('');
     try {
       const { data, error } = await supabase.functions.invoke('ezpay-invoice-query', {
@@ -647,7 +728,78 @@ const SuperAdminOrders: React.FC = () => {
     } catch (error: any) {
       setDetailError(error?.message || '無法查詢發票狀態');
     } finally {
-      setDetailLoading(false);
+      setDetailActionLoading(false);
+    }
+  };
+
+  const handleCreateLogisticsAction = async () => {
+    if (!shopDetail?.id) return;
+
+    setDetailActionLoading(true);
+    setDetailError('');
+    try {
+      const { data, error } = await supabase.functions.invoke('ezpay-logistics-create', {
+        body: { order_id: shopDetail.id },
+      });
+      if (error) throw error;
+      if (data?.success === false && data?.error) throw new Error(data.error);
+      await refreshLogisticsDetail();
+      await refreshInvoiceDetail();
+    } catch (error: any) {
+      setDetailError(error?.message || '無法產製物流單');
+    } finally {
+      setDetailActionLoading(false);
+    }
+  };
+
+  const handleQueryLogisticsAction = async () => {
+    if (!shopDetail?.id) return;
+
+    setDetailActionLoading(true);
+    setDetailError('');
+    try {
+      const { data, error } = await supabase.functions.invoke('ezpay-logistics-query', {
+        body: { order_id: shopDetail.id },
+      });
+      if (error) throw error;
+      if (data?.success === false && data?.error) throw new Error(data.error);
+      await refreshLogisticsDetail();
+    } catch (error: any) {
+      setDetailError(error?.message || '無法查詢物流單');
+    } finally {
+      setDetailActionLoading(false);
+    }
+  };
+
+  const handlePrintLogisticsAction = async () => {
+    if (!shopDetail?.id) return;
+
+    setDetailActionLoading(true);
+    setDetailError('');
+    try {
+      const { data, error } = await supabase.functions.invoke('ezpay-logistics-print', {
+        body: { order_id: shopDetail.id },
+      });
+      if (error) throw error;
+      if (data?.success === false && data?.error) throw new Error(data.error);
+
+      const body = String(data?.body || '');
+      const contentType = String(data?.contentType || 'text/html');
+      const popup = window.open('', '_blank', 'noopener,noreferrer,width=960,height=720');
+      if (!popup) throw new Error('無法開啟列印視窗');
+
+      popup.document.open();
+      if (contentType.includes('text/html') || body.trim().startsWith('<')) {
+        popup.document.write(body);
+      } else {
+        const escaped = body.replace(/[&<>]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch] || ch));
+        popup.document.write(`<pre style="white-space:pre-wrap;font-family:monospace;padding:24px;">${escaped}</pre>`);
+      }
+      popup.document.close();
+    } catch (error: any) {
+      setDetailError(error?.message || '無法列印物流單');
+    } finally {
+      setDetailActionLoading(false);
     }
   };
 
@@ -1119,6 +1271,58 @@ const SuperAdminOrders: React.FC = () => {
                               className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50"
                             >
                               查詢發票狀態
+                            </button>
+                          </div>
+                        </CardSection>
+                      )}
+                      {selectedDetail.type === 'shop' && (
+                        <CardSection title={PAGE_LABELS.logisticsInfo} icon={<Truck className="h-4 w-4" />}>
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <InfoItem label="物流狀態" value={LOGISTICS_STATUS_LABELS[currentLogistics?.logistics_status || ''] || currentLogistics?.logistics_status || '尚未產製'} />
+                            <InfoItem label="物流型態" value={formatLogisticsTypeLabel(currentLogistics?.logistics_type)} />
+                            <InfoItem label="物流方式" value={formatShipTypeLabel(currentLogistics?.ship_type)} />
+                            <InfoItem label="訂單金額" value={formatCurrency(Number(currentLogistics?.total_amount || shopDetail?.total_amount || 0))} />
+                            <InfoItem label="寄件人" value={currentLogistics?.recipient_name || shopDetail?.customer_name || customerProfile?.display_name || '-'} />
+                            <InfoItem label="收件電話" value={currentLogistics?.recipient_phone || shopDetail?.recipient_phone || customerProfile?.phone || '-'} />
+                            <InfoItem label="收件 Email" value={currentLogistics?.recipient_email || shopDetail?.customer_email || customerEmail || '-'} />
+                            <InfoItem label="Merchant Order No." value={currentLogistics?.merchant_order_no || shopDetail?.merchant_order_no || '-'} mono />
+                            <InfoItem label="物流單號" value={currentLogistics?.lgs_no || '-'} mono />
+                            <InfoItem label="門市寄件代號" value={currentLogistics?.store_print_no || '-'} mono />
+                            <InfoItem label="門市代號" value={currentLogistics?.store_id || '-'} mono />
+                            <InfoItem label="門市名稱" value={currentLogistics?.store_name || '-'} />
+                            <InfoItem label="門市電話" value={currentLogistics?.store_tel || '-'} />
+                            <InfoItem label="門市地址" value={currentLogistics?.store_addr || '-'} />
+                          </div>
+                          {currentLogistics?.error_message && (
+                            <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm leading-6 text-red-700">
+                              {currentLogistics.error_message}
+                            </div>
+                          )}
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => void handleCreateLogisticsAction()}
+                              disabled={detailActionLoading}
+                              className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              直接產製物流單
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleQueryLogisticsAction()}
+                              disabled={detailActionLoading}
+                              className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              查詢物流單
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handlePrintLogisticsAction()}
+                              disabled={detailActionLoading}
+                              className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <Printer className="h-4 w-4" />
+                              列印物流單
                             </button>
                           </div>
                         </CardSection>

@@ -22,6 +22,14 @@ function okResponse() {
   });
 }
 
+function redirectResponse(merchantOrderNo?: string) {
+  const siteUrl = (Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_SITE_URL") || "https://nestobi.com").replace(/\/$/, "");
+  const target = new URL(`${siteUrl}/member/orders`);
+  if (merchantOrderNo) target.searchParams.set("merchantOrderNo", merchantOrderNo);
+  target.searchParams.set("payment", "subscription");
+  return Response.redirect(target.toString(), 303);
+}
+
 function createServiceClient() {
   return createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
@@ -179,6 +187,8 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
 
+  const shouldRedirect = new URL(req.url).searchParams.get("redirect") === "1";
+
   try {
     const hashKey = Deno.env.get("NEWEBPAY_HASH_KEY") ?? "";
     const hashIV = Deno.env.get("NEWEBPAY_HASH_IV") ?? "";
@@ -275,7 +285,7 @@ Deno.serve(async (req: Request) => {
     const { data: existingOrder } = await existingOrderQuery.maybeSingle();
 
     if (existingOrder) {
-      return okResponse();
+      return shouldRedirect ? redirectResponse(merchantOrderNo) : okResponse();
     }
 
     if (tradeStatus === "SUCCESS") {
@@ -400,7 +410,7 @@ Deno.serve(async (req: Request) => {
         await supabase.from("points").insert({
           user_id: subscription.user_id,
           amount: rewardPoints,
-          transaction_type: "earn",
+          transaction_type: "earned",
           reference_id: order.id,
           source_type: "subscription",
           source_id: order.id,
@@ -418,7 +428,7 @@ Deno.serve(async (req: Request) => {
         console.warn("[newebpay-period-webhook] Invoice creation failed:", invoiceError);
       }
 
-      return okResponse();
+      return shouldRedirect ? redirectResponse(merchantOrderNo) : okResponse();
     }
 
     await supabase
@@ -448,9 +458,12 @@ Deno.serve(async (req: Request) => {
       "payment-failed",
     );
 
-    return okResponse();
+    return shouldRedirect ? redirectResponse(merchantOrderNo) : okResponse();
   } catch (error) {
     console.error("[newebpay-period-webhook] Error:", error);
+    if (new URL(req.url).searchParams.get("redirect") === "1") {
+      return redirectResponse();
+    }
     return jsonResponse({
       success: false,
       error: error instanceof Error ? error.message : "Webhook processing failed.",

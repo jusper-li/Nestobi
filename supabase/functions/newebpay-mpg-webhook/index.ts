@@ -272,7 +272,7 @@ Deno.serve(async (req: Request) => {
         await supabase.from("points").insert({
           user_id: order.user_id,
           amount: rewardPoints,
-          transaction_type: "earn",
+          transaction_type: "earned",
           reference_id: order.id,
           source_type: "order",
           source_id: order.id,
@@ -354,7 +354,7 @@ Deno.serve(async (req: Request) => {
       await supabase.from("points").insert({
         user_id: order.user_id,
         amount: Number(order.points_discount || 0),
-        transaction_type: "earn",
+        transaction_type: "earned",
         reference_id: order.id,
         source_type: "order",
         source_id: order.id,

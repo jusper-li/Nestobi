@@ -104,6 +104,7 @@ function getPeriodGatewayUrl() {
 function normalizeSubscriptionPeriodValue(value: unknown): SubscriptionPlanMonths | null {
   const text = String(value ?? "").trim().toUpperCase();
   if (!text) return null;
+  if (text === "每月") return "NE";
   if (["NE", "M", "MONTHLY", "MONTH", "MONTHS", "月繳"].includes(text)) return "NE";
 
   const months = Number.parseInt(text, 10);
@@ -118,7 +119,7 @@ function extractSubscriptionPeriods(specifications: unknown): SubscriptionPlanMo
   const values = specifications.flatMap((spec) => {
     if (!spec || typeof spec !== "object") return [];
     const entry = spec as { name?: unknown; options?: unknown; value?: unknown };
-    if (String(entry.name ?? "").trim() !== SUBSCRIPTION_SPEC_NAME) return [];
+    if (String(entry.name ?? "").trim() !== "訂閱期數") return [];
 
     if (Array.isArray(entry.options)) {
       return entry.options
@@ -298,6 +299,7 @@ Deno.serve(async (req: Request) => {
 
     const timestamp = Math.floor(Date.now() / 1000);
     const notifyURL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-period-webhook`;
+    const returnURL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-period-webhook?redirect=1`;
 
     const postDataParams = new URLSearchParams({
       RespondType: "JSON",
@@ -316,6 +318,7 @@ Deno.serve(async (req: Request) => {
       OrderInfo: "N",
       EmailModify: "1",
       NotifyURL: notifyURL,
+      ReturnURL: returnURL,
     });
 
     const postData = await aesEncrypt(postDataParams.toString(), hashKey, hashIV);

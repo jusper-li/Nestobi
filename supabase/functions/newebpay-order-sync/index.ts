@@ -29,6 +29,14 @@ function createServiceClient() {
   );
 }
 
+function createAuthClient(authHeader: string) {
+  return createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    { global: { headers: { Authorization: authHeader } } },
+  );
+}
+
 async function getNewebPayCredentials(): Promise<NewebPayCredentials> {
   return {
     merchantId: Deno.env.get("NEWEBPAY_MERCHANT_ID") ?? null,
@@ -44,6 +52,35 @@ async function sha256Hex(data: string): Promise<string> {
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("")
     .toUpperCase();
+}
+
+async function aesDecrypt(hexData: string, key: string, iv: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const encryptedBytes = new Uint8Array(
+    (hexData.match(/.{1,2}/g) ?? []).map((byte) => parseInt(byte, 16)),
+  );
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(key),
+    { name: "AES-CBC" },
+    false,
+    ["decrypt"],
+  );
+  const decrypted = await crypto.subtle.decrypt(
+    { name: "AES-CBC", iv: encoder.encode(iv) },
+    cryptoKey,
+    encryptedBytes,
+  );
+  return new TextDecoder().decode(decrypted);
+}
+
+function safeEquals(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
 }
 
 function countCheckValue(merchantId: string, hashKey: string, hashIV: string, merchantOrderNo: string, amt: number) {
@@ -84,6 +121,45 @@ async function getRewardPoints(
   return Math.max(0, Math.floor(Number(data || 0)));
 }
 
+async function parseMerchantOrderNoFromTradeInfo(
+  tradeInfo: string,
+  tradeSha: string | null,
+  credentials: NewebPayCredentials,
+) {
+  if (!credentials.hashKey || !credentials.hashIV) {
+    throw new Error("NewebPay credentials are not configured.");
+  }
+
+  if (tradeSha) {
+    const expectedSha = await sha256Hex(`HashKey=${credentials.hashKey}&${tradeInfo}&HashIV=${credentials.hashIV}`);
+    if (!safeEquals(tradeSha.toUpperCase(), expectedSha)) {
+      throw new Error("Invalid TradeSha.");
+    }
+  }
+
+  const decrypted = await aesDecrypt(tradeInfo, credentials.hashKey, credentials.hashIV);
+  let payload: Record<string, unknown>;
+  try {
+    payload = JSON.parse(decrypted) as Record<string, unknown>;
+  } catch {
+    payload = Object.fromEntries(new URLSearchParams(decrypted).entries());
+  }
+
+  const result = (payload.Result || payload.result || payload) as Record<string, unknown>;
+  return String(result.MerchantOrderNo || result.merchantOrderNo || payload.MerchantOrderNo || "").trim() || null;
+}
+
+async function isElevatedUser(supabase: ReturnType<typeof createServiceClient>, userId: string) {
+  const { data, error } = await supabase
+    .from("tbl_user_auth")
+    .select("role")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) return false;
+  return data?.role === "admin" || data?.role === "superadmin";
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -98,8 +174,45 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: false, error: "NewebPay credentials are not configured." }, 500);
     }
 
-    const { merchantOrderNo } = await req.json();
-    if (!merchantOrderNo || typeof merchantOrderNo !== "string") {
+    const contentType = req.headers.get("content-type") || "";
+    let merchantOrderNo: string | null = null;
+    let jsonUserId: string | null = null;
+
+    if (contentType.includes("application/json")) {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        return jsonResponse({ success: false, error: "Authentication required." }, 401);
+      }
+      const authClient = createAuthClient(authHeader);
+      const { data: { user }, error: userError } = await authClient.auth.getUser();
+      if (userError || !user) {
+        return jsonResponse({ success: false, error: "Invalid or expired session." }, 401);
+      }
+      jsonUserId = user.id;
+      const body = await req.json().catch(() => ({}));
+      merchantOrderNo = typeof body?.merchantOrderNo === "string" ? body.merchantOrderNo : null;
+    } else if (contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data")) {
+      const form = await req.formData();
+      const tradeInfo = String(form.get("TradeInfo") || "").trim();
+      const tradeSha = String(form.get("TradeSha") || "").trim() || null;
+      merchantOrderNo = tradeInfo
+        ? await parseMerchantOrderNoFromTradeInfo(tradeInfo, tradeSha, credentials)
+        : String(form.get("MerchantOrderNo") || form.get("merchantOrderNo") || "").trim() || null;
+    } else {
+      const text = await req.text();
+      try {
+        const body = JSON.parse(text);
+        merchantOrderNo = typeof body?.merchantOrderNo === "string" ? body.merchantOrderNo : null;
+      } catch {
+        const params = new URLSearchParams(text);
+        const tradeInfo = String(params.get("TradeInfo") || "").trim();
+        merchantOrderNo = tradeInfo
+          ? await parseMerchantOrderNoFromTradeInfo(tradeInfo, params.get("TradeSha"), credentials)
+          : String(params.get("MerchantOrderNo") || params.get("merchantOrderNo") || "").trim() || null;
+      }
+    }
+
+    if (!merchantOrderNo) {
       return jsonResponse({ success: false, error: "Missing merchantOrderNo." }, 400);
     }
 
@@ -118,6 +231,10 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: false, error: "Order not found." }, 404);
     }
 
+    if (jsonUserId && order.user_id !== jsonUserId && !(await isElevatedUser(supabase, jsonUserId))) {
+      return jsonResponse({ success: false, error: "Forbidden." }, 403);
+    }
+
     if (String(order.payment_status || "").toLowerCase() === "paid" && String(order.newebpay_status || "").toLowerCase() === "success") {
       try {
         const invoiceResult = await createEzpayInvoiceForOrder(supabase, order.id);
@@ -128,6 +245,9 @@ Deno.serve(async (req: Request) => {
         console.warn("[newebpay-order-sync] Invoice creation failed:", invoiceError);
       }
 
+      if (!contentType.includes("application/json")) {
+        return Response.redirect(`${Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_SITE_URL") || "https://nestobi.com"}/member/orders?merchantOrderNo=${encodeURIComponent(merchantOrderNo)}`, 303);
+      }
       return jsonResponse({ success: true, synced: false, reason: "already_paid" });
     }
 
@@ -170,6 +290,9 @@ Deno.serve(async (req: Request) => {
     const isPaid = status === "SUCCESS" && tradeStatus === "1";
 
     if (!isPaid) {
+      if (!contentType.includes("application/json")) {
+        return Response.redirect(`${Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_SITE_URL") || "https://nestobi.com"}/member/orders?merchantOrderNo=${encodeURIComponent(merchantOrderNo)}`, 303);
+      }
       return jsonResponse({
         success: true,
         synced: false,
@@ -208,14 +331,14 @@ Deno.serve(async (req: Request) => {
         .select("id")
         .eq("reference_id", order.id)
         .eq("source_type", "order")
-        .eq("transaction_type", "earn")
+        .eq("transaction_type", "earned")
         .maybeSingle();
 
       if (!existingPoints) {
         await supabase.from("points").insert({
           user_id: order.user_id,
           amount: rewardPoints,
-          transaction_type: "earn",
+          transaction_type: "earned",
           reference_id: order.id,
           source_type: "order",
           source_id: order.id,
@@ -233,6 +356,9 @@ Deno.serve(async (req: Request) => {
       console.warn("[newebpay-order-sync] Invoice creation failed:", invoiceError);
     }
 
+    if (!contentType.includes("application/json")) {
+      return Response.redirect(`${Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_SITE_URL") || "https://nestobi.com"}/member/orders?merchantOrderNo=${encodeURIComponent(merchantOrderNo)}`, 303);
+    }
     return jsonResponse({
       success: true,
       synced: true,
