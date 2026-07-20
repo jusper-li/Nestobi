@@ -90,6 +90,7 @@ export default function MemberOrders() {
     review: pick('評價商品', 'Review Product', '商品を評価', '상품 평가'),
     returnRequested: pick('已申請退貨', 'Return Requested', '返品申請済み', '반품 신청됨'),
     refundRequested: pick('已申請退款', 'Refund Requested', '返金申請済み', '환불 신청됨'),
+    refundUnavailable: pick('此訂單不符合退款申請條件，需付款成功且訂單尚未完成。', 'This order is not eligible for a refund request. It must be paid and not completed.', 'この注文は返金申請条件を満たしていません。支払い済みかつ未完了である必要があります。', '이 주문은 환불 신청 조건에 맞지 않습니다. 결제 완료 상태이며 완료 전이어야 합니다.'),
     requestSent: pick('申請已送出，客服會盡快聯絡你。', 'Request sent. Support will contact you soon.', '申請を送信しました。サポートより近日中に連絡します。', '신청이 접수되었습니다. 고객센터에서 곧 연락드립니다.'),
     addedToCart: pick('已加入購物車', 'Added to cart', 'カートに追加しました', '장바구니에 추가됨'),
     addedFavorite: pick('已加入收藏', 'Added to favorites', 'お気に入りに追加しました', '즐겨찾기에 추가됨'),
@@ -298,6 +299,11 @@ export default function MemberOrders() {
   const persistAfterSalesRequest = async (orderId: string, type: 'return' | 'refund') => {
     if (!user) {
       showMessage('error', t.actionFailed);
+      return;
+    }
+    const order = orders.find(item => item.id === orderId);
+    if (type === 'refund' && (order?.payment_status !== 'paid' || order.status === 'completed')) {
+      showMessage('error', t.refundUnavailable);
       return;
     }
     setBusyAction(`${orderId}:${type}`);
@@ -617,7 +623,9 @@ export default function MemberOrders() {
                     <h4 className="mb-3 flex items-center gap-1.5 font-medium text-gray-700"><Headphones className="h-4 w-4" />{t.afterSales}</h4>
                     <div className="flex flex-wrap gap-2">
                       <button type="button" onClick={() => void persistAfterSalesRequest(order.id, 'return')} disabled={afterSalesRequests[`${order.id}:return`] || busyAction === `${order.id}:return`} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:border-green-200 disabled:bg-green-50 disabled:text-green-700"><Package className="h-4 w-4" />{afterSalesRequests[`${order.id}:return`] ? t.returnRequested : t.return}</button>
-                      <button type="button" onClick={() => void persistAfterSalesRequest(order.id, 'refund')} disabled={afterSalesRequests[`${order.id}:refund`] || busyAction === `${order.id}:refund`} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:border-green-200 disabled:bg-green-50 disabled:text-green-700"><Receipt className="h-4 w-4" />{afterSalesRequests[`${order.id}:refund`] ? t.refundRequested : t.refund}</button>
+                      {order.payment_status === 'paid' && order.status !== 'completed' && (
+                        <button type="button" onClick={() => void persistAfterSalesRequest(order.id, 'refund')} disabled={afterSalesRequests[`${order.id}:refund`] || busyAction === `${order.id}:refund`} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:border-green-200 disabled:bg-green-50 disabled:text-green-700"><Receipt className="h-4 w-4" />{afterSalesRequests[`${order.id}:refund`] ? t.refundRequested : t.refund}</button>
+                      )}
                       <a href={contactHref(order.id)} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"><Headphones className="h-4 w-4" />{t.contact}</a>
                       <button type="button" onClick={() => handleBuyAgain(order.id, items)} disabled={busyAction === `${order.id}:buy`} className="inline-flex items-center gap-1.5 rounded-lg bg-[#C09A6A] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#8B6840] disabled:opacity-60"><RotateCcw className="h-4 w-4" />{t.buyAgain}</button>
                       <button type="button" onClick={() => void handleFavorite(items)} disabled={busyAction === 'favorite'} className="inline-flex items-center gap-1.5 rounded-lg border border-pink-200 px-3 py-2 text-sm font-medium text-pink-600 transition hover:bg-pink-50 disabled:opacity-60"><Heart className="h-4 w-4" />{orderProductIds(items).every(productId => favoriteProductIds[productId]) && items.length > 0 ? t.favorited : t.favorite}</button>
