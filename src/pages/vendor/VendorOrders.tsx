@@ -12,6 +12,7 @@ import {
   Package,
   Phone,
   Receipt,
+  Search,
   ShoppingBag,
   Truck,
   User,
@@ -187,6 +188,91 @@ const getProductOrderListStatus = (item: ProductOrderLine) => (
   hasPendingRefundRequest(item) ? 'refund_pending' : item.status
 );
 
+const normalizeSearch = (value: unknown) => String(value ?? '').trim().toLowerCase();
+
+const flattenSearchValue = (value: unknown): string => {
+  if (!value) return '';
+  if (Array.isArray(value)) return value.map(flattenSearchValue).join(' ');
+  if (typeof value === 'object') return Object.values(value as Record<string, unknown>).map(flattenSearchValue).join(' ');
+  return String(value);
+};
+
+const getCustomerSearchText = (customer?: CustomerProfile) => [
+  customer?.user_id,
+  customer?.display_name,
+  customer?.phone,
+  customer?.email,
+].filter(Boolean).join(' ');
+
+const getOrderSearchText = (item: VendorOrderItem, customerProfiles: Record<string, CustomerProfile>) => {
+  if (item.kind === 'product') {
+    const order = item.productOrder.orders;
+    const customer = order?.user_id ? customerProfiles[order.user_id] : undefined;
+    return [
+      item.id,
+      item.productOrder.id,
+      item.productOrder.order_id,
+      item.productOrder.products?.id,
+      item.productOrder.products?.name,
+      item.productOrder.products?.sku,
+      item.productOrder.status,
+      order?.id,
+      order?.user_id,
+      order?.merchant_order_no,
+      order?.newebpay_status,
+      order?.payment_status,
+      order?.payment_method,
+      flattenSearchValue(order?.shipping_address),
+      getCustomerSearchText(customer),
+    ].filter(Boolean).join(' ');
+  }
+
+  if (item.kind === 'subscription') {
+    const order = item.subscription.orders;
+    const customer = customerProfiles[item.subscription.user_id];
+    return [
+      item.id,
+      item.subscription.id,
+      item.subscription.order_id,
+      item.subscription.user_id,
+      item.subscription.product_id,
+      item.subscription.products?.id,
+      item.subscription.products?.name,
+      item.subscription.products?.sku,
+      item.subscription.customer_name,
+      item.subscription.customer_email,
+      item.subscription.customer_phone,
+      item.subscription.status,
+      item.subscription.period_type,
+      item.subscription.period_point,
+      item.subscription.period_times,
+      item.subscription.newebpay_trade_no,
+      item.subscription.newebpay_auth_code,
+      item.subscription.newebpay_card_no,
+      item.subscription.notes,
+      flattenSearchValue(item.subscription.shipping_address),
+      order?.id,
+      order?.merchant_order_no,
+      order?.payment_status,
+      order?.payment_method,
+      flattenSearchValue(order?.shipping_address),
+      getCustomerSearchText(customer),
+    ].filter(Boolean).join(' ');
+  }
+
+  const customer = customerProfiles[item.booking.user_id];
+  return [
+    item.id,
+    item.booking.id,
+    item.booking.user_id,
+    item.booking.status,
+    item.booking.payment_status,
+    item.booking.tbl_rooms?.name,
+    item.booking.tbl_rooms?.location,
+    getCustomerSearchText(customer),
+  ].filter(Boolean).join(' ');
+};
+
 const VendorOrders: React.FC = () => {
   const { user } = useAuth();
   const { lang } = useLanguage();
@@ -202,6 +288,7 @@ const VendorOrders: React.FC = () => {
   const [noVendor, setNoVendor] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<'product' | 'subscription' | 'booking'>('product');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [orderSearchQuery, setOrderSearchQuery] = useState('');
   const [updating, setUpdating] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [selectedDetail, setSelectedDetail] = useState<VendorOrderItem | null>(null);
@@ -220,6 +307,11 @@ const VendorOrders: React.FC = () => {
     productEmpty: pick('目前沒有符合條件的商品訂單。', 'No matching product orders yet.', '条件に一致する商品注文はまだありません。', '조건에 맞는 상품 주문이 아직 없습니다.'),
     subscriptionEmpty: pick('目前沒有符合條件的訂閱制訂單。', 'No matching subscription orders yet.', '条件に一致する定期便注文はまだありません。', '조건에 맞는 구독 주문이 아직 없습니다.'),
     bookingEmpty: pick('目前沒有符合條件的訂房。', 'No matching bookings yet.', '条件に一致する予約はまだありません。', '조건에 맞는 예약이 아직 없습니다.'),
+    searchTitle: pick('訂單查詢', 'Order search', '注文検索', '주문 검색'),
+    searchPlaceholder: pick('輸入訂單編號、商品、姓名、電話、Email、地址或藍新交易資料', 'Search order number, product, name, phone, email, address, or NewebPay data', '注文番号、商品、氏名、電話、Email、住所、決済情報で検索', '주문번호, 상품, 이름, 전화, 이메일, 주소, 결제정보 검색'),
+    searchHint: pick('會在目前分類與狀態篩選內查詢。', 'Search applies within the current category and status filters.', '現在の分類とステータス内で検索します。', '현재 분류와 상태 필터 안에서 검색합니다.'),
+    clearSearch: pick('清除', 'Clear', 'クリア', '지우기'),
+    searchResultCount: pick('符合筆數', 'Matches', '一致件数', '일치 건수'),
     all: pick('全部', 'All', 'すべて', '전체'),
     productTab: pick('商品訂單', 'Product Orders', '商品注文', '상품 주문'),
     subscriptionTab: pick('訂閱制', 'Subscriptions', '定期便', '구독'),
@@ -323,6 +415,7 @@ const VendorOrders: React.FC = () => {
 
   const getAfterSalesStatusLabel = (status?: string | null) => {
     if (status === 'pending') return pick('待處理', 'Pending', '未処理', '대기');
+    if (status === 'resolved') return labels.handled;
     if (status === 'completed') return labels.handled;
     if (status === 'approved') return pick('已核准', 'Approved', '承認済み', '승인됨');
     if (status === 'rejected') return pick('已拒絕', 'Rejected', '拒否済み', '거절됨');
@@ -610,7 +703,11 @@ const VendorOrders: React.FC = () => {
   }, [bookings, productOrders, subscriptionOrders]);
 
   const categoryItems = items.filter(item => item.kind === categoryFilter);
-  const filtered = statusFilter === 'all' ? categoryItems : categoryItems.filter(item => item.status === statusFilter);
+  const statusFiltered = statusFilter === 'all' ? categoryItems : categoryItems.filter(item => item.status === statusFilter);
+  const normalizedOrderSearchQuery = normalizeSearch(orderSearchQuery);
+  const filtered = normalizedOrderSearchQuery
+    ? statusFiltered.filter(item => normalizeSearch(getOrderSearchText(item, customerProfiles)).includes(normalizedOrderSearchQuery))
+    : statusFiltered;
   const emptyLabel = categoryFilter === 'product'
     ? labels.productEmpty
     : categoryFilter === 'subscription'
@@ -718,6 +815,35 @@ const VendorOrders: React.FC = () => {
             <span className={`mt-1 block text-xs ${categoryFilter === option.value ? 'text-emerald-50' : 'text-gray-400'}`}>{option.count}</span>
           </button>
         ))}
+      </div>
+
+      <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm font-bold text-gray-900">{labels.searchTitle}</p>
+            <p className="mt-1 text-xs text-gray-400">{labels.searchHint}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-500">
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+              {labels.searchResultCount} {filtered.length}
+            </span>
+            {orderSearchQuery && (
+              <button type="button" onClick={() => setOrderSearchQuery('')} className="rounded-full border border-gray-200 px-3 py-1 text-gray-500 transition hover:border-emerald-300 hover:text-emerald-700">
+                {labels.clearSearch}
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="mt-4 flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 transition focus-within:border-emerald-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-100">
+          <Search className="h-5 w-5 flex-shrink-0 text-gray-400" />
+          <input
+            type="search"
+            value={orderSearchQuery}
+            onChange={(event) => setOrderSearchQuery(event.target.value)}
+            placeholder={labels.searchPlaceholder}
+            className="min-w-0 flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+          />
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
