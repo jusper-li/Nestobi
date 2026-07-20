@@ -247,6 +247,18 @@ Deno.serve(async (req: Request) => {
       shippingPhone = shippingPhone || getShippingField(shippingSnapshot, ["phone", "recipient_phone", "customer_phone", "buyer_phone"]);
       shippingAddress = shippingAddress || getShippingField(shippingSnapshot, ["address", "shipping_address", "recipient_address", "line1"]);
 
+      if (!shippingName || !shippingPhone || !shippingAddress) {
+        const { data: retryProfile } = await serviceClient
+          .from("tbl_mn5wgzh0")
+          .select("display_name, phone, address")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        shippingName = shippingName || String(retryProfile?.display_name || user.email || "").trim();
+        shippingPhone = shippingPhone || String(retryProfile?.phone || "").trim();
+        shippingAddress = shippingAddress || String(retryProfile?.address || "").trim();
+      }
+
       const { data: retryItems, error: retryItemsError } = await serviceClient
         .from("purchase_records")
         .select("id,quantity,unit_price,total_price,products(name)")
@@ -254,6 +266,9 @@ Deno.serve(async (req: Request) => {
 
       if (retryItemsError) {
         return jsonResponse({ success: false, error: retryItemsError.message }, 500);
+      }
+      if (!retryItems || retryItems.length === 0) {
+        return jsonResponse({ success: false, error: "Order items not found." }, 400);
       }
 
       const nextMerchantOrderNo = buildMerchantOrderNo(user.id);

@@ -134,6 +134,21 @@ const PRODUCT_SELECT = 'id,category_id,vendor_id,name,description,price,stock_qu
 
 const formatSubscriptionPeriod = (period: SubscriptionPlanMonths) => (period === 'NE' ? '不限' : `${period} 期`);
 
+function getProductSubscriptionInfo(product: Product) {
+  const specifications = Array.isArray(product.specifications) ? product.specifications : [];
+  const subscriptionSpec = specifications.find((spec) => spec.name.trim() === SUBSCRIPTION_SPEC_NAME) || null;
+  const plans = Array.isArray(product.subscription_plans) ? product.subscription_plans : [];
+  const planPeriods = plans
+    .map((plan) => normalizeSubscriptionPeriodValue(plan.months))
+    .filter((period): period is SubscriptionPlanMonths => Boolean(period));
+  const periods = subscriptionSpec ? extractSubscriptionPeriods([subscriptionSpec]) : Array.from(new Set(planPeriods));
+
+  return {
+    configured: Boolean(subscriptionSpec || plans.length > 0),
+    periods,
+  };
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -329,17 +344,13 @@ export default function VendorProducts() {
     setShowModal(true);
   };
 
-  const openEdit = (product: Product) => {
+  const openEdit = (product: Product, focusSubscription = false) => {
     setEditing(product);
     const nextForm = rawToForm(product as unknown as Record<string, unknown>);
+    const subscriptionInfo = getProductSubscriptionInfo(product);
     setForm(nextForm);
-    setSubscriptionPeriods(extractSubscriptionPeriods((product as unknown as { specifications?: unknown }).specifications));
-    const hasSubscriptionPlans = Array.isArray(product.subscription_plans) && product.subscription_plans.length > 0;
-    setSubscriptionEnabled(
-      hasSubscriptionPlans
-      || Boolean((product as unknown as { specifications?: unknown }).specifications && extractSubscriptionPeriods((product as unknown as { specifications?: unknown }).specifications).length > 0)
-      || Boolean(product.category_id && categories.find(category => category.id === product.category_id && /subscription|訂閱|定期便|週期|period/i.test([category.slug, category.name].join(' '))))
-    );
+    setSubscriptionPeriods(subscriptionInfo.periods.length > 0 ? subscriptionInfo.periods : DEFAULT_SUBSCRIPTION_PERIODS);
+    setSubscriptionEnabled(focusSubscription || subscriptionInfo.configured);
     setDescPreview(false);
     setShowModal(true);
   };
@@ -375,25 +386,21 @@ export default function VendorProducts() {
 
   const toggleSubscriptionSetting = async (product: Product) => {
     if (!vendorId) return;
-    const subscriptionSpec = Array.isArray(product.specifications)
-      ? product.specifications.find((spec) => spec.name.trim() === SUBSCRIPTION_SPEC_NAME) || null
-      : null;
-    const hasSubscription = Boolean(subscriptionSpec || (Array.isArray(product.subscription_plans) && product.subscription_plans.length > 0));
-    const currentPeriods = subscriptionSpec ? extractSubscriptionPeriods([subscriptionSpec]) : DEFAULT_SUBSCRIPTION_PERIODS;
-    const safePeriods = currentPeriods.length > 0 ? currentPeriods : DEFAULT_SUBSCRIPTION_PERIODS;
+    const subscriptionInfo = getProductSubscriptionInfo(product);
+    const hasSubscription = subscriptionInfo.configured;
+    const nextPeriods = subscriptionInfo.periods.length > 0 ? subscriptionInfo.periods : DEFAULT_SUBSCRIPTION_PERIODS;
+
     const baseSpecifications = Array.isArray(product.specifications)
       ? product.specifications.filter((spec) => spec.name.trim() !== SUBSCRIPTION_SPEC_NAME)
       : [];
     const nextSpecifications = hasSubscription
       ? baseSpecifications
-      : [...baseSpecifications, buildSubscriptionSpecification(safePeriods)];
+      : [...baseSpecifications, buildSubscriptionSpecification(nextPeriods)];
     const nextSubscriptionPlans = hasSubscription
       ? []
       : mergeSubscriptionPlans(
-          safePeriods,
-          Array.isArray(product.subscription_plans) && product.subscription_plans.length > 0
-            ? product.subscription_plans
-            : buildDefaultSubscriptionPlans(Number(product.price) || 0),
+          nextPeriods,
+          Array.isArray(product.subscription_plans) ? product.subscription_plans : [],
           Number(product.price) || 0,
         );
 
@@ -412,6 +419,7 @@ export default function VendorProducts() {
       await logAdminAction(hasSubscription ? 'disable_subscription_product' : 'enable_subscription_product', 'products', product.id, {
         vendor_id: vendorId,
         name: product.name,
+        periods: hasSubscription ? [] : nextPeriods,
       });
       await fetchProducts(vendorId);
     } catch (error) {
@@ -468,10 +476,10 @@ export default function VendorProducts() {
     const finalSubscriptionPeriods =
       normalizedPeriods.length > 0 ? Array.from(new Set(normalizedPeriods)) : DEFAULT_SUBSCRIPTION_PERIODS;
     const baseSpecifications = normalizeSpecifications(form.specifications.filter((spec) => spec.name.trim() !== SUBSCRIPTION_SPEC_NAME));
-    const mergedSpecifications = subscriptionEnabled || showSubscriptionSettings || subscriptionSpec
+    const mergedSpecifications = subscriptionEnabled
       ? [...baseSpecifications, { name: SUBSCRIPTION_SPEC_NAME, options: finalSubscriptionPeriods.map(String) }]
       : baseSpecifications;
-    const mergedSubscriptionPlans = subscriptionEnabled || showSubscriptionSettings
+    const mergedSubscriptionPlans = subscriptionEnabled
       ? mergeSubscriptionPlans(finalSubscriptionPeriods, form.subscription_plans, Number(form.price) || 0)
       : [];
     const payload = {
@@ -600,23 +608,16 @@ export default function VendorProducts() {
   const setBulkField = <K extends keyof ProductForm>(key: string, field: K, value: ProductForm[K]) => {
     setScraperItems(current => current.map(item => item.key === key ? { ...item, form: { ...item.form, [field]: value } } : item));
   };
-  const selectedCategory = useMemo(
-    () => categories.find(category => category.id === form.category_id),
-    [categories, form.category_id]
-  );
-  const selectedCategoryPath = useMemo(
-    () => (selectedCategory ? getCategoryPath(selectedCategory, categories) : ''),
-    [categories, selectedCategory]
-  );
-  const subscriptionSpec = form.specifications.find(spec => spec.name.trim() === SUBSCRIPTION_SPEC_NAME);
-  const isSubscriptionCategory = useMemo(() => {
-    const haystack = [selectedCategory?.slug, selectedCategory?.name, selectedCategoryPath]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-    return /subscription|訂閱|定期便|週期|period/.test(haystack);
-  }, [selectedCategory?.name, selectedCategory?.slug, selectedCategoryPath]);
-  const showSubscriptionSettings = subscriptionEnabled || Boolean(subscriptionSpec) || isSubscriptionCategory;
+  const showSubscriptionSettings = subscriptionEnabled;
+  const setSubscriptionEnabledFromForm = (enabled: boolean) => {
+    setSubscriptionEnabled(enabled);
+    if (!enabled) return;
+
+    setForm(current => ({
+      ...current,
+      subscription_plans: mergeSubscriptionPlans(subscriptionPeriods, current.subscription_plans, Number(current.price) || 0),
+    }));
+  };
   const toggleSubscriptionPeriod = (period: SubscriptionPlanMonths) => {
     setSubscriptionPeriods(current => {
       const nextPeriods = current.includes(period)
@@ -633,12 +634,7 @@ export default function VendorProducts() {
     if (categoryFilter === 'all') return products;
     return products.filter((product) => product.category_id === categoryFilter);
   }, [categoryFilter, products]);
-  const subscriptionProductCount = products.filter((product) => {
-    const specs = Array.isArray(product.specifications) ? product.specifications : [];
-    const plans = Array.isArray(product.subscription_plans) ? product.subscription_plans : [];
-    const names = specs.some(spec => String(spec?.name || '').trim() === SUBSCRIPTION_SPEC_NAME);
-    return names || plans.length > 0;
-  }).length;
+  const subscriptionProductCount = products.filter((product) => getProductSubscriptionInfo(product).configured).length;
   const setSubscriptionPlanAmount = (period: SubscriptionPlanMonths, amount: number) => {
     const normalizedAmount = normalizeSubscriptionPlanAmount(amount);
     setForm(current => ({
@@ -759,7 +755,7 @@ export default function VendorProducts() {
                 <th className="px-5 py-3 text-left font-medium text-gray-500">分類</th>
                 <th className="px-5 py-3 text-right font-medium text-gray-500">價格</th>
                 <th className="px-5 py-3 text-right font-medium text-gray-500">庫存</th>
-                <th className="px-5 py-3 text-center font-medium text-gray-500">訂閱</th>
+                <th className="px-5 py-3 text-center font-medium text-gray-500">訂閱狀態</th>
                 <th className="px-5 py-3 text-center font-medium text-gray-500">狀態</th>
                 <th className="px-5 py-3 text-right font-medium text-gray-500">操作</th>
               </tr>
@@ -775,7 +771,7 @@ export default function VendorProducts() {
                         <div className="mt-1 flex flex-wrap gap-1">
                           {product.source_url && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">已連來源</span>}
                           {product.images && product.images.length > 1 && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">{product.images.length} 張圖</span>}
-                          {(product.subscription_plans?.length || product.specifications?.some(spec => spec.name.trim() === SUBSCRIPTION_SPEC_NAME)) ? (
+                          {getProductSubscriptionInfo(product).configured ? (
                             <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">訂閱</span>
                           ) : null}
                         </div>
@@ -813,27 +809,28 @@ export default function VendorProducts() {
                   <td className="px-5 py-4 text-right text-gray-600">{product.stock_quantity}</td>
                   <td className="px-5 py-4 text-center">
                     {(() => {
-                      const subscriptionSpec = Array.isArray(product.specifications)
-                        ? product.specifications.find((spec) => spec.name.trim() === SUBSCRIPTION_SPEC_NAME) || null
-                        : null;
-                      const hasSubscription = Boolean(subscriptionSpec || (Array.isArray(product.subscription_plans) && product.subscription_plans.length > 0));
-                      const periods = subscriptionSpec ? extractSubscriptionPeriods([subscriptionSpec]) : [];
+                      const subscriptionInfo = getProductSubscriptionInfo(product);
+                      const hasSubscription = subscriptionInfo.configured;
+                      const periods = subscriptionInfo.periods;
                       return (
                         <div>
                           <button
                             type="button"
                             onClick={() => void toggleSubscriptionSetting(product)}
                             disabled={saving}
-                            className={`inline-flex min-w-24 items-center justify-between gap-2 rounded-full px-2 py-1 text-xs font-medium transition disabled:cursor-wait disabled:opacity-60 ${hasSubscription ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                            className={`inline-flex min-w-28 items-center justify-between gap-2 rounded-full px-2 py-1 text-xs font-semibold transition disabled:cursor-wait disabled:opacity-60 ${hasSubscription ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
                             aria-pressed={hasSubscription}
                           >
-                            <span>{hasSubscription ? '已啟用' : '已關閉'}</span>
+                            <span>{hasSubscription ? '已啟用' : '未啟用'}</span>
                             <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition ${hasSubscription ? 'bg-emerald-500' : 'bg-gray-300'}`}>
                               <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition ${hasSubscription ? 'translate-x-4' : 'translate-x-0.5'}`} />
                             </span>
                           </button>
                           {hasSubscription && periods.length > 0 && (
                             <p className="mt-1 text-[11px] text-emerald-600">{periods.map(formatSubscriptionPeriod).join('、')}</p>
+                          )}
+                          {!hasSubscription && (
+                            <p className="mt-1 text-[11px] text-gray-400">點擊可快速啟用預設方案</p>
                           )}
                         </div>
                       );
@@ -895,17 +892,17 @@ export default function VendorProducts() {
                 <Field label="商品描述">
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-gray-50/80 px-4 py-3">
                     <div>
-                      <p className="text-sm font-semibold text-gray-800">訂閱商品設定</p>
-                      <p className="mt-1 text-xs text-gray-500">啟用後可以設定訂閱期數與每期金額。</p>
+                      <p className="text-sm font-semibold text-gray-800">訂閱方案設定</p>
+                      <p className="mt-1 text-xs text-gray-500">這裡才是設定訂閱期數、每期金額與方案內容的主要入口。</p>
                     </div>
                     <label className="flex cursor-pointer items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-sm font-medium text-emerald-700">
                       <input
                         type="checkbox"
                         checked={subscriptionEnabled}
-                        onChange={(event) => setSubscriptionEnabled(event.target.checked)}
+                        onChange={(event) => setSubscriptionEnabledFromForm(event.target.checked)}
                         className="h-4 w-4 rounded accent-emerald-600"
                       />
-                      啟用訂閱設定
+                      啟用訂閱方案
                     </label>
                   </div>
                   {showSubscriptionSettings && (

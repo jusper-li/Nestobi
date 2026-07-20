@@ -387,7 +387,7 @@ const VendorOrders: React.FC = () => {
             : Promise.resolve({ data: null }),
           supabase
             .from('product_subscriptions')
-            .select('id,user_id,product_id,vendor_id,order_id,quantity,monthly_amount,period_type,period_point,period_start_type,period_times,billing_cycle_count,status,next_bill_at,last_billed_at,started_at,ended_at,expires_at,shipping_address,customer_name,customer_email,customer_phone,newebpay_trade_no,newebpay_auth_code,newebpay_card_no,newebpay_payment_type,newebpay_respond_code,newebpay_status,newebpay_paid_at,notes,created_at,updated_at,products(id,name,image_url,sku,vendor_id),orders(id,user_id,status,payment_status,payment_method,merchant_order_no,newebpay_status,total_amount,currency,created_at,shipping_address)')
+            .select('id,user_id,product_id,vendor_id,order_id,quantity,monthly_amount,period_type,period_point,period_start_type,period_times,billing_cycle_count,status,next_bill_at,last_billed_at,started_at,ended_at,expires_at,shipping_address,customer_name,customer_email,customer_phone,newebpay_trade_no,newebpay_auth_code,newebpay_card_no,newebpay_payment_type,newebpay_respond_code,newebpay_status,newebpay_paid_at,notes,created_at,updated_at,products(id,name,image_url,sku,vendor_id),orders!product_subscriptions_order_id_fkey(id,user_id,status,payment_status,payment_method,merchant_order_no,newebpay_status,total_amount,currency,created_at,shipping_address)')
             .eq('id', item.subscription.id)
             .maybeSingle(),
         ]);
@@ -450,7 +450,7 @@ const VendorOrders: React.FC = () => {
         .order('created_at', { ascending: false }),
       supabase
         .from('product_subscriptions')
-        .select('id, user_id, product_id, vendor_id, order_id, quantity, monthly_amount, period_type, period_point, period_start_type, period_times, billing_cycle_count, status, next_bill_at, last_billed_at, started_at, ended_at, expires_at, shipping_address, customer_name, customer_email, customer_phone, newebpay_trade_no, newebpay_auth_code, newebpay_card_no, newebpay_payment_type, newebpay_respond_code, newebpay_status, newebpay_paid_at, notes, created_at, updated_at, products!inner(id, name, image_url, sku, vendor_id), orders(id, user_id, status, payment_status, payment_method, merchant_order_no, newebpay_status, total_amount, currency, created_at, shipping_address)')
+        .select('id, user_id, product_id, vendor_id, order_id, quantity, monthly_amount, period_type, period_point, period_start_type, period_times, billing_cycle_count, status, next_bill_at, last_billed_at, started_at, ended_at, expires_at, shipping_address, customer_name, customer_email, customer_phone, newebpay_trade_no, newebpay_auth_code, newebpay_card_no, newebpay_payment_type, newebpay_respond_code, newebpay_status, newebpay_paid_at, notes, created_at, updated_at, products!inner(id, name, image_url, sku, vendor_id), orders!product_subscriptions_order_id_fkey(id, user_id, status, payment_status, payment_method, merchant_order_no, newebpay_status, total_amount, currency, created_at, shipping_address)')
         .eq('vendor_id', vid)
         .order('created_at', { ascending: false }),
     ]);

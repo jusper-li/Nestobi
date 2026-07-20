@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { openAIModels } from "../_shared/openaiModels.ts";
 
 type Lang = "zh-TW" | "en" | "ja" | "ko";
 
@@ -147,7 +148,7 @@ Deno.serve(async (req: Request) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: openAIModels.translation(),
           messages: [
             {
               role: "system",

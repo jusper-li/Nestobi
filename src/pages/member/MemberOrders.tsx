@@ -25,6 +25,7 @@ interface PurchaseRecord {
 interface Order {
   id: string;
   merchant_order_no?: string;
+  order_number?: string;
   total_amount: number;
   status: string;
   payment_status: string;
@@ -43,7 +44,8 @@ export default function MemberOrders() {
   const { lang } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const merchantOrderNo = searchParams.get('merchantOrderNo');
+  const orderLookupNo = searchParams.get('merchantOrderNo') || searchParams.get('orderNumber') || '';
+  const merchantOrderNo = searchParams.get('merchantOrderNo') || '';
   const syncAttemptedRef = useRef<string | null>(null);
   const locale = normalizeLang(lang) as UiLang;
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
@@ -136,8 +138,8 @@ export default function MemberOrders() {
       if (!user || !merchantOrderNo || loading) return;
       if (syncAttemptedRef.current === merchantOrderNo) return;
 
-      const currentOrder = orders.find(order => order.merchant_order_no === merchantOrderNo);
-      if (!currentOrder || currentOrder.payment_status === 'paid') return;
+      const currentOrder = orders.find(order => order.merchant_order_no === merchantOrderNo || order.order_number === merchantOrderNo);
+      if (!currentOrder || currentOrder.payment_status === 'paid' || currentOrder.merchant_order_no !== merchantOrderNo) return;
 
       syncAttemptedRef.current = merchantOrderNo;
 
@@ -164,7 +166,7 @@ export default function MemberOrders() {
       if (!user || !merchantOrderNo || loading) return;
       if (trackedPurchaseRef.current === merchantOrderNo) return;
 
-      const currentOrder = orders.find(order => order.merchant_order_no === merchantOrderNo);
+      const currentOrder = orders.find(order => order.merchant_order_no === merchantOrderNo || order.order_number === merchantOrderNo);
       if (!currentOrder || currentOrder.payment_status !== 'paid') return;
 
       trackedPurchaseRef.current = merchantOrderNo;
@@ -189,6 +191,18 @@ export default function MemberOrders() {
 
     void trackCompletedPurchase();
   }, [loading, merchantOrderNo, orders, t.unknown, user]);
+
+  useEffect(() => {
+    if (!orderLookupNo || loading || orders.length === 0) return;
+    const matchedOrder = orders.find(order =>
+      order.merchant_order_no === orderLookupNo ||
+      order.order_number === orderLookupNo ||
+      order.id === orderLookupNo
+    );
+    if (matchedOrder) {
+      setExpandedId(matchedOrder.id);
+    }
+  }, [loading, orderLookupNo, orders]);
 
   useEffect(() => {
     setDetails({});
@@ -438,7 +452,11 @@ export default function MemberOrders() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        const response = (error as { context?: Response }).context;
+        const errorBody = response ? await response.json().catch(() => null) : null;
+        throw new Error(errorBody?.error || error.message);
+      }
       if (!data?.success) throw new Error(data?.error || 'Payment retry failed');
 
       if (data.mode === 'points') {
@@ -453,8 +471,8 @@ export default function MemberOrders() {
         data.tradeSha,
         data.version || '2.3',
       );
-    } catch {
-      showMessage('error', t.actionFailed);
+    } catch (error) {
+      showMessage('error', error instanceof Error ? error.message : t.actionFailed);
       setBusyAction(null);
     }
   };

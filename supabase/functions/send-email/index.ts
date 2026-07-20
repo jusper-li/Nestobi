@@ -540,8 +540,8 @@ function bookingEmail(locale: Locale, data: Record<string, unknown>) {
 function orderEmail(locale: Locale, data: Record<string, unknown>) {
   const c = copy(locale);
   const items = Array.isArray(data.items) ? data.items : [];
-  const merchantOrderNo = String(data.merchantOrderNo || data.orderNo || data.orderId || "");
-  const displayName = String(data.displayName || data.fullName || data.name || "traveler");
+  const merchantOrderNo = String(data.merchantOrderNo || data.orderNumber || data.orderNo || data.orderId || "");
+  const displayName = String(data.displayName || data.customerName || data.fullName || data.name || "traveler");
   const shippingName = String(data.shippingName || data.recipientName || data.receiverName || "");
   const customerEmail = String(data.email || data.customerEmail || "");
   const customerPhone = String(data.phone || data.customerPhone || "");
@@ -549,10 +549,27 @@ function orderEmail(locale: Locale, data: Record<string, unknown>) {
   const shippingAddress = String(data.shippingAddress || data.address || "");
   const paymentMethod = paymentMethodLabel(locale, data.paymentMethod);
   const paymentStatus = paymentStatusLabel(locale, data.paymentStatus);
-  const subtotalPrice = Number(data.subtotalPrice || data.subtotal_amount || 0);
+  const subtotalPrice = Number(data.subtotalPrice || data.subtotal || data.subtotal_amount || 0);
   const pointsDiscount = Number(data.pointsDiscount || 0);
   const pointsEarned = Number(data.pointsEarned || 0);
-  const totalAmount = Number(data.totalAmount || data.totalPrice || 0);
+  const totalAmount = Number(data.totalAmount || data.total || data.totalPrice || 0);
+  const recipientKind = String(data.recipientKind || "");
+  const siteUrl = String(data.siteUrl || Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_SITE_URL") || "https://nestobi.com").replace(/\/$/, "");
+  const explicitOrderUrl = String(data.orderUrl || data.orderLink || data.memberOrderUrl || "").trim();
+  const orderPath = recipientKind === "vendor" ? "/vendor/orders" : "/member/orders";
+  const orderUrl = explicitOrderUrl || `${siteUrl}${orderPath}${merchantOrderNo ? `?merchantOrderNo=${encodeURIComponent(merchantOrderNo)}` : ""}`;
+  const orderCtaLabel = text(locale, {
+    "zh-TW": recipientKind === "vendor" ? "前往訂單管理" : "前往我的訂單",
+    en: recipientKind === "vendor" ? "Open order management" : "View my order",
+    ja: recipientKind === "vendor" ? "注文管理を開く" : "注文を見る",
+    ko: recipientKind === "vendor" ? "주문 관리 열기" : "주문 보기",
+  });
+  const orderCtaNote = text(locale, {
+    "zh-TW": recipientKind === "vendor" ? "登入廠商後台後可查看訂單內容、付款與物流資訊。" : "登入會員後可查看訂單狀態、付款、發票與物流資訊。",
+    en: recipientKind === "vendor" ? "Sign in to the vendor dashboard to view order, payment, and shipment details." : "Sign in to view order status, payment, invoice, and shipment details.",
+    ja: recipientKind === "vendor" ? "ベンダー管理画面にログインすると、注文・支払い・配送情報を確認できます。" : "ログインすると、注文状況、支払い、請求書、配送情報を確認できます。",
+    ko: recipientKind === "vendor" ? "공급자 대시보드에 로그인 후 주문, 결제, 배송 정보를 확인할 수 있습니다." : "로그인 후 주문 상태, 결제, 인보이스, 배송 정보를 확인할 수 있습니다.",
+  });
 
   const rows = items
     .map((item: Record<string, unknown>) => {
@@ -597,6 +614,12 @@ function orderEmail(locale: Locale, data: Record<string, unknown>) {
      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f4ee;border-radius:12px;padding:16px;margin:16px 0;">
        ${infoRows}
      </table>
+     <div style="background:#fff7eb;border:1px solid #edd7b3;border-radius:14px;padding:18px;margin:16px 0;text-align:center;">
+       ${merchantOrderNo ? `<div style="font-size:13px;color:#806d58;margin-bottom:6px;">${escapeHtml(c.orderNo)}</div>
+       <div style="font-size:18px;font-weight:800;letter-spacing:.04em;color:#24180d;margin-bottom:14px;">${escapeHtml(merchantOrderNo)}</div>` : ""}
+       <a href="${escapeHtml(orderUrl)}" style="display:inline-block;background:#24180d;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:800;">${escapeHtml(orderCtaLabel)}</a>
+       <div style="font-size:12px;line-height:1.6;color:#8a7864;margin-top:12px;">${escapeHtml(orderCtaNote)}</div>
+     </div>
      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f4ee;border-radius:12px;padding:16px;margin:16px 0;">
        ${amountRows}
      </table>

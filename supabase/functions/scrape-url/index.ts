@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import { openAIModels } from "../_shared/openaiModels.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -945,7 +946,7 @@ Deno.serve(async (req: Request) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: openAIModels.extraction(),
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
         response_format: { type: "json_object" },

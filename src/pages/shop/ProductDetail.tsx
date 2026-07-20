@@ -13,7 +13,7 @@ import { translateCategoriesFromCacheOnly, translateCategoriesOnDemand, translat
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { sanitizeHtml } from '../../lib/security';
 import { createSubscriptionCheckout, submitNewebPayPeriodForm } from '../../lib/subscriptionCheckout';
-import { DEFAULT_SUBSCRIPTION_PERIODS, extractSubscriptionPeriods, normalizeSubscriptionPeriodValue, type SubscriptionPlanMonths } from '../../lib/subscriptionPeriods';
+import { SUBSCRIPTION_SPEC_NAME, extractSubscriptionPeriods, normalizeSubscriptionPeriodValue, type SubscriptionPlanMonths } from '../../lib/subscriptionPeriods';
 import { normalizeSubscriptionPlans, type SubscriptionPlan } from '../../lib/subscriptionPlans';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
@@ -46,8 +46,6 @@ interface ProductReview {
   comment: string | null;
   created_at: string;
 }
-
-const SUBSCRIPTION_SPEC_NAME = '訂閱期數';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -82,10 +80,10 @@ export default function ProductDetail() {
     ),
     subscriptionTag: t4('訂閱', 'Subscription', '定期便', '구독'),
     subscriptionHint: t4(
-      '若後台尚未設定，系統會預設提供 3、6、12 個月與月繳。',
-      'If no configuration exists yet, the system falls back to 3, 6, 12 months and monthly charging.',
-      '設定がない場合は、3・6・12か月と月額が既定で表示されます。',
-      '설정이 없으면 3, 6, 12개월과 월 결제가 기본값입니다.'
+      '前台會同步後台啟用的期數與每期金額。',
+      'The storefront mirrors the enabled periods and per-cycle amounts from the admin panel.',
+      'フロントには管理画面で有効化された期間と金額のみ表示されます。',
+      '프런트에는 관리자에서 활성화한 기간과 회차별 금액만 표시됩니다.'
     ),
     period3: t4('3 個月', '3 months', '3か月', '3개월'),
     period6: t4('6 個月', '6 months', '6か月', '6개월'),
@@ -131,7 +129,8 @@ export default function ProductDetail() {
       setProduct(loaded);
       setQty(1);
       setActiveImage(null);
-      setSubscriptionMonths(extractSubscriptionPeriods(loaded.specifications)[0] || 12);
+      const loadedSubscriptionSpec = loaded.specifications?.find((spec) => spec.name.trim() === SUBSCRIPTION_SPEC_NAME) || null;
+      setSubscriptionMonths(loadedSubscriptionSpec ? (extractSubscriptionPeriods([loadedSubscriptionSpec])[0] || 12) : 12);
 
       const [{ data: c }, { data: r }] = await Promise.all([
         loaded.category_id ? supabase.from('categories').select('id,name,slug').eq('id', loaded.category_id).maybeSingle() : Promise.resolve({ data: null }),
@@ -241,10 +240,6 @@ export default function ProductDetail() {
     return gallery.length ? gallery : [cover];
   }, [viewProduct]);
 
-  const isSubscriptionProduct = Boolean(
-    viewCategory?.slug === 'dlal-subscription' || viewCategory?.slug?.startsWith('subscription-')
-  );
-
   const subscriptionOptions = useMemo(() => {
     const rawPlans = Array.isArray(viewProduct?.subscription_plans) ? viewProduct.subscription_plans : [];
     const months = rawPlans
@@ -252,9 +247,10 @@ export default function ProductDetail() {
       .filter((plan): plan is SubscriptionPlanMonths => Boolean(plan));
     if (months.length > 0) return Array.from(new Set(months));
 
-    const options = extractSubscriptionPeriods(viewProduct?.specifications);
-    return options.length > 0 ? options : DEFAULT_SUBSCRIPTION_PERIODS;
+    const subscriptionSpec = viewProduct?.specifications?.find((spec) => spec.name.trim() === SUBSCRIPTION_SPEC_NAME) || null;
+    return subscriptionSpec ? extractSubscriptionPeriods([subscriptionSpec]) : [];
   }, [viewProduct?.specifications, viewProduct?.subscription_plans]);
+  const isSubscriptionProduct = subscriptionOptions.length > 0;
   const subscriptionPlans = useMemo(() => {
     return normalizeSubscriptionPlans(viewProduct?.subscription_plans, viewProduct?.price || 0, subscriptionOptions);
   }, [subscriptionOptions, viewProduct?.price, viewProduct?.subscription_plans]);

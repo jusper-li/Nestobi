@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import { openAIModels } from "../_shared/openaiModels.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -218,7 +219,7 @@ async function callOpenAIText(apiKey: string, prompt: string): Promise<any> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-4o",
+      model: openAIModels.extraction(),
       messages: [{ role: "user", content: prompt }],
       temperature: 0.1,
       response_format: { type: "json_object" },
@@ -242,7 +243,7 @@ async function callOpenAIVision(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-4o",
+      model: openAIModels.vision(),
       messages: [{
         role: "user",
         content: [

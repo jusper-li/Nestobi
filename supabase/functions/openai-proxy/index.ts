@@ -1,13 +1,15 @@
 ﻿import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
+import { openAIModels } from "../_shared/openaiModels.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const VECTOR_EMBEDDING_MODEL = "text-embedding-3-small";
-const TRANSLATION_MODEL = "gpt-5.4-mini";
+const VECTOR_EMBEDDING_MODEL = openAIModels.embedding();
+const TRANSLATION_MODEL = openAIModels.translation();
 const VECTOR_SYNC_INTERVAL_MS = 10 * 60 * 1000;
 const VECTOR_UNAVAILABLE_RETRY_MS = 5 * 60 * 1000;
 const VECTOR_SYNC_BATCH_SIZE = 96;
@@ -733,7 +735,7 @@ async function chatCompletion(options: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: options.model ?? "gpt-4o-mini",
+      model: options.model ?? openAIModels.chat(),
       temperature: options.temperature ?? 0.4,
       max_tokens: options.max_tokens ?? 1200,
       messages: options.messages,
@@ -763,7 +765,10 @@ Deno.serve(async (req) => {
   try {
     if (!(await isAuthenticatedRequest(req))) return json({ error: "Unauthorized" }, 401);
 
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return json({ error: "Invalid JSON body" }, 400);
+    }
     const action = body.action;
 
     if (action === "translate") {
@@ -862,7 +867,7 @@ Deno.serve(async (req) => {
             `LATEST_USER_QUESTION: ${question}`,
           ].join("\n");
           const rawResult = await chatCompletion({
-            model: "gpt-4o",
+            model: openAIModels.chat(),
             temperature: 0.2,
             max_tokens: 1200,
             messages: [
@@ -894,7 +899,7 @@ Deno.serve(async (req) => {
 
     if (action === "itinerary") {
       const resultText = await chatCompletion({
-        model: "gpt-4o",
+        model: openAIModels.extraction(),
         temperature: 0.65,
         max_tokens: 4500,
         response_format: { type: "json_object" },

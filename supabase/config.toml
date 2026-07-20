@@ -1,5 +1,8 @@
 project_id = "sonpin"
 
+[functions.openai-proxy]
+verify_jwt = true
+
 [auth.email.template.confirmation]
 subject = "Sonpin 驗證電子郵件"
 content_path = "./supabase/templates/confirmation.html"

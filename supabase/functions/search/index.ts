@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { openAIModels } from "../_shared/openaiModels.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -63,7 +64,7 @@ Deno.serve(async (req: Request) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: openAIModels.search(),
         messages: [
           {
             role: "system",

@@ -17,7 +17,7 @@ const isSubscriptionSpecName = (name: string) => {
 export function normalizeSubscriptionPeriodValue(value: unknown): SubscriptionPlanMonths | null {
   const text = String(value ?? '').trim().toUpperCase();
   if (!text) return null;
-  if (['NE', 'M', 'MONTHLY', 'MONTH', 'MONTHS', '月繳'].includes(text)) return 'NE';
+  if (['NE', 'M', 'MONTHLY', 'MONTH', 'MONTHS', '每月'].includes(text)) return 'NE';
 
   const months = Number.parseInt(text, 10);
   if (months === 3 || months === 6 || months === 12) return months;
@@ -59,7 +59,12 @@ export function extractSubscriptionPeriods(specifications: unknown): Subscriptio
 export function buildSubscriptionSpecification(periods: SubscriptionPlanMonths[]) {
   return {
     name: SUBSCRIPTION_SPEC_NAME,
-    options: Array.from(new Set(periods.map((period) => normalizeSubscriptionPeriodValue(period)).filter((period): period is SubscriptionPlanMonths => Boolean(period)))),
+    options: Array.from(
+      new Set(
+        periods
+          .map((period) => normalizeSubscriptionPeriodValue(period))
+          .filter((period): period is SubscriptionPlanMonths => Boolean(period))
+      )
+    ),
   };
 }
-
