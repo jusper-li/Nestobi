@@ -22,7 +22,7 @@ import MultiImageUpload from '../../components/MultiImageUpload';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { logAdminAction } from '../../lib/auditLog';
-import { getCategoryOptionLabel, getCategoryPath, sortCategoriesForTree } from '../../lib/categoryTree';
+import { getCategoryDepth, getCategoryOptionLabel, getCategoryPath, getDescendantCategoryIds, sortCategoriesForTree } from '../../lib/categoryTree';
 import { sanitizeHtml, sanitizeText } from '../../lib/security';
 import {
   DEFAULT_SUBSCRIPTION_PERIODS,
@@ -288,17 +288,38 @@ export default function VendorProducts() {
   const [parserError, setParserError] = useState('');
 
   const categoryById = useMemo(() => new Map(categories.map(category => [category.id, category])), [categories]);
+  const orderedCategories = useMemo(() => sortCategoriesForTree(categories), [categories]);
+  const rootCategories = useMemo(
+    () => orderedCategories.filter(category => getCategoryDepth(category, categories) === 0),
+    [orderedCategories, categories],
+  );
+  const childCategoriesByParent = useMemo(() => {
+    const map = new Map<string, Category[]>();
+    orderedCategories.forEach(category => {
+      if (!category.parent_id) return;
+      const children = map.get(category.parent_id) || [];
+      children.push(category);
+      map.set(category.parent_id, children);
+    });
+    return map;
+  }, [orderedCategories]);
   const categoryStats = useMemo(() => {
-    const counts = new Map<string, number>();
+    const directCounts = new Map<string, number>();
     products.forEach((product) => {
       if (!product.category_id) return;
-      counts.set(product.category_id, (counts.get(product.category_id) || 0) + 1);
+      directCounts.set(product.category_id, (directCounts.get(product.category_id) || 0) + 1);
     });
-    return sortCategoriesForTree(categories).map((category) => ({
+    return orderedCategories.map((category) => ({
       ...category,
-      count: counts.get(category.id) || 0,
+      directCount: directCounts.get(category.id) || 0,
+      count: Array.from(getDescendantCategoryIds(categories, category.id))
+        .reduce((sum, categoryId) => sum + (directCounts.get(categoryId) || 0), 0),
     }));
-  }, [categories, products]);
+  }, [categories, orderedCategories, products]);
+  const categoryStatsById = useMemo(
+    () => new Map(categoryStats.map(category => [category.id, category])),
+    [categoryStats],
+  );
 
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('id,name,slug,parent_id').order('name', { ascending: true });
@@ -632,8 +653,9 @@ export default function VendorProducts() {
   };
   const visibleProducts = useMemo(() => {
     if (categoryFilter === 'all') return products;
-    return products.filter((product) => product.category_id === categoryFilter);
-  }, [categoryFilter, products]);
+    const selectedIds = getDescendantCategoryIds(categories, categoryFilter);
+    return products.filter((product) => Boolean(product.category_id && selectedIds.has(product.category_id)));
+  }, [categories, categoryFilter, products]);
   const subscriptionProductCount = products.filter((product) => getProductSubscriptionInfo(product).configured).length;
   const setSubscriptionPlanAmount = (period: SubscriptionPlanMonths, amount: number) => {
     const normalizedAmount = normalizeSubscriptionPlanAmount(amount);
@@ -686,10 +708,17 @@ export default function VendorProducts() {
             className="min-w-56 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
             <option value="all">全部分類</option>
-            {sortCategoriesForTree(categories).map(category => (
-              <option key={category.id} value={category.id}>
-                {getCategoryOptionLabel(category, categories)}
-              </option>
+            {rootCategories.map(root => (
+              <React.Fragment key={root.id}>
+                <option value={root.id}>{root.name}</option>
+                {orderedCategories
+                  .filter(category => category.parent_id && getDescendantCategoryIds(categories, root.id).has(category.id))
+                  .map(category => (
+                    <option key={category.id} value={category.id}>
+                      {getCategoryOptionLabel(category, categories)}
+                    </option>
+                  ))}
+              </React.Fragment>
             ))}
           </select>
         </div>
@@ -714,21 +743,59 @@ export default function VendorProducts() {
 
       <div className="rounded-2xl bg-white p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <p className="text-sm font-semibold text-gray-700">各分類商品數</p>
-          <p className="text-xs text-gray-400">未分類商品也會另外保留在表格中</p>
+          <p className="text-sm font-semibold text-gray-700">商品分類架構</p>
+          <p className="text-xs text-gray-400">大分類數量會包含底下所有子分類，0 筆子分類已自動淡化</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {categoryStats.length > 0 ? categoryStats.map((category) => (
-            <button
-              key={category.id}
-              type="button"
-              onClick={() => setCategoryFilter(category.id)}
-              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${categoryFilter === category.id ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'}`}
-            >
-              <span>{getCategoryOptionLabel(category, categories)}</span>
-              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">{category.count}</span>
-            </button>
-          )) : (
+        <div className="grid gap-3 lg:grid-cols-2">
+          {rootCategories.length > 0 ? rootCategories.map((root) => {
+            const rootStat = categoryStatsById.get(root.id);
+            const childIds = getDescendantCategoryIds(categories, root.id);
+            childIds.delete(root.id);
+            const visibleChildren = orderedCategories.filter(category => childIds.has(category.id));
+            return (
+              <div key={root.id} className={`rounded-2xl border p-3 transition ${categoryFilter === root.id ? 'border-emerald-400 bg-emerald-50/70' : 'border-gray-100 bg-gray-50/60'}`}>
+                <button
+                  type="button"
+                  onClick={() => setCategoryFilter(root.id)}
+                  className="flex w-full items-center justify-between gap-3 text-left"
+                >
+                  <div>
+                    <p className="font-semibold text-gray-900">{root.name}</p>
+                    <p className="text-xs text-gray-500">大分類 / 含子分類商品</p>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-emerald-700 shadow-sm">{rootStat?.count || 0}</span>
+                </button>
+                {visibleChildren.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {visibleChildren.map(child => {
+                      const stat = categoryStatsById.get(child.id);
+                      const depth = Math.max(1, getCategoryDepth(child, categories));
+                      const active = categoryFilter === child.id;
+                      const count = stat?.count || 0;
+                      return (
+                        <button
+                          key={child.id}
+                          type="button"
+                          onClick={() => setCategoryFilter(child.id)}
+                          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                            active
+                              ? 'border-emerald-500 bg-emerald-600 text-white shadow-sm'
+                              : count > 0
+                                ? 'border-gray-200 bg-white text-gray-700 hover:border-emerald-300 hover:text-emerald-700'
+                                : 'border-gray-100 bg-white/60 text-gray-400'
+                          }`}
+                          style={{ marginLeft: Math.min(depth - 1, 2) * 10 }}
+                        >
+                          <span>{child.name}</span>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${active ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>{count}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          }) : (
             <p className="text-sm text-gray-400">目前沒有分類資料，請先確認 categories 表是否已有資料。</p>
           )}
         </div>
@@ -785,13 +852,23 @@ export default function VendorProducts() {
                         onClick={() => openCategoryPicker(product)}
                         className="group w-full text-left"
                       >
-                        <div className="space-y-1">
-                          <div className="text-sm font-medium text-gray-900 group-hover:text-emerald-700">
-                            {categoryById.get(product.category_id)?.name || '-'}
-                          </div>
-                          <div className="text-xs leading-5 text-gray-500 group-hover:text-emerald-600">
-                            {getCategoryPath(categoryById.get(product.category_id)!, categories)}
-                          </div>
+                        <div className="space-y-1.5">
+                          {(() => {
+                            const category = categoryById.get(product.category_id)!;
+                            const path = getCategoryPath(category, categories).split(' / ').filter(Boolean);
+                            const mainCategory = path[0] || category.name;
+                            const currentCategory = path[path.length - 1] || category.name;
+                            const middlePath = path.length > 2 ? path.slice(1, -1).join(' / ') : '';
+                            return (
+                              <>
+                                <div className="text-sm font-semibold text-gray-900 group-hover:text-emerald-700">{mainCategory}</div>
+                                <div className="text-xs leading-5 text-gray-500 group-hover:text-emerald-600">
+                                  <span className="font-medium text-gray-700">{currentCategory}</span>
+                                  {middlePath ? <span className="ml-1 text-gray-400">/ {middlePath}</span> : null}
+                                </div>
+                              </>
+                            );
+                          })()}
                           <div className="text-[11px] font-medium text-emerald-600">點我可直接勾選調整</div>
                         </div>
                       </button>
@@ -865,7 +942,14 @@ export default function VendorProducts() {
               <Field label="分類">
                 <select value={form.category_id} onChange={event => setField('category_id', event.target.value)} className="input">
                   <option value="">未分類</option>
-                  {sortCategoriesForTree(categories).map(category => <option key={category.id} value={category.id}>{getCategoryOptionLabel(category, categories)}</option>)}
+                  {rootCategories.map(root => (
+                    <React.Fragment key={root.id}>
+                      <option value={root.id}>{root.name}</option>
+                      {orderedCategories
+                        .filter(category => category.parent_id && getDescendantCategoryIds(categories, root.id).has(category.id))
+                        .map(category => <option key={category.id} value={category.id}>{getCategoryOptionLabel(category, categories)}</option>)}
+                    </React.Fragment>
+                  ))}
                 </select>
               </Field>
               <div className="grid grid-cols-2 gap-3">
@@ -1044,24 +1128,34 @@ export default function VendorProducts() {
                       {categoryPickerProduct.category_id ? '' : '✓'}
                     </span>
                   </button>
-                  {sortCategoriesForTree(categories).map((category) => {
-                    const checked = categoryPickerProduct.category_id === category.id;
+                  {rootCategories.map((root) => {
+                    const descendants = orderedCategories.filter(category => category.id === root.id || getDescendantCategoryIds(categories, root.id).has(category.id));
                     return (
-                      <button
-                        key={category.id}
-                        type="button"
-                        disabled={categoryPickerSaving}
-                        onClick={() => void updateProductCategory(categoryPickerProduct.id, category.id)}
-                        className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${checked ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/60'} disabled:cursor-wait disabled:opacity-60`}
-                      >
-                        <div>
-                          <p className="font-medium text-gray-900">{getCategoryOptionLabel(category, categories)}</p>
-                          <p className="text-xs text-gray-500">{getCategoryPath(category, categories) || category.name}</p>
-                        </div>
-                        <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full border ${checked ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-gray-300 bg-white'}`}>
-                          {checked ? '✓' : ''}
-                        </span>
-                      </button>
+                      <div key={root.id} className="rounded-2xl border border-gray-100 bg-gray-50/70 p-3">
+                        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-400">大分類</p>
+                        {descendants.map((category) => {
+                          const checked = categoryPickerProduct.category_id === category.id;
+                          const depth = getCategoryDepth(category, categories);
+                          return (
+                            <button
+                              key={category.id}
+                              type="button"
+                              disabled={categoryPickerSaving}
+                              onClick={() => void updateProductCategory(categoryPickerProduct.id, category.id)}
+                              className={`mt-2 flex w-full items-center justify-between rounded-2xl border bg-white px-4 py-3 text-left transition ${checked ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/60'} disabled:cursor-wait disabled:opacity-60`}
+                              style={{ paddingLeft: 16 + Math.min(depth, 3) * 18 }}
+                            >
+                              <div>
+                                <p className={`font-medium ${depth === 0 ? 'text-gray-950' : 'text-gray-800'}`}>{category.name}</p>
+                                <p className="text-xs text-gray-500">{depth === 0 ? '大分類，可選取整個分類' : getCategoryPath(category, categories)}</p>
+                              </div>
+                              <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full border ${checked ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-gray-300 bg-white'}`}>
+                                {checked ? '✓' : ''}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     );
                   })}
                 </div>

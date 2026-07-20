@@ -58,6 +58,7 @@ interface CustomerProfile {
 
 interface AfterSalesRequest {
   id: string;
+  order_id?: string;
   request_type: string;
   status: string;
   message: string;
@@ -75,6 +76,7 @@ interface ProductOrderLine {
   status: string;
   created_at: string;
   products?: { id: string; name: string; image_url?: string | null; sku?: string | null; vendor_id?: string | null } | null;
+  after_sales_requests?: AfterSalesRequest[] | null;
   orders?: {
     id: string;
     user_id: string;
@@ -168,9 +170,19 @@ type VendorOrderItem =
   | { kind: 'product'; id: string; created_at: string; status: string; productOrder: ProductOrderLine }
   | { kind: 'subscription'; id: string; created_at: string; status: string; subscription: SubscriptionOrderLine };
 
-const PRODUCT_STATUS_FILTERS = ['all', 'pending', 'processing', 'shipped', 'completed', 'cancelled', 'refunded'];
+const PRODUCT_STATUS_FILTERS = ['all', 'pending', 'refund_pending', 'processing', 'shipped', 'completed', 'cancelled', 'refunded'];
 const SUBSCRIPTION_STATUS_FILTERS = ['all', 'pending', 'active', 'paused', 'cancelled', 'expired'];
 const BOOKING_STATUS_FILTERS = ['all', 'pending', 'confirmed', 'completed', 'cancelled'];
+
+const hasPendingAfterSalesRequest = (requests: AfterSalesRequest[] | null | undefined, type: string) => (
+  (requests || []).some(request => request.request_type === type && request.status === 'pending')
+);
+
+const hasPendingRefundRequest = (item: ProductOrderLine) => hasPendingAfterSalesRequest(item.after_sales_requests, 'refund');
+
+const getProductOrderListStatus = (item: ProductOrderLine) => (
+  hasPendingRefundRequest(item) ? 'refund_pending' : item.status
+);
 
 const VendorOrders: React.FC = () => {
   const { user } = useAuth();
@@ -232,6 +244,10 @@ const VendorOrders: React.FC = () => {
     paid: pick('已付款', 'Paid', '支払済み', '결제 완료'),
     unpaid: pick('未付款', 'Unpaid', '未払い', '미결제'),
     refunded: pick('已退款', 'Refunded', '返金済み', '환불됨'),
+    refundPending: pick('待退款', 'Refund requested', '返金待ち', '환불 대기'),
+    refundRequested: pick('客戶已申請退款', 'Customer requested a refund', '顧客が返金を申請しました', '고객이 환불을 요청했습니다'),
+    processRefund: pick('處理退款', 'Process refund', '返金処理', '환불 처리'),
+    closeRefundRequest: pick('標記已處理', 'Mark handled', '処理済みにする', '처리 완료'),
   };
 
   const activeStatusFilters = categoryFilter === 'product'
@@ -254,6 +270,7 @@ const VendorOrders: React.FC = () => {
     completed: getStatusLabel('completed', locale),
     cancelled: getStatusLabel('cancelled', locale),
     refunded: labels.refunded,
+    refund_pending: labels.refundPending,
   };
 
   const subscriptionStatusLabels: Record<string, string> = {
@@ -462,8 +479,33 @@ const VendorOrders: React.FC = () => {
     const bookingData = (bookingRes.data || []) as Booking[];
     const productData = (productRes.data || []) as ProductOrderLine[];
     const subscriptionData = (subscriptionRes.data || []) as SubscriptionOrderLine[];
+    const productOrderIds = Array.from(new Set(productData.map(item => item.order_id).filter(Boolean)));
+    let afterSalesByOrderId = new Map<string, AfterSalesRequest[]>();
+
+    if (productOrderIds.length > 0) {
+      const { data: afterSalesData, error: afterSalesError } = await supabase
+        .from('after_sales_requests')
+        .select('id,order_id,request_type,status,message,created_at,updated_at')
+        .in('order_id', productOrderIds)
+        .order('created_at', { ascending: false });
+
+      if (afterSalesError) {
+        setMessage(afterSalesError.message);
+      } else {
+        afterSalesByOrderId = (afterSalesData || []).reduce((map, request) => {
+          const orderId = request.order_id;
+          if (!orderId) return map;
+          map.set(orderId, [...(map.get(orderId) || []), request as AfterSalesRequest]);
+          return map;
+        }, new Map<string, AfterSalesRequest[]>());
+      }
+    }
+
     setBookings(bookingData);
-    setProductOrders(productData);
+    setProductOrders(productData.map(item => ({
+      ...item,
+      after_sales_requests: afterSalesByOrderId.get(item.order_id) || [],
+    })));
     setSubscriptionOrders(subscriptionData);
 
     const userIds = Array.from(new Set([
@@ -522,7 +564,7 @@ const VendorOrders: React.FC = () => {
         kind: 'product' as const,
         id: `product:${item.id}`,
         created_at: item.created_at,
-        status: item.status,
+        status: getProductOrderListStatus(item),
         productOrder: item,
       })),
       ...subscriptionOrders.map(item => ({
@@ -570,6 +612,12 @@ const VendorOrders: React.FC = () => {
     try {
       if (status === 'cancelled' && item.orders?.payment_status === 'paid') {
         await refundOrder(item.order_id);
+        await supabase
+          .from('after_sales_requests')
+          .update({ status: 'completed', updated_at: new Date().toISOString() })
+          .eq('order_id', item.order_id)
+          .eq('request_type', 'refund')
+          .eq('status', 'pending');
         await logAdminAction('refund_product_order', 'purchase_records', item.id, {
           order_id: item.order_id,
           vendor_id: vendorId,
@@ -582,6 +630,14 @@ const VendorOrders: React.FC = () => {
 
       const { error } = await supabase.from('purchase_records').update({ status }).eq('id', item.id);
       if (error) throw error;
+      if (status === 'cancelled' && hasPendingRefundRequest(item)) {
+        await supabase
+          .from('after_sales_requests')
+          .update({ status: 'completed', updated_at: new Date().toISOString() })
+          .eq('order_id', item.order_id)
+          .eq('request_type', 'refund')
+          .eq('status', 'pending');
+      }
       await logAdminAction('update_product_order_status', 'purchase_records', item.id, { order_id: item.order_id, status, vendor_id: vendorId });
       await refresh();
       setMessage('');
@@ -1073,6 +1129,8 @@ function ProductOrderCard({
   onViewDetail: () => void;
 }) {
   const busy = updating === `product:${item.id}`;
+  const refundPending = hasPendingRefundRequest(item);
+  const displayedStatus = getProductOrderListStatus(item);
   return (
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0 flex-1 space-y-2">
@@ -1081,7 +1139,15 @@ function ProductOrderCard({
             <Package className="h-3.5 w-3.5" />
             {labels.productOrder}
           </span>
-          <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(item.status)}`}>{getStatusLabel(item.status, locale)}</span>
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${refundPending ? 'bg-red-50 text-red-700' : getStatusColor(item.status)}`}>
+            {displayedStatus === 'refund_pending' ? labels.refundPending : getStatusLabel(item.status, locale)}
+          </span>
+          {refundPending && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">
+              <Receipt className="h-3.5 w-3.5" />
+              {labels.refundRequested}
+            </span>
+          )}
         </div>
         <p className="font-semibold text-gray-900">{item.products?.name || labels.productOrder}</p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
@@ -1098,7 +1164,17 @@ function ProductOrderCard({
       </div>
       <div className="flex flex-col items-end gap-2">
         <p className="text-xl font-bold text-emerald-700">{formatCurrency(item.total_price)}</p>
-        {item.status === 'pending' && (
+        {refundPending && item.orders?.payment_status === 'paid' && (
+          <button type="button" onClick={() => onUpdate(item, 'cancelled')} disabled={busy} className="rounded-xl bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-700 disabled:opacity-60">
+            {busy ? '...' : labels.processRefund}
+          </button>
+        )}
+        {refundPending && item.orders?.payment_status !== 'paid' && (
+          <button type="button" onClick={() => onUpdate(item, 'cancelled')} disabled={busy} className="rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-amber-700 disabled:opacity-60">
+            {busy ? '...' : labels.closeRefundRequest}
+          </button>
+        )}
+        {!refundPending && item.status === 'pending' && (
           <div className="flex gap-2">
             <button type="button" onClick={() => onUpdate(item, 'processing')} disabled={busy} className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60">
               {busy ? '...' : labels.markProcessing}

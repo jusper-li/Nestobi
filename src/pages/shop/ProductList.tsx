@@ -357,10 +357,14 @@ export default function ProductList() {
     () => orderedCategories.filter(category => getCategoryDepth(category, displayCategories) === 0),
     [orderedCategories, displayCategories],
   );
-  const childCategories = useMemo(
-    () => activeCategory ? orderedCategories.filter(category => category.parent_id === activeCategory.id) : [],
-    [activeCategory, orderedCategories],
-  );
+  const childCategoryGroups = useMemo(() => {
+    if (!activeRoot) return [] as Array<{ parent: Category; children: Category[] }>;
+    const rootChildren = orderedCategories.filter(category => category.parent_id === activeRoot.id);
+    return rootChildren.map(parent => ({
+      parent,
+      children: orderedCategories.filter(category => category.parent_id === parent.id),
+    }));
+  }, [activeRoot, orderedCategories]);
   const handleCategoryChange = (nextCategoryId: string) => {
     setSelectedCategory(nextCategoryId);
     setSearch('');
@@ -462,6 +466,10 @@ export default function ProductList() {
         )}
 
         <div className="mb-6">
+          <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+            <Package className="h-3.5 w-3.5" />
+            <span>{t4('大分類', 'Main Categories', 'メインカテゴリ', '상위 카테고리')}</span>
+          </div>
           <div className="mb-4 flex flex-wrap gap-2">
             <button
               type="button"
@@ -490,27 +498,44 @@ export default function ProductList() {
             ))}
           </div>
 
-          {childCategories.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1 text-xs text-slate-400">
+          {activeRoot && childCategoryGroups.length > 0 && (
+            <div className="rounded-2xl border border-slate-100 bg-white/90 p-4 shadow-sm">
+              <div className="mb-3 flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-slate-400">
                 <ChevronRight className="h-3 w-3" />
                 <span>{labels.subCategories}</span>
               </div>
-              {childCategories.map(category => (
-                <button
-                  key={category.id}
-                  type="button"
-                  onClick={() => handleCategoryChange(category.id)}
-                  className={`flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-all ${
-                    selectedCategory === category.id
-                      ? 'border-[#8B6840] bg-[#8B6840] text-white shadow-sm'
-                      : 'border-slate-200 bg-white text-slate-500 hover:border-[#8B6840]/40 hover:text-[#8B6840]'
-                  }`}
-                >
-                  <Tag className="h-2.5 w-2.5" />
-                  {category.name}
-                </button>
-              ))}
+              <div className="space-y-3">
+                {childCategoryGroups.map(({ parent, children }) => (
+                  <div key={parent.id} className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCategoryChange(parent.id)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
+                        selectedCategory === parent.id
+                          ? 'border-[#8B6840] bg-[#8B6840] text-white shadow-sm'
+                          : 'border-[#8B6840]/20 bg-[#f8f4ee] text-[#8B6840] hover:border-[#8B6840]/50'
+                      }`}
+                    >
+                      {parent.name}
+                    </button>
+                    {children.map(category => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() => handleCategoryChange(category.id)}
+                        className={`flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-all ${
+                          selectedCategory === category.id
+                            ? 'border-[#8B6840] bg-[#8B6840] text-white shadow-sm'
+                            : 'border-slate-200 bg-white text-slate-500 hover:border-[#8B6840]/40 hover:text-[#8B6840]'
+                        }`}
+                      >
+                        <Tag className="h-2.5 w-2.5" />
+                        {category.name}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
