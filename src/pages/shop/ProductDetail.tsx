@@ -13,6 +13,7 @@ import { translateCategoriesFromCacheOnly, translateCategoriesOnDemand, translat
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { sanitizeHtml } from '../../lib/security';
 import { createSubscriptionCheckout, submitNewebPayPeriodForm } from '../../lib/subscriptionCheckout';
+import { DEFAULT_SUBSCRIPTION_PERIODS, extractSubscriptionPeriods, type SubscriptionPlanMonths } from '../../lib/subscriptionPeriods';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
 
@@ -28,6 +29,7 @@ interface Product {
   origin?: string | null;
   roast_level?: string | null;
   processing_method?: string | null;
+  specifications?: { name: string; options: string[] }[] | null;
 }
 
 interface Category {
@@ -43,6 +45,8 @@ interface ProductReview {
   created_at: string;
 }
 
+const SUBSCRIPTION_SPEC_NAME = '訂閱期數';
+
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -54,47 +58,47 @@ export default function ProductDetail() {
   const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
 
   const labels = {
-    shop: t4('商品列表', 'Shop', '商品一覧', '상품'),
+    shop: t4('商店', 'Shop', 'ショップ', '상점'),
     notFound: t4('找不到商品', 'Product not found', '商品が見つかりません', '상품을 찾을 수 없습니다'),
-    back: t4('返回商品列表', 'Back to shop', '商品一覧に戻る', '상품 목록으로 돌아가기'),
+    back: t4('返回商店', 'Back to shop', 'ショップへ戻る', '상점으로 돌아가기'),
     quantity: t4('數量', 'Quantity', '数量', '수량'),
-    addCart: t4('加入購物車', 'Add to cart', 'カートに追加', '장바구니 담기'),
-    buyNow: t4('立即購買', 'Buy now', '今すぐ購入', '바로 구매'),
+    addCart: t4('加入購物車', 'Add to cart', 'カートに入れる', '장바구니에 담기'),
+    buyNow: t4('立即購買', 'Buy now', '今すぐ購入', '지금 구매'),
     soldOut: t4('已售完', 'Sold out', '売り切れ', '품절'),
     info: t4('商品資訊', 'Product info', '商品情報', '상품 정보'),
-    origin: t4('產地', 'Origin', '産地', '원산地'),
+    origin: t4('產地', 'Origin', '産地', '원산지'),
     roast: t4('烘焙度', 'Roast', '焙煎度', '로스팅'),
     process: t4('處理法', 'Process', '精製方法', '가공 방식'),
-    related: t4('你可能也喜歡', 'You may also like', 'おすすめ商品', '추천 상품'),
-    details: t4('分類', 'Details', '分類', '분류'),
-    subscriptionTitle: t4('咖啡定期便', 'Coffee subscription', 'コーヒー定期便', '커피 정기배송'),
+    related: t4('你可能也會喜歡', 'You may also like', 'こちらもおすすめ', '추천 상품'),
+    details: t4('詳細', 'Details', '詳細', '상세'),
+    subscriptionTitle: t4('訂閱期數設定', 'Subscription periods', '定期便の期間', '구독 주기'),
     subscriptionDesc: t4(
-      '選擇訂閱週期，付款後每月由藍新金流自動扣款並建立訂單。',
-      'Choose a billing cycle. After payment, NewebPay will auto-charge monthly and create orders.',
-      '支払い後、選択した周期に応じて毎月NewebPayから自動決済され、注文が作成されます。',
-      '결제 후 선택한 주기에 따라 매월 NewebPay로 자동 결제되어 주문이 생성됩니다.',
+      '這個商品的期數由後台設定，前台只會顯示已啟用的選項。',
+      'This product’s billing cycles are configured in the admin panel and only enabled options are shown here.',
+      'この商品の期間は管理画面で設定され、ここには有効な選択肢のみ表示されます。',
+      '이 상품의 결제 주기는 관리자 설정에 따라 활성화된 옵션만 표시됩니다.'
     ),
-    subscriptionTag: t4('訂閱制', 'Subscription', '定期購入', '구독형'),
+    subscriptionTag: t4('訂閱', 'Subscription', '定期便', '구독'),
     subscriptionHint: t4(
-      '訂閱商品會直接寫入會員與訂單資料，後台可追蹤每次扣款、出貨與會員咖啡偏好。',
-      'Subscription items are saved to member and order records so the backend can track charges, shipments, and coffee preferences.',
-      '定期購入商品は会員・注文データに記録され、管理画面で決済、発送、コーヒー嗜好を追跡できます。',
-      '구독 상품은 회원 및 주문 데이터에 저장되어 결제, 출고, 커피 취향을 백오피스에서 추적할 수 있습니다.',
+      '若後台尚未設定，系統會預設提供 3、6、12 個月與月繳。',
+      'If no configuration exists yet, the system falls back to 3, 6, 12 months and monthly charging.',
+      '設定がない場合は、3・6・12か月と月額が既定で表示されます。',
+      '설정이 없으면 3, 6, 12개월과 월 결제가 기본값입니다.'
     ),
     period3: t4('3 個月', '3 months', '3か月', '3개월'),
     period6: t4('6 個月', '6 months', '6か月', '6개월'),
     period12: t4('12 個月', '12 months', '12か月', '12개월'),
-    monthly: t4('持續每月扣款', 'Monthly auto-charge', '毎月自動扣款', '매월 자동결제'),
-    subscribeNow: t4('訂閱並每月自動扣款', 'Subscribe and auto-charge monthly', '定期購入して毎月自動決済', '구독 후 매월 자동 결제'),
-    subscribing: t4('訂閱處理中...', 'Processing subscription...', '定期購入を処理中...', '구독 처리 중...'),
+    monthly: t4('月繳', 'Monthly auto-charge', '月額自動課金', '월 결제'),
+    subscribeNow: t4('訂閱並開始扣款', 'Subscribe and auto-charge monthly', '定期便を申し込む', '구독하고 매월 결제'),
+    subscribing: t4('訂閱處理中…', 'Processing subscription...', '定期便処理中…', '구독 처리 중…'),
   };
 
   const actionLabels = {
     favorite: t4('加入收藏', 'Add Favorite', 'お気に入りに追加', '즐겨찾기 추가'),
-    favorited: t4('已收藏', 'Favorited', 'お気に入り済み', '즐겨찾기됨'),
-    reviews: t4('商品評論', 'Product Reviews', '商品レビュー', '상품 리뷰'),
-    noReviews: t4('目前沒有評論', 'No reviews yet', 'まだレビューはありません', '아직 리뷰가 없습니다'),
-    loginToFavorite: t4('請先登入後再收藏。', 'Please sign in to save favorites.', 'お気に入りに追加するにはログインしてください。', '즐겨찾기에 추가하려면 먼저 로그인하세요.'),
+    favorited: t4('已收藏', 'Favorited', 'お気に入り済み', '즐겨찾기 완료'),
+    reviews: t4('商品評價', 'Product Reviews', '商品レビュー', '상품 리뷰'),
+    noReviews: t4('目前還沒有評價', 'No reviews yet', 'まだレビューはありません', '아직 리뷰가 없습니다'),
+    loginToFavorite: t4('請先登入後再收藏商品。', 'Please sign in to save favorites.', 'お気に入り登録するにはログインしてください。', '즐겨찾기를 저장하려면 로그인해 주세요.'),
   };
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -109,7 +113,7 @@ export default function ProductDetail() {
   const [subscribing, setSubscribing] = useState(false);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [reviews, setReviews] = useState<ProductReview[]>([]);
-  const [subscriptionMonths, setSubscriptionMonths] = useState<number | 'NE'>(12);
+  const [subscriptionMonths, setSubscriptionMonths] = useState<SubscriptionPlanMonths>(12);
   const { isFavorite, loading: favoriteLoading, toggleFavorite } = useMemberFavorite(user?.id, 'product', id);
 
   useEffect(() => {
@@ -120,21 +124,31 @@ export default function ProductDetail() {
         setLoading(false);
         return;
       }
+
       const loaded = p as Product;
       setProduct(loaded);
       setQty(1);
       setActiveImage(null);
+      setSubscriptionMonths(extractSubscriptionPeriods(loaded.specifications)[0] || 12);
 
       const [{ data: c }, { data: r }] = await Promise.all([
         loaded.category_id ? supabase.from('categories').select('id,name,slug').eq('id', loaded.category_id).maybeSingle() : Promise.resolve({ data: null }),
         loaded.category_id
-          ? supabase.from('products').select('id,name,description,price,image_url,images,stock_quantity,category_id,origin,roast_level,processing_method').eq('is_active', true).eq('category_id', loaded.category_id).neq('id', loaded.id).limit(4)
+          ? supabase
+              .from('products')
+              .select('id,name,description,price,image_url,images,stock_quantity,category_id,origin,roast_level,processing_method')
+              .eq('is_active', true)
+              .eq('category_id', loaded.category_id)
+              .neq('id', loaded.id)
+              .limit(4)
           : Promise.resolve({ data: [] }),
       ]);
+
       setCategory((c || null) as Category | null);
       setRelated((r || []) as Product[]);
       setLoading(false);
     };
+
     if (id) void run();
   }, [id]);
 
@@ -145,6 +159,7 @@ export default function ProductDetail() {
         setReviews([]);
         return;
       }
+
       const { data } = await supabase
         .from('product_reviews')
         .select('id,rating,comment,created_at')
@@ -152,8 +167,10 @@ export default function ProductDetail() {
         .eq('status', 'published')
         .order('created_at', { ascending: false })
         .limit(6);
+
       if (!cancelled) setReviews((data || []) as ProductReview[]);
     };
+
     void fetchReviews();
     return () => {
       cancelled = true;
@@ -168,6 +185,7 @@ export default function ProductDetail() {
         cancelled = true;
       };
     }
+
     setDisplayProduct(product);
     translateProductsFromCacheOnly([product], locale).then(rows => !cancelled && rows[0] && setDisplayProduct(rows[0] as Product)).catch(() => {});
     translateProductsOnDemand([product], locale).then(rows => !cancelled && rows[0] && setDisplayProduct(rows[0] as Product)).catch(() => {});
@@ -184,6 +202,7 @@ export default function ProductDetail() {
         cancelled = true;
       };
     }
+
     setDisplayCategory(category);
     translateCategoriesFromCacheOnly([category], locale).then(rows => !cancelled && rows[0] && setDisplayCategory(rows[0] as Category)).catch(() => {});
     translateCategoriesOnDemand([category], locale).then(rows => !cancelled && rows[0] && setDisplayCategory(rows[0] as Category)).catch(() => {});
@@ -200,6 +219,7 @@ export default function ProductDetail() {
         cancelled = true;
       };
     }
+
     setDisplayRelated(related);
     translateProductsFromCacheOnly(related, locale).then(rows => !cancelled && setDisplayRelated(rows as Product[])).catch(() => {});
     translateProductsOnDemand(related, locale).then(rows => !cancelled && setDisplayRelated(rows as Product[])).catch(() => {});
@@ -223,28 +243,32 @@ export default function ProductDetail() {
     viewCategory?.slug === 'dlal-subscription' || viewCategory?.slug?.startsWith('subscription-')
   );
 
-  const subscriptionOptions = [
-    { value: 3 as const, label: labels.period3 },
-    { value: 6 as const, label: labels.period6 },
-    { value: 12 as const, label: labels.period12 },
-    { value: 'NE' as const, label: labels.monthly },
-  ];
+  const subscriptionOptions = useMemo(() => {
+    const options = extractSubscriptionPeriods(viewProduct?.specifications);
+    return options.length > 0 ? options : DEFAULT_SUBSCRIPTION_PERIODS;
+  }, [viewProduct?.specifications]);
 
   useEffect(() => {
-    switch (viewCategory?.slug) {
-      case 'subscription-3-months':
-        setSubscriptionMonths(3);
-        break;
-      case 'subscription-6-months':
-        setSubscriptionMonths(6);
-        break;
-      case 'subscription-12-months':
-        setSubscriptionMonths(12);
-        break;
-      default:
-        break;
+    if (!isSubscriptionProduct) return;
+    if (!subscriptionOptions.includes(subscriptionMonths)) {
+      setSubscriptionMonths(subscriptionOptions[0] || 12);
     }
-  }, [viewCategory?.slug]);
+  }, [isSubscriptionProduct, subscriptionOptions, subscriptionMonths]);
+
+  const subscriptionPeriodLabel = (value: SubscriptionPlanMonths) => {
+    switch (value) {
+      case 3:
+        return labels.period3;
+      case 6:
+        return labels.period6;
+      case 12:
+        return labels.period12;
+      case 'NE':
+        return labels.monthly;
+      default:
+        return String(value);
+    }
+  };
 
   const handleAdd = async () => {
     if (!viewProduct) return;
@@ -267,11 +291,7 @@ export default function ProductDetail() {
     try {
       const result = await createSubscriptionCheckout(viewProduct.id, qty, subscriptionMonths);
       if (result.paymentUrl && result.merchantId && result.postData) {
-        submitNewebPayPeriodForm(
-          result.paymentUrl,
-          result.merchantId,
-          result.postData,
-        );
+        submitNewebPayPeriodForm(result.paymentUrl, result.merchantId, result.postData);
       } else {
         throw new Error('Subscription checkout failed.');
       }
@@ -286,11 +306,19 @@ export default function ProductDetail() {
       navigate('/auth/login');
       return;
     }
+
     await toggleFavorite();
   };
 
   if (loading) {
-    return <div className="min-h-screen bg-gray-50"><Navigation /><div className="flex justify-center py-24"><div className="h-10 w-10 animate-spin rounded-full border-4 border-[#C09A6A] border-t-transparent" /></div></div>;
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex justify-center py-24">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#C09A6A] border-t-transparent" />
+        </div>
+      </div>
+    );
   }
 
   if (!viewProduct) {
@@ -299,7 +327,10 @@ export default function ProductDetail() {
         <Navigation />
         <div className="mx-auto max-w-3xl px-4 py-24 text-center">
           <h1 className="mb-4 text-2xl font-bold">{labels.notFound}</h1>
-          <Link to="/shop" className="inline-flex items-center gap-2 rounded-xl bg-[#C09A6A] px-5 py-3 font-semibold text-white"><ArrowLeft className="h-4 w-4" />{labels.back}</Link>
+          <Link to="/shop" className="inline-flex items-center gap-2 rounded-xl bg-[#C09A6A] px-5 py-3 font-semibold text-white">
+            <ArrowLeft className="h-4 w-4" />
+            {labels.back}
+          </Link>
         </div>
         <Footer />
       </div>
@@ -312,12 +343,23 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SEOHead title={viewProduct.name} description={(viewProduct.description || '').replace(/<[^>]+>/g, ' ').slice(0, 160)} ogImage={mainImage} ogType="product" pageType="product" />
+      <SEOHead
+        title={viewProduct.name}
+        description={(viewProduct.description || '').replace(/<[^>]+>/g, ' ').slice(0, 160)}
+        ogImage={mainImage}
+        ogType="product"
+        pageType="product"
+      />
       <Navigation />
       <main className="mx-auto max-w-6xl px-4 py-8">
         <nav className="mb-6 flex items-center gap-1.5 text-sm text-slate-500">
           <Link to="/shop" className="font-semibold hover:text-[#8B6840]">{labels.shop}</Link>
-          {viewCategory && (<><ChevronRight className="h-3.5 w-3.5" /><span>{viewCategory.name}</span></>)}
+          {viewCategory && (
+            <>
+              <ChevronRight className="h-3.5 w-3.5" />
+              <span>{viewCategory.name}</span>
+            </>
+          )}
           <ChevronRight className="h-3.5 w-3.5" />
           <span className="max-w-[220px] truncate font-semibold text-slate-700">{viewProduct.name}</span>
         </nav>
@@ -329,8 +371,13 @@ export default function ProductDetail() {
             </div>
             {images.length > 1 && (
               <div className="mt-3 grid grid-cols-4 gap-2">
-                {images.map(image => (
-                  <button key={image} type="button" onClick={() => setActiveImage(image)} className={`overflow-hidden rounded-xl border ${mainImage === image ? 'border-[#8B6840]' : 'border-gray-200'}`}>
+                {images.map((image) => (
+                  <button
+                    key={image}
+                    type="button"
+                    onClick={() => setActiveImage(image)}
+                    className={`overflow-hidden rounded-xl border ${mainImage === image ? 'border-[#8B6840]' : 'border-gray-200'}`}
+                  >
                     <img src={image} alt={viewProduct.name} className="h-16 w-full object-cover" />
                   </button>
                 ))}
@@ -343,7 +390,7 @@ export default function ProductDetail() {
             <div className="text-4xl font-bold text-[#2C1F10]">{formatCurrency(viewProduct.price)}</div>
             <p className={`text-sm ${inStock ? 'text-emerald-700' : 'text-red-600'}`}>{inStock ? `${viewProduct.stock_quantity}` : labels.soldOut}</p>
 
-            {isSubscriptionProduct ? (
+            {isSubscriptionProduct && (
               <div className="rounded-2xl border border-[#E8D8BF] bg-[#FCF8F0] p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
@@ -353,45 +400,64 @@ export default function ProductDetail() {
                   <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#8B6840] shadow-sm">{labels.subscriptionTag}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  {subscriptionOptions.map(option => (
+                  {subscriptionOptions.map((option) => (
                     <button
-                      key={String(option.value)}
+                      key={String(option)}
                       type="button"
-                      onClick={() => setSubscriptionMonths(option.value)}
+                      onClick={() => setSubscriptionMonths(option)}
                       className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
-                        subscriptionMonths === option.value
+                        subscriptionMonths === option
                           ? 'border-[#8B6840] bg-[#8B6840] text-white'
                           : 'border-gray-200 bg-white text-gray-700 hover:border-[#C09A6A] hover:text-[#8B6840]'
                       }`}
                     >
-                      {option.label}
+                      {subscriptionPeriodLabel(option)}
                     </button>
                   ))}
                 </div>
                 <p className="mt-3 text-xs leading-5 text-gray-500">{labels.subscriptionHint}</p>
               </div>
-            ) : null}
+            )}
 
             <div className="flex items-center gap-3">
               <span className="text-sm text-gray-600">{labels.quantity}</span>
               <div className="inline-flex items-center rounded-xl border bg-white">
-                <button type="button" onClick={() => setQty(v => Math.max(1, v - 1))} disabled={qty <= 1} className="p-2 disabled:opacity-40"><Minus className="h-4 w-4" /></button>
+                <button type="button" onClick={() => setQty((value) => Math.max(1, value - 1))} disabled={qty <= 1} className="p-2 disabled:opacity-40">
+                  <Minus className="h-4 w-4" />
+                </button>
                 <span className="min-w-[2rem] text-center text-sm font-semibold">{qty}</span>
-                <button type="button" onClick={() => setQty(v => Math.min(Math.max(1, viewProduct.stock_quantity), v + 1))} disabled={qty >= Math.max(1, viewProduct.stock_quantity)} className="p-2 disabled:opacity-40"><Plus className="h-4 w-4" /></button>
+                <button
+                  type="button"
+                  onClick={() => setQty((value) => Math.min(Math.max(1, viewProduct.stock_quantity), value + 1))}
+                  disabled={qty >= Math.max(1, viewProduct.stock_quantity)}
+                  className="p-2 disabled:opacity-40"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <button type="button" onClick={handleAdd} disabled={!inStock || adding} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-3 font-semibold text-gray-700 disabled:opacity-40">
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={!inStock || adding}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-3 font-semibold text-gray-700 disabled:opacity-40"
+              >
                 <ShoppingCart className="h-4 w-4" />
                 {labels.addCart}
               </button>
-              <button type="button" onClick={() => handleAdd().then(() => navigate('/cart'))} disabled={!inStock || adding} className="rounded-xl bg-gray-900 px-4 py-3 font-semibold text-white disabled:opacity-40">
+              <button
+                type="button"
+                onClick={() => handleAdd().then(() => navigate('/cart'))}
+                disabled={!inStock || adding}
+                className="rounded-xl bg-gray-900 px-4 py-3 font-semibold text-white disabled:opacity-40"
+              >
                 {labels.buyNow}
               </button>
             </div>
 
-            {isSubscriptionProduct ? (
+            {isSubscriptionProduct && (
               <button
                 type="button"
                 onClick={handleSubscribe}
@@ -400,9 +466,16 @@ export default function ProductDetail() {
               >
                 {subscribing ? labels.subscribing : labels.subscribeNow}
               </button>
-            ) : null}
+            )}
 
-            <button type="button" onClick={() => void handleFavorite()} disabled={favoriteLoading} className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition disabled:opacity-50 ${isFavorite ? 'border-pink-200 bg-pink-50 text-pink-600' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`}>
+            <button
+              type="button"
+              onClick={() => void handleFavorite()}
+              disabled={favoriteLoading}
+              className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition disabled:opacity-50 ${
+                isFavorite ? 'border-pink-200 bg-pink-50 text-pink-600' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
               <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
               {isFavorite ? actionLabels.favorited : actionLabels.favorite}
             </button>
@@ -437,7 +510,7 @@ export default function ProductDetail() {
           </div>
           {reviews.length > 0 ? (
             <div className="space-y-3">
-              {reviews.map(review => (
+              {reviews.map((review) => (
                 <article key={review.id} className="rounded-xl border border-gray-100 p-4">
                   <div className="mb-2 flex gap-0.5">
                     {Array.from({ length: 5 }).map((_, index) => (
@@ -457,7 +530,7 @@ export default function ProductDetail() {
           <section className="mt-12">
             <h2 className="mb-4 text-2xl font-bold text-charcoal">{labels.related}</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {viewRelated.map(item => (
+              {viewRelated.map((item) => (
                 <Link key={item.id} to={`/shop/${item.id}`} className="overflow-hidden rounded-2xl border bg-white shadow-sm">
                   <img src={item.image_url || images[0]} alt={item.name} className="h-36 w-full object-cover" />
                   <div className="p-3">

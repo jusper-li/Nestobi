@@ -134,6 +134,7 @@ export interface Product {
   price: number;
   image_url: string;
   images?: string[];
+  specifications?: { name: string; options: string[] }[];
   stock_quantity: number;
   is_active: boolean;
   sku: string;

@@ -13,6 +13,11 @@ interface PeriodCheckoutRequest {
   planMonths?: number | "NE";
 }
 
+type SubscriptionPlanMonths = 3 | 6 | 12 | "NE";
+
+const DEFAULT_SUBSCRIPTION_PERIODS: SubscriptionPlanMonths[] = [3, 6, 12, "NE"];
+const SUBSCRIPTION_SPEC_NAME = "訂閱期數";
+
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -96,6 +101,39 @@ function getPeriodGatewayUrl() {
     || "https://ccore.newebpay.com/MPG/period";
 }
 
+function normalizeSubscriptionPeriodValue(value: unknown): SubscriptionPlanMonths | null {
+  const text = String(value ?? "").trim().toUpperCase();
+  if (!text) return null;
+  if (["NE", "M", "MONTHLY", "MONTH", "MONTHS", "月繳"].includes(text)) return "NE";
+
+  const months = Number.parseInt(text, 10);
+  if (months === 3 || months === 6 || months === 12) return months;
+
+  return null;
+}
+
+function extractSubscriptionPeriods(specifications: unknown): SubscriptionPlanMonths[] {
+  if (!Array.isArray(specifications)) return [...DEFAULT_SUBSCRIPTION_PERIODS];
+
+  const values = specifications.flatMap((spec) => {
+    if (!spec || typeof spec !== "object") return [];
+    const entry = spec as { name?: unknown; options?: unknown; value?: unknown };
+    if (String(entry.name ?? "").trim() !== SUBSCRIPTION_SPEC_NAME) return [];
+
+    if (Array.isArray(entry.options)) {
+      return entry.options
+        .map((option) => normalizeSubscriptionPeriodValue(option))
+        .filter((option): option is SubscriptionPlanMonths => Boolean(option));
+    }
+
+    const normalized = normalizeSubscriptionPeriodValue(entry.value);
+    return normalized ? [normalized] : [];
+  });
+
+  const unique = Array.from(new Set(values));
+  return unique.length > 0 ? unique : [...DEFAULT_SUBSCRIPTION_PERIODS];
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -128,7 +166,7 @@ Deno.serve(async (req: Request) => {
     const [productRes, profileRes] = await Promise.all([
       supabase
         .from("products")
-        .select("id,name,price,image_url,category_id,vendor_id,is_active,stock_quantity")
+        .select("id,name,price,image_url,category_id,vendor_id,is_active,stock_quantity,specifications")
         .eq("id", productId)
         .maybeSingle(),
       supabase
@@ -157,6 +195,17 @@ Deno.serve(async (req: Request) => {
     if (!isSubscriptionCategory) {
       return jsonResponse({ success: false, error: "This product does not support subscriptions." }, 400);
     }
+
+    const allowedPeriods = extractSubscriptionPeriods((product as { specifications?: unknown } | null)?.specifications);
+    const normalizedRequestedPeriod = normalizeSubscriptionPeriodValue(planMonths);
+    if (!normalizedRequestedPeriod || !allowedPeriods.includes(normalizedRequestedPeriod)) {
+      return jsonResponse({
+        success: false,
+        error: "This subscription period is not enabled for the selected product.",
+        allowedPeriods,
+      }, 400);
+    }
+    const periodTimes = String(normalizedRequestedPeriod);
 
     const { data: vendor } = product.vendor_id
       ? await supabase.from("vendors").select("id,name,contact_email").eq("id", product.vendor_id).maybeSingle()
@@ -193,7 +242,7 @@ Deno.serve(async (req: Request) => {
         period_type: "M",
         period_point: periodPoint,
         period_start_type: "2",
-        period_times: planMonths,
+        period_times: periodTimes,
         status: "pending",
         newebpay_status: "pending",
         shipping_address: shippingAddress,
@@ -234,7 +283,7 @@ Deno.serve(async (req: Request) => {
       PeriodAmt: String(monthlyAmount),
       PeriodPoint: periodPoint,
       PeriodStartType: "2",
-      PeriodTimes: planMonths,
+      PeriodTimes: periodTimes,
       PayerEmail: customerEmail,
       PaymentInfo: "Y",
       OrderInfo: "N",
