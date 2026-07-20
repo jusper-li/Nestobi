@@ -24,6 +24,13 @@ import { supabase } from '../../lib/supabase';
 import { logAdminAction } from '../../lib/auditLog';
 import { getCategoryOptionLabel, getCategoryPath, sortCategoriesForTree } from '../../lib/categoryTree';
 import { sanitizeHtml, sanitizeText } from '../../lib/security';
+import {
+  DEFAULT_SUBSCRIPTION_PERIODS,
+  SUBSCRIPTION_SPEC_NAME,
+  extractSubscriptionPeriods,
+  normalizeSubscriptionPeriodValue,
+  type SubscriptionPlanMonths,
+} from '../../lib/subscriptionPeriods';
 import { formatCurrency } from '../../lib/utils';
 
 interface Product {
@@ -46,6 +53,7 @@ interface Product {
   weight_grams?: number;
   tags?: string[];
   source_url?: string;
+  specifications?: Specification[];
   is_active: boolean;
 }
 
@@ -75,7 +83,13 @@ type ProductForm = {
   tags: string[];
   source_url: string;
   is_active: boolean;
+  specifications: Specification[];
 };
+
+interface Specification {
+  name: string;
+  options: string[];
+}
 
 interface BulkProductItem {
   key: string;
@@ -102,9 +116,10 @@ const emptyForm: ProductForm = {
   tags: [],
   source_url: '',
   is_active: true,
+  specifications: [],
 };
 
-const PRODUCT_SELECT = 'id,category_id,vendor_id,name,description,price,stock_quantity,image_url,images,sku,origin,roast_level,processing_method,altitude,variety,flavor_notes,weight_grams,tags,source_url,is_active';
+const PRODUCT_SELECT = 'id,category_id,vendor_id,name,description,price,stock_quantity,image_url,images,sku,origin,roast_level,processing_method,altitude,variety,flavor_notes,weight_grams,tags,source_url,specifications,is_active';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -122,9 +137,32 @@ function splitArrayInput(value: string) {
   return value.split(/[、,，/／|｜]/).map(item => item.trim()).filter(Boolean);
 }
 
+function normalizeSpecifications(specifications: Specification[]) {
+  return specifications
+    .map((spec) => ({
+      name: sanitizeText(spec.name || '', 80).trim(),
+      options: Array.from(
+        new Set(
+          (spec.options || [])
+            .map((option) => sanitizeText(option || '', 80).trim())
+            .map((option) => normalizeSubscriptionPeriodValue(option) ?? option)
+            .filter((option): option is string | number => Boolean(option))
+            .map((option) => String(option))
+        )
+      ),
+    }))
+    .filter((spec) => spec.name.length > 0 && spec.options.length > 0);
+}
+
 function rawToForm(raw: Record<string, unknown>, fallbackCategoryId = ''): ProductForm {
   const imageUrl = String(raw.image_url || '');
   const images = toStringArray(raw.images);
+  const specifications = Array.isArray(raw.specifications)
+    ? raw.specifications.map((spec: any) => ({
+        name: String(spec?.name || ''),
+        options: Array.isArray(spec?.options) ? spec.options.map(String).filter(Boolean) : [],
+      }))
+    : [];
 
   return {
     category_id: String(raw.category_id || fallbackCategoryId || ''),
@@ -144,6 +182,7 @@ function rawToForm(raw: Record<string, unknown>, fallbackCategoryId = ''): Produ
     weight_grams: Number(raw.weight_grams) || 0,
     tags: toStringArray(raw.tags),
     source_url: String(raw.source_url || ''),
+    specifications,
     is_active: raw.is_active !== false,
   };
 }
@@ -180,6 +219,7 @@ function toProductPayload(form: ProductForm, vendorId: string) {
     weight_grams: Number(form.weight_grams) || 0,
     tags: form.tags.map(item => sanitizeText(item, 80)).filter(Boolean),
     source_url: sanitizeText(form.source_url, 1000),
+    specifications: normalizeSpecifications(form.specifications),
     is_active: form.is_active,
     updated_at: new Date().toISOString(),
   };
@@ -198,6 +238,7 @@ export default function VendorProducts() {
   const [form, setForm] = useState<ProductForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [descPreview, setDescPreview] = useState(false);
+  const [subscriptionPeriods, setSubscriptionPeriods] = useState<SubscriptionPlanMonths[]>(DEFAULT_SUBSCRIPTION_PERIODS);
 
   const [showScraper, setShowScraper] = useState(false);
   const [scraperUrl, setScraperUrl] = useState('');
@@ -252,12 +293,14 @@ export default function VendorProducts() {
   const openAdd = () => {
     setEditing(null);
     resetForm();
+    setSubscriptionPeriods(DEFAULT_SUBSCRIPTION_PERIODS);
     setShowModal(true);
   };
 
   const openEdit = (product: Product) => {
     setEditing(product);
     setForm(rawToForm(product as unknown as Record<string, unknown>));
+    setSubscriptionPeriods(extractSubscriptionPeriods((product as unknown as { specifications?: unknown }).specifications));
     setDescPreview(false);
     setShowModal(true);
   };
@@ -303,7 +346,19 @@ export default function VendorProducts() {
     if (!vendorId || !form.name.trim()) return;
     setSaving(true);
 
-    const payload = toProductPayload(form, vendorId);
+    const normalizedPeriods = subscriptionPeriods
+      .map((period) => normalizeSubscriptionPeriodValue(period))
+      .filter((period): period is SubscriptionPlanMonths => Boolean(period));
+    const finalSubscriptionPeriods =
+      normalizedPeriods.length > 0 ? Array.from(new Set(normalizedPeriods)) : DEFAULT_SUBSCRIPTION_PERIODS;
+    const baseSpecifications = normalizeSpecifications(form.specifications.filter((spec) => spec.name.trim() !== SUBSCRIPTION_SPEC_NAME));
+    const mergedSpecifications = showSubscriptionSettings || subscriptionSpec
+      ? [...baseSpecifications, { name: SUBSCRIPTION_SPEC_NAME, options: finalSubscriptionPeriods.map(String) }]
+      : baseSpecifications;
+    const payload = {
+      ...toProductPayload(form, vendorId),
+      specifications: mergedSpecifications,
+    };
     if (editing) {
       await supabase.from('products').update(payload).eq('id', editing.id).eq('vendor_id', vendorId);
       await logAdminAction('update_product', 'products', editing.id, { name: payload.name, vendor_id: vendorId });
@@ -424,6 +479,19 @@ export default function VendorProducts() {
   const setField = <K extends keyof ProductForm>(key: K, value: ProductForm[K]) => setForm(current => ({ ...current, [key]: value }));
   const setBulkField = <K extends keyof ProductForm>(key: string, field: K, value: ProductForm[K]) => {
     setScraperItems(current => current.map(item => item.key === key ? { ...item, form: { ...item.form, [field]: value } } : item));
+  };
+  const selectedCategory = useMemo(
+    () => categories.find(category => category.id === form.category_id),
+    [categories, form.category_id]
+  );
+  const subscriptionSpec = form.specifications.find(spec => spec.name.trim() === SUBSCRIPTION_SPEC_NAME);
+  const showSubscriptionSettings = Boolean(subscriptionSpec) || Boolean(selectedCategory?.slug === 'dlal-subscription' || selectedCategory?.slug?.startsWith('subscription-'));
+  const toggleSubscriptionPeriod = (period: SubscriptionPlanMonths) => {
+    setSubscriptionPeriods(current => (
+      current.includes(period)
+        ? current.filter(item => item !== period)
+        : [...current, period]
+    ));
   };
 
   if (loading) return <div className="flex justify-center py-16"><div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" /></div>;
@@ -553,6 +621,49 @@ export default function VendorProducts() {
               </div>
               <div className="md:col-span-2">
                 <Field label="商品描述">
+                  {showSubscriptionSettings && (
+                    <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <h4 className="text-sm font-bold text-emerald-900">訂閱期數設定</h4>
+                          <p className="mt-1 text-xs leading-5 text-emerald-800">
+                            請勾選這個商品允許的期數。此商品的訂閱金額會沿用上方的售價欄位。
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSubscriptionPeriods(DEFAULT_SUBSCRIPTION_PERIODS)}
+                          className="rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                        >
+                          還原預設
+                        </button>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+                        {DEFAULT_SUBSCRIPTION_PERIODS.map((period) => {
+                          const active = subscriptionPeriods.includes(period);
+                          const label = period === 'NE' ? '月繳' : `${period} 個月`;
+
+                          return (
+                            <button
+                              key={String(period)}
+                              type="button"
+                              onClick={() => toggleSubscriptionPeriod(period)}
+                              className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                                active
+                                  ? 'border-emerald-600 bg-emerald-600 text-white'
+                                  : 'border-gray-200 bg-white text-gray-700 hover:border-emerald-300 hover:text-emerald-700'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="mt-3 text-xs text-gray-600">
+                        如果不設定，前台會預設顯示 3、6、12 個月與月繳。
+                      </p>
+                    </div>
+                  )}
                   <HtmlEditor value={form.description} onChange={value => setField('description', value)} rows={8} preview={descPreview} onTogglePreview={() => setDescPreview(value => !value)} accentClass="focus:ring-emerald-500" />
                 </Field>
               </div>
