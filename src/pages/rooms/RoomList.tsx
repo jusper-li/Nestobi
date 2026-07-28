@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { AlertCircle, Building2, Loader2, MapPin, Search, Users, X } from 'lucide-react';
+import { AlertCircle, Building2, Calendar, Loader2, MapPin, Search, Users, X } from 'lucide-react';
 import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
@@ -40,6 +40,12 @@ interface Room {
 
 type SortMode = 'recommended' | 'price-asc' | 'price-desc' | 'capacity';
 
+interface AvailabilityResult {
+  availableRoomIds?: string[];
+  total?: number;
+  error?: string;
+}
+
 const ROOMS_CACHE_KEY = 'nestobi:list:rooms:v2';
 const ROOMS_SNAPSHOT_PATH = '/snapshots/rooms.json';
 const ROOM_TYPES = ['all', 'single', 'double', 'suite', 'deluxe', 'family', 'villa'];
@@ -76,6 +82,15 @@ function localizeCityName(text: string | null | undefined) {
   return (text || '').trim();
 }
 
+async function fetchRoomAvailability(checkIn: string, checkOut: string, guests: number) {
+  const { data, error } = await supabase.functions.invoke<AvailabilityResult>('room-availability-search', {
+    body: { checkIn, checkOut, guests },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data?.availableRoomIds || [];
+}
+
 export default function RoomList() {
   const [searchParams] = useSearchParams();
   const { lang } = useLanguage();
@@ -90,10 +105,16 @@ export default function RoomList() {
   const [maxPrice, setMaxPrice] = useState(30000);
   const [sortMode, setSortMode] = useState<SortMode>('recommended');
   const [search, setSearch] = useState(() => searchParams.get('search') || '');
+  const [checkInDate, setCheckInDate] = useState(() => searchParams.get('check_in') || searchParams.get('checkIn') || '');
+  const [checkOutDate, setCheckOutDate] = useState(() => searchParams.get('check_out') || searchParams.get('checkOut') || '');
+  const [guestCount, setGuestCount] = useState(() => Math.max(1, Number(searchParams.get('guests') || 1)));
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSummary, setAiSummary] = useState('');
   const [aiError, setAiError] = useState('');
   const [semanticMatches, setSemanticMatches] = useState<SemanticSearchMatch[] | null>(null);
+  const [availableRoomIds, setAvailableRoomIds] = useState<string[] | null>(null);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState('');
   const [translationNotice, setTranslationNotice] = useState('');
 
   const labels = {
@@ -132,6 +153,15 @@ export default function RoomList() {
     aiUnavailable: t4('AI 搜尋暫時無法使用', 'AI search is temporarily unavailable', 'AI検索は一時的に利用できません', 'AI 검색을 일시적으로 사용할 수 없습니다'),
     aiSummary: t4('已依語意相關度排序住宿。', 'Stays sorted by semantic relevance.', '意味的な関連度で宿泊を並べ替えました。', '의미 관련도에 따라 숙소를 정렬했습니다.'),
   };
+  const searchLabels = {
+    checkIn: t4('入住日期', 'Check-in', 'チェックイン', '체크인'),
+    checkOut: t4('退房日期', 'Check-out', 'チェックアウト', '체크아웃'),
+    guestCount: t4('入住人數', 'Guests', '人数', '인원'),
+    smartSearch: t4('AI 智慧查詢', 'AI Smart Search', 'AIスマート検索', 'AI 스마트 검색'),
+    availabilitySummary: t4('已依日期、人數與空房狀態篩選。', 'Filtered by dates, guests, and availability.', '日付・人数・空室状況で絞り込みました。', '날짜, 인원, 객실 가능 여부로 필터링했습니다.'),
+    availabilityUnavailable: t4('空房查詢暫時無法使用，已先保留語意搜尋與人數篩選。', 'Availability search is temporarily unavailable. Semantic search and guest filtering still apply.', '空室検索は一時的に利用できません。意味検索と人数絞り込みは適用済みです。', '객실 가능 여부 검색을 일시적으로 사용할 수 없습니다. 의미 검색과 인원 필터는 적용됩니다.'),
+  };
+
   const typeLabels: Record<string, string> = {
     all: t4('全部房型', 'All Rooms', 'すべての客室', '전체 객실'),
     single: t4('單人房', 'Single', 'シングル', '싱글'),
@@ -225,17 +255,20 @@ export default function RoomList() {
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
+    const availableSet = availableRoomIds ? new Set(availableRoomIds) : null;
     const list = displayRooms.filter(room => {
       const typeOk = roomType === 'all' || room.room_type === roomType;
       const priceOk = room.price_per_night <= maxPrice;
+      const guestOk = room.capacity >= guestCount;
+      const availabilityOk = !availableSet || availableSet.has(room.id);
       const queryOk = semanticMatches?.length
         ? semanticMatches.some(match => match.source_id === room.id)
         : !query || roomSearchText(room).includes(query);
-      return typeOk && priceOk && queryOk;
+      return typeOk && priceOk && guestOk && availabilityOk && queryOk;
     });
     if (semanticMatches?.length && sortMode === 'recommended') return sortBySemanticMatches(list, semanticMatches);
     return sortRooms(list, sortMode);
-  }, [displayRooms, roomType, maxPrice, search, sortMode, semanticMatches]);
+  }, [availableRoomIds, displayRooms, guestCount, roomType, maxPrice, search, sortMode, semanticMatches]);
 
   const roomJsonLd = useMemo(
     () =>
@@ -251,24 +284,47 @@ export default function RoomList() {
   );
 
   const handleAISearch = async () => {
-    if (!search.trim()) {
+    const hasDateRange = Boolean(checkInDate && checkOutDate);
+    if (!search.trim() && !hasDateRange && guestCount <= 1) {
       setSemanticMatches(null);
+      setAvailableRoomIds(null);
       setAiSummary('');
       setAiError('');
+      setAvailabilityError('');
       return;
     }
     setAiLoading(true);
+    setAvailabilityLoading(hasDateRange);
     setAiError('');
+    setAvailabilityError('');
     setAiSummary('');
     setSemanticMatches(null);
     try {
-      const result = await semanticSearch('rooms', search, 24);
-      setSemanticMatches(result.matches || []);
-      setAiSummary(result.summary || labels.aiSummary);
+      const [semanticResult, availabilityResult] = await Promise.allSettled([
+        search.trim() ? semanticSearch('rooms', search, 24) : Promise.resolve({ matches: [], summary: '' }),
+        hasDateRange ? fetchRoomAvailability(checkInDate, checkOutDate, guestCount) : Promise.resolve<string[] | null>(null),
+      ]);
+
+      if (semanticResult.status === 'fulfilled') {
+        setSemanticMatches(semanticResult.value.matches || []);
+      } else {
+        setAiError(semanticResult.reason instanceof Error ? semanticResult.reason.message : labels.aiUnavailable);
+      }
+
+      if (availabilityResult.status === 'fulfilled') {
+        setAvailableRoomIds(availabilityResult.value);
+      } else {
+        setAvailableRoomIds(null);
+        setAvailabilityError(availabilityResult.reason instanceof Error ? availabilityResult.reason.message : searchLabels.availabilityUnavailable);
+      }
+
+      const semanticSummary = semanticResult.status === 'fulfilled' ? semanticResult.value.summary : '';
+      setAiSummary([semanticSummary || (search.trim() ? labels.aiSummary : ''), hasDateRange ? searchLabels.availabilitySummary : ''].filter(Boolean).join(' '));
     } catch (error) {
       setAiError(error instanceof Error ? error.message : labels.aiUnavailable);
     } finally {
       setAiLoading(false);
+      setAvailabilityLoading(false);
     }
   };
 
@@ -304,9 +360,56 @@ export default function RoomList() {
                 <X className="h-4 w-4" />
               </button>
             )}
-            <button type="button" onClick={handleAISearch} disabled={aiLoading || !search.trim()} className="rounded-xl bg-[#C09A6A] px-4 py-3 text-white transition hover:bg-[#8B6840] disabled:opacity-50">
-              {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+            <button type="button" onClick={handleAISearch} disabled={aiLoading || availabilityLoading || (!search.trim() && !(checkInDate && checkOutDate) && guestCount <= 1)} className="rounded-xl bg-[#C09A6A] px-4 py-3 text-white transition hover:bg-[#8B6840] disabled:opacity-50">
+              {aiLoading || availabilityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
             </button>
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-[1fr_1fr_0.8fr]">
+            <label className="flex items-center gap-2 rounded-2xl border border-gray-100 bg-white px-3 py-2 text-sm text-gray-600">
+              <Calendar className="h-4 w-4 text-[#C09A6A]" />
+              <span className="sr-only">{searchLabels.checkIn}</span>
+              <input
+                type="date"
+                value={checkInDate}
+                onChange={event => {
+                  setCheckInDate(event.target.value);
+                  setAvailableRoomIds(null);
+                }}
+                className="min-w-0 flex-1 bg-transparent outline-none"
+                aria-label={searchLabels.checkIn}
+              />
+            </label>
+            <label className="flex items-center gap-2 rounded-2xl border border-gray-100 bg-white px-3 py-2 text-sm text-gray-600">
+              <Calendar className="h-4 w-4 text-[#C09A6A]" />
+              <span className="sr-only">{searchLabels.checkOut}</span>
+              <input
+                type="date"
+                value={checkOutDate}
+                min={checkInDate || undefined}
+                onChange={event => {
+                  setCheckOutDate(event.target.value);
+                  setAvailableRoomIds(null);
+                }}
+                className="min-w-0 flex-1 bg-transparent outline-none"
+                aria-label={searchLabels.checkOut}
+              />
+            </label>
+            <label className="flex items-center gap-2 rounded-2xl border border-gray-100 bg-white px-3 py-2 text-sm text-gray-600">
+              <Users className="h-4 w-4 text-[#C09A6A]" />
+              <span className="sr-only">{searchLabels.guestCount}</span>
+              <input
+                type="number"
+                min={1}
+                max={30}
+                value={guestCount}
+                onChange={event => {
+                  setGuestCount(Math.max(1, Number(event.target.value || 1)));
+                  setAvailableRoomIds(null);
+                }}
+                className="min-w-0 flex-1 bg-transparent outline-none"
+                aria-label={searchLabels.guestCount}
+              />
+            </label>
           </div>
           <p className="mt-3 text-sm font-semibold text-[#2C1F10]/70">{filtered.length} {labels.featuredCount}</p>
         </div>
@@ -317,6 +420,12 @@ export default function RoomList() {
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             <AlertCircle className="h-4 w-4 flex-shrink-0" />
             {aiError}
+          </div>
+        )}
+        {availabilityError && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            {availabilityError}
           </div>
         )}
         {aiSummary && (
