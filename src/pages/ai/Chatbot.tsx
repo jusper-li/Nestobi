@@ -1,6 +1,6 @@
 ﻿import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Bot, Hotel, MessageSquareText, Package, Send, Sparkles, User } from 'lucide-react';
+import { Bot, ChevronDown, ChevronUp, Hotel, MessageSquareText, Package, Send, Sparkles, User } from 'lucide-react';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import { useAuth } from '../../contexts/AuthContext';
@@ -20,8 +20,7 @@ interface MessageItem {
 
 type Locale = 'zh-TW' | 'en' | 'ja' | 'ko';
 type ChatRow = { id: string; role: 'user' | 'assistant'; content: string; created_at: string; session_id: string };
-const HISTORY_PREVIEW_LIMIT = 12;
-const HISTORY_FULL_LIMIT = 120;
+const HISTORY_PAGE_SIZE = 20;
 
 const pick = (locale: Locale, zh: string, en: string, ja: string, ko: string) =>
   pickByLang(locale, zh, en, ja, ko);
@@ -122,12 +121,16 @@ function renderMessageContent(content: string, role: MessageItem['role']) {
   ));
 }
 
-function mergeMessages(existing: MessageItem[], incoming: MessageItem[]) {
-  const merged = new Map<string, MessageItem>();
-  [...existing, ...incoming].forEach(message => {
-    merged.set(message.id, message);
-  });
-  return [...merged.values()].sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+function rowsToMessages(rows: ChatRow[]) {
+  return rows
+    .filter((row) => row.role === 'user' || row.role === 'assistant')
+    .map((row) => ({
+      id: row.id,
+      role: row.role,
+      content: row.content,
+      createdAt: row.created_at,
+      time: formatMessageTime(row.created_at),
+    }));
 }
 
 export default function Chatbot() {
@@ -135,6 +138,9 @@ export default function Chatbot() {
   const { user } = useAuth();
   const locale = normalizeLang(lang) as Locale;
   const bottomRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const oldestHistoryCursorRef = useRef<string | null>(null);
+  const skipNextAutoScrollRef = useRef(false);
 
   const storageKey = useMemo(
     () => (user ? `nestobi:ai-chat-session:${user.id}` : 'nestobi:ai-chat-session'),
@@ -162,9 +168,11 @@ export default function Chatbot() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyLoadingMore, setHistoryLoadingMore] = useState(false);
+  const [hasMoreHistory, setHasMoreHistory] = useState(false);
   const [historyError, setHistoryError] = useState('');
+  const [quickGuideOpen, setQuickGuideOpen] = useState(false);
   const [quickGuideTab, setQuickGuideTab] = useState<'faq' | 'product' | 'room'>('faq');
-  const [mobileQuickGuideExpanded, setMobileQuickGuideExpanded] = useState<'faq' | 'product' | 'room' | null>(null);
   const featuredFaqs = useMemo(() => getFeaturedFaqPrompts(locale, 4), [locale]);
   const quickGuide = useMemo(
     () => ({
@@ -195,9 +203,11 @@ export default function Chatbot() {
     { id: 'product' as const, label: quickGuide.productTitle, icon: Package, color: 'amber' },
     { id: 'room' as const, label: quickGuide.roomTitle, icon: Hotel, color: 'emerald' },
   ];
-  const activeQuickGuideTab = quickGuideTabs.find((tab) => tab.id === quickGuideTab) ?? quickGuideTabs[0];
-
   useEffect(() => {
+    if (skipNextAutoScrollRef.current) {
+      skipNextAutoScrollRef.current = false;
+      return;
+    }
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading, historyLoading]);
 
@@ -257,56 +267,23 @@ export default function Chatbot() {
           .eq('user_id', user.id)
           .eq('session_id', ensuredSessionId)
           .order('created_at', { ascending: false })
-          .limit(HISTORY_PREVIEW_LIMIT);
+          .limit(HISTORY_PAGE_SIZE + 1);
 
         if (previewError) throw previewError;
         if (cancelled) return;
 
-        const previewHistory = ((previewData || []) as ChatRow[])
-          .filter((row) => row.role === 'user' || row.role === 'assistant')
-          .reverse()
-          .map((row) => ({
-            id: row.id,
-            role: row.role,
-            content: row.content,
-            createdAt: row.created_at,
-            time: formatMessageTime(row.created_at),
-          }));
+        const rows = (previewData || []) as ChatRow[];
+        const previewHistory = rowsToMessages(rows.slice(0, HISTORY_PAGE_SIZE).reverse());
+        oldestHistoryCursorRef.current = previewHistory[0]?.createdAt || null;
+        setHasMoreHistory(rows.length > HISTORY_PAGE_SIZE);
 
         setMessages(previewHistory.length ? previewHistory : [createWelcomeMessage()]);
         setHistoryLoading(false);
-
-        void (async () => {
-          try {
-            const { data: fullData, error: fullError } = await supabase
-              .from('tbl_mn5wn257')
-              .select('id, role, content, created_at, session_id')
-              .eq('user_id', user.id)
-              .eq('session_id', ensuredSessionId)
-              .order('created_at', { ascending: true })
-              .limit(HISTORY_FULL_LIMIT);
-
-            if (fullError || cancelled) return;
-
-            const fullHistory = ((fullData || []) as ChatRow[])
-              .filter((row) => row.role === 'user' || row.role === 'assistant')
-              .map((row) => ({
-                id: row.id,
-                role: row.role,
-                content: row.content,
-                createdAt: row.created_at,
-                time: formatMessageTime(row.created_at),
-              }));
-
-            setMessages(prev => mergeMessages(prev, fullHistory.length ? fullHistory : [createWelcomeMessage()]));
-          } catch {
-            // Keep the fast preview loaded even if the background fill fails.
-          }
-        })();
       } catch (err) {
         if (!cancelled) {
           setHistoryError(err instanceof Error ? err.message : pick(locale, '歷史對話載入失敗。', 'Failed to load chat history.', '会話履歴の読み込みに失敗しました。', '대화 기록을 불러오지 못했습니다.'));
           setMessages((prev) => (prev.length ? prev : [createWelcomeMessage()]));
+          setHasMoreHistory(false);
         }
       } finally {
         if (!cancelled) setHistoryLoading(false);
@@ -318,6 +295,58 @@ export default function Chatbot() {
       cancelled = true;
     };
   }, [locale, storageKey, user?.id, welcomeText]);
+
+  const loadOlderHistory = async () => {
+    if (!user || historyLoading || historyLoadingMore || !hasMoreHistory || !oldestHistoryCursorRef.current) return;
+
+    const scrollEl = chatScrollRef.current;
+    const previousScrollHeight = scrollEl?.scrollHeight || 0;
+    setHistoryLoadingMore(true);
+    setHistoryError('');
+
+    try {
+      const { data, error } = await supabase
+        .from('tbl_mn5wn257')
+        .select('id, role, content, created_at, session_id')
+        .eq('user_id', user.id)
+        .eq('session_id', sessionId)
+        .lt('created_at', oldestHistoryCursorRef.current)
+        .order('created_at', { ascending: false })
+        .limit(HISTORY_PAGE_SIZE + 1);
+
+      if (error) throw error;
+
+      const rows = (data || []) as ChatRow[];
+      const olderMessages = rowsToMessages(rows.slice(0, HISTORY_PAGE_SIZE).reverse());
+      if (!olderMessages.length) {
+        setHasMoreHistory(false);
+        return;
+      }
+
+      oldestHistoryCursorRef.current = olderMessages[0]?.createdAt || oldestHistoryCursorRef.current;
+      setHasMoreHistory(rows.length > HISTORY_PAGE_SIZE);
+      skipNextAutoScrollRef.current = true;
+      setMessages((prev) => {
+        const existingIds = new Set(prev.map((message) => message.id));
+        return [...olderMessages.filter((message) => !existingIds.has(message.id)), ...prev];
+      });
+
+      requestAnimationFrame(() => {
+        if (!scrollEl) return;
+        scrollEl.scrollTop = scrollEl.scrollHeight - previousScrollHeight;
+      });
+    } catch (err) {
+      setHistoryError(err instanceof Error ? err.message : pick(locale, '更早的對話載入失敗。', 'Failed to load older messages.', '古い会話の読み込みに失敗しました。', '이전 대화 기록을 불러오지 못했습니다.'));
+    } finally {
+      setHistoryLoadingMore(false);
+    }
+  };
+
+  const handleChatScroll = () => {
+    const scrollEl = chatScrollRef.current;
+    if (!scrollEl || scrollEl.scrollTop > 96) return;
+    void loadOlderHistory();
+  };
 
   const saveMessage = async (message: MessageItem, activeSessionId = sessionId) => {
     if (!user || message.id === 'welcome') return;
@@ -375,6 +404,9 @@ export default function Chatbot() {
     localStorage.setItem(storageKey, nextSessionId);
     setSessionId(nextSessionId);
     setHistoryError('');
+    oldestHistoryCursorRef.current = null;
+    setHasMoreHistory(false);
+    setHistoryLoadingMore(false);
     setMessages([createWelcomeMessage()]);
   };
 
@@ -463,11 +495,11 @@ export default function Chatbot() {
   );
 
   return (
-    <div className="relative min-h-[100dvh] bg-slate-50 md:h-[100dvh]">
+    <div className="relative min-h-[100dvh] bg-slate-50 md:h-[100dvh] md:overflow-hidden">
       <SEOHead title={pageTitle} description={pageDesc} />
       <Navigation />
 
-      <main className="fixed inset-x-0 top-16 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] mx-auto flex min-h-0 w-full max-w-5xl flex-col overflow-hidden bg-white md:relative md:inset-auto md:my-4 md:rounded-2xl md:border md:border-slate-100 md:shadow-sm">
+      <main className="fixed inset-x-0 top-16 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] mx-auto flex min-h-0 w-full max-w-5xl flex-col overflow-hidden bg-white md:relative md:inset-auto md:my-4 md:h-[calc(100dvh-7rem)] md:rounded-2xl md:border md:border-slate-100 md:shadow-sm">
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden pb-[calc(5.75rem+env(safe-area-inset-bottom)+0.75rem)] md:pb-0">
           <div className="sticky top-0 z-30 flex items-center gap-2 border-b border-slate-100 bg-white/95 px-5 py-3 backdrop-blur">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100">
@@ -484,14 +516,22 @@ export default function Chatbot() {
             </button>
           </div>
 
-          <div className="border-b border-slate-100 bg-[linear-gradient(180deg,#FAFAF7_0%,#F5F1E7_100%)] px-3 py-2.5 md:px-5 md:py-4">
-            <div className="mb-1 inline-flex rounded-full border border-white/70 bg-white/80 px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] text-slate-500 shadow-sm md:px-3 md:text-xs">
-              <Sparkles className="mr-1 h-3.5 w-3.5 text-amber-500" />
-              {quickGuide.title}
+          <div className="border-b border-slate-100 bg-[linear-gradient(180deg,#FAFAF7_0%,#F5F1E7_100%)] px-3 py-2.5 md:px-5">
+            <div className="flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setQuickGuideOpen((prev) => !prev)}
+                className="inline-flex items-center rounded-full border border-white/70 bg-white/80 px-2.5 py-1 text-[11px] font-semibold tracking-[0.16em] text-slate-500 shadow-sm transition hover:border-amber-200 hover:text-amber-700 md:px-3 md:text-xs"
+                aria-expanded={quickGuideOpen}
+              >
+                <Sparkles className="mr-1 h-3.5 w-3.5 text-amber-500" />
+                {quickGuide.title}
+                {quickGuideOpen ? <ChevronUp className="ml-1 h-3.5 w-3.5" /> : <ChevronDown className="ml-1 h-3.5 w-3.5" />}
+              </button>
             </div>
-            <div className="mb-2 hidden text-sm text-slate-500 md:mb-4 md:block md:text-sm">{quickGuide.subtitle}</div>
+            <div className={`mt-2 hidden text-sm text-slate-500 md:mb-4 md:text-sm ${quickGuideOpen ? 'md:block' : 'md:hidden'}`}>{quickGuide.subtitle}</div>
 
-            <div className="mb-1.5 flex gap-1 overflow-x-auto pb-1 md:hidden">
+            <div className={`mt-2 gap-1 overflow-x-auto pb-1 ${quickGuideOpen ? 'flex' : 'hidden'}`}>
               {quickGuideTabs.map(tab => {
                 const Icon = tab.icon;
                 const active = quickGuideTab === tab.id;
@@ -499,10 +539,7 @@ export default function Chatbot() {
                   <button
                     key={tab.id}
                     type="button"
-                    onClick={() => {
-                      setQuickGuideTab(tab.id);
-                      setMobileQuickGuideExpanded(prev => (prev === tab.id ? null : tab.id));
-                    }}
+                    onClick={() => setQuickGuideTab(tab.id)}
                     className={`flex shrink-0 items-center justify-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
                       active
                         ? tab.color === 'amber'
@@ -515,15 +552,15 @@ export default function Chatbot() {
                   >
                     <Icon className="h-3.5 w-3.5" />
                     <span>{tab.label}</span>
-                    </button>
+                  </button>
                   );
                 })}
             </div>
 
-            <div className={`md:hidden ${mobileQuickGuideExpanded ? 'block' : 'hidden'}`}>
+            <div className={`${quickGuideOpen ? 'block' : 'hidden'}`}>
               <div className="space-y-0">
-                {mobileQuickGuideExpanded === 'faq' &&
-                  quickGuide.faqActions.slice(0, 2).map(item => (
+                {quickGuideTab === 'faq' &&
+                  quickGuide.faqActions.map(item => (
                     <button
                       key={item.id}
                       type="button"
@@ -534,8 +571,8 @@ export default function Chatbot() {
                       <span className="text-slate-300">›</span>
                     </button>
                   ))}
-                {mobileQuickGuideExpanded === 'product' &&
-                  quickGuide.productPrompts.slice(0, 2).map(prompt => (
+                {quickGuideTab === 'product' &&
+                  quickGuide.productPrompts.map(prompt => (
                     <button
                       key={prompt}
                       type="button"
@@ -546,8 +583,8 @@ export default function Chatbot() {
                       <span className="text-slate-300">›</span>
                     </button>
                   ))}
-                {mobileQuickGuideExpanded === 'room' &&
-                  quickGuide.roomPrompts.slice(0, 2).map(prompt => (
+                {quickGuideTab === 'room' &&
+                  quickGuide.roomPrompts.map(prompt => (
                     <button
                       key={prompt}
                       type="button"
@@ -558,101 +595,29 @@ export default function Chatbot() {
                       <span className="text-slate-300">›</span>
                     </button>
                   ))}
-              </div>
-            </div>
-
-            <div className="hidden gap-3 md:grid md:grid-cols-3">
-              <div className={`group relative overflow-hidden rounded-[1.4rem] border border-slate-200/80 bg-white p-4 shadow-[0_10px_30px_rgba(44,31,16,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(44,31,16,0.10)] ${quickGuideTab !== 'faq' ? 'hidden md:block' : ''}`}>
-                <div className="absolute right-0 top-0 h-20 w-20 rounded-bl-full bg-sky-50/80" />
-                <div className="relative mb-3 flex items-start justify-between gap-3">
-                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
-                    <MessageSquareText className="h-5 w-5" />
-                  </div>
-                  <Link to="/faq" className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-sky-300 hover:bg-sky-50">
-                    {pick(locale, '看更多', 'More', 'もっと見る', '더 보기')}
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
-                </div>
-                <div className="mb-3">
-                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{quickGuide.faqTitle}</div>
-                  <div className="text-lg font-bold text-slate-800">{quickGuide.faqCta}</div>
-                </div>
-                <div className="grid gap-2">
-                  {quickGuide.faqActions.map(item => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => sendQuickPrompt(item.question)}
-                      className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-left text-sm text-slate-700 transition hover:border-sky-300 hover:bg-sky-50"
-                    >
-                      <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">{item.category}</span>
-                      <span className="mt-0.5 block leading-5">{item.question}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className={`group relative overflow-hidden rounded-[1.4rem] border border-slate-200/80 bg-white p-4 shadow-[0_10px_30px_rgba(44,31,16,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(44,31,16,0.10)] ${quickGuideTab !== 'product' ? 'hidden md:block' : ''}`}>
-                <div className="absolute right-0 top-0 h-20 w-20 rounded-bl-full bg-amber-50/80" />
-                <div className="relative mb-3 flex items-start justify-between gap-3">
-                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
-                    <Package className="h-5 w-5" />
-                  </div>
-                  <Link to="/shop" className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-amber-300 hover:bg-amber-50">
-                    {pick(locale, '商品頁', 'Shop', 'ショップ', '상품')}
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
-                </div>
-                <div className="mb-3">
-                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{quickGuide.productTitle}</div>
-                  <div className="text-lg font-bold text-slate-800">{quickGuide.productCta}</div>
-                </div>
-                <div className="grid gap-2">
-                  {quickGuide.productPrompts.map(prompt => (
-                    <button
-                      key={prompt}
-                      type="button"
-                      onClick={() => sendQuickPrompt(prompt)}
-                      className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-left text-sm text-amber-900 transition hover:border-amber-300 hover:bg-amber-100"
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className={`group relative overflow-hidden rounded-[1.4rem] border border-slate-200/80 bg-white p-4 shadow-[0_10px_30px_rgba(44,31,16,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(44,31,16,0.10)] ${quickGuideTab !== 'room' ? 'hidden md:block' : ''}`}>
-                <div className="absolute right-0 top-0 h-20 w-20 rounded-bl-full bg-emerald-50/80" />
-                <div className="relative mb-3 flex items-start justify-between gap-3">
-                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-                    <Hotel className="h-5 w-5" />
-                  </div>
-                  <Link to="/rooms" className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-emerald-300 hover:bg-emerald-50">
-                    {pick(locale, '住宿頁', 'Stays', '宿泊', '숙소')}
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
-                </div>
-                <div className="mb-3">
-                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{quickGuide.roomTitle}</div>
-                  <div className="text-lg font-bold text-slate-800">{quickGuide.roomCta}</div>
-                </div>
-                <div className="grid gap-2">
-                  {quickGuide.roomPrompts.map(prompt => (
-                    <button
-                      key={prompt}
-                      type="button"
-                      onClick={() => sendQuickPrompt(prompt)}
-                      className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-left text-sm text-emerald-900 transition hover:border-emerald-300 hover:bg-emerald-100"
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 pb-[calc(12rem+env(safe-area-inset-bottom))] md:px-5 md:pb-6">
+          <div
+            ref={chatScrollRef}
+            onScroll={handleChatScroll}
+            className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 pb-[calc(12rem+env(safe-area-inset-bottom))] md:px-5 md:pb-28"
+          >
+            {hasMoreHistory && !historyLoading && (
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={loadOlderHistory}
+                  disabled={historyLoadingMore}
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-500 shadow-sm transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 disabled:opacity-50"
+                >
+                  {historyLoadingMore
+                    ? pick(locale, '載入更早對話中...', 'Loading older messages...', '古い会話を読み込み中...', '이전 대화를 불러오는 중...')
+                    : pick(locale, '載入更早對話', 'Load older messages', '古い会話を読み込む', '이전 대화 불러오기')}
+                </button>
+              </div>
+            )}
             {historyLoading && (
               <div className="text-sm text-gray-400">
                 {pick(locale, '載入歷史對話...', 'Loading chat history...', '会話履歴を読み込み中...', '대화 기록을 불러오는 중...')}
