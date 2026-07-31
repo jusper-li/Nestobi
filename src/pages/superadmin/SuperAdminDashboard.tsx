@@ -7,9 +7,9 @@ import {
   DollarSign,
   Shield,
   UserPlus,
-  Activity,
   CheckCircle,
   AlertCircle,
+  RefreshCcw,
 } from 'lucide-react';
 import { logAdminAction } from '../../lib/auditLog';
 import { supabase } from '../../lib/supabase';
@@ -31,16 +31,6 @@ interface SystemStats {
   totalRevenue: number;
 }
 
-interface ActivityLog {
-  id: string;
-  action: string;
-  entity_type: string;
-  entity_id: string | null;
-  created_at: string;
-  details?: Record<string, unknown> | null;
-  actor_user_id?: string | null;
-}
-
 const SuperAdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<SystemStats>({
     totalUsers: 0,
@@ -53,7 +43,6 @@ const SuperAdminDashboard: React.FC = () => {
   const [promoteUserId, setPromoteUserId] = useState('');
   const [promoting, setPromoting] = useState(false);
   const [promoteMsg, setPromoteMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [recentLogs, setRecentLogs] = useState<ActivityLog[]>([]);
 
   const fetchData = async () => {
     const [
@@ -62,18 +51,12 @@ const SuperAdminDashboard: React.FC = () => {
       { count: ordCount },
       { data: revenue },
       { data: adminsData },
-      { data: logsData },
     ] = await Promise.all([
       supabase.from('tbl_user_auth').select('*', { count: 'exact', head: true }),
       supabase.from('tbl_bookings').select('*', { count: 'exact', head: true }),
       supabase.from('orders').select('*', { count: 'exact', head: true }),
       supabase.from('orders').select('total_amount').eq('payment_status', 'paid'),
       supabase.from('tbl_user_auth').select('*').in('role', ['admin', 'superadmin']).order('created_at', { ascending: false }),
-      supabase
-        .from('admin_activity_logs')
-        .select('id,action,entity_type,entity_id,details,actor_user_id,created_at')
-        .order('created_at', { ascending: false })
-        .limit(6),
     ]);
 
     const totalRev = (revenue || []).reduce((sum: number, row: any) => sum + (row.total_amount || 0), 0);
@@ -92,7 +75,6 @@ const SuperAdminDashboard: React.FC = () => {
 
     const profileMap = Object.fromEntries((profiles || []).map((profile: any) => [profile.user_id, profile.display_name]));
     setAdmins((adminsData || []).map((admin: any) => ({ ...admin, display_name: profileMap[admin.user_id] })));
-    setRecentLogs((logsData || []) as ActivityLog[]);
     setLoading(false);
   };
 
@@ -133,13 +115,6 @@ const SuperAdminDashboard: React.FC = () => {
     user: 'bg-gray-100 text-gray-600',
   };
 
-  const HEALTH_CHECKS = [
-    { label: '資料庫連線', status: 'normal' },
-    { label: '用戶認證服務', status: 'normal' },
-    { label: 'AI 服務', status: 'normal' },
-    { label: '付款服務', status: 'normal' },
-  ];
-
   if (loading) {
     return (
       <div className="flex justify-center py-16">
@@ -166,11 +141,28 @@ const SuperAdminDashboard: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="mb-2 flex items-center gap-3">
-        <div className="rounded-xl bg-purple-100 p-2">
-          <Shield className="h-6 w-6 text-purple-700" />
+      <div className="mb-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="max-w-3xl">
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-amber-100 p-2">
+                <Shield className="h-6 w-6 text-amber-700" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">超級管理員總覽</h1>
+                <p className="mt-1 text-sm text-gray-500">快速查看會員、訂房、訂單與營收摘要。</p>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={fetchData}
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            重新整理
+          </button>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">超級管理員總覽</h1>
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -185,7 +177,7 @@ const SuperAdminDashboard: React.FC = () => {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className="rounded-2xl bg-white p-5 shadow-sm"
+            className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm"
           >
             <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${stat.color}`}>{stat.icon}</div>
             <p className="text-sm text-gray-500">{stat.label}</p>
@@ -195,7 +187,7 @@ const SuperAdminDashboard: React.FC = () => {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
           <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
             <Shield className="h-5 w-5 text-purple-600" />
             超級管理員與管理員
@@ -246,55 +238,17 @@ const SuperAdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-6 shadow-sm">
           <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
-            <Activity className="h-5 w-5 text-green-600" />
-            系統健康狀態
+            <Shield className="h-5 w-5 text-emerald-700" />
+            後台資訊分工
           </h3>
-          <div className="space-y-3">
-            {HEALTH_CHECKS.map((check, index) => (
-              <div key={index} className="flex items-center justify-between border-b border-gray-50 py-2.5 last:border-0">
-                <span className="text-sm text-gray-700">{check.label}</span>
-                <div className="flex items-center gap-2">
-                  <div className={`h-2 w-2 rounded-full ${check.status === 'normal' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-                  <span className={`text-xs font-medium ${check.status === 'normal' ? 'text-green-600' : 'text-red-500'}`}>
-                    {check.status === 'normal' ? '正常' : '異常'}
-                  </span>
-                </div>
-              </div>
-            ))}
+          <div className="space-y-3 text-sm leading-7 text-emerald-950/80">
+            <p>平台 API、主機、信件與金流說明請看「平台資訊」。</p>
+            <p>操作軌跡請看「活動紀錄」。</p>
+            <p>版本、Commit、系統檢查與稽核基線請看「版本與稽核」。</p>
           </div>
         </div>
-      </div>
-
-      <div className="rounded-2xl bg-white p-6 shadow-sm">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h3 className="flex items-center gap-2 font-semibold text-gray-900">
-            <Activity className="h-5 w-5 text-green-600" />
-            最近活動紀錄
-          </h3>
-          <button type="button" onClick={fetchData} className="text-sm font-medium text-green-700 hover:text-green-800">
-            重新整理
-          </button>
-        </div>
-        {recentLogs.length === 0 ? (
-          <p className="py-4 text-center text-sm text-gray-400">目前沒有活動紀錄</p>
-        ) : (
-          <div className="space-y-3">
-            {recentLogs.map(log => (
-              <div key={log.id} className="rounded-2xl bg-gray-50 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-gray-900">{log.action.replace(/_/g, ' ')}</p>
-                  <span className="text-xs text-gray-400">{formatDate(log.created_at)}</span>
-                </div>
-                <p className="mt-1 text-sm text-gray-600">
-                  {log.entity_type}
-                  {log.entity_id ? ` · ${log.entity_id}` : ''}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

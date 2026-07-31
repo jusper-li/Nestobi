@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type React from 'react';
 import { motion } from 'framer-motion';
-import { Coins, Heart, Headphones, MessageSquare, Plus, RefreshCw, Search, Star } from 'lucide-react';
+import { Coins, Heart, Headphones, MessageSquare, Plus, RefreshCw, Search, ShieldCheck, Star } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { refundOrder } from '../../lib/orderRefund';
@@ -425,16 +425,29 @@ export default function EngagementManagement({ mode }: EngagementManagementProps
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{labels.title}</h1>
-          <p className="mt-1 text-sm text-gray-500">{labels.subtitle}</p>
+      <div className="mb-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-amber-100 p-2">
+            <ShieldCheck className="h-6 w-6 text-amber-700" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{labels.title}</h1>
+            <p className="mt-1 text-sm text-gray-500">{labels.subtitle}</p>
+          </div>
         </div>
+        <button
+          type="button"
+          onClick={() => void loadData()}
+          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+        >
+          <RefreshCw className="h-4 w-4" />
+          {labels.refresh}
+        </button>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-4">
         {(mode === 'vendor' ? stats.slice(0, 3) : stats).map((stat, index) => (
-          <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }} className="rounded-2xl bg-white p-4 shadow-sm">
+          <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }} className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
             <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700">{stat.icon}</div>
             <p className="text-sm text-gray-500">{stat.label}</p>
             <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
@@ -478,10 +491,6 @@ export default function EngagementManagement({ mode }: EngagementManagementProps
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-500">
           <span className="rounded-full bg-gray-100 px-3 py-1 font-medium">顯示 {activeCount} 筆</span>
           {search.trim() ? <span className="rounded-full bg-amber-50 px-3 py-1 font-medium text-amber-800">搜尋：{search.trim()}</span> : null}
-          <button type="button" onClick={() => void loadData()} className="ml-auto inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1 font-medium text-gray-600 transition hover:bg-gray-50">
-            <RefreshCw className="h-3.5 w-3.5" />
-            {labels.refresh}
-          </button>
         </div>
       </div>
 

@@ -97,6 +97,7 @@ import SuperAdminRoomTranslations from './pages/superadmin/SuperAdminRoomTransla
 import SuperAdminThemeBanners from './pages/superadmin/SuperAdminThemeBanners';
 import SuperAdminActivityLogs from './pages/superadmin/SuperAdminActivityLogs';
 import SuperAdminVersionLogs from './pages/superadmin/SuperAdminVersionLogs';
+import SuperAdminPlatformInfo from './pages/superadmin/SuperAdminPlatformInfo';
 
 import VendorLayout from './pages/vendor/VendorLayout';
 import VendorDashboard from './pages/vendor/VendorDashboard';
@@ -243,6 +244,7 @@ function AppShell() {
                   <Route path="points-ledger" element={<SuperAdminPointLedger />} />
                   <Route path="points-ledger/:id" element={<SuperAdminPointLedgerDetail />} />
                   <Route path="activity-logs" element={<SuperAdminActivityLogs />} />
+                  <Route path="platform-info" element={<SuperAdminPlatformInfo />} />
                   <Route path="ai-analytics" element={<SuperAdminAIAnalytics />} />
                   <Route path="chatbot" element={<SuperAdminChatbot />} />
                   <Route path="static-pages" element={<AdminStaticPages />} />

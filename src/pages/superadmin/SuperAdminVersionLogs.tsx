@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
 import { BadgeCheck, Clock3, RefreshCcw, ShieldCheck, Sparkles, Tag } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
@@ -243,65 +242,56 @@ const SuperAdminVersionLogs: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-3xl border border-slate-800/10 bg-gradient-to-br from-slate-950 via-emerald-900 to-emerald-700 p-5 text-white shadow-lg md:p-6"
-      >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-100">
-              <Sparkles className="h-4 w-4" />
-              <span>{labels.title}</span>
-            </div>
-            <h1 className="mt-4 text-2xl font-bold leading-tight md:text-3xl">{labels.title}</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-emerald-50/85 md:text-[15px]">{labels.subtitle}</p>
+      <div className="mb-2 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-amber-100 p-2">
+            <BadgeCheck className="h-6 w-6 text-amber-700" />
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={fetchRecords}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
-            >
-              <RefreshCcw className="h-4 w-4" />
-              {labels.refresh}
-            </button>
-            <button
-              type="button"
-              onClick={runVersionBaseline}
-              disabled={recording}
-              className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <BadgeCheck className="h-4 w-4" />
-              {labels.recordVersion}
-            </button>
-            <button
-              type="button"
-              onClick={runSystemCheck}
-              disabled={recording}
-              className="inline-flex items-center gap-2 rounded-2xl border border-emerald-200/40 bg-emerald-500/20 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <ShieldCheck className="h-4 w-4" />
-              {labels.runCheck}
-            </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{labels.title}</h1>
+            <p className="mt-1 text-sm text-gray-500">{labels.subtitle}</p>
           </div>
         </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {topStats.map(item => (
-            <div key={item.label} className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.16em] text-emerald-100/80">{item.label}</p>
-                  <p className="mt-1 break-all text-sm font-semibold leading-6 text-white">{item.value}</p>
-                </div>
-                <div className="text-emerald-100">{item.icon}</div>
-              </div>
-            </div>
-          ))}
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={fetchRecords}
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            {labels.refresh}
+          </button>
+          <button
+            type="button"
+            onClick={runVersionBaseline}
+            disabled={recording}
+            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <BadgeCheck className="h-4 w-4" />
+            {labels.recordVersion}
+          </button>
+          <button
+            type="button"
+            onClick={runSystemCheck}
+            disabled={recording}
+            className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <ShieldCheck className="h-4 w-4" />
+            {labels.runCheck}
+          </button>
         </div>
-      </motion.div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {topStats.map(item => (
+          <div key={item.label} className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700">{item.icon}</div>
+            <p className="text-sm text-gray-500">{item.label}</p>
+            <p className="mt-1 break-all text-lg font-bold leading-6 text-gray-900">{item.value}</p>
+          </div>
+        ))}
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[

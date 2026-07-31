@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Clock3,
   Database,
+  RefreshCcw,
   Search,
   ShieldCheck,
   Tag,
@@ -191,49 +192,44 @@ const SuperAdminActivityLogs: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-slate-800/10 bg-gradient-to-br from-slate-950 to-emerald-900 p-5 text-white shadow-lg shadow-emerald-950/10 md:p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-100">
-              <ShieldCheck className="h-4 w-4" />
-              <span>{labels.title}</span>
-            </div>
-            <h1 className="mt-4 text-2xl font-bold leading-tight md:text-3xl">{labels.title}</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-emerald-50/85 md:text-[15px]">{labels.subtitle}</p>
+      <div className="mb-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-amber-100 p-2">
+            <ShieldCheck className="h-6 w-6 text-amber-700" />
           </div>
-          <button
-            type="button"
-            onClick={loadLogs}
-            className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
-          >
-            <Activity className="h-4 w-4" />
-            {labels.refresh}
-          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{labels.title}</h1>
+            <p className="mt-1 text-sm text-gray-500">{labels.subtitle}</p>
+          </div>
         </div>
+        <button
+          type="button"
+          onClick={loadLogs}
+          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+        >
+          <RefreshCcw className="h-4 w-4" />
+          {labels.refresh}
+        </button>
+      </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {[
-            { label: labels.total, value: logs.length, icon: <Database className="h-5 w-5" /> },
-            { label: labels.today, value: todayCount, icon: <CalendarClock className="h-5 w-5" /> },
-            { label: labels.actors, value: uniqueActors, icon: <User className="h-5 w-5" /> },
-            { label: labels.entity, value: entityFilter === 'all' ? entityOptions.length - 1 : 1, icon: <Tag className="h-5 w-5" /> },
-          ].map(item => (
-            <motion.div
-              key={item.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.16em] text-emerald-100/80">{item.label}</p>
-                  <p className="mt-1 text-2xl font-bold">{item.value}</p>
-                </div>
-                <div className="text-emerald-100">{item.icon}</div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: labels.total, value: logs.length, icon: <Database className="h-5 w-5" /> },
+          { label: labels.today, value: todayCount, icon: <CalendarClock className="h-5 w-5" /> },
+          { label: labels.actors, value: uniqueActors, icon: <User className="h-5 w-5" /> },
+          { label: labels.entity, value: entityFilter === 'all' ? entityOptions.length - 1 : 1, icon: <Tag className="h-5 w-5" /> },
+        ].map(item => (
+          <motion.div
+            key={item.label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm"
+          >
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700">{item.icon}</div>
+            <p className="text-sm text-gray-500">{item.label}</p>
+            <p className="mt-1 text-2xl font-bold text-gray-900">{item.value}</p>
+          </motion.div>
+        ))}
       </div>
 
       <div className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm md:p-5">
