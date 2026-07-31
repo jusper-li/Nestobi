@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Award, RefreshCw, Save, ShieldCheck, Sparkles } from 'lucide-react';
+import { Award, Coins, Database, RefreshCw, Save, ShieldCheck } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDateTime } from '../../lib/utils';
 import { logAdminAction } from '../../lib/auditLog';
@@ -15,16 +15,24 @@ interface PointRewardRule {
   created_at: string;
 }
 
+const SOURCE_TYPES = ['booking', 'order', 'subscription'];
+
 const SOURCE_LABELS: Record<string, string> = {
-  booking: '訂房回饋',
-  order: '商城回饋',
-  subscription: '定期便回饋',
+  booking: '住宿訂房',
+  order: '商品訂單',
+  subscription: '訂閱制訂單',
 };
 
 const SOURCE_HELP: Record<string, string> = {
-  booking: '影響住宿與訂房完成後的點數贈送。',
-  order: '影響一般商品結帳成功後的點數贈送。',
-  subscription: '影響咖啡定期便每次扣款成功後的點數贈送。',
+  booking: '會員完成住宿訂房付款後，依實付金額換算可獲得的點數。',
+  order: '會員完成商城商品付款後，依實付金額換算可獲得的點數。',
+  subscription: '會員完成訂閱制扣款後，依每期實付金額換算可獲得的點數。',
+};
+
+const DEFAULT_POINTS: Record<string, number> = {
+  booking: 10,
+  order: 5,
+  subscription: 5,
 };
 
 export default function SuperAdminPointRewards() {
@@ -35,44 +43,26 @@ export default function SuperAdminPointRewards() {
   const [error, setError] = useState<string | null>(null);
   const [tableMissing, setTableMissing] = useState(false);
 
-  const buildFallbackRules = (): PointRewardRule[] => [
-    {
-      source_type: 'booking',
-      label: SOURCE_LABELS.booking,
-      points_per_100: 10,
+  const buildFallbackRules = (): PointRewardRule[] =>
+    SOURCE_TYPES.map(sourceType => ({
+      source_type: sourceType,
+      label: SOURCE_LABELS[sourceType],
+      points_per_100: DEFAULT_POINTS[sourceType],
       is_active: true,
       notes: '',
       updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
-    },
-    {
-      source_type: 'order',
-      label: SOURCE_LABELS.order,
-      points_per_100: 5,
-      is_active: true,
-      notes: '',
-      updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-    },
-    {
-      source_type: 'subscription',
-      label: SOURCE_LABELS.subscription,
-      points_per_100: 5,
-      is_active: true,
-      notes: '',
-      updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-    },
-  ];
+    }));
 
   const loadRules = async () => {
     setLoading(true);
     setError(null);
     setTableMissing(false);
+
     const { data, error: loadError } = await supabase
       .from('point_reward_rules')
       .select('*')
-      .in('source_type', ['booking', 'order', 'subscription'])
+      .in('source_type', SOURCE_TYPES)
       .order('created_at', { ascending: true });
 
     if (loadError) {
@@ -84,19 +74,18 @@ export default function SuperAdminPointRewards() {
 
       if (isMissingTable) {
         setTableMissing(true);
-        setError('找不到 public.point_reward_rules，請先套用資料庫 migration。');
-        setRules(buildFallbackRules());
+        setError('找不到 public.point_reward_rules 資料表，請確認點數獎勵 migration 已完成。');
       } else {
         setError(loadError.message);
-        setRules(buildFallbackRules());
       }
+      setRules(buildFallbackRules());
     } else {
-      const next = ['booking', 'order', 'subscription'].map(sourceType => {
+      const next = SOURCE_TYPES.map(sourceType => {
         const existing = (data || []).find(item => item.source_type === sourceType) as PointRewardRule | undefined;
         return existing || {
           source_type: sourceType,
           label: SOURCE_LABELS[sourceType],
-          points_per_100: sourceType === 'booking' ? 10 : 5,
+          points_per_100: DEFAULT_POINTS[sourceType],
           is_active: true,
           notes: '',
           updated_at: new Date().toISOString(),
@@ -105,6 +94,7 @@ export default function SuperAdminPointRewards() {
       });
       setRules(next);
     }
+
     setLoading(false);
   };
 
@@ -113,6 +103,11 @@ export default function SuperAdminPointRewards() {
   }, []);
 
   const totalEnabled = useMemo(() => rules.filter(rule => rule.is_active).length, [rules]);
+  const averagePoints = useMemo(() => {
+    if (rules.length === 0) return 0;
+    const total = rules.reduce((sum, rule) => sum + Number(rule.points_per_100 || 0), 0);
+    return Math.round(total / rules.length);
+  }, [rules]);
 
   const updateRule = (sourceType: string, patch: Partial<PointRewardRule>) => {
     setRules(prev => prev.map(rule => (rule.source_type === sourceType ? { ...rule, ...patch } : rule)));
@@ -120,11 +115,13 @@ export default function SuperAdminPointRewards() {
 
   const saveRule = async (rule: PointRewardRule) => {
     if (tableMissing) {
-      setError('資料表尚未建立，無法儲存。請先同步 point_reward_rules migration。');
+      setError('資料表尚未建立，請先套用 point_reward_rules migration 後再儲存。');
       return;
     }
+
     setSaving(rule.source_type);
     setError(null);
+
     try {
       const payload = {
         source_type: rule.source_type,
@@ -152,7 +149,7 @@ export default function SuperAdminPointRewards() {
       }, 2500);
       await loadRules();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : '儲存失敗');
+      setError(saveError instanceof Error ? saveError.message : '儲存點數獎勵規則失敗');
     } finally {
       setSaving(null);
     }
@@ -161,39 +158,45 @@ export default function SuperAdminPointRewards() {
   if (loading) {
     return (
       <div className="flex justify-center py-24">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#C09A6A] border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div className="rounded-3xl bg-gradient-to-br from-[#24180d] via-[#3a2817] to-[#8B6840] p-6 text-white shadow-lg">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide">
-              <ShieldCheck className="h-4 w-4" />
-              點數回饋邏輯管理
-            </div>
-            <h1 className="text-3xl font-bold">後台調整每 100 元回饋點數</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-7 text-white/80">
-              訂房、商城、定期便三種來源都會讀這裡的規則。你調整倍率後，新的訂單與扣款就會依最新設定發點數。
-            </p>
+    <div className="max-w-5xl space-y-6">
+      <div className="mb-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-amber-100 p-2">
+            <Award className="h-6 w-6 text-amber-700" />
           </div>
-          <button
-            type="button"
-            onClick={loadRules}
-            className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
-          >
-            <RefreshCw className="h-4 w-4" />
-            重新載入
-          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">點數獎勵</h1>
+            <p className="mt-1 text-sm text-gray-500">設定訂房、商品訂單與訂閱制每消費 NT$100 可回饋多少點數。</p>
+          </div>
         </div>
-        <div className="mt-5 flex flex-wrap gap-3 text-sm text-white/80">
-          <span className="rounded-full bg-white/10 px-3 py-1">啟用中 {totalEnabled} / {rules.length}</span>
-          <span className="rounded-full bg-white/10 px-3 py-1">資料表：point_reward_rules</span>
-          <span className="rounded-full bg-white/10 px-3 py-1">計算函式：calculate_point_reward_points()</span>
-        </div>
+        <button
+          type="button"
+          onClick={loadRules}
+          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+        >
+          <RefreshCw className="h-4 w-4" />
+          重新整理
+        </button>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[
+          { label: '啟用規則', value: `${totalEnabled} / ${rules.length}`, icon: <ShieldCheck className="h-5 w-5" /> },
+          { label: '平均回饋', value: `${averagePoints} 點 / NT$100`, icon: <Coins className="h-5 w-5" /> },
+          { label: '資料來源', value: 'point_reward_rules', icon: <Database className="h-5 w-5" /> },
+        ].map(item => (
+          <div key={item.label} className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700">{item.icon}</div>
+            <p className="text-sm text-gray-500">{item.label}</p>
+            <p className="mt-1 break-all text-xl font-bold text-gray-900">{item.value}</p>
+          </div>
+        ))}
       </div>
 
       {error ? (
@@ -201,7 +204,7 @@ export default function SuperAdminPointRewards() {
           {error}
           {tableMissing ? (
             <p className="mt-1 text-xs leading-5 text-amber-700">
-              頁面已先顯示預設規則，但尚未找到資料表，儲存也會失敗。請先把 `supabase/migrations/20260624170000_add_point_reward_rules.sql` 套用到遠端資料庫。
+              請確認 `supabase/migrations/20260624170000_add_point_reward_rules.sql` 已套用到目前 Supabase 專案。
             </p>
           ) : null}
         </div>
@@ -213,24 +216,24 @@ export default function SuperAdminPointRewards() {
             key={rule.source_type}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-3xl border border-[#eadfce] bg-white p-5 shadow-sm"
+            className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm"
           >
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-[#8B6840]" />
-                  <h2 className="text-lg font-bold text-[#2C1F10]">{rule.label || SOURCE_LABELS[rule.source_type]}</h2>
+                  <Award className="h-5 w-5 text-amber-700" />
+                  <h2 className="text-lg font-bold text-gray-900">{rule.label || SOURCE_LABELS[rule.source_type]}</h2>
                 </div>
                 <p className="mt-1 text-sm text-gray-500">{SOURCE_HELP[rule.source_type]}</p>
               </div>
-              <label className="inline-flex items-center gap-2 rounded-full bg-[#fcf8f0] px-3 py-2 text-sm font-medium text-[#8B6840]">
+              <label className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
                 <input
                   type="checkbox"
                   checked={rule.is_active}
                   onChange={e => updateRule(rule.source_type, { is_active: e.target.checked })}
-                  className="h-4 w-4 rounded border-gray-300 text-[#8B6840] focus:ring-[#8B6840]"
+                  className="h-4 w-4 rounded border-gray-300 text-amber-700 focus:ring-amber-600"
                 />
-                啟用回饋
+                啟用獎勵
               </label>
             </div>
 
@@ -241,7 +244,7 @@ export default function SuperAdminPointRewards() {
                   <input
                     value={rule.label}
                     onChange={e => updateRule(rule.source_type, { label: e.target.value })}
-                    className="rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#8B6840] focus:ring-2 focus:ring-[#8B6840]/20"
+                    className="rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                   />
                 </label>
                 <label className="grid gap-2">
@@ -250,14 +253,15 @@ export default function SuperAdminPointRewards() {
                     value={rule.notes}
                     onChange={e => updateRule(rule.source_type, { notes: e.target.value })}
                     rows={3}
-                    className="rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#8B6840] focus:ring-2 focus:ring-[#8B6840]/20"
+                    placeholder="可填寫回饋規則說明，方便管理員辨識。"
+                    className="rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                   />
                 </label>
               </div>
 
-              <div className="space-y-3 rounded-2xl bg-[#fcf8f0] p-4">
+              <div className="space-y-3 rounded-2xl bg-gray-50 p-4">
                 <label className="grid gap-2">
-                  <span className="text-sm font-medium text-gray-700">每 100 元回饋</span>
+                  <span className="text-sm font-medium text-gray-700">每 NT$100 回饋點數</span>
                   <div className="relative">
                     <input
                       type="number"
@@ -265,14 +269,16 @@ export default function SuperAdminPointRewards() {
                       step={1}
                       value={rule.points_per_100}
                       onChange={e => updateRule(rule.source_type, { points_per_100: Number(e.target.value) })}
-                      className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 pr-16 text-sm outline-none transition focus:border-[#8B6840] focus:ring-2 focus:ring-[#8B6840]/20"
+                      className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 pr-16 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                     />
                     <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">點</span>
                   </div>
                 </label>
 
                 <div className="rounded-2xl bg-white px-4 py-3 text-sm text-gray-600">
-                  目前換算：<span className="font-semibold text-[#2C1F10]">{Math.max(0, Math.floor(Number(rule.points_per_100 || 0)))}</span> 點 / 100 元
+                  目前規則：
+                  <span className="font-semibold text-gray-900">{Math.max(0, Math.floor(Number(rule.points_per_100 || 0)))}</span>
+                  點 / NT$100
                 </div>
 
                 <button
@@ -280,7 +286,7 @@ export default function SuperAdminPointRewards() {
                   onClick={() => void saveRule(rule)}
                   disabled={saving === rule.source_type || tableMissing}
                   className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-50 ${
-                    saved.has(rule.source_type) ? 'bg-emerald-600' : 'bg-[#8B6840] hover:bg-[#6f5231]'
+                    saved.has(rule.source_type) ? 'bg-emerald-600' : 'bg-amber-600 hover:bg-amber-700'
                   }`}
                 >
                   {saving === rule.source_type ? (
@@ -293,22 +299,19 @@ export default function SuperAdminPointRewards() {
               </div>
             </div>
 
-            <div className="mt-4 text-xs text-gray-400">
-              最後更新：{formatDateTime(rule.updated_at)}
-            </div>
+            <div className="mt-4 text-xs text-gray-400">最後更新：{formatDateTime(rule.updated_at)}</div>
           </motion.div>
         ))}
       </div>
 
-      <div className="rounded-2xl border border-dashed border-[#eadfce] bg-white p-5 text-sm text-gray-600">
-        <p className="font-semibold text-[#2C1F10]">實際套用位置</p>
+      <div className="rounded-2xl border border-dashed border-amber-200 bg-white p-5 text-sm text-gray-600">
+        <p className="font-semibold text-gray-900">目前串接位置</p>
         <ul className="mt-2 space-y-1.5">
-          <li>訂房完成後：`private.sync_booking_points()`</li>
-          <li>一般商品付款成功：`newebpay-mpg-webhook`</li>
-          <li>咖啡定期便每月扣款成功：`newebpay-period-webhook`</li>
+          <li>住宿訂房完成後：`private.sync_booking_points()`</li>
+          <li>商品訂單付款完成後：`newebpay-mpg-webhook`</li>
+          <li>訂閱制扣款完成後：`newebpay-period-webhook`</li>
         </ul>
       </div>
     </div>
   );
 }
-
