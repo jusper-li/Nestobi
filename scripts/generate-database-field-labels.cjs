@@ -816,7 +816,7 @@ const writeMarkdown = (rows, tables) => {
     }
   }
 
-  fs.writeFileSync(path.join(docsDir, 'database-field-labels.md'), markdown, 'utf8');
+  fs.writeFileSync(path.join(docsDir, 'database-field-labels.md'), `${markdown.trimEnd()}\n`, 'utf8');
 };
 
 const verifyComplete = (tables) => {

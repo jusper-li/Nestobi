@@ -1532,4 +1532,3 @@
 | `stat_key` | 統計鍵 |
 | `stat_value` | 統計值 |
 | `updated_at` | 更新時間 |
-
