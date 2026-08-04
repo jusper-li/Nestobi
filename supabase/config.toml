@@ -42,6 +42,12 @@ verify_jwt = true
 [functions.ezpay-logistics-notify]
 verify_jwt = false
 
+[functions.ezpay-logistics-get-number]
+verify_jwt = true
+
+[functions.ezpay-logistics-trace]
+verify_jwt = true
+
 [auth.email.template.confirmation]
 subject = "Sonpin 驗證電子郵件"
 content_path = "./supabase/templates/confirmation.html"

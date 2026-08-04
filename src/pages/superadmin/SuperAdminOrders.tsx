@@ -771,6 +771,42 @@ const SuperAdminOrders: React.FC = () => {
     }
   };
 
+  const handleGetLogisticsNumberAction = async () => {
+    if (!shopDetail?.id) return;
+    setDetailActionLoading(true);
+    setDetailError('');
+    try {
+      const { data, error } = await supabase.functions.invoke('ezpay-logistics-get-number', {
+        body: { order_id: shopDetail.id },
+      });
+      if (error) throw error;
+      if (data?.success === false && data?.error) throw new Error(data.error);
+      await refreshLogisticsDetail();
+    } catch (error: any) {
+      setDetailError(error?.message || '無法取得物流單號');
+    } finally {
+      setDetailActionLoading(false);
+    }
+  };
+
+  const handleTraceLogisticsAction = async () => {
+    if (!shopDetail?.id) return;
+    setDetailActionLoading(true);
+    setDetailError('');
+    try {
+      const { data, error } = await supabase.functions.invoke('ezpay-logistics-trace', {
+        body: { order_id: shopDetail.id },
+      });
+      if (error) throw error;
+      if (data?.success === false && data?.error) throw new Error(data.error);
+      await refreshLogisticsDetail();
+    } catch (error: any) {
+      setDetailError(error?.message || '無法追蹤配送狀態');
+    } finally {
+      setDetailActionLoading(false);
+    }
+  };
+
   const handlePrintLogisticsAction = async () => {
     if (!shopDetail?.id) return;
 
@@ -1309,11 +1345,27 @@ const SuperAdminOrders: React.FC = () => {
                             </button>
                             <button
                               type="button"
+                              onClick={() => void handleGetLogisticsNumberAction()}
+                              disabled={detailActionLoading || !currentLogistics}
+                              className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              取得物流單號
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => void handleQueryLogisticsAction()}
                               disabled={detailActionLoading}
                               className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               查詢物流單
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleTraceLogisticsAction()}
+                              disabled={detailActionLoading || !currentLogistics}
+                              className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              追蹤配送
                             </button>
                             <button
                               type="button"

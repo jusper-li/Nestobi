@@ -90,41 +90,38 @@ interface AuthUserProfile {
   phone?: string | null;
 }
 
-const EZPAY_ENDPOINTS: Record<EzPayLogisticsEnv, Record<"createShipment" | "queryShipment" | "printLabel", string>> = {
+type EzPayLogisticsOperation =
+  | "storeMap"
+  | "createShipment"
+  | "getShipmentNo"
+  | "printLabel"
+  | "queryShipment"
+  | "modifyShipment"
+  | "trace";
+
+const EZPAY_ENDPOINTS: Record<EzPayLogisticsEnv, Record<EzPayLogisticsOperation, string>> = {
   sandbox: {
-    createShipment: "https://cinv.ezpay.com.tw/Api/Logistic/createShipment",
-    queryShipment: "https://cinv.ezpay.com.tw/Api/Logistic/queryShipment",
-    printLabel: "https://cinv.ezpay.com.tw/Api/Logistic/printLabel",
+    storeMap: "https://ccore.newebpay.com/API/Logistic/storeMap",
+    createShipment: "https://ccore.newebpay.com/API/Logistic/createShipment",
+    getShipmentNo: "https://ccore.newebpay.com/API/Logistic/getShipmentNo",
+    printLabel: "https://ccore.newebpay.com/API/Logistic/printLabel",
+    queryShipment: "https://ccore.newebpay.com/API/Logistic/queryShipment",
+    modifyShipment: "https://ccore.newebpay.com/API/Logistic/modifyShipment",
+    trace: "https://ccore.newebpay.com/API/Logistic/trace",
   },
   production: {
-    createShipment: "https://inv.ezpay.com.tw/Api/Logistic/createShipment",
-    queryShipment: "https://inv.ezpay.com.tw/Api/Logistic/queryShipment",
-    printLabel: "https://inv.ezpay.com.tw/Api/Logistic/printLabel",
+    storeMap: "https://core.newebpay.com/API/Logistic/storeMap",
+    createShipment: "https://core.newebpay.com/API/Logistic/createShipment",
+    getShipmentNo: "https://core.newebpay.com/API/Logistic/getShipmentNo",
+    printLabel: "https://core.newebpay.com/API/Logistic/printLabel",
+    queryShipment: "https://core.newebpay.com/API/Logistic/queryShipment",
+    modifyShipment: "https://core.newebpay.com/API/Logistic/modifyShipment",
+    trace: "https://core.newebpay.com/API/Logistic/trace",
   },
 };
 
 export function trimText(value: unknown) {
   return String(value ?? "").trim();
-}
-
-export async function createLogisticsNotifyToken() {
-  const secret = trimText(Deno.env.get("EZPAY_LOGISTICS_HASH_KEY"));
-  const merchantId = trimText(Deno.env.get("EZPAY_LOGISTICS_MERCHANT_ID"));
-  if (!secret || !merchantId) throw new Error("ezPay logistics credentials are not configured.");
-  const input = new TextEncoder().encode(`notify:${merchantId}:${secret}`);
-  const digest = await crypto.subtle.digest("SHA-256", input);
-  return Array.from(new Uint8Array(digest))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-export function safeTokenEquals(a: string, b: string) {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let index = 0; index < a.length; index += 1) {
-    diff |= a.charCodeAt(index) ^ b.charCodeAt(index);
-  }
-  return diff === 0;
 }
 
 export function normalizeEzpayLogisticsEnv(value: unknown): EzPayLogisticsEnv {
@@ -174,15 +171,6 @@ export function parseResponseBody(text: string) {
   return { raw: text };
 }
 
-function pkcs7Pad(input: Uint8Array, blockSize = 16) {
-  const remainder = input.length % blockSize;
-  const paddingSize = remainder === 0 ? blockSize : blockSize - remainder;
-  const padded = new Uint8Array(input.length + paddingSize);
-  padded.set(input, 0);
-  padded.fill(paddingSize, input.length);
-  return padded;
-}
-
 async function aes256CbcEncryptToHex(text: string, key: string, iv: string) {
   const encoder = new TextEncoder();
   const cryptoKey = await crypto.subtle.importKey(
@@ -195,9 +183,66 @@ async function aes256CbcEncryptToHex(text: string, key: string, iv: string) {
   const encrypted = await crypto.subtle.encrypt(
     { name: "AES-CBC", iv: encoder.encode(iv) },
     cryptoKey,
-    pkcs7Pad(encoder.encode(text)),
+    encoder.encode(text),
   );
   return Array.from(new Uint8Array(encrypted)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function aes256CbcDecryptFromHex(hex: string, key: string, iv: string) {
+  if (!/^[0-9a-f]+$/i.test(hex) || hex.length % 2 !== 0) throw new Error("Invalid logistics encrypted payload.");
+  const encoder = new TextEncoder();
+  const encrypted = new Uint8Array(hex.match(/.{2}/g)!.map((value) => Number.parseInt(value, 16)));
+  const cryptoKey = await crypto.subtle.importKey("raw", encoder.encode(key), { name: "AES-CBC" }, false, ["decrypt"]);
+  const decrypted = await crypto.subtle.decrypt(
+    { name: "AES-CBC", iv: encoder.encode(iv) },
+    cryptoKey,
+    encrypted,
+  );
+  return new TextDecoder().decode(decrypted);
+}
+
+async function sha256UpperHex(text: string) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase();
+}
+
+function getCredentials() {
+  const merchantId = trimText(Deno.env.get("EZPAY_LOGISTICS_MERCHANT_ID"));
+  const hashKey = trimText(Deno.env.get("EZPAY_LOGISTICS_HASH_KEY"));
+  const hashIV = trimText(Deno.env.get("EZPAY_LOGISTICS_HASH_IV"));
+  if (!merchantId || !hashKey || !hashIV) throw new Error("ezPay logistics credentials are not configured.");
+  if (new TextEncoder().encode(hashKey).length !== 32 || new TextEncoder().encode(hashIV).length !== 16) {
+    throw new Error("ezPay logistics HashKey or HashIV length is invalid.");
+  }
+  return { merchantId, hashKey, hashIV };
+}
+
+async function buildApiRequest(payload: Record<string, unknown>) {
+  const { merchantId, hashKey, hashIV } = getCredentials();
+  const encryptedData = await aes256CbcEncryptToHex(JSON.stringify(payload), hashKey, hashIV);
+  const hashData = await sha256UpperHex(`HashKey=${hashKey}&${encryptedData}&HashIV=${hashIV}`);
+  return new URLSearchParams({
+    UID_: merchantId,
+    Version_: trimText(payload.Version) || "1.0",
+    RespondType_: trimText(payload.RespondType) || "JSON",
+    EncryptData_: encryptedData,
+    HashData_: hashData,
+  });
+}
+
+export async function decodeEzpayLogisticsCallback(payload: Record<string, unknown>) {
+  const encryptedData = trimText(payload.EncryptData || payload.EncryptData_);
+  if (!encryptedData) throw new Error("Missing logistics EncryptData.");
+  const { hashKey, hashIV } = getCredentials();
+  const decrypted = await aes256CbcDecryptFromHex(encryptedData, hashKey, hashIV);
+  const decoded = safeJsonParse(decrypted);
+  if (!decoded || typeof decoded !== "object" || Array.isArray(decoded)) {
+    throw new Error("Invalid logistics callback payload.");
+  }
+  return decoded as Record<string, unknown>;
 }
 
 function normalizeLogisticsType(value: unknown, shippingAddress?: Record<string, unknown> | null): EzPayLogisticsType {
@@ -280,11 +325,7 @@ function buildCommonPostData(params: {
   recipientPhone: string;
   recipientEmail: string;
   storeId: string;
-  storeName: string;
-  storeTel: string;
-  storeAddr: string;
   totalAmount: number;
-  itemDesc: string;
   notifyUrl: string;
 }) {
   return {
@@ -299,33 +340,19 @@ function buildCommonPostData(params: {
     UserTel: params.recipientPhone,
     UserEmail: params.recipientEmail,
     StoreID: params.storeId,
-    StoreName: params.storeName,
-    StoreTel: params.storeTel,
-    StoreAddr: params.storeAddr,
     Amt: formatAmount(params.totalAmount),
     NotifyURL: params.notifyUrl,
-    ItemDesc: params.itemDesc,
   };
 }
 
 function buildQueryPostData(params: {
   merchantOrderNo: string;
-  logisticsType: EzPayLogisticsType;
-  shipType: EzPayLogisticsShipType;
-  storeId: string;
-  storePrintNo: string;
-  lgsNo: string;
 }) {
   return {
     RespondType: "JSON",
     Version: "1.0",
     TimeStamp: String(Math.floor(Date.now() / 1000)),
     MerchantOrderNo: params.merchantOrderNo,
-    LgsType: params.logisticsType,
-    ShipType: params.shipType,
-    StoreID: params.storeId,
-    StorePrintNo: params.storePrintNo,
-    LgsNo: params.lgsNo,
   };
 }
 
@@ -333,28 +360,14 @@ function buildPrintPostData(params: {
   merchantOrderNo: string;
   logisticsType: EzPayLogisticsType;
   shipType: EzPayLogisticsShipType;
-  tradeType: number;
-  storeId: string;
-  storeName: string;
-  storeTel: string;
-  storeAddr: string;
-  storePrintNo: string;
-  lgsNo: string;
 }) {
   return {
     RespondType: "JSON",
     Version: "1.0",
     TimeStamp: String(Math.floor(Date.now() / 1000)),
-    MerchantOrderNo: params.merchantOrderNo,
+    MerchantOrderNo: [params.merchantOrderNo],
     LgsType: params.logisticsType,
     ShipType: params.shipType,
-    TradeType: String(params.tradeType),
-    StoreID: params.storeId,
-    StoreName: params.storeName,
-    StoreTel: params.storeTel,
-    StoreAddr: params.storeAddr,
-    StorePrintNo: params.storePrintNo,
-    LgsNo: params.lgsNo,
   };
 }
 
@@ -493,8 +506,136 @@ async function sendEzpayRequest(endpoint: string, requestBody: URLSearchParams) 
   return { rawText, parsed, result, ok: response.ok, contentType: response.headers.get("content-type") || "text/plain" };
 }
 
+function isSuccessfulResponse(response: { ok: boolean; parsed: Record<string, unknown> }) {
+  const status = trimText(response.parsed.Status || response.parsed.status).toUpperCase();
+  return response.ok && (status === "SUCCESS" || status === "1" || status === "OK");
+}
+
 function getErrorMessage(parsed: Record<string, unknown>, fallback: string) {
   return trimText(parsed.Message || parsed.message || parsed.ErrMsg || parsed.errMsg || parsed.error_message) || fallback;
+}
+
+function findDeepValue(value: unknown, keys: string[]): string {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findDeepValue(item, keys);
+      if (found) return found;
+    }
+    return "";
+  }
+  const record = asRecord(value);
+  if (!record) return "";
+  for (const key of keys) {
+    const found = trimText(record[key]);
+    if (found && found !== "[object Object]") return found;
+  }
+  for (const nested of Object.values(record)) {
+    const found = findDeepValue(nested, keys);
+    if (found) return found;
+  }
+  return "";
+}
+
+async function requestOrderOperation(
+  operation: "getShipmentNo" | "trace",
+  merchantOrderNo: string,
+  env: EzPayLogisticsEnv,
+) {
+  const payload = {
+    MerchantOrderNo: operation === "getShipmentNo" ? [merchantOrderNo] : merchantOrderNo,
+    Version: "1.0",
+    TimeStamp: String(Math.floor(Date.now() / 1000)),
+    RespondType: "JSON",
+  };
+  const requestBody = await buildApiRequest(payload);
+  const endpoint = getEzpayLogisticsUrls(env)[operation];
+  const response = await sendEzpayRequest(endpoint, requestBody);
+  return { payload, requestBody, endpoint, response };
+}
+
+export async function getEzpayLogisticsNumberForOrder(
+  supabase: SupabaseClient,
+  orderId: string,
+  env = normalizeEzpayLogisticsEnv(Deno.env.get("EZPAY_LOGISTICS_ENV")),
+): Promise<EzPayLogisticsResult> {
+  getCredentials();
+  const { order, existingLogistics } = await loadOrderContext(supabase, orderId);
+  if (!existingLogistics) throw new Error("Logistics record not found.");
+
+  const merchantOrderNo = trimText(existingLogistics.merchant_order_no || order.merchant_order_no || getMerchantOrderNo(order.id));
+  const operation = await requestOrderOperation("getShipmentNo", merchantOrderNo, env);
+  const success = isSuccessfulResponse(operation.response);
+  const logisticsNo = findDeepValue(operation.response.parsed, ["LgsNo", "lgsNo", "LogisticsNo", "logisticsNo"]);
+  const storePrintNo = findDeepValue(operation.response.parsed, ["StorePrintNo", "storePrintNo"]);
+  const message = getErrorMessage(operation.response.parsed, operation.response.rawText || "ezPay logistics number request failed.");
+
+  await updateLogisticsRecord(supabase, order.id, {
+    logistics_status: success ? "created" : "failed",
+    lgs_no: logisticsNo || existingLogistics.lgs_no,
+    store_print_no: storePrintNo || existingLogistics.store_print_no,
+    ezpay_raw_request: {
+      endpoint: operation.endpoint,
+      body: Object.fromEntries(operation.requestBody.entries()),
+      postData: operation.payload,
+    },
+    ezpay_raw_response: mergeLogisticsResponse(existingLogistics.ezpay_raw_response, "getShipmentNo", operation.response.parsed),
+    error_message: success ? null : message,
+  });
+
+  if (success && (logisticsNo || storePrintNo)) {
+    await updateOrderShipmentFields(supabase, order.id, {
+      tracking_number: logisticsNo || storePrintNo,
+      shipping_status: "preparing",
+      delivery_status: "preparing",
+    });
+  }
+
+  return {
+    success,
+    logisticsStatus: success ? "created" : "failed",
+    logisticsNo: logisticsNo || existingLogistics.lgs_no,
+    storePrintNo: storePrintNo || existingLogistics.store_print_no,
+    error: success ? null : message,
+  };
+}
+
+export async function traceEzpayLogisticsForOrder(
+  supabase: SupabaseClient,
+  orderId: string,
+  env = normalizeEzpayLogisticsEnv(Deno.env.get("EZPAY_LOGISTICS_ENV")),
+): Promise<EzPayLogisticsResult & { trace: Record<string, unknown> }> {
+  getCredentials();
+  const { order, existingLogistics } = await loadOrderContext(supabase, orderId);
+  if (!existingLogistics) throw new Error("Logistics record not found.");
+
+  const merchantOrderNo = trimText(existingLogistics.merchant_order_no || order.merchant_order_no || getMerchantOrderNo(order.id));
+  const operation = await requestOrderOperation("trace", merchantOrderNo, env);
+  const success = isSuccessfulResponse(operation.response);
+  const logisticsNo = findDeepValue(operation.response.parsed, ["LgsNo", "lgsNo", "LogisticsNo", "logisticsNo"]);
+  const storePrintNo = findDeepValue(operation.response.parsed, ["StorePrintNo", "storePrintNo"]);
+  const message = getErrorMessage(operation.response.parsed, operation.response.rawText || "ezPay logistics trace failed.");
+
+  await updateLogisticsRecord(supabase, order.id, {
+    logistics_status: success ? existingLogistics.logistics_status : "failed",
+    lgs_no: logisticsNo || existingLogistics.lgs_no,
+    store_print_no: storePrintNo || existingLogistics.store_print_no,
+    ezpay_raw_request: {
+      endpoint: operation.endpoint,
+      body: Object.fromEntries(operation.requestBody.entries()),
+      postData: operation.payload,
+    },
+    ezpay_raw_response: mergeLogisticsResponse(existingLogistics.ezpay_raw_response, "trace", operation.response.parsed),
+    error_message: success ? null : message,
+  });
+
+  return {
+    success,
+    logisticsStatus: success ? existingLogistics.logistics_status : "failed",
+    logisticsNo: logisticsNo || existingLogistics.lgs_no,
+    storePrintNo: storePrintNo || existingLogistics.store_print_no,
+    trace: operation.response.parsed,
+    error: success ? null : message,
+  };
 }
 
 export async function createEzpayLogisticsForOrder(
@@ -503,10 +644,7 @@ export async function createEzpayLogisticsForOrder(
   input: EzPayLogisticsInput = {},
   env = normalizeEzpayLogisticsEnv(Deno.env.get("EZPAY_LOGISTICS_ENV")),
 ): Promise<EzPayLogisticsResult> {
-  const merchantId = trimText(Deno.env.get("EZPAY_LOGISTICS_MERCHANT_ID"));
-  const hashKey = trimText(Deno.env.get("EZPAY_LOGISTICS_HASH_KEY"));
-  const hashIV = trimText(Deno.env.get("EZPAY_LOGISTICS_HASH_IV"));
-  if (!merchantId || !hashKey || !hashIV) throw new Error("ezPay logistics credentials are not configured.");
+  getCredentials();
 
   const { order, items, profile, existingLogistics, buyerEmailFallback } = await loadOrderContext(supabase, orderId);
   if (trimText(order.payment_status).toLowerCase() !== "paid") throw new Error("Order is not marked as paid.");
@@ -535,17 +673,13 @@ export async function createEzpayLogisticsForOrder(
   const storeTel = trimText(input.store_tel || source.storeTel);
   const storeAddr = trimText(input.store_addr || source.storeAddr);
   const totalAmount = Math.max(0, Math.round(parseNumeric(order.total_amount)));
-  const itemDesc = buildItemDesc(items);
-  const notifyUrlBase = trimText(input.notify_url || `${Deno.env.get("SUPABASE_URL")}/functions/v1/ezpay-logistics-notify`);
-  const notifyUrlObject = new URL(notifyUrlBase);
-  notifyUrlObject.searchParams.set("token", await createLogisticsNotifyToken());
-  const notifyUrl = notifyUrlObject.toString();
+  const notifyUrl = trimText(input.notify_url || `${Deno.env.get("SUPABASE_URL")}/functions/v1/ezpay-logistics-notify`);
 
   if (!recipientName) throw new Error("Recipient name is required.");
   if (!recipientPhone) throw new Error("Recipient phone is required.");
   if (!recipientEmail) throw new Error("Recipient email is required.");
-  if (logisticsType === "C2C" && (!storeId || !storeName || !storeTel || !storeAddr)) {
-    throw new Error("Store information is required for C2C logistics.");
+  if (!storeId) {
+    throw new Error("Store ID is required for convenience-store logistics.");
   }
 
   const postData = buildCommonPostData({
@@ -557,19 +691,11 @@ export async function createEzpayLogisticsForOrder(
     recipientPhone,
     recipientEmail,
     storeId,
-    storeName,
-    storeTel,
-    storeAddr,
     totalAmount,
-    itemDesc,
     notifyUrl,
   });
 
-  const encryptedPostData = await aes256CbcEncryptToHex(new URLSearchParams(postData).toString(), hashKey, hashIV);
-  const requestBody = new URLSearchParams({
-    MerchantID_: merchantId,
-    PostData_: encryptedPostData,
-  });
+  const requestBody = await buildApiRequest(postData);
 
   const rawRequest = {
     endpoint: getEzpayLogisticsUrls(env).createShipment,
@@ -606,7 +732,7 @@ export async function createEzpayLogisticsForOrder(
   const result = response.result;
   const logisticsNo = trimText(result.LgsNo || result.lgsNo || result.LogisticsNo || result.logisticsNo);
   const storePrintNo = trimText(result.StorePrintNo || result.storePrintNo);
-  const success = response.ok && status === "SUCCESS" && (logisticsNo || storePrintNo);
+  const success = isSuccessfulResponse(response);
 
   await updateLogisticsRecord(supabase, order.id, {
     logistics_status: success ? "created" : "failed",
@@ -629,11 +755,11 @@ export async function createEzpayLogisticsForOrder(
     error_message: success ? null : message,
   });
 
-  if (success) {
+  if (success && (logisticsNo || storePrintNo)) {
     await updateOrderShipmentFields(supabase, order.id, {
       tracking_number: logisticsNo || storePrintNo || order.tracking_number || null,
-      shipping_status: "shipped",
-      delivery_status: "shipping",
+      shipping_status: "preparing",
+      delivery_status: "preparing",
     });
   }
 
@@ -651,10 +777,7 @@ export async function queryEzpayLogisticsForOrder(
   orderId: string,
   env = normalizeEzpayLogisticsEnv(Deno.env.get("EZPAY_LOGISTICS_ENV")),
 ): Promise<EzPayLogisticsResult> {
-  const merchantId = trimText(Deno.env.get("EZPAY_LOGISTICS_MERCHANT_ID"));
-  const hashKey = trimText(Deno.env.get("EZPAY_LOGISTICS_HASH_KEY"));
-  const hashIV = trimText(Deno.env.get("EZPAY_LOGISTICS_HASH_IV"));
-  if (!merchantId || !hashKey || !hashIV) throw new Error("ezPay logistics credentials are not configured.");
+  getCredentials();
 
   const { order, existingLogistics } = await loadOrderContext(supabase, orderId);
   if (!existingLogistics) throw new Error("Logistics record not found.");
@@ -667,18 +790,9 @@ export async function queryEzpayLogisticsForOrder(
 
   const postData = buildQueryPostData({
     merchantOrderNo,
-    logisticsType,
-    shipType,
-    storeId: trimText(existingLogistics.store_id),
-    storePrintNo,
-    lgsNo,
   });
 
-  const encryptedPostData = await aes256CbcEncryptToHex(new URLSearchParams(postData).toString(), hashKey, hashIV);
-  const requestBody = new URLSearchParams({
-    MerchantID_: merchantId,
-    PostData_: encryptedPostData,
-  });
+  const requestBody = await buildApiRequest(postData);
 
   const rawRequest = {
     endpoint: getEzpayLogisticsUrls(env).queryShipment,
@@ -689,15 +803,17 @@ export async function queryEzpayLogisticsForOrder(
   const response = await sendEzpayRequest(getEzpayLogisticsUrls(env).queryShipment, requestBody);
   const status = trimText(response.parsed.Status || response.parsed.status).toUpperCase();
   const message = getErrorMessage(response.parsed, response.rawText || "ezPay logistics query failed.");
-  const success = response.ok && status === "SUCCESS";
+  const success = isSuccessfulResponse(response);
+  const resultLogisticsNo = trimText(response.result.LgsNo || response.result.lgsNo || response.result.LogisticsNo);
+  const resultStorePrintNo = trimText(response.result.StorePrintNo || response.result.storePrintNo);
 
   await updateLogisticsRecord(supabase, order.id, {
     logistics_status: success ? (existingLogistics.logistics_status || "created") : "failed",
     logistics_type: logisticsType,
     ship_type: shipType,
     merchant_order_no: merchantOrderNo,
-    lgs_no: lgsNo || existingLogistics.lgs_no,
-    store_print_no: storePrintNo || existingLogistics.store_print_no,
+    lgs_no: resultLogisticsNo || lgsNo || existingLogistics.lgs_no,
+    store_print_no: resultStorePrintNo || storePrintNo || existingLogistics.store_print_no,
     store_id: existingLogistics.store_id,
     store_name: existingLogistics.store_name,
     store_tel: existingLogistics.store_tel,
@@ -714,8 +830,8 @@ export async function queryEzpayLogisticsForOrder(
   return {
     success,
     logisticsStatus: success ? existingLogistics.logistics_status : "failed",
-    logisticsNo: lgsNo || existingLogistics.lgs_no,
-    storePrintNo: storePrintNo || existingLogistics.store_print_no,
+    logisticsNo: resultLogisticsNo || lgsNo || existingLogistics.lgs_no,
+    storePrintNo: resultStorePrintNo || storePrintNo || existingLogistics.store_print_no,
     error: success ? null : message,
   };
 }
@@ -725,10 +841,7 @@ export async function printEzpayLogisticsForOrder(
   orderId: string,
   env = normalizeEzpayLogisticsEnv(Deno.env.get("EZPAY_LOGISTICS_ENV")),
 ): Promise<{ success: boolean; body: string; contentType: string; logisticsNo?: string | null; storePrintNo?: string | null; error?: string | null }> {
-  const merchantId = trimText(Deno.env.get("EZPAY_LOGISTICS_MERCHANT_ID"));
-  const hashKey = trimText(Deno.env.get("EZPAY_LOGISTICS_HASH_KEY"));
-  const hashIV = trimText(Deno.env.get("EZPAY_LOGISTICS_HASH_IV"));
-  if (!merchantId || !hashKey || !hashIV) throw new Error("ezPay logistics credentials are not configured.");
+  getCredentials();
 
   const { order, existingLogistics } = await loadOrderContext(supabase, orderId);
   if (!existingLogistics) throw new Error("Logistics record not found.");
@@ -748,20 +861,9 @@ export async function printEzpayLogisticsForOrder(
     merchantOrderNo,
     logisticsType,
     shipType,
-    tradeType,
-    storeId,
-    storeName,
-    storeTel,
-    storeAddr,
-    storePrintNo,
-    lgsNo,
   });
 
-  const encryptedPostData = await aes256CbcEncryptToHex(new URLSearchParams(postData).toString(), hashKey, hashIV);
-  const requestBody = new URLSearchParams({
-    MerchantID_: merchantId,
-    PostData_: encryptedPostData,
-  });
+  const requestBody = await buildApiRequest(postData);
 
   const rawRequest = {
     endpoint: getEzpayLogisticsUrls(env).printLabel,
