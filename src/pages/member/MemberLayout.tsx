@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import Navigation from '../../components/Navigation';
+import LanguageSwitcher from '../../components/ui/LanguageSwitcher';
 
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 
@@ -78,6 +79,7 @@ export default function MemberLayout() {
         ))}
       </nav>
       <div className="border-t border-gray-100 p-4">
+        <LanguageSwitcher className="mb-2 w-full justify-between" />
         <button
           onClick={handleSignOut}
           className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-red-500 transition hover:bg-red-50"

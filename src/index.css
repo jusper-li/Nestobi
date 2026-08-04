@@ -5,6 +5,17 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --surface-page: #f8fafc;
+    --surface-panel: #ffffff;
+    --border-soft: #e5e7eb;
+    --text-strong: #111827;
+    --text-muted: #6b7280;
+    --accent-admin: #d97706;
+    --accent-vendor: #059669;
+    --accent-member: #a67c48;
+  }
+
   html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
@@ -43,6 +54,19 @@
     background-color: rgba(192,154,106,0.22);
     color: #1A1A1A;
   }
+
+  :focus-visible {
+    outline: 3px solid rgba(217, 119, 6, 0.28);
+    outline-offset: 2px;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 @layer components {
@@ -79,6 +103,33 @@
     @apply inline-flex items-center gap-2 px-6 py-3 bg-[#2C1F10]/10 text-[#2C1F10] font-semibold rounded-lg
            border border-[#2C1F10]/30 backdrop-blur-sm tracking-wide transition-all duration-200 hover:bg-[#2C1F10]/20;
     letter-spacing: 0.01em;
+  }
+
+  .app-page {
+    @apply mx-auto w-full max-w-[1440px] space-y-5;
+  }
+
+  .app-panel {
+    @apply rounded-3xl border border-gray-100 bg-white shadow-sm;
+  }
+
+  .app-field {
+    @apply min-h-11 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20;
+  }
+
+  .app-empty-state {
+    @apply flex min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/70 px-6 py-10 text-center text-sm text-gray-500;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

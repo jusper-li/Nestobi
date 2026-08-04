@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Award, Coins, Database, RefreshCw, Save, ShieldCheck } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDateTime } from '../../lib/utils';
 import { logAdminAction } from '../../lib/auditLog';
+import PageShell from '../../components/ui/PageShell';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface PointRewardRule {
   source_type: string;
@@ -35,7 +37,19 @@ const DEFAULT_POINTS: Record<string, number> = {
   subscription: 5,
 };
 
+const buildFallbackRules = (): PointRewardRule[] =>
+  SOURCE_TYPES.map(sourceType => ({
+    source_type: sourceType,
+    label: SOURCE_LABELS[sourceType],
+    points_per_100: DEFAULT_POINTS[sourceType],
+    is_active: true,
+    notes: '',
+    updated_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+  }));
+
 export default function SuperAdminPointRewards() {
+  const { t } = useLanguage();
   const [rules, setRules] = useState<PointRewardRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -43,18 +57,7 @@ export default function SuperAdminPointRewards() {
   const [error, setError] = useState<string | null>(null);
   const [tableMissing, setTableMissing] = useState(false);
 
-  const buildFallbackRules = (): PointRewardRule[] =>
-    SOURCE_TYPES.map(sourceType => ({
-      source_type: sourceType,
-      label: SOURCE_LABELS[sourceType],
-      points_per_100: DEFAULT_POINTS[sourceType],
-      is_active: true,
-      notes: '',
-      updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-    }));
-
-  const loadRules = async () => {
+  const loadRules = useCallback(async () => {
     setLoading(true);
     setError(null);
     setTableMissing(false);
@@ -68,7 +71,6 @@ export default function SuperAdminPointRewards() {
     if (loadError) {
       const isMissingTable =
         loadError.code === '42P01' ||
-        loadError.status === 404 ||
         loadError.message.toLowerCase().includes('schema cache') ||
         loadError.message.toLowerCase().includes('could not find the table');
 
@@ -96,11 +98,11 @@ export default function SuperAdminPointRewards() {
     }
 
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     void loadRules();
-  }, []);
+  }, [loadRules]);
 
   const totalEnabled = useMemo(() => rules.filter(rule => rule.is_active).length, [rules]);
   const averagePoints = useMemo(() => {
@@ -164,40 +166,24 @@ export default function SuperAdminPointRewards() {
   }
 
   return (
-    <div className="max-w-5xl space-y-6">
-      <div className="mb-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-amber-100 p-2">
-            <Award className="h-6 w-6 text-amber-700" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">點數獎勵</h1>
-            <p className="mt-1 text-sm text-gray-500">設定訂房、商品訂單與訂閱制每消費 NT$100 可回饋多少點數。</p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={loadRules}
-          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-        >
-          <RefreshCw className="h-4 w-4" />
-          重新整理
-        </button>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        {[
-          { label: '啟用規則', value: `${totalEnabled} / ${rules.length}`, icon: <ShieldCheck className="h-5 w-5" /> },
-          { label: '平均回饋', value: `${averagePoints} 點 / NT$100`, icon: <Coins className="h-5 w-5" /> },
-          { label: '資料來源', value: 'point_reward_rules', icon: <Database className="h-5 w-5" /> },
-        ].map(item => (
-          <div key={item.label} className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700">{item.icon}</div>
-            <p className="text-sm text-gray-500">{item.label}</p>
-            <p className="mt-1 break-all text-xl font-bold text-gray-900">{item.value}</p>
-          </div>
-        ))}
-      </div>
+    <PageShell
+      title={t('points.rewards.title', '點數獎勵')}
+      subtitle={t('points.rewards.subtitle', '設定訂房、商品訂單與訂閱制每消費 NT$100 可回饋多少點數。')}
+      eyebrow={t('backoffice.superAdmin', '超級管理員')}
+      icon={<Award className="h-6 w-6" />}
+      actions={[{
+        label: t('common.refresh', '重新整理'),
+        onClick: () => void loadRules(),
+        icon: <RefreshCw className="h-4 w-4" />,
+      }]}
+      stats={[
+        { label: t('points.rewards.enabled', '啟用規則'), value: `${totalEnabled} / ${rules.length}`, icon: <ShieldCheck className="h-5 w-5" /> },
+        { label: t('points.rewards.average', '平均回饋'), value: `${averagePoints} ${t('points.unit', '點')} / NT$100`, icon: <Coins className="h-5 w-5" /> },
+        { label: t('points.rewards.source', '資料來源'), value: 'point_reward_rules', icon: <Database className="h-5 w-5" /> },
+      ]}
+      tone="amber"
+    >
+      <div className="space-y-5">
 
       {error ? (
         <div className={`rounded-2xl px-4 py-3 text-sm ${tableMissing ? 'border border-amber-200 bg-amber-50 text-amber-800' : 'border border-red-200 bg-red-50 text-red-700'}`}>
@@ -304,7 +290,7 @@ export default function SuperAdminPointRewards() {
         ))}
       </div>
 
-      <div className="rounded-2xl border border-dashed border-amber-200 bg-white p-5 text-sm text-gray-600">
+      <div className="rounded-2xl border border-dashed border-amber-200 bg-amber-50/40 p-5 text-sm text-gray-600">
         <p className="font-semibold text-gray-900">目前串接位置</p>
         <ul className="mt-2 space-y-1.5">
           <li>住宿訂房完成後：`private.sync_booking_points()`</li>
@@ -312,6 +298,7 @@ export default function SuperAdminPointRewards() {
           <li>訂閱制扣款完成後：`newebpay-period-webhook`</li>
         </ul>
       </div>
-    </div>
+      </div>
+    </PageShell>
   );
 }

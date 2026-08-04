@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Award,
@@ -34,6 +34,9 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { APP_BUILD_LABEL, APP_COMMIT_LONG } from '../../lib/appVersion';
 import { recordVersionBaseline } from '../../lib/auditLog';
+import LanguageSwitcher from '../../components/ui/LanguageSwitcher';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { normalizeLang, pickByLang } from '../../lib/i18n';
 
 type NavItem = {
   to: string;
@@ -50,6 +53,12 @@ type NavSection = {
 
 const SuperAdminLayout: React.FC = () => {
   const { signOut, user, role, loading } = useAuth();
+  const { lang } = useLanguage();
+  const locale = normalizeLang(lang);
+  const pick = useCallback(
+    (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko),
+    [locale],
+  );
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openSectionIds, setOpenSectionIds] = useState<string[]>(['overview']);
   const navigate = useNavigate();
@@ -59,69 +68,69 @@ const SuperAdminLayout: React.FC = () => {
     () => [
       {
         id: 'overview',
-        title: '總覽與營運',
+        title: pick('總覽與營運', 'Overview & operations', '概要と運営', '개요 및 운영'),
         items: [
-          { to: '/superadmin', icon: <LayoutDashboard className="h-5 w-5" />, label: '總覽', end: true },
-          { to: '/superadmin/engagement', icon: <MessageSquare className="h-5 w-5" />, label: '互動總覽' },
-          { to: '/superadmin/revenue', icon: <BarChart2 className="h-5 w-5" />, label: '營收報表' },
+          { to: '/superadmin', icon: <LayoutDashboard className="h-5 w-5" />, label: pick('總覽', 'Dashboard', 'ダッシュボード', '대시보드'), end: true },
+          { to: '/superadmin/engagement', icon: <MessageSquare className="h-5 w-5" />, label: pick('互動總覽', 'Engagement', 'エンゲージメント', '상호작용') },
+          { to: '/superadmin/revenue', icon: <BarChart2 className="h-5 w-5" />, label: pick('營收報表', 'Revenue', '売上レポート', '매출 보고서') },
         ],
       },
       {
         id: 'commerce',
-        title: '商品與訂單',
+        title: pick('商品與訂單', 'Products & orders', '商品と注文', '상품 및 주문'),
         items: [
-          { to: '/superadmin/products', icon: <ShoppingBag className="h-5 w-5" />, label: '商品管理' },
-          { to: '/superadmin/product-categories', icon: <Tags className="h-5 w-5" />, label: '商品分類' },
-          { to: '/superadmin/orders', icon: <Package className="h-5 w-5" />, label: '商店訂單' },
-          { to: '/superadmin/vendors', icon: <Store className="h-5 w-5" />, label: '供應商管理' },
+          { to: '/superadmin/products', icon: <ShoppingBag className="h-5 w-5" />, label: pick('商品管理', 'Products', '商品管理', '상품 관리') },
+          { to: '/superadmin/product-categories', icon: <Tags className="h-5 w-5" />, label: pick('商品分類', 'Categories', '商品カテゴリ', '상품 분류') },
+          { to: '/superadmin/orders', icon: <Package className="h-5 w-5" />, label: pick('商店訂單', 'Store orders', 'ストア注文', '스토어 주문') },
+          { to: '/superadmin/vendors', icon: <Store className="h-5 w-5" />, label: pick('供應商管理', 'Vendors', '仕入先管理', '공급업체 관리') },
         ],
       },
       {
         id: 'stays',
-        title: '住宿與門市',
+        title: pick('住宿與門市', 'Stays & stores', '宿泊と店舗', '숙박 및 매장'),
         items: [
-          { to: '/superadmin/rooms', icon: <BedDouble className="h-5 w-5" />, label: '住宿管理' },
-          { to: '/superadmin/room-translations', icon: <Languages className="h-5 w-5" />, label: '住宿翻譯' },
-          { to: '/superadmin/store-locations', icon: <MapPin className="h-5 w-5" />, label: '門市地點' },
+          { to: '/superadmin/rooms', icon: <BedDouble className="h-5 w-5" />, label: pick('住宿管理', 'Stays', '宿泊管理', '숙박 관리') },
+          { to: '/superadmin/room-translations', icon: <Languages className="h-5 w-5" />, label: pick('住宿翻譯', 'Stay translations', '宿泊翻訳', '숙박 번역') },
+          { to: '/superadmin/store-locations', icon: <MapPin className="h-5 w-5" />, label: pick('門市地點', 'Store locations', '店舗所在地', '매장 위치') },
         ],
       },
       {
         id: 'content',
-        title: '內容與 AI',
+        title: pick('內容與 AI', 'Content & AI', 'コンテンツと AI', '콘텐츠 및 AI'),
         items: [
-          { to: '/superadmin/blog', icon: <Coffee className="h-5 w-5" />, label: '部落格' },
-          { to: '/superadmin/blog-categories', icon: <FolderOpen className="h-5 w-5" />, label: '文章分類' },
-          { to: '/superadmin/coffee-quiz', icon: <Coffee className="h-5 w-5" />, label: '咖啡 AI 測驗' },
-          { to: '/superadmin/ai-analytics', icon: <Brain className="h-5 w-5" />, label: 'AI 分析' },
-          { to: '/superadmin/chatbot', icon: <MessageSquare className="h-5 w-5" />, label: 'AI 客服' },
-          { to: '/superadmin/listing-command', icon: <Terminal className="h-5 w-5" />, label: 'AI 上架指令' },
+          { to: '/superadmin/blog', icon: <Coffee className="h-5 w-5" />, label: pick('部落格', 'Blog', 'ブログ', '블로그') },
+          { to: '/superadmin/blog-categories', icon: <FolderOpen className="h-5 w-5" />, label: pick('文章分類', 'Article categories', '記事カテゴリ', '글 분류') },
+          { to: '/superadmin/coffee-quiz', icon: <Coffee className="h-5 w-5" />, label: pick('咖啡 AI 測驗', 'Coffee AI quiz', 'コーヒー AI 診断', '커피 AI 테스트') },
+          { to: '/superadmin/ai-analytics', icon: <Brain className="h-5 w-5" />, label: pick('AI 分析', 'AI analytics', 'AI 分析', 'AI 분석') },
+          { to: '/superadmin/chatbot', icon: <MessageSquare className="h-5 w-5" />, label: pick('AI 客服', 'AI support', 'AI サポート', 'AI 고객센터') },
+          { to: '/superadmin/listing-command', icon: <Terminal className="h-5 w-5" />, label: pick('AI 上架指令', 'AI listing command', 'AI 出品コマンド', 'AI 등록 명령') },
         ],
       },
       {
         id: 'members',
-        title: '會員與點數',
+        title: pick('會員與點數', 'Members & points', '会員とポイント', '회원 및 포인트'),
         items: [
-          { to: '/superadmin/users', icon: <Users className="h-5 w-5" />, label: '會員管理' },
-          { to: '/superadmin/point-rewards', icon: <Award className="h-5 w-5" />, label: '點數獎勵' },
-          { to: '/superadmin/points-ledger', icon: <Coins className="h-5 w-5" />, label: '點數帳本' },
-          { to: '/superadmin/permissions', icon: <Shield className="h-5 w-5" />, label: '權限管理' },
+          { to: '/superadmin/users', icon: <Users className="h-5 w-5" />, label: pick('會員管理', 'Members', '会員管理', '회원 관리') },
+          { to: '/superadmin/point-rewards', icon: <Award className="h-5 w-5" />, label: pick('點數獎勵', 'Point rewards', 'ポイント特典', '포인트 적립') },
+          { to: '/superadmin/points-ledger', icon: <Coins className="h-5 w-5" />, label: pick('點數帳本', 'Points ledger', 'ポイント台帳', '포인트 원장') },
+          { to: '/superadmin/permissions', icon: <Shield className="h-5 w-5" />, label: pick('權限管理', 'Permissions', '権限管理', '권한 관리') },
         ],
       },
       {
         id: 'system',
-        title: '網站與系統',
+        title: pick('網站與系統', 'Website & system', 'サイトとシステム', '웹사이트 및 시스템'),
         items: [
-          { to: '/superadmin/static-pages', icon: <FileText className="h-5 w-5" />, label: '靜態頁面' },
-          { to: '/superadmin/faq', icon: <HelpCircle className="h-5 w-5" />, label: '常見問題' },
-          { to: '/superadmin/site-settings', icon: <Settings className="h-5 w-5" />, label: '網站設定' },
-          { to: '/superadmin/theme-banners', icon: <Image className="h-5 w-5" />, label: '橫幅管理' },
-          { to: '/superadmin/activity-logs', icon: <History className="h-5 w-5" />, label: '活動紀錄' },
-          { to: '/superadmin/platform-info', icon: <Server className="h-5 w-5" />, label: '平台資訊' },
-          { to: '/superadmin/version-logs', icon: <BadgeCheck className="h-5 w-5" />, label: '版本與稽核' },
+          { to: '/superadmin/static-pages', icon: <FileText className="h-5 w-5" />, label: pick('靜態頁面', 'Static pages', '固定ページ', '정적 페이지') },
+          { to: '/superadmin/faq', icon: <HelpCircle className="h-5 w-5" />, label: pick('常見問題', 'FAQ', 'よくある質問', '자주 묻는 질문') },
+          { to: '/superadmin/site-settings', icon: <Settings className="h-5 w-5" />, label: pick('網站設定', 'Site settings', 'サイト設定', '사이트 설정') },
+          { to: '/superadmin/theme-banners', icon: <Image className="h-5 w-5" />, label: pick('橫幅管理', 'Banners', 'バナー管理', '배너 관리') },
+          { to: '/superadmin/activity-logs', icon: <History className="h-5 w-5" />, label: pick('活動紀錄', 'Activity logs', 'アクティビティログ', '활동 기록') },
+          { to: '/superadmin/platform-info', icon: <Server className="h-5 w-5" />, label: pick('平台資訊', 'Platform info', 'プラットフォーム情報', '플랫폼 정보') },
+          { to: '/superadmin/version-logs', icon: <BadgeCheck className="h-5 w-5" />, label: pick('版本與稽核', 'Versions & audit', 'バージョンと監査', '버전 및 감사') },
         ],
       },
     ],
-    [],
+    [pick],
   );
 
   const navLinks = useMemo(() => navSections.flatMap(section => section.items), [navSections]);
@@ -181,7 +190,7 @@ const SuperAdminLayout: React.FC = () => {
             <Crown className="h-6 w-6 text-slate-900" />
           </div>
           <div>
-            <p className="text-sm font-bold text-white">超級管理員</p>
+            <p className="text-sm font-bold text-white">{pick('超級管理員', 'Super Admin', 'スーパー管理者', '최고 관리자')}</p>
             <span className="rounded bg-amber-400 px-1.5 py-0.5 text-xs font-bold text-slate-900">SUPERADMIN</span>
           </div>
         </div>
@@ -235,6 +244,9 @@ const SuperAdminLayout: React.FC = () => {
       </nav>
 
       <div className="border-t border-slate-800 p-3">
+        <div className="mb-2 px-3">
+          <LanguageSwitcher inverted className="w-full justify-between" />
+        </div>
         <p className="mb-2 truncate px-3 text-xs text-slate-400">{user?.email}</p>
         <button
           type="button"
@@ -242,7 +254,7 @@ const SuperAdminLayout: React.FC = () => {
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-400 transition hover:bg-slate-700"
         >
           <LogOut className="h-5 w-5" />
-          <span>登出</span>
+          <span>{pick('登出', 'Logout', 'ログアウト', '로그아웃')}</span>
         </button>
       </div>
     </div>
@@ -268,9 +280,10 @@ const SuperAdminLayout: React.FC = () => {
           <button type="button" onClick={() => setSidebarOpen(true)} className="rounded-lg p-2 hover:bg-slate-800">
             <Menu className="h-5 w-5 text-white" />
           </button>
-          <span className="font-semibold text-white">{currentPage?.label || '超級管理員'}</span>
+          <span className="min-w-0 flex-1 truncate font-semibold text-white">{currentPage?.label || pick('超級管理員', 'Super Admin', 'スーパー管理者', '최고 관리자')}</span>
+          <LanguageSwitcher compact inverted />
         </header>
-        <main className="flex-1 overflow-auto p-4 md:p-6">
+        <main className="flex-1 overflow-auto p-3 sm:p-4 md:p-6">
           <Outlet />
         </main>
       </div>

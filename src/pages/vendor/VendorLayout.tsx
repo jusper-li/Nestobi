@@ -4,6 +4,7 @@ import { LayoutDashboard, BedDouble, Package, ShoppingBag, User, LogOut, Menu, S
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
+import LanguageSwitcher from '../../components/ui/LanguageSwitcher';
 
 const VendorLayout: React.FC = () => {
   const { user, signOut, role, storeAssignments } = useAuth();
@@ -60,6 +61,9 @@ const VendorLayout: React.FC = () => {
         ))}
       </nav>
       <div className="p-3 border-t border-emerald-800 space-y-1">
+        <div className="mb-2 px-3">
+          <LanguageSwitcher inverted className="w-full justify-between" />
+        </div>
         <p className="text-emerald-300 text-xs px-3 mb-2 truncate">{user?.email}</p>
         <NavLink to="/" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-emerald-200 hover:text-white hover:bg-emerald-700 w-full transition">
           <Home className="w-5 h-5" />{t.home}
@@ -89,7 +93,7 @@ const VendorLayout: React.FC = () => {
           </button>
           <span className="font-semibold text-white">{t.mobileTitle}</span>
         </header>
-        <main className="flex-1 p-4 md:p-6 overflow-auto">
+        <main className="flex-1 overflow-auto p-3 sm:p-4 md:p-6">
           <Outlet />
         </main>
       </div>

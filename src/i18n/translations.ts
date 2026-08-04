@@ -58,6 +58,19 @@ const zhTW = {
     close: '關閉',
     learnMore: '了解更多',
     language: '語言',
+    home: '首頁',
+    refresh: '重新整理',
+    retry: '重試',
+    viewDetails: '查看詳情',
+  },
+  backoffice: {
+    superAdmin: '超級管理員',
+    vendor: '廠商管理',
+    member: '會員中心',
+    management: '管理中心',
+    logout: '登出',
+    backHome: '回首頁',
+    language: '介面語言',
   },
   auth: {
     email: '電子郵件',
@@ -124,6 +137,19 @@ const en: typeof zhTW = {
     close: 'Close',
     learnMore: 'Learn more',
     language: 'Language',
+    home: 'Home',
+    refresh: 'Refresh',
+    retry: 'Retry',
+    viewDetails: 'View details',
+  },
+  backoffice: {
+    superAdmin: 'Super Admin',
+    vendor: 'Vendor Portal',
+    member: 'Member Center',
+    management: 'Management',
+    logout: 'Logout',
+    backHome: 'Back to home',
+    language: 'Interface language',
   },
   auth: {
     email: 'Email',
@@ -138,13 +164,97 @@ const en: typeof zhTW = {
 
 const ja: typeof zhTW = {
   ...en,
-  common: { ...en.common, language: '言語' },
+  common: {
+    ...en.common,
+    language: '言語',
+    home: 'ホーム',
+    refresh: '再読み込み',
+    retry: '再試行',
+    viewDetails: '詳細を見る',
+  },
+  backoffice: {
+    superAdmin: 'スーパー管理者',
+    vendor: 'ベンダー管理',
+    member: '会員センター',
+    management: '管理センター',
+    logout: 'ログアウト',
+    backHome: 'ホームへ戻る',
+    language: '表示言語',
+  },
 };
 
 const ko: typeof zhTW = {
   ...en,
-  common: { ...en.common, language: '언어' },
+  common: {
+    ...en.common,
+    language: '언어',
+    home: '홈',
+    refresh: '새로고침',
+    retry: '다시 시도',
+    viewDetails: '상세 보기',
+  },
+  backoffice: {
+    superAdmin: '최고 관리자',
+    vendor: '업체 관리',
+    member: '회원 센터',
+    management: '관리 센터',
+    logout: '로그아웃',
+    backHome: '홈으로',
+    language: '화면 언어',
+  },
 };
 
 export const translations: Record<Lang, typeof zhTW> = { 'zh-TW': zhTW, en, ja, ko };
 export type Translations = typeof zhTW;
+
+const runtimeTranslations: Record<Lang, Record<string, string>> = {
+  'zh-TW': {
+    'common.translating': '翻譯中',
+    'points.rewards.title': '點數獎勵',
+    'points.rewards.subtitle': '設定訂房、商品訂單與訂閱制每消費 NT$100 可回饋多少點數。',
+    'points.rewards.enabled': '啟用規則',
+    'points.rewards.average': '平均回饋',
+    'points.rewards.source': '資料來源',
+    'points.unit': '點',
+  },
+  en: {
+    'common.translating': 'Translating',
+    'points.rewards.title': 'Point rewards',
+    'points.rewards.subtitle': 'Set the points earned for every NT$100 spent on stays, orders, and subscriptions.',
+    'points.rewards.enabled': 'Enabled rules',
+    'points.rewards.average': 'Average reward',
+    'points.rewards.source': 'Data source',
+    'points.unit': 'points',
+  },
+  ja: {
+    'common.translating': '翻訳中',
+    'points.rewards.title': 'ポイント特典',
+    'points.rewards.subtitle': '宿泊、商品注文、定期購入で NT$100 ごとに付与するポイントを設定します。',
+    'points.rewards.enabled': '有効なルール',
+    'points.rewards.average': '平均付与',
+    'points.rewards.source': 'データソース',
+    'points.unit': 'ポイント',
+  },
+  ko: {
+    'common.translating': '번역 중',
+    'points.rewards.title': '포인트 적립',
+    'points.rewards.subtitle': '숙박, 상품 주문, 구독 결제 NT$100당 적립 포인트를 설정합니다.',
+    'points.rewards.enabled': '사용 중인 규칙',
+    'points.rewards.average': '평균 적립',
+    'points.rewards.source': '데이터 소스',
+    'points.unit': '포인트',
+  },
+};
+
+const readTranslation = (source: unknown, path: string): unknown =>
+  path.split('.').reduce<unknown>((value, segment) => {
+    if (!value || typeof value !== 'object') return undefined;
+    return (value as Record<string, unknown>)[segment];
+  }, source);
+
+export function translateKey(lang: Lang, key: string, fallback = key): string {
+  const runtimeValue = runtimeTranslations[lang][key];
+  if (runtimeValue) return runtimeValue;
+  const value = readTranslation(translations[lang], key);
+  return typeof value === 'string' && value.trim() ? value : fallback;
+}
