@@ -107,6 +107,26 @@ export function trimText(value: unknown) {
   return String(value ?? "").trim();
 }
 
+export async function createLogisticsNotifyToken() {
+  const secret = trimText(Deno.env.get("EZPAY_LOGISTICS_HASH_KEY"));
+  const merchantId = trimText(Deno.env.get("EZPAY_LOGISTICS_MERCHANT_ID"));
+  if (!secret || !merchantId) throw new Error("ezPay logistics credentials are not configured.");
+  const input = new TextEncoder().encode(`notify:${merchantId}:${secret}`);
+  const digest = await crypto.subtle.digest("SHA-256", input);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export function safeTokenEquals(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let index = 0; index < a.length; index += 1) {
+    diff |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  }
+  return diff === 0;
+}
+
 export function normalizeEzpayLogisticsEnv(value: unknown): EzPayLogisticsEnv {
   return trimText(value).toLowerCase() === "production" ? "production" : "sandbox";
 }
@@ -516,7 +536,10 @@ export async function createEzpayLogisticsForOrder(
   const storeAddr = trimText(input.store_addr || source.storeAddr);
   const totalAmount = Math.max(0, Math.round(parseNumeric(order.total_amount)));
   const itemDesc = buildItemDesc(items);
-  const notifyUrl = trimText(input.notify_url || `${Deno.env.get("SUPABASE_URL")}/functions/v1/ezpay-logistics-notify`);
+  const notifyUrlBase = trimText(input.notify_url || `${Deno.env.get("SUPABASE_URL")}/functions/v1/ezpay-logistics-notify`);
+  const notifyUrlObject = new URL(notifyUrlBase);
+  notifyUrlObject.searchParams.set("token", await createLogisticsNotifyToken());
+  const notifyUrl = notifyUrlObject.toString();
 
   if (!recipientName) throw new Error("Recipient name is required.");
   if (!recipientPhone) throw new Error("Recipient phone is required.");

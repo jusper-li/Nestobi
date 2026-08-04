@@ -33,6 +33,13 @@ interface Order {
   discount_code: string;
   currency: string;
   created_at: string;
+  invoices?: Array<{ invoice_status: string; invoice_number?: string | null; invoice_date?: string | null }> | null;
+  logistics_shipments?: Array<{
+    logistics_status: string;
+    logistics_type?: string | null;
+    lgs_no?: string | null;
+    store_print_no?: string | null;
+  }> | null;
 }
 
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
@@ -127,7 +134,11 @@ export default function MemberOrders() {
         setLoading(false);
         return;
       }
-      const { data } = await supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+      const { data } = await supabase
+        .from('orders')
+        .select('*,invoices(invoice_status,invoice_number,invoice_date),logistics_shipments(logistics_status,logistics_type,lgs_no,store_print_no)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
       setOrders(data || []);
       setLoading(false);
     };
@@ -522,6 +533,9 @@ export default function MemberOrders() {
         orders.map((order, index) => {
           const items = details[order.id] || [];
           const isExpanded = expandedId === order.id;
+          const invoice = order.invoices?.[0] || null;
+          const shipment = order.logistics_shipments?.[0] || null;
+          const trackingNumber = shipment?.lgs_no || shipment?.store_print_no || '';
 
           return (
             <motion.article key={order.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="overflow-hidden rounded-2xl bg-white shadow-sm">
@@ -543,7 +557,7 @@ export default function MemberOrders() {
                   <Info label={t.orderDate} value={formatDate(order.created_at, dateLocale)} />
                   <Info label={t.summary} value={formatCurrency(order.total_amount, order.currency || 'TWD')} strong />
                   <Info label={t.paymentMethod} value={paymentMethodLabel(order.payment_method)} />
-                  <Info label={t.logisticsStatus} value={deliveryLabel(order.status)} />
+                  <Info label={t.logisticsStatus} value={shipment?.logistics_status || deliveryLabel(order.status)} />
                 </div>
 
                 <div className={`${isExpanded ? 'block' : 'hidden'} space-y-4 sm:block`}>
@@ -552,8 +566,8 @@ export default function MemberOrders() {
                     <Info label={t.orderDate} value={formatDate(order.created_at, dateLocale)} />
                     <Info label={t.paymentMethod} value={paymentMethodLabel(order.payment_method)} />
                     <Info label={t.paymentStatus} value={order.payment_status === 'paid' ? t.paid : t.unpaid} />
-                    <Info label={t.logisticsStatus} value={deliveryLabel(order.status)} />
-                    <Info label={t.invoiceStatus} value={t.invoicePending} />
+                    <Info label={t.logisticsStatus} value={shipment?.logistics_status || deliveryLabel(order.status)} />
+                    <Info label={t.invoiceStatus} value={invoice?.invoice_status || t.invoicePending} />
                     <Info label={t.recommendations} value={order.discount_code || t.notProvided} />
                     <Info label={t.summary} value={formatCurrency(order.total_amount, order.currency || 'TWD')} strong />
                   </div>
@@ -561,12 +575,12 @@ export default function MemberOrders() {
                   <section className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                     <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900"><Truck className="h-4 w-4 text-[#0D9488]" />{t.logistics}</h4>
                     <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                      <Info label={t.company} value={t.blackCat} />
-                      <Info label={t.trackingNo} value={order.status === 'shipped' || order.status === 'completed' ? `NTB${order.id.slice(-8).toUpperCase()}` : t.notProvided} />
-                      <Info label={t.deliveryStatus} value={deliveryLabel(order.status)} />
+                      <Info label={t.company} value={shipment?.logistics_type || t.notProvided} />
+                      <Info label={t.trackingNo} value={trackingNumber || t.notProvided} />
+                      <Info label={t.deliveryStatus} value={shipment?.logistics_status || deliveryLabel(order.status)} />
                       <Info label={t.estimatedArrival} value={estimatedArrival(order.created_at)} />
                     </div>
-                    <button type="button" className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
+                    <button type="button" disabled={!trackingNumber} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">
                       <Search className="h-4 w-4" />
                       {t.queryLogistics}
                     </button>

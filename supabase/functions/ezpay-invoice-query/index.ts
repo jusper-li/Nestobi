@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { assertAdmin } from "../_shared/ezpay-logistics.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,13 +12,6 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
-}
-
-function createServiceClient() {
-  return createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-  );
 }
 
 function trimText(value: unknown) {
@@ -86,6 +79,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    const { adminClient: supabase } = await assertAdmin(req);
     const merchantId = trimText(Deno.env.get("EZPAY_INVOICE_MERCHANT_ID"));
     const hashKey = trimText(Deno.env.get("EZPAY_INVOICE_HASH_KEY"));
     const hashIV = trimText(Deno.env.get("EZPAY_INVOICE_HASH_IV"));
@@ -103,7 +97,6 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: false, error: "Missing order_id." }, 400);
     }
 
-    const supabase = createServiceClient();
     const { data: invoice, error } = await supabase
       .from("invoices")
       .select("*")

@@ -83,6 +83,16 @@ function safeEquals(a: string, b: string) {
   return diff === 0;
 }
 
+function getShippingField(shippingAddress: unknown, keys: string[]) {
+  if (!shippingAddress || typeof shippingAddress !== "object" || Array.isArray(shippingAddress)) return "";
+  const source = shippingAddress as Record<string, unknown>;
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
 function parseNewebPayDate(value: unknown) {
   if (typeof value !== "string" || value.length === 0) return new Date().toISOString();
   if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value;
@@ -198,15 +208,13 @@ Deno.serve(async (req: Request) => {
     const tradeInfo = params.get("TradeInfo");
     const tradeSha = params.get("TradeSha");
 
-    if (!tradeInfo) {
-      return jsonResponse({ success: false, error: "Missing TradeInfo." }, 400);
+    if (!tradeInfo || !tradeSha) {
+      return jsonResponse({ success: false, error: "Missing TradeInfo or TradeSha." }, 400);
     }
 
-    if (tradeSha) {
-      const expectedSha = await sha256Hex(`HashKey=${credentials.hashKey}&${tradeInfo}&HashIV=${credentials.hashIV}`);
-      if (!safeEquals(tradeSha.toUpperCase(), expectedSha)) {
-        return jsonResponse({ success: false, error: "Invalid TradeSha." }, 400);
-      }
+    const expectedSha = await sha256Hex(`HashKey=${credentials.hashKey}&${tradeInfo}&HashIV=${credentials.hashIV}`);
+    if (!safeEquals(tradeSha.toUpperCase(), expectedSha)) {
+      return jsonResponse({ success: false, error: "Invalid TradeSha." }, 400);
     }
 
     const payload = JSON.parse(await aesDecrypt(tradeInfo, credentials.hashKey, credentials.hashIV));
@@ -221,7 +229,7 @@ Deno.serve(async (req: Request) => {
     const supabase = createServiceClient();
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id, user_id, total_amount, subtotal_amount, points_discount, merchant_order_no, newebpay_status, newebpay_payment_type")
+      .select("id,user_id,total_amount,subtotal_amount,points_discount,payment_method,merchant_order_no,newebpay_status,newebpay_payment_type,shipping_address")
       .eq("merchant_order_no", merchantOrderNo)
       .maybeSingle();
 
@@ -231,6 +239,13 @@ Deno.serve(async (req: Request) => {
 
     if (!order) {
       return jsonResponse({ success: false, error: "Order not found." }, 404);
+    }
+
+    const callbackAmount = Number(result.Amt ?? result.Amount);
+    const orderAmount = Math.round(Number(order.total_amount || 0));
+    if (!Number.isFinite(callbackAmount) || Math.round(callbackAmount) !== orderAmount) {
+      console.error("[newebpay-mpg-webhook] Amount mismatch", { merchantOrderNo, callbackAmount, orderAmount });
+      return jsonResponse({ success: false, error: "Payment amount mismatch." }, 400);
     }
 
     if (tradeStatus === "SUCCESS") {
@@ -246,7 +261,7 @@ Deno.serve(async (req: Request) => {
         return okResponse();
       }
 
-      await supabase
+      const { error: paidOrderError } = await supabase
         .from("orders")
         .update({
           status: "processing",
@@ -261,23 +276,36 @@ Deno.serve(async (req: Request) => {
           updated_at: new Date().toISOString(),
         })
         .eq("id", order.id);
+      if (paidOrderError) throw paidOrderError;
 
-      await supabase
+      const { error: recordUpdateError } = await supabase
         .from("purchase_records")
         .update({ status: "completed" })
         .eq("order_id", order.id);
+      if (recordUpdateError) throw recordUpdateError;
 
       const rewardPoints = await getRewardPoints(supabase, "order", Number(order.total_amount || 0));
       if (rewardPoints > 0) {
-        await supabase.from("points").insert({
-          user_id: order.user_id,
-          amount: rewardPoints,
-          transaction_type: "earned",
-          reference_id: order.id,
-          source_type: "order",
-          source_id: order.id,
-          description: "Shop purchase points reward",
-        });
+        const { data: existingReward } = await supabase
+          .from("points")
+          .select("id")
+          .eq("source_type", "order")
+          .eq("source_id", order.id)
+          .eq("transaction_type", "earned")
+          .eq("description", "Shop purchase points reward")
+          .limit(1);
+        if (!existingReward?.length) {
+          const { error: pointError } = await supabase.from("points").insert({
+            user_id: order.user_id,
+            amount: rewardPoints,
+            transaction_type: "earned",
+            reference_id: order.id,
+            source_type: "order",
+            source_id: order.id,
+            description: "Shop purchase points reward",
+          });
+          if (pointError) throw pointError;
+        }
       }
 
       const [profileRes, itemsRes] = await Promise.all([
@@ -299,10 +327,10 @@ Deno.serve(async (req: Request) => {
           email,
           displayName,
           items,
-          String(order.shipping_name || ""),
-          String(order.shipping_phone || ""),
-          String(order.shipping_address || ""),
-          String(order.newebpay_payment_type || "CREDIT"),
+          getShippingField(order.shipping_address, ["name", "recipient_name", "customer_name", "buyer_name"]),
+          getShippingField(order.shipping_address, ["phone", "recipient_phone", "customer_phone", "buyer_phone"]),
+          getShippingField(order.shipping_address, ["address", "shipping_address", "recipient_address", "line1"]),
+          String(result.PaymentType || order.newebpay_payment_type || "CREDIT"),
           Number(order.subtotal_amount || 0),
           Number(order.points_discount || 0),
           rewardPoints,
@@ -329,7 +357,7 @@ Deno.serve(async (req: Request) => {
       return okResponse();
     }
 
-    await supabase
+    const { error: failedOrderError } = await supabase
       .from("orders")
       .update({
         status: "cancelled",
@@ -344,6 +372,7 @@ Deno.serve(async (req: Request) => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", order.id);
+    if (failedOrderError) throw failedOrderError;
 
     await supabase
       .from("purchase_records")

@@ -1,7 +1,46 @@
-project_id = "sonpin"
+project_id = "qthciyizquumeufrujyp"
 
 [functions.openai-proxy]
 verify_jwt = true
+
+[functions.newebpay-mpg-payment]
+verify_jwt = true
+
+[functions.newebpay-mpg-webhook]
+verify_jwt = false
+
+[functions.newebpay-order-sync]
+verify_jwt = false
+
+[functions.newebpay-order-refund]
+verify_jwt = true
+
+[functions.newebpay-period-payment]
+verify_jwt = true
+
+[functions.newebpay-period-webhook]
+verify_jwt = false
+
+[functions.ezpay-invoice-create]
+verify_jwt = true
+
+[functions.ezpay-invoice-query]
+verify_jwt = true
+
+[functions.ezpay-invoice-void]
+verify_jwt = true
+
+[functions.ezpay-logistics-create]
+verify_jwt = true
+
+[functions.ezpay-logistics-query]
+verify_jwt = true
+
+[functions.ezpay-logistics-print]
+verify_jwt = true
+
+[functions.ezpay-logistics-notify]
+verify_jwt = false
 
 [auth.email.template.confirmation]
 subject = "Sonpin 驗證電子郵件"

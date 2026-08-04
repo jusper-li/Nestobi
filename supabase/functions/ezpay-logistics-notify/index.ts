@@ -1,5 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createServiceClient, handleEzpayLogisticsNotify, parseResponseBody } from "../_shared/ezpay-logistics.ts";
+import {
+  createLogisticsNotifyToken,
+  createServiceClient,
+  handleEzpayLogisticsNotify,
+  parseResponseBody,
+  safeTokenEquals,
+} from "../_shared/ezpay-logistics.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,6 +41,11 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    const suppliedToken = new URL(req.url).searchParams.get("token") || "";
+    const expectedToken = await createLogisticsNotifyToken();
+    if (!suppliedToken || !safeTokenEquals(suppliedToken, expectedToken)) {
+      return jsonResponse({ success: false, error: "Invalid logistics callback token." }, 401);
+    }
     const payload = await readPayload(req);
     const supabase = await createServiceClient();
     const result = await handleEzpayLogisticsNotify(supabase, payload);

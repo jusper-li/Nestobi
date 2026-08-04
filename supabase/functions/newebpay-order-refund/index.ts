@@ -115,7 +115,7 @@ async function refundCreditCard(
     throw new Error("NewebPay HashKey/HashIV are not configured.");
   }
 
-  const postData = new URLSearchParams({
+  const requestParams = {
     RespondType: "JSON",
     Version: "1.1",
     Amt: String(Math.max(0, Math.floor(amount))),
@@ -123,7 +123,8 @@ async function refundCreditCard(
     TimeStamp: String(Math.floor(Date.now() / 1000)),
     IndexType: "1",
     CloseType: "2",
-  }).toString();
+  };
+  const postData = new URLSearchParams(requestParams).toString();
 
   const encryptedPostData = await aesEncrypt(postData, credentials.hashKey, credentials.hashIV);
   const body = new URLSearchParams({
@@ -160,7 +161,62 @@ async function refundCreditCard(
     throw new Error(message);
   }
 
-  return payload;
+  return { payload, requestParams };
+}
+
+async function voidIssuedInvoice(
+  supabase: ReturnType<typeof createServiceClient>,
+  orderId: string,
+  reason: string,
+) {
+  const { data: invoice, error: invoiceError } = await supabase
+    .from("invoices")
+    .select("invoice_number,invoice_status,ezpay_raw_request,ezpay_raw_response")
+    .eq("order_id", orderId)
+    .maybeSingle();
+  if (invoiceError || !invoice || invoice.invoice_status !== "issued" || !invoice.invoice_number) {
+    return { attempted: false, success: true, error: invoiceError?.message || null };
+  }
+
+  const merchantId = Deno.env.get("EZPAY_INVOICE_MERCHANT_ID") || "";
+  const hashKey = Deno.env.get("EZPAY_INVOICE_HASH_KEY") || "";
+  const hashIV = Deno.env.get("EZPAY_INVOICE_HASH_IV") || "";
+  if (!merchantId || !hashKey || !hashIV) {
+    const error = "ezPay invoice credentials are not configured.";
+    await supabase.from("invoices").update({ error_message: error }).eq("order_id", orderId);
+    return { attempted: true, success: false, error };
+  }
+
+  const postData = {
+    RespondType: "JSON",
+    Version: "1.4",
+    TimeStamp: String(Math.floor(Date.now() / 1000)),
+    MerchantOrderNo: String(invoice.ezpay_raw_request?.postData?.MerchantOrderNo || ""),
+    InvoiceNumber: String(invoice.invoice_number),
+    Reason: reason,
+  };
+  const encryptedPostData = await aesEncrypt(new URLSearchParams(postData).toString(), hashKey, hashIV);
+  const env = (Deno.env.get("EZPAY_INVOICE_ENV") || "sandbox").toLowerCase();
+  const endpoint = env === "production"
+    ? "https://inv.ezpay.com.tw/Api/invoice_invalid"
+    : "https://cinv.ezpay.com.tw/Api/invoice_invalid";
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ MerchantID_: merchantId, PostData_: encryptedPostData }),
+  });
+  const rawText = await response.text();
+  let payload: Record<string, unknown> = { raw: rawText };
+  try { payload = JSON.parse(rawText) as Record<string, unknown>; } catch { /* Keep the raw response. */ }
+  const success = response.ok && String(payload.Status || payload.status || "").toUpperCase() === "SUCCESS";
+  const error = success ? null : String(payload.Message || payload.message || rawText || "Invoice void failed.");
+  await supabase.from("invoices").update({
+    // Keep the invoice issued until ezPay confirms the void operation.
+    invoice_status: success ? "cancelled" : invoice.invoice_status,
+    ezpay_raw_response: { ...(invoice.ezpay_raw_response || {}), void: payload },
+    error_message: error,
+  }).eq("order_id", orderId);
+  return { attempted: true, success, error };
 }
 
 Deno.serve(async (req: Request) => {
@@ -212,7 +268,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id,user_id,total_amount,points_discount,status,payment_status,payment_method,merchant_order_no,newebpay_status,purchase_records(id,product_id,products(vendor_id))")
+      .select("id,user_id,total_amount,points_discount,status,payment_status,payment_method,merchant_order_no,newebpay_status,newebpay_payment_type,newebpay_trade_no,purchase_records(id,product_id,products(vendor_id))")
       .eq("id", orderId)
       .maybeSingle();
 
@@ -236,6 +292,13 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    if (currentPaymentStatus !== "paid") {
+      return jsonResponse({ success: false, error: "Only paid orders can be refunded." }, 409);
+    }
+    if (currentStatus === "completed") {
+      return jsonResponse({ success: false, error: "Completed orders cannot be refunded." }, 409);
+    }
+
     if (!elevated && vendorId) {
       const vendorIds = new Set(
         (order.purchase_records || [])
@@ -251,7 +314,19 @@ Deno.serve(async (req: Request) => {
     const pointsDiscount = Math.max(0, Math.floor(Number(order.points_discount || 0)));
     const orderAmount = Math.max(0, Math.floor(Number(order.total_amount || 0)));
     const paymentMethod = String(order.payment_method || "");
-    const usesNewebPay = orderAmount > 0 && ["credit_card", "points_credit_card"].includes(paymentMethod) && String(order.newebpay_status || "") === "success";
+    const newebpayPaymentType = String(order.newebpay_payment_type || "").toUpperCase();
+    const usesNewebPay = orderAmount > 0
+      && ["credit_card", "points_credit_card"].includes(paymentMethod)
+      && String(order.newebpay_status || "") === "success";
+
+    if (usesNewebPay && newebpayPaymentType !== "CREDIT") {
+      return jsonResponse({
+        success: false,
+        manualRefundRequired: true,
+        paymentType: newebpayPaymentType || "UNKNOWN",
+        error: "This payment type cannot be refunded through the credit-card Close API. Complete the refund manually and record the result.",
+      }, 409);
+    }
 
     if (usesNewebPay && !String(order.merchant_order_no || "").trim()) {
       return jsonResponse({ success: false, error: "Missing merchant order number." }, 400);
@@ -259,13 +334,51 @@ Deno.serve(async (req: Request) => {
 
     const credentials = await getNewebPayCredentials();
     let refundResult: Record<string, unknown> | null = null;
+    let refundAuditId: string | null = null;
 
     if (usesNewebPay) {
-      refundResult = await refundCreditCard(
-        credentials,
-        String(order.merchant_order_no || "").trim(),
-        orderAmount,
-      );
+      const { data: refundAudit, error: refundAuditError } = await supabase
+        .from("payment_refunds")
+        .insert({
+          order_id: order.id,
+          user_id: order.user_id,
+          requested_by: user.id,
+          provider: "newebpay",
+          payment_type: newebpayPaymentType,
+          amount: orderAmount,
+          status: "processing",
+          provider_trade_no: order.newebpay_trade_no || null,
+        })
+        .select("id")
+        .single();
+      if (refundAuditError) {
+        return jsonResponse({ success: false, error: refundAuditError.message }, 500);
+      }
+      refundAuditId = refundAudit.id;
+
+      try {
+        const result = await refundCreditCard(
+          credentials,
+          String(order.merchant_order_no || "").trim(),
+          orderAmount,
+        );
+        refundResult = result.payload;
+        await supabase.from("payment_refunds").update({
+          status: "succeeded",
+          raw_request: result.requestParams,
+          raw_response: result.payload,
+          completed_at: new Date().toISOString(),
+          error_message: null,
+        }).eq("id", refundAuditId);
+      } catch (refundError) {
+        const message = refundError instanceof Error ? refundError.message : "NewebPay refund failed.";
+        await supabase.from("payment_refunds").update({
+          status: "failed",
+          error_message: message,
+          completed_at: new Date().toISOString(),
+        }).eq("id", refundAuditId);
+        return jsonResponse({ success: false, error: message, refundAuditId }, 502);
+      }
     }
 
     if (pointsDiscount > 0) {
@@ -319,6 +432,8 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: false, error: recordUpdateError.message }, 500);
     }
 
+    const invoiceVoidResult = await voidIssuedInvoice(supabase, order.id, "Order refunded");
+
     await sendNotificationEmail(
       `訂單退款完成：${order.merchant_order_no || order.id}`,
       [
@@ -339,7 +454,9 @@ Deno.serve(async (req: Request) => {
       orderStatus: "cancelled",
       paymentStatus: nextPaymentStatus,
       refundedAmount: usesNewebPay ? orderAmount : 0,
+      refundAuditId,
       refundResult,
+      invoiceVoidResult,
     });
   } catch (error) {
     console.error("[newebpay-order-refund] Error:", error);

@@ -9,6 +9,23 @@ const corsHeaders = {
 
 type PaymentMethod = "CREDIT" | "WEBATM" | "ATM" | "CVS" | "BARCODE" | "APPLEPAY" | "ANDROIDPAY" | "UNIONPAY";
 
+const PAYMENT_METHODS = new Set<PaymentMethod>([
+  "CREDIT", "WEBATM", "ATM", "CVS", "BARCODE", "APPLEPAY", "ANDROIDPAY", "UNIONPAY",
+]);
+
+function getPaymentFlags(paymentMethod: PaymentMethod) {
+  return {
+    CREDIT: paymentMethod === "CREDIT" ? "1" : "0",
+    WEBATM: paymentMethod === "WEBATM" ? "1" : "0",
+    VACC: paymentMethod === "ATM" ? "1" : "0",
+    CVS: paymentMethod === "CVS" ? "1" : "0",
+    BARCODE: paymentMethod === "BARCODE" ? "1" : "0",
+    UNIONPAY: paymentMethod === "UNIONPAY" ? "1" : "0",
+    APPLEPAY: paymentMethod === "APPLEPAY" ? "1" : "0",
+    ANDROIDPAY: paymentMethod === "ANDROIDPAY" ? "1" : "0",
+  };
+}
+
 interface ShopCheckoutRequest {
   pointsToUse?: number;
   paymentMethod?: PaymentMethod;
@@ -200,7 +217,11 @@ Deno.serve(async (req: Request) => {
 
     const body: ShopCheckoutRequest = await req.json();
     const pointsToUse = Math.max(0, Math.floor(Number(body.pointsToUse || 0)));
-    const paymentMethod = body.paymentMethod || "CREDIT";
+    const requestedPaymentMethod = String(body.paymentMethod || "CREDIT").toUpperCase() as PaymentMethod;
+    if (!PAYMENT_METHODS.has(requestedPaymentMethod)) {
+      return jsonResponse({ success: false, error: "Unsupported payment method." }, 400);
+    }
+    const paymentMethod = requestedPaymentMethod;
     const retryOrderId = String(body.retryOrderId || "").trim();
     let shippingName = String(body.name || "").trim();
     let shippingPhone = String(body.phone || "").trim();
@@ -240,6 +261,9 @@ Deno.serve(async (req: Request) => {
       }
       if (String(existingOrder.payment_status || "").toLowerCase() === "refunded") {
         return jsonResponse({ success: false, error: "Refunded orders cannot be paid again." }, 400);
+      }
+      if (String(existingOrder.status || "").toLowerCase() === "completed") {
+        return jsonResponse({ success: false, error: "Completed orders cannot be paid again." }, 400);
       }
 
       const shippingSnapshot = existingOrder.shipping_address || {};
@@ -411,14 +435,6 @@ Deno.serve(async (req: Request) => {
     const itemDesc = buildItemDesc(checkout.items);
     const timestamp = Math.floor(Date.now() / 1000);
     const notifyURL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-mpg-webhook`;
-    const enabledPaymentFlags = {
-      CREDIT: "1",
-      WEBATM: "1",
-      VACC: "1",
-      CVS: "1",
-      BARCODE: "1",
-    } as const;
-
     const tradeInfoParams = new URLSearchParams({
       MerchantID: credentials.merchantId,
       RespondType: "JSON",
@@ -432,10 +448,7 @@ Deno.serve(async (req: Request) => {
       NotifyURL: notifyURL,
       ReturnURL: returnUrl,
       ClientBackURL: clientBackUrl,
-      ...enabledPaymentFlags,
-      UNIONPAY: paymentMethod === "UNIONPAY" ? "1" : "0",
-      APPLEPAY: paymentMethod === "APPLEPAY" ? "1" : "0",
-      ANDROIDPAY: paymentMethod === "ANDROIDPAY" ? "1" : "0",
+      ...getPaymentFlags(paymentMethod),
     });
 
     const encryptedTradeInfo = await aesEncrypt(
