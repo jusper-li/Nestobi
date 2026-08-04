@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, ChevronRight, Eye, Loader2, Package, Search, ShoppingCart, SlidersHorizontal, Sparkles, Tag, X } from 'lucide-react';
 import Footer from '../../components/Footer';
@@ -18,7 +19,7 @@ import {
   translateProductsOnDemand,
 } from '../../lib/contentTranslations';
 import { supabase } from '../../lib/supabase';
-import { PRODUCT_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
+import { PRODUCT_FALLBACK_IMAGE, useFallbackImage as handleImageFallback } from '../../lib/images';
 import { fetchPublicList, fetchSnapshotList, readCachedList, withRetry, writeCachedList } from '../../lib/listData';
 import { getCategoryDepth, getDescendantCategoryIds, getProductCategoryIds, sortCategoriesForTree } from '../../lib/categoryTree';
 import { buildItemListSchema } from '../../lib/seoSchemas';
@@ -85,7 +86,10 @@ export default function ProductList() {
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
   const shouldTranslate = pickByLang(normalizedLang, '0', '1', '1', '1') === '1';
-  const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
+  const t4 = useCallback(
+    (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko),
+    [normalizedLang],
+  );
   const labels = {
     seoTitle: t4('根本在旅行', 'Genbon Travel Shop', '根本在旅行', '근본재여행'),
     seoDesc: t4('根本在旅行整理咖啡、茶點、旅行小物與門市商品，適合出發前準備、旅後補貨或挑選伴手禮。', 'Genbon Travel Shop curates coffee, tea snacks, travel goods, and store items for trip prep, restocking, and gifts.', '根本在旅行はコーヒー、お茶菓子、旅の小物、店舗商品を整理し、出発前の準備や旅後の補充、ギフト選びに役立ちます。', '근본재여행은 커피, 차 간식, 여행 소품, 매장 상품을 정리해 출발 전 준비, 여행 후 보충, 선물 고르기에 도움을 줍니다.'),
@@ -217,7 +221,7 @@ export default function ProductList() {
       .catch(() => {});
 
     return () => { cancelled = true; };
-  }, []);
+  }, [t4]);
 
   useEffect(() => {
     let cancelled = false;
@@ -271,7 +275,7 @@ export default function ProductList() {
     })();
 
     return () => { cancelled = true; };
-  }, [products, normalizedLang, shouldTranslate]);
+  }, [products, normalizedLang, shouldTranslate, t4]);
 
   useEffect(() => {
     let cancelled = false;
@@ -302,7 +306,7 @@ export default function ProductList() {
     return () => {
       cancelled = true;
     };
-  }, [categories, normalizedLang, shouldTranslate]);
+  }, [categories, normalizedLang, shouldTranslate, t4]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -404,7 +408,7 @@ export default function ProductList() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F7F5F1]">
       <SEOHead
         title={labels.seoTitle}
         description={labels.seoDesc}
@@ -433,7 +437,7 @@ export default function ProductList() {
           <p className="mt-3 text-sm font-semibold text-[#2C1F10]/70">{visibleCount} / {filtered.length} {labels.foundProducts}</p>
         </div>
       </ThemeHeroCarousel>
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10 xl:px-14">
         <AnimatePresence>
           {aiError && (
             <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mb-5 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -590,16 +594,17 @@ export default function ProductList() {
           </div>
         ) : filtered.length > 0 ? (
           <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="columns-1 gap-5 sm:columns-2 lg:columns-3 xl:columns-4">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {visibleProducts.map((product, index) => (
-              <motion.article key={product.id} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index, 11) * 0.02 }} className="group mb-5 inline-block w-full break-inside-avoid overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-card" style={{ contentVisibility: 'auto', containIntrinsicSize: '340px' }}>
-                <Link to={`/shop/${product.id}`} className="relative block h-52 overflow-hidden bg-gray-100">
-                  <img src={product.image_url || PRODUCT_FALLBACK_IMAGE} alt={product.name} loading={index < 6 ? 'eager' : 'lazy'} decoding="async" onError={event => useFallbackImage(event, PRODUCT_FALLBACK_IMAGE)} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+              <motion.article key={product.id} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index, 11) * 0.02 }} className="group flex h-full min-h-[420px] flex-col overflow-hidden rounded-[1.75rem] border border-stone-200/80 bg-white shadow-[0_8px_30px_rgba(63,45,26,0.06)] transition hover:-translate-y-1 hover:border-[#C09A6A]/40 hover:shadow-[0_18px_45px_rgba(63,45,26,0.12)]" style={{ contentVisibility: 'auto', containIntrinsicSize: '420px' }}>
+                <Link to={`/shop/${product.id}`} className="relative block aspect-[4/3] overflow-hidden bg-stone-100">
+                  <img src={product.image_url || PRODUCT_FALLBACK_IMAGE} alt={product.name} loading={index < 6 ? 'eager' : 'lazy'} decoding="async" onError={event => handleImageFallback(event, PRODUCT_FALLBACK_IMAGE)} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                  <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/35 to-transparent opacity-70 transition group-hover:opacity-90" />
                   {product.stock_quantity <= 5 && product.stock_quantity > 0 && <span className="absolute right-3 top-3 rounded-full bg-orange-500 px-2.5 py-1 text-xs font-bold text-white">{labels.lowStock.replace('{count}', String(product.stock_quantity))}</span>}
                   {product.stock_quantity === 0 && <div className="absolute inset-0 flex items-center justify-center bg-black/45"><span className="rounded-full bg-white px-4 py-1.5 text-sm font-bold text-gray-800">{labels.soldOut}</span></div>}
                 </Link>
-                <div className="flex flex-1 flex-col p-4">
-                  <Link to={`/shop/${product.id}`} className="line-clamp-2 text-sm font-bold leading-6 text-gray-900 transition hover:text-[#8B6840]">
+                <div className="flex flex-1 flex-col p-5">
+                  <Link to={`/shop/${product.id}`} className="line-clamp-2 text-base font-bold leading-6 text-gray-950 transition hover:text-[#8B6840]">
                     {product.name}
                   </Link>
                   {product.description && <p className="mt-2 line-clamp-2 text-xs font-medium leading-6 text-slate-600">{stripHtml(product.description)}</p>}
@@ -610,14 +615,13 @@ export default function ProductList() {
                       ))}
                     </div>
                   )}
-                  <div className="mt-auto flex items-end justify-between gap-3 pt-5">
-                    <span className="text-lg font-bold text-[#8B6840]">{formatCurrency(product.price)}</span>
+                  <div className="mt-auto flex items-end justify-between gap-3 border-t border-stone-100 pt-4">
+                    <span className="text-xl font-bold tracking-tight text-[#6F4F2B]">{formatCurrency(product.price)}</span>
                     <div className="flex shrink-0 items-center gap-1.5">
-                      <Link to={`/shop/${product.id}`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-2 text-xs font-semibold text-slate-700 transition hover:bg-[#F0E4C8] hover:text-[#2C1F10]">
+                      <Link to={`/shop/${product.id}`} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-stone-200 text-stone-600 transition hover:bg-[#F0E4C8] hover:text-[#2C1F10]" aria-label={labels.details} title={labels.details}>
                         <Eye className="h-3.5 w-3.5" />
-                        {labels.details}
                       </Link>
-                      <button type="button" onClick={() => handleAddToCart(product.id)} disabled={product.stock_quantity === 0 || addingId === product.id} className="inline-flex items-center gap-1.5 rounded-xl bg-[#8B6840] px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#6F4F2B] disabled:bg-gray-200 disabled:text-gray-500">
+                      <button type="button" onClick={() => handleAddToCart(product.id)} disabled={product.stock_quantity === 0 || addingId === product.id} className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-[#2C1F10] px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#6F4F2B] disabled:bg-gray-200 disabled:text-gray-500">
                         {addingId === product.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShoppingCart className="h-3.5 w-3.5" />}
                         {labels.addOn}
                       </button>

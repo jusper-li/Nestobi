@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, CheckCircle, FileText, MapPin, Users } from 'lucide-react';
+import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -239,10 +240,10 @@ const BookingForm: React.FC = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="commerce-page">
         <Navigation />
-        <div className="mx-auto max-w-md px-4 py-16 text-center">
-          <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+        <div className="commerce-container max-w-xl py-16 text-center">
+          <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="commerce-card p-8 sm:p-12">
             <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
               <CheckCircle className="h-10 w-10 text-green-600" />
             </div>
@@ -253,7 +254,7 @@ const BookingForm: React.FC = () => {
             <p className="mb-8 text-gray-500">
               {t('總金額', 'Total', '合計', '총액')}: <strong>{formatCurrency(payableTotal)}</strong>
             </p>
-            <button onClick={() => navigate('/member')} className="rounded-xl bg-[#C09A6A] px-8 py-3 font-semibold text-white transition hover:bg-[#8B6840]">
+            <button onClick={() => navigate('/member')} className="commerce-primary-button">
               {t('前往會員中心', 'Go to Member Center', '会員センターへ', '회원 센터로 이동')}
             </button>
           </motion.div>
@@ -263,20 +264,26 @@ const BookingForm: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="commerce-page">
       <Navigation />
-      <div className="mx-auto max-w-3xl px-4 py-8">
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">{t('立即預訂', 'Book Now', '今すぐ予約', '지금 예약')}</h1>
+      <div className="commerce-container max-w-5xl">
+        <div className="commerce-card mb-8 bg-[radial-gradient(circle_at_top_right,rgba(192,154,106,0.18),transparent_45%)] p-6 sm:p-8">
+          <p className="commerce-kicker">STAY RESERVATION</p>
+          <h1 className="mt-3 text-3xl font-bold text-[#2C1F10] sm:text-4xl">{t('立即預訂', 'Book Now', '今すぐ予約', '지금 예약')}</h1>
+          <p className="mt-3 text-sm leading-7 text-stone-500">{t('確認入住資訊與付款方式後，即可送出住宿預訂。', 'Confirm your stay details and payment method to complete the reservation.', '宿泊情報と支払い方法を確認して予約を完了してください。', '숙박 정보와 결제 방식을 확인한 후 예약을 완료하세요.')}</p>
+        </div>
+        <Footer />
 
         {room && (
-          <div className="mb-6 flex gap-4 rounded-2xl bg-white p-5 shadow-md">
+          <div className="commerce-card mb-6 flex flex-col gap-5 p-5 sm:flex-row sm:items-center">
             <img
               src={room.image_url || 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=200'}
               alt={room.name}
-              className="h-20 w-24 flex-shrink-0 rounded-xl object-cover"
+              className="h-40 w-full flex-shrink-0 rounded-2xl object-cover sm:h-28 sm:w-40"
             />
             <div>
-              <h3 className="font-semibold text-gray-900">{room.name}</h3>
+              <p className="commerce-kicker">SELECTED STAY</p>
+              <h3 className="mt-1 text-xl font-semibold text-gray-900">{room.name}</h3>
               <div className="mt-1 flex items-center gap-1 text-sm text-gray-500">
                 <MapPin className="h-3.5 w-3.5" />
                 {room.location || '-'}
@@ -290,7 +297,7 @@ const BookingForm: React.FC = () => {
 
         {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl bg-white p-6 shadow-md">
+        <form onSubmit={handleSubmit} className="commerce-card space-y-6 p-6 sm:p-8">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -305,7 +312,7 @@ const BookingForm: React.FC = () => {
                 onChange={e => setCheckIn(e.target.value)}
                 required
                 min={new Date().toISOString().split('T')[0]}
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
+                className="commerce-field"
               />
             </div>
             <div>
@@ -321,7 +328,7 @@ const BookingForm: React.FC = () => {
                 onChange={e => setCheckOut(e.target.value)}
                 required
                 min={checkIn || new Date().toISOString().split('T')[0]}
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
+                className="commerce-field"
               />
             </div>
           </div>
@@ -339,11 +346,11 @@ const BookingForm: React.FC = () => {
               onChange={e => setGuests(Number(e.target.value))}
               min={1}
               max={room?.capacity || 10}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
+              className="commerce-field"
             />
           </div>
 
-          <section className="rounded-2xl border border-[#E7DBC7] bg-[#FFF9F0] p-4 shadow-sm">
+          <section className="rounded-[1.5rem] border border-[#E7DBC7] bg-[#FFF9F0] p-5">
             <div className="mb-3 flex items-center justify-between gap-3 text-sm text-gray-700">
               <span className="font-medium">{t('付款方式', 'Payment method', '支払い方法', '결제 방식')}</span>
               <span>{t('可用點數', 'Available points', '利用可能ポイント', '사용 가능 포인트')} {availablePoints.toLocaleString()} NP</span>
@@ -353,10 +360,10 @@ const BookingForm: React.FC = () => {
                 type="button"
                 onClick={() => setPaymentChoice('POINTS')}
                 disabled={!canUsePointPayment}
-                className={paymentChoice === 'POINTS' ? 'rounded-xl border border-[#C09A6A] bg-white px-4 py-3 text-left text-[#2C1F10] transition disabled:cursor-not-allowed disabled:opacity-50' : 'rounded-xl border border-gray-200 bg-white px-4 py-3 text-left text-gray-700 transition hover:border-[#C09A6A]/60 disabled:cursor-not-allowed disabled:opacity-50'}
+                className={paymentChoice === 'POINTS' ? 'rounded-2xl border border-[#2C1F10] bg-[#2C1F10] px-4 py-4 text-left text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50' : 'rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left text-gray-700 transition hover:border-[#C09A6A]/60 disabled:cursor-not-allowed disabled:opacity-50'}
               >
                 <div className="text-sm font-semibold">{t('點數付款', 'Points payment', 'ポイント払い', '포인트 결제')}</div>
-                <div className="mt-1 text-xs leading-5 text-gray-500">
+                <div className={`mt-1 text-xs leading-5 ${paymentChoice === 'POINTS' ? 'text-white/65' : 'text-gray-500'}`}>
                   {canUsePointPayment
                     ? t('可全額折抵本次訂房。', 'Use points to cover the full booking amount.', '今回の予約金額を全額ポイントで支払えます。', '이번 예약 금액을 포인트로 전액 결제할 수 있습니다。')
                     : t('點數不足，請改選專人服務。', 'Not enough points. Please choose service support instead.', 'ポイントが不足しています。専人サポートをお選びください。', '포인트가 부족합니다. 전담 서비스를 선택해 주세요。')}
@@ -365,10 +372,10 @@ const BookingForm: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setPaymentChoice('SERVICE')}
-                className={paymentChoice === 'SERVICE' ? 'rounded-xl border border-[#C09A6A] bg-white px-4 py-3 text-left text-[#2C1F10] transition' : 'rounded-xl border border-gray-200 bg-white px-4 py-3 text-left text-gray-700 transition hover:border-[#C09A6A]/60'}
+                className={paymentChoice === 'SERVICE' ? 'rounded-2xl border border-[#2C1F10] bg-[#2C1F10] px-4 py-4 text-left text-white shadow-sm transition' : 'rounded-2xl border border-stone-200 bg-white px-4 py-4 text-left text-gray-700 transition hover:border-[#C09A6A]/60'}
               >
                 <div className="text-sm font-semibold">{t('專人服務', 'Service support', '専人サポート', '전담 서비스')}</div>
-                <div className="mt-1 text-xs leading-5 text-gray-500">
+                <div className={`mt-1 text-xs leading-5 ${paymentChoice === 'SERVICE' ? 'text-white/65' : 'text-gray-500'}`}>
                   {t('由專人協助確認付款與入住細節。', 'A specialist will help confirm payment and stay details.', '専任スタッフが支払いと宿泊内容を確認します。', '전담 담당자가 결제 및 숙박 세부 사항을 확인합니다。')}
                 </div>
               </button>
@@ -391,12 +398,12 @@ const BookingForm: React.FC = () => {
               onChange={e => setSpecialRequests(e.target.value)}
               rows={3}
               placeholder={t('例如：加床、嬰兒床、延後入住時間...', 'e.g. extra bed, baby cot, late check-in...', '例：エキストラベッド、ベビーベッド、遅めのチェックイン...', '예: 엑스트라 베드, 아기 침대, 늦은 체크인...')}
-              className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#2C1F10]"
+              className="commerce-field resize-none"
             />
           </div>
 
           {nights > 0 && room && (
-            <div className="space-y-1 rounded-xl bg-[#F0E4C8] p-4">
+            <div className="space-y-2 rounded-[1.5rem] bg-[#F0E4C8] p-5">
               {hasVariablePricing ? (
                 nightBreakdown.map((row, i) => (
                   <div key={i} className="flex justify-between text-sm text-gray-600">
@@ -428,12 +435,13 @@ const BookingForm: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C09A6A] py-3 font-semibold text-white shadow-md transition hover:bg-[#8B6840] disabled:opacity-60"
+            className="commerce-primary-button w-full"
           >
             {loading ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" /> : t('確認預訂', 'Confirm Booking', '予約を確定', '예약 확정')}
           </button>
         </form>
       </div>
+      <Footer />
     </div>
   );
 };

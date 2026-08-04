@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AlertTriangle, CheckCircle, Minus, Plus, ShieldCheck, ShoppingBag, Trash2 } from 'lucide-react';
+import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
@@ -107,7 +108,7 @@ export default function Cart() {
       setShippingPhone(profile.phone || '');
       setShippingAddress(profile.shipping_address || '');
     }
-  }, [profile?.user_id]);
+  }, [profile]);
 
   useEffect(() => {
     const fetchPointBalance = async () => {
@@ -124,10 +125,8 @@ export default function Cart() {
   const validCartItems = cartItems.filter(hasProduct);
   const unavailableCartItems = cartItems.filter((item) => !item.products);
   const subtotal = validCartItems.reduce((sum, item) => sum + item.products.price * item.quantity, 0);
-  const maxPointUse = Math.max(0, Math.min(availablePoints, subtotal));
   const pointDiscount = paymentChoice === 'POINTS' ? subtotal : 0;
   const payableSubtotal = Math.max(0, subtotal - pointDiscount);
-  const paymentMethod = paymentChoice === 'POINTS' ? 'points' : 'credit_card';
   const pointsEarned = Math.floor(payableSubtotal / 100) * 5;
   const shippingReady = shippingName.trim().length > 0 && shippingPhone.trim().length > 0 && shippingAddress.trim().length > 0;
 
@@ -213,32 +212,35 @@ export default function Cart() {
 
   if (!user && !loading && cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="commerce-page">
         <Navigation />
-        <div className="mx-auto max-w-md px-4 py-32 text-center">
+        <div className="commerce-container max-w-xl py-20 text-center">
+          <div className="commerce-card p-8 sm:p-12">
           <ShoppingBag className="mx-auto mb-4 h-14 w-14 text-gray-300" />
           <h1 className="mb-2 text-2xl font-bold text-gray-900">{t.loginTitle}</h1>
           <p className="mb-6 text-sm leading-6 text-gray-500">{t.loginDesc}</p>
-          <button type="button" onClick={() => navigate('/auth/login')} className="rounded-xl bg-[#C09A6A] px-6 py-3 font-bold text-white transition hover:bg-[#8B6840]">
+          <button type="button" onClick={() => navigate('/auth/login')} className="commerce-primary-button">
             {t.loginNow}
           </button>
+          </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="commerce-page">
         <Navigation />
-        <div className="mx-auto max-w-md px-4 py-20 text-center">
-          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+        <div className="commerce-container max-w-xl py-20 text-center">
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="commerce-card p-8 sm:p-12">
             <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
               <CheckCircle className="h-10 w-10 text-green-600" />
             </div>
             <h1 className="mb-2 text-2xl font-bold text-gray-900">{t.successTitle}</h1>
             <p className="mb-6 text-sm leading-6 text-gray-500">{t.successDesc}</p>
-            <button type="button" onClick={() => navigate('/member/orders')} className="rounded-xl bg-[#C09A6A] px-8 py-3 font-bold text-white transition hover:bg-[#8B6840]">
+            <button type="button" onClick={() => navigate('/member/orders')} className="commerce-primary-button">
               {t.viewOrders}
             </button>
           </motion.div>
@@ -248,26 +250,26 @@ export default function Cart() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="commerce-page">
       <Navigation />
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+      <main className="commerce-container">
+        <div className="commerce-card mb-8 overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(192,154,106,0.16),transparent_42%)] p-6 sm:p-8">
           <div>
-            <p className="section-label">{t.checkout}</p>
-            <h1 className="section-title flex items-center gap-2 text-3xl">
-              <ShoppingBag className="h-7 w-7 text-[#C09A6A]" />
+            <p className="commerce-kicker">SECURE CHECKOUT</p>
+            <h1 className="mt-3 flex items-center gap-3 text-3xl font-bold text-[#2C1F10] sm:text-4xl">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F0E4C8] text-[#8B6840]"><ShoppingBag className="h-6 w-6" /></span>
               {t.checkout}
             </h1>
-            <span className="gold-bar" />
           </div>
         </div>
+        <Footer />
 
         {loading ? (
           <div className="flex justify-center py-24">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#C09A6A] border-t-transparent" />
           </div>
         ) : validCartItems.length === 0 ? (
-          <div className="rounded-2xl bg-white px-4 py-24 text-center text-gray-400 shadow-sm">
+          <div className="commerce-card px-4 py-24 text-center text-gray-400">
             <ShoppingBag className="mx-auto mb-4 h-16 w-16 opacity-20" />
             <p className="text-lg font-semibold text-gray-500">{t.emptyCart}</p>
             {unavailableCartItems.length > 0 && (
@@ -283,7 +285,7 @@ export default function Cart() {
             </button>
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-start">
             <div className="space-y-3">
               {unavailableCartItems.length > 0 && (
                 <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -297,8 +299,8 @@ export default function Cart() {
                 </div>
               )}
               {validCartItems.map((item) => (
-                <motion.div key={item.id} layout className="flex gap-4 rounded-2xl bg-white p-4 shadow-sm">
-                  <img src={item.products.image_url || 'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=240'} alt={item.products.name} className="h-24 w-24 flex-shrink-0 rounded-xl object-cover" />
+                <motion.div key={item.id} layout className="commerce-card flex gap-4 p-4 sm:p-5">
+                  <img src={item.products.image_url || 'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=240'} alt={item.products.name} className="h-24 w-24 flex-shrink-0 rounded-2xl object-cover sm:h-28 sm:w-28" />
                   <div className="min-w-0 flex-1">
                     <h2 className="truncate text-sm font-bold text-gray-900">{item.products.name}</h2>
                     <p className="mt-1 font-bold text-[#C09A6A]">{formatCurrency(item.products.price)}</p>
@@ -322,7 +324,7 @@ export default function Cart() {
               ))}
             </div>
 
-            <aside className="h-fit rounded-2xl bg-white p-6 shadow-sm">
+            <aside className="commerce-card h-fit p-5 lg:sticky lg:top-24 lg:p-6">
               <div className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-900">
                 <ShieldCheck className="h-5 w-5 text-[#C09A6A]" />
                 {t.orderSummary}
@@ -349,7 +351,7 @@ export default function Cart() {
                         value={shippingName}
                         onChange={e => setShippingName(e.target.value)}
                         placeholder={t.shippingName}
-                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C09A6A]/30"
+                        className="commerce-field"
                         disabled={checkoutLoading}
                       />
                     </div>
@@ -360,7 +362,7 @@ export default function Cart() {
                         value={shippingPhone}
                         onChange={e => setShippingPhone(e.target.value)}
                         placeholder="09XX-XXX-XXX"
-                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C09A6A]/30"
+                        className="commerce-field"
                         disabled={checkoutLoading}
                       />
                     </div>
@@ -371,7 +373,7 @@ export default function Cart() {
                         onChange={e => setShippingAddress(e.target.value)}
                         placeholder={t.shippingAddress}
                         rows={3}
-                        className="w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C09A6A]/30"
+                        className="commerce-field resize-none"
                         disabled={checkoutLoading}
                       />
                     </div>
@@ -393,7 +395,7 @@ export default function Cart() {
                       key={option.value}
                       type="button"
                       onClick={() => setPaymentChoice(option.value)}
-                      className={`rounded-lg border px-3 py-2 transition ${paymentChoice === option.value ? 'border-[#C09A6A] bg-[#FEF9EC] text-[#8B6840]' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                      className={`rounded-xl border px-3 py-2.5 transition ${paymentChoice === option.value ? 'border-[#2C1F10] bg-[#2C1F10] text-white shadow-sm' : 'border-stone-200 text-stone-600 hover:border-[#C09A6A] hover:bg-[#FEF9EC]'}`}
                     >
                       {option.label}
                     </button>
@@ -414,7 +416,7 @@ export default function Cart() {
               </div>
               {checkoutError && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-600">{checkoutError}</p>}
               {!user && <p className="mb-3 rounded-lg bg-[#FEF9EC] px-3 py-2 text-center text-sm font-semibold text-[#8B6840]">{t.loginBeforeCheckout}</p>}
-              <button type="button" onClick={handleCheckout} disabled={checkoutLoading || validCartItems.length === 0 || !shippingReady} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C09A6A] py-3 font-bold text-white transition hover:bg-[#8B6840] disabled:opacity-60">
+              <button type="button" onClick={handleCheckout} disabled={checkoutLoading || validCartItems.length === 0 || !shippingReady} className="commerce-primary-button w-full">
                 {checkoutLoading && <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />}
                 {t.placeOrder}
               </button>
@@ -422,6 +424,7 @@ export default function Cart() {
           </div>
         )}
       </main>
+      <Footer />
     </div>
   );
 }

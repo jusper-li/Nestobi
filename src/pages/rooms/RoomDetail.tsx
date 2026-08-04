@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Building2, Calendar, Heart, MapPin, Star, Users } from 'lucide-react';
 import Footer from '../../components/Footer';
@@ -9,7 +9,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberFavorite } from '../../hooks/useMemberFavorite';
 import { getTranslationRuntimeState, translateHotelsOnDemand, translateRoomsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
-import { ROOM_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
+import { ROOM_FALLBACK_IMAGE, useFallbackImage as handleImageFallback } from '../../lib/images';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
 
@@ -63,7 +63,10 @@ export default function RoomDetail() {
   const { lang } = useLanguage();
   const locale = normalizeLang(lang);
   const shouldTranslate = pickByLang(locale, '0', '1', '1', '1') === '1';
-  const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
+  const t4 = useCallback(
+    (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko),
+    [locale],
+  );
 
   const [room, setRoom] = useState<Room | null>(null);
   const [displayRoom, setDisplayRoom] = useState<Room | null>(null);
@@ -159,7 +162,7 @@ export default function RoomDetail() {
     return () => {
       cancelled = true;
     };
-  }, [room, locale, shouldTranslate]);
+  }, [room, locale, shouldTranslate, t4]);
 
   const currentRoom = displayRoom || room;
 
@@ -174,7 +177,7 @@ export default function RoomDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="commerce-page">
         <Navigation />
         <div className="flex justify-center py-24">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#2C1F10] border-t-transparent" />
@@ -185,11 +188,11 @@ export default function RoomDetail() {
 
   if (!currentRoom) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="commerce-page">
         <Navigation />
         <div className="mx-auto max-w-3xl px-4 py-24 text-center">
           <h2 className="mb-4 text-xl font-bold">{t4('找不到房間資料', 'Room not found', '客室が見つかりません', '객실을 찾을 수 없습니다')}</h2>
-          <Link to="/rooms" className="inline-flex items-center gap-2 rounded-xl bg-[#C09A6A] px-5 py-3 font-semibold text-white">
+          <Link to="/rooms" className="commerce-primary-button">
             <ArrowLeft className="h-4 w-4" />
             {t4('返回住宿列表', 'Back to Room List', '客室一覧に戻る', '객실 목록으로 돌아가기')}
           </Link>
@@ -222,10 +225,10 @@ export default function RoomDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="commerce-page">
       <SEOHead title={currentRoom.name} description={`${currentRoom.name} - ${currentRoom.location || ''}`} ogImage={cover} />
       <Navigation />
-      <div className="mx-auto max-w-6xl px-4 py-8">
+      <div className="commerce-container">
         {translationNotice && (
           <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">{translationNotice}</div>
         )}
@@ -235,15 +238,17 @@ export default function RoomDetail() {
           <span className="max-w-[220px] truncate">{currentRoom.name}</span>
         </nav>
 
-        <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="grid gap-8 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
           <section>
-            <div className="overflow-hidden rounded-3xl bg-white shadow-sm">
-              <img src={cover} alt={currentRoom.name} onError={event => useFallbackImage(event, ROOM_FALLBACK_IMAGE)} className="h-[280px] w-full object-cover md:h-[420px]" />
+            <div className="commerce-card relative overflow-hidden">
+              <img src={cover} alt={currentRoom.name} onError={event => handleImageFallback(event, ROOM_FALLBACK_IMAGE)} className="h-[320px] w-full object-cover md:h-[520px]" />
+              <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-stone-950/60 to-transparent" />
+              <span className="absolute bottom-5 left-5 inline-flex items-center gap-2 rounded-full border border-white/25 bg-stone-950/40 px-4 py-2 text-xs font-semibold text-white backdrop-blur"><MapPin className="h-3.5 w-3.5" />{currentRoom.location || currentRoom.hotels?.city || '-'}</span>
             </div>
             {gallery.length > 1 && (
               <div className="mt-3 grid grid-cols-4 gap-2">
                 {gallery.map(image => (
-                  <button key={image} type="button" onClick={() => setActiveImage(image)} className={`overflow-hidden rounded-xl border ${cover === image ? 'border-[#8B6840]' : 'border-gray-200'}`}>
+                  <button key={image} type="button" onClick={() => setActiveImage(image)} className={`overflow-hidden rounded-2xl border-2 bg-white p-1 transition ${cover === image ? 'border-[#8B6840]' : 'border-transparent hover:border-stone-300'}`}>
                     <img src={image} alt={currentRoom.name} className="h-16 w-full object-cover" />
                   </button>
                 ))}
@@ -251,7 +256,7 @@ export default function RoomDetail() {
             )}
           </section>
 
-          <section className="rounded-3xl bg-white p-6 shadow-sm">
+          <section className="commerce-card p-6 lg:sticky lg:top-24 lg:p-8">
             <div className="mb-3 flex items-center gap-2">
               <span className="rounded-full bg-[#F3E7D5] px-3 py-1 text-xs font-semibold text-[#8B6840]">{typeLabel}</span>
               {currentRoom.hotels?.name && (
@@ -293,10 +298,10 @@ export default function RoomDetail() {
             ) : null}
 
             <div className="mt-6 flex gap-3">
-              <Link to={`/booking/${currentRoom.id}`} className="inline-flex flex-1 items-center justify-center rounded-xl bg-[#C09A6A] px-4 py-3 text-sm font-semibold text-white transition hover:brightness-105">
+              <Link to={`/booking/${currentRoom.id}`} className="commerce-primary-button flex-1">
                 {t4('立即訂房', 'Book Now', '今すぐ予約', '지금 예약')}
               </Link>
-              <Link to="/rooms" className="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700">
+              <Link to="/rooms" className="commerce-secondary-button">
                 {t4('返回列表', 'Back', '一覧へ戻る', '목록으로')}
               </Link>
             </div>
@@ -306,7 +311,7 @@ export default function RoomDetail() {
             </button>
           </section>
         </div>
-        <section className="mt-8 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+        <section className="commerce-card mt-8 p-6 lg:p-8">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-bold text-[#2C1F10]">{reviewsTitle}</h2>
             {reviews.length > 0 ? (

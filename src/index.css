@@ -120,6 +120,34 @@
   .app-empty-state {
     @apply flex min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/70 px-6 py-10 text-center text-sm text-gray-500;
   }
+
+  .commerce-page {
+    @apply min-h-screen bg-[#F7F5F1] text-stone-900;
+  }
+
+  .commerce-container {
+    @apply mx-auto w-full max-w-[1320px] px-4 py-8 sm:px-6 lg:px-10 lg:py-12;
+  }
+
+  .commerce-card {
+    @apply rounded-[1.75rem] border border-stone-200/80 bg-white shadow-[0_10px_35px_rgba(63,45,26,0.07)];
+  }
+
+  .commerce-kicker {
+    @apply text-[11px] font-bold uppercase tracking-[0.2em] text-[#8B6840];
+  }
+
+  .commerce-field {
+    @apply w-full rounded-2xl border border-stone-200 bg-[#FFFCF7] px-4 py-3 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-[#C09A6A] focus:ring-4 focus:ring-[#C09A6A]/10;
+  }
+
+  .commerce-primary-button {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#2C1F10] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#4A3420] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0;
+  }
+
+  .commerce-secondary-button {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-stone-300 bg-white px-5 py-3 text-sm font-bold text-stone-700 transition hover:-translate-y-0.5 hover:border-[#C09A6A] hover:text-[#8B6840] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

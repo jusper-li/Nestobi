@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   BookMarked,
@@ -48,7 +49,10 @@ export default function Navigation() {
   const [navigationBlocks, setNavigationBlocks] = useState<SiteContentBlock[]>([]);
 
   const locale = normalizeLang(lang) as UiLang;
-  const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
+  const pick = useCallback(
+    (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko),
+    [locale],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -94,7 +98,7 @@ export default function Navigation() {
       closeMenu: pick('關閉選單', 'Close menu', 'メニューを閉じる', '메뉴 닫기'),
       language: pick('語言', 'Language', '言語', '언어'),
     }),
-    [locale, navigationMap],
+    [locale, navigationMap, pick],
   );
 
   const languageOptions = useMemo(
@@ -104,7 +108,7 @@ export default function Navigation() {
       { code: 'ja' as const, label: pick('日文', 'Japanese', '日本語', '일본어'), short: 'JP' },
       { code: 'ko' as const, label: pick('韓文', 'Korean', '韓国語', '한국어'), short: 'KR' },
     ],
-    [locale],
+    [pick],
   );
 
   const currentLangOption = languageOptions.find(option => option.code === locale) || languageOptions[0];
@@ -142,7 +146,7 @@ export default function Navigation() {
       image: '/assets/ruoshui-jinhe-logo.png',
       className: 'h-12 w-auto md:h-14',
     };
-  }, [location.pathname, locale]);
+  }, [location.pathname, pick]);
 
   const navLinks = [
     { to: '/rooms', label: labels.rooms, icon: Hotel },
@@ -183,9 +187,9 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-[#2C1F10]/10 bg-white/95 shadow-sm backdrop-blur">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between gap-3">
+    <nav className="sticky top-0 z-50 border-b border-stone-200/80 bg-[#FFFCF7]/92 shadow-[0_4px_24px_rgba(53,38,22,0.06)] backdrop-blur-xl">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10 xl:px-14">
+        <div className="flex h-[4.5rem] items-center justify-between gap-3">
           <Link to={brand.to} className="flex min-w-0 items-center gap-3">
             {brand.image ? (
               <img src={brand.image} alt={brand.alt} className={brand.className} />
@@ -201,8 +205,8 @@ export default function Navigation() {
                 to={to}
                 aria-label={label}
                 title={label}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                  isActive(to) ? 'bg-[#F0E4C8] text-[#2C1F10]' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                className={`flex min-h-10 items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold transition ${
+                  isActive(to) ? 'bg-[#2C1F10] text-white shadow-sm' : 'text-stone-600 hover:bg-[#F0E4C8] hover:text-[#2C1F10]'
                 }`}
               >
                 <Icon size={16} />
@@ -219,7 +223,7 @@ export default function Navigation() {
                   setLangMenuOpen(open => !open);
                   setUserMenuOpen(false);
                 }}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100"
+                className="flex min-h-10 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-stone-600 transition hover:bg-[#F0E4C8]"
               >
                 <Globe size={16} />
                 <span className="hidden sm:block">{currentLangOption.short}</span>
@@ -253,7 +257,7 @@ export default function Navigation() {
               </AnimatePresence>
             </div>
 
-            <Link to="/cart" className="relative rounded-lg p-2 text-gray-600 transition hover:bg-gray-100 hover:text-[#2C1F10]" aria-label={labels.cart}>
+            <Link to="/cart" className="relative flex h-10 w-10 items-center justify-center rounded-full text-stone-600 transition hover:bg-[#F0E4C8] hover:text-[#2C1F10]" aria-label={labels.cart}>
               <ShoppingCart size={21} />
               {totalItems > 0 && <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[11px] font-bold text-white">{totalItems > 9 ? '9+' : totalItems}</span>}
             </Link>
@@ -316,13 +320,13 @@ export default function Navigation() {
                 <Link to="/auth/login" className="px-3 py-2 text-sm font-semibold text-gray-700 transition hover:text-[#2C1F10]">
                   {labels.login}
                 </Link>
-                <Link to="/auth/register" className="rounded-lg bg-[#C09A6A] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#8B6840]">
+                <Link to="/auth/register" className="rounded-full bg-[#2C1F10] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#8B6840]">
                   {labels.register}
                 </Link>
               </div>
             )}
 
-            <button type="button" onClick={() => setMenuOpen(open => !open)} className="rounded-lg p-2 text-gray-600 transition hover:bg-gray-100">
+            <button type="button" onClick={() => setMenuOpen(open => !open)} className="flex h-10 w-10 items-center justify-center rounded-full text-stone-600 transition hover:bg-[#F0E4C8]">
               {menuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
@@ -331,8 +335,8 @@ export default function Navigation() {
 
       <AnimatePresence>
         {menuOpen && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-t border-gray-200 bg-white">
-            <div className="mx-auto max-w-7xl space-y-1 px-4 py-3 sm:px-6 lg:px-8">
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-t border-stone-200 bg-[#FFFCF7]">
+            <div className="mx-auto grid max-w-[1440px] gap-1 px-4 py-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:px-10 xl:px-14">
               {menuLinks.map(({ to, label, icon: Icon, requiresAuth }) => {
                 if (requiresAuth && !user) return null;
                 return (

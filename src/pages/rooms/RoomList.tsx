@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useCallback } from 'react';
 import { AlertCircle, Building2, Calendar, Loader2, MapPin, Search, Users, X } from 'lucide-react';
 import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
@@ -8,7 +9,7 @@ import ThemeHeroCarousel from '../../components/ThemeHeroCarousel';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getTranslationRuntimeState, translateRoomsFromCacheOnly, translateRoomsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
-import { ROOM_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
+import { ROOM_FALLBACK_IMAGE, useFallbackImage as handleImageFallback } from '../../lib/images';
 import { fetchPublicList, fetchSnapshotList, readCachedList, withRetry, writeCachedList } from '../../lib/listData';
 import { buildItemListSchema } from '../../lib/seoSchemas';
 import { SemanticSearchMatch, semanticSearch, sortBySemanticMatches } from '../../lib/semanticSearch';
@@ -96,7 +97,10 @@ export default function RoomList() {
   const { lang } = useLanguage();
   const locale = normalizeLang(lang);
   const shouldTranslate = pickByLang(locale, '0', '1', '1', '1') === '1';
-  const t4 = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
+  const t4 = useCallback(
+    (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko),
+    [locale],
+  );
 
   const [rooms, setRooms] = useState<Room[]>([]);
   const [displayRooms, setDisplayRooms] = useState<Room[]>([]);
@@ -251,7 +255,7 @@ export default function RoomList() {
     return () => {
       cancelled = true;
     };
-  }, [rooms, locale, shouldTranslate]);
+  }, [rooms, locale, shouldTranslate, t4]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -329,7 +333,7 @@ export default function RoomList() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F7F5F1]">
       <SEOHead
         title={labels.seoTitle}
         description={labels.seoDesc}
@@ -415,7 +419,7 @@ export default function RoomList() {
         </div>
       </ThemeHeroCarousel>
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10 xl:px-14">
         {aiError && (
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -435,23 +439,25 @@ export default function RoomList() {
           <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">{translationNotice}</div>
         )}
 
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          {ROOM_TYPES.map(type => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => setRoomType(type)}
-              className={`rounded-full px-4 py-2 text-sm ${roomType === type ? 'bg-[#C09A6A] text-white' : 'border bg-white'}`}
-            >
-              {typeLabels[type]}
-            </button>
-          ))}
-          <div className="ml-auto flex items-center gap-2">
+        <div className="mb-6 rounded-[1.75rem] border border-stone-200/80 bg-white p-4 shadow-[0_8px_30px_rgba(63,45,26,0.05)]">
+          <div className="flex flex-wrap items-center gap-2">
+            {ROOM_TYPES.map(type => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setRoomType(type)}
+                className={`min-h-10 rounded-full px-4 py-2 text-sm font-semibold transition ${roomType === type ? 'bg-[#2C1F10] text-white shadow-sm' : 'border border-stone-200 bg-white text-stone-600 hover:border-[#C09A6A] hover:text-[#8B6840]'}`}
+              >
+                {typeLabels[type]}
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-col gap-3 border-t border-stone-100 pt-4 sm:flex-row sm:items-center">
             <span className="text-sm">
               {labels.maxPrice} NT$ {maxPrice.toLocaleString()}
             </span>
-            <input type="range" min={1000} max={30000} step={500} value={maxPrice} onChange={e => setMaxPrice(Number(e.target.value))} />
-            <select value={sortMode} onChange={e => setSortMode(e.target.value as SortMode)} className="rounded-xl border px-3 py-2">
+            <input type="range" min={1000} max={30000} step={500} value={maxPrice} onChange={e => setMaxPrice(Number(e.target.value))} className="w-full accent-[#8B6840] sm:max-w-xs" />
+            <select value={sortMode} onChange={e => setSortMode(e.target.value as SortMode)} className="min-h-10 rounded-xl border border-stone-200 bg-white px-3 py-2 font-semibold text-stone-700 sm:ml-auto">
               <option value="recommended">{labels.recommended}</option>
               <option value="price-asc">{labels.priceAsc}</option>
               <option value="price-desc">{labels.priceDesc}</option>
@@ -467,33 +473,36 @@ export default function RoomList() {
         ) : filtered.length === 0 ? (
           <div className="rounded-xl border bg-white p-8 text-center text-gray-500">{labels.empty}</div>
         ) : (
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {filtered.map(room => {
               const hotel = getHotel(room);
               const city = localizeCityName(room.location || hotel?.city || '');
               const capacityText = room.min_capacity && room.min_capacity !== room.capacity ? `${room.min_capacity}-${room.capacity}` : `${room.capacity}`;
 
               return (
-                <article key={room.id} className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-                  <img
-                    src={room.image_url || ROOM_FALLBACK_IMAGE}
-                    alt={room.name}
-                    onError={event => useFallbackImage(event, ROOM_FALLBACK_IMAGE)}
-                    className="h-48 w-full object-cover"
-                  />
-                  <div className="p-4">
+                <article key={room.id} className="group flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-stone-200/80 bg-white shadow-[0_8px_30px_rgba(63,45,26,0.06)] transition hover:-translate-y-1 hover:border-[#C09A6A]/40 hover:shadow-[0_18px_45px_rgba(63,45,26,0.12)]">
+                  <Link to={`/rooms/${room.id}`} className="relative block aspect-[4/3] overflow-hidden bg-stone-100">
+                    <img
+                      src={room.image_url || ROOM_FALLBACK_IMAGE}
+                      alt={room.name}
+                      onError={event => handleImageFallback(event, ROOM_FALLBACK_IMAGE)}
+                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/55 to-transparent" />
+                    <span className="absolute bottom-4 left-4 inline-flex items-center gap-1 rounded-full border border-white/25 bg-black/25 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
+                      <MapPin className="h-3.5 w-3.5" />
+                      {city || labels.locationUnavailable}
+                    </span>
+                  </Link>
+                  <div className="flex flex-1 flex-col p-5">
                     {hotel?.name && (
                       <p className="mb-2 inline-flex items-center gap-1 text-sm text-[#8B6840]">
                         <Building2 className="h-4 w-4" />
                         {hotel.name}
                       </p>
                     )}
-                    <h3 className="text-2xl font-bold">{room.name}</h3>
-                    <p className="mt-1 flex items-center gap-3 text-sm text-gray-500">
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {city || labels.locationUnavailable}
-                      </span>
+                    <h3 className="text-xl font-bold leading-snug text-stone-950">{room.name}</h3>
+                    <p className="mt-2 flex items-center gap-3 text-sm text-gray-500">
                       <span className="inline-flex items-center gap-1">
                         <Users className="h-4 w-4" />
                         {capacityText} {labels.guests}
@@ -509,16 +518,16 @@ export default function RoomList() {
                         ))}
                       </div>
                     )}
-                    <div className="mt-4 flex items-end justify-between">
+                    <div className="mt-auto flex items-end justify-between gap-3 border-t border-stone-100 pt-4">
                       <div>
-                        <div className="text-4xl font-bold text-[#2C1F10]">{formatCurrency(room.price_per_night)}</div>
+                        <div className="text-2xl font-bold tracking-tight text-[#2C1F10]">{formatCurrency(room.price_per_night)}</div>
                         {room.weekend_price ? (
                           <div className="text-sm text-gray-500">
                             {labels.weekend} {formatCurrency(room.weekend_price)}
                           </div>
                         ) : null}
                       </div>
-                      <Link to={`/rooms/${room.id}`} className="rounded-xl bg-[#C09A6A] px-4 py-2 text-sm font-semibold text-white">{labels.details}</Link>
+                      <Link to={`/rooms/${room.id}`} className="inline-flex min-h-10 items-center rounded-full bg-[#2C1F10] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#6F4F2B]">{labels.details}</Link>
                     </div>
                   </div>
                 </article>

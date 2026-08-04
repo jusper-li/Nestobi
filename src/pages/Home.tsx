@@ -22,7 +22,7 @@ import {
   BLOG_FALLBACK_IMAGE,
   PRODUCT_FALLBACK_IMAGE,
   ROOM_FALLBACK_IMAGE,
-  useFallbackImage,
+  useFallbackImage as handleImageFallback,
 } from '../lib/images';
 import { fetchPublicList, fetchSnapshotList } from '../lib/listData';
 import { supabase } from '../lib/supabase';
@@ -375,32 +375,34 @@ export default function Home() {
   }, [featuredPosts, normalizedLang]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#F7F5F1]">
       <SEOHead title={t.pageTitle} description={t.pageDesc} keywords={`Nestobi, ${t.stays}, ${t.shop}`} pageType="home" ogType="website" />
       <Navigation />
 
-      <section className="relative isolate overflow-hidden bg-[#FFF8EA] text-[#2C1F10]">
+      <section className="relative isolate overflow-hidden bg-stone-950 text-white">
         <div className="absolute inset-0">
           {homeBanners.map((banner, index) => (
             <img
               key={banner.id}
               src={banner.image_url}
               alt={pickBannerText(normalizedLang, banner, 'title')}
-              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
-                index === homeBannerIndex ? 'opacity-80' : 'opacity-0'
+              className={`absolute inset-0 h-full w-full object-cover transition duration-1000 ${
+                index === homeBannerIndex ? 'scale-100 opacity-75' : 'scale-[1.03] opacity-0'
               }`}
             />
           ))}
         </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-[#FFF8EA]/96 via-[#FFF8EA]/72 to-[#FFF8EA]/20" />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-stone-950/95 via-stone-950/68 to-stone-950/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-stone-950/20" />
+        <div className="absolute -left-24 top-0 h-96 w-96 rounded-full bg-amber-300/20 blur-3xl" />
 
-        <div className="relative mx-auto grid min-h-[640px] max-w-7xl items-center gap-8 px-4 pb-20 pt-8 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8 lg:py-24">
-          <div className="order-2 max-w-2xl lg:order-1">
-            <h1 className="whitespace-pre-line text-4xl font-bold leading-tight text-[#2C1F10] md:text-6xl">
+        <div className="relative mx-auto grid min-h-[680px] max-w-[1440px] items-center gap-10 px-4 pb-24 pt-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(390px,0.72fr)] lg:px-10 lg:py-20 xl:px-14">
+          <div className="order-1 max-w-3xl">
+            <p className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] font-bold tracking-[0.2em] text-amber-200 backdrop-blur">TRAVEL · SHOP · DISCOVER</p>
+            <h1 className="mt-5 whitespace-pre-line font-serif text-4xl font-semibold leading-[1.06] tracking-[-0.035em] text-white sm:text-5xl lg:text-6xl xl:text-7xl">
               {homeBannerText.title}
             </h1>
-            <p className="mt-6 max-w-xl text-base leading-8 text-[#2C1F10]/72 md:text-lg">{homeBannerText.subtitle}</p>
+            <p className="mt-6 max-w-2xl text-base leading-8 text-white/72 md:text-lg">{homeBannerText.subtitle}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               {homeBannerLink && (
                 isInternalLink(homeBannerLink) ? (
@@ -415,7 +417,7 @@ export default function Home() {
                   </a>
                 )
               )}
-              <Link to="/rooms" className="btn-ghost"><Hotel size={18} />{t.exploreStays}</Link>
+              <Link to="/rooms" className="inline-flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-6 py-3 font-semibold text-white backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/20"><Hotel size={18} />{t.exploreStays}</Link>
             </div>
 
             {homeBanners.length > 1 && (
@@ -425,7 +427,7 @@ export default function Home() {
                     key={banner.id}
                     type="button"
                     onClick={() => setHomeBannerIndex(index)}
-                    className={`h-2.5 rounded-full transition-all ${index === homeBannerIndex ? 'w-8 bg-[#2C1F10]' : 'w-2.5 bg-[#2C1F10]/24 hover:bg-[#2C1F10]/45'}`}
+                    className={`h-1.5 rounded-full transition-all ${index === homeBannerIndex ? 'w-9 bg-amber-300' : 'w-3 bg-white/35 hover:bg-white/60'}`}
                     aria-label={`Home banner ${index + 1}`}
                   />
                 ))}
@@ -433,10 +435,10 @@ export default function Home() {
             )}
           </div>
 
-          <div className="order-1 space-y-4 lg:order-2">
-          <form onSubmit={submitHomeSearch} className="rounded-3xl border border-white/80 bg-white/90 p-4 shadow-xl backdrop-blur-md sm:p-6 lg:p-8">
-            <p className="text-sm font-bold text-[#8B6840]">{homeSearchLabels.title}</p>
-            <h2 className="mt-2 text-2xl font-bold text-[#2C1F10] lg:text-4xl">{homeSearchLabels.submit}</h2>
+          <div className="order-2 space-y-4">
+          <form onSubmit={submitHomeSearch} className="rounded-[2rem] border border-white/30 bg-white/95 p-4 text-[#2C1F10] shadow-2xl backdrop-blur-xl sm:p-6 lg:p-7">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#8B6840]">SMART DISCOVERY</p>
+            <h2 className="mt-2 text-2xl font-bold text-[#2C1F10] lg:text-3xl">{homeSearchLabels.title}</h2>
             <p className="mt-3 text-sm leading-6 text-[#2C1F10]/65">{homeSearchLabels.subtitle}</p>
             <div className="mt-5 flex rounded-2xl bg-[#F7F1E8] p-1">
               {(['rooms', 'journal'] as const).map(target => (
@@ -450,7 +452,7 @@ export default function Home() {
                 </button>
               ))}
             </div>
-            <div className="mt-4 flex items-center gap-2 rounded-2xl border border-[#C09A6A]/25 bg-white px-4 py-2">
+            <div className="mt-4 flex items-center gap-2 rounded-2xl border border-[#C09A6A]/25 bg-[#FFFCF7] px-4 py-2 shadow-inner">
               <Search className="h-5 w-5 flex-shrink-0 text-[#C09A6A]" />
               <input
                 value={homeSearch}
@@ -468,6 +470,28 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="relative z-20 mx-auto -mt-10 max-w-[1320px] px-4 sm:px-6 lg:px-10">
+        <div className="grid overflow-hidden rounded-[2rem] border border-stone-200/80 bg-white shadow-[0_20px_60px_rgba(48,35,20,0.14)] md:grid-cols-3">
+          {[
+            { to: '/rooms', icon: Hotel, label: t.trustStaysTitle, desc: t.trustStaysDesc, tone: 'bg-emerald-50 text-emerald-700' },
+            { to: '/shop', icon: ShoppingBag, label: t.trustShopTitle, desc: t.trustShopDesc, tone: 'bg-amber-50 text-amber-700' },
+            { to: '/blog', icon: Coffee, label: t.trustAiTitle, desc: t.trustAiDesc, tone: 'bg-orange-50 text-orange-700' },
+          ].map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <Link key={item.to} to={item.to} className={`group flex items-center gap-4 p-5 transition hover:bg-stone-50 sm:p-6 ${index ? 'border-t border-stone-100 md:border-l md:border-t-0' : ''}`}>
+                <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${item.tone}`}><Icon className="h-5 w-5" /></span>
+                <span className="min-w-0 flex-1">
+                  <strong className="block text-base text-stone-950">{item.label}</strong>
+                  <span className="mt-1 line-clamp-2 block text-xs leading-5 text-stone-500">{item.desc}</span>
+                </span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-stone-300 transition group-hover:translate-x-1 group-hover:text-[#8B6840]" />
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
       {translationNotice && (
         <div className="mx-auto mt-4 max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">{translationNotice}</div>
@@ -475,29 +499,32 @@ export default function Home() {
       )}
 
       {hasRecommendations && (
-        <section className="bg-white py-12 md:py-16">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <section className="relative overflow-hidden py-16 md:py-24">
+          <div className="pointer-events-none absolute -right-40 top-8 h-96 w-96 rounded-full bg-amber-200/20 blur-3xl" />
+          <div className="pointer-events-none absolute -left-40 bottom-0 h-80 w-80 rounded-full bg-emerald-200/20 blur-3xl" />
+          <div className="mx-auto max-w-[1320px] px-4 sm:px-6 lg:px-10">
+            <div className="relative mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end">
               <div>
                 <p className="section-label">{flowLabels.recommendations}</p>
-                <h2 className="section-title text-3xl">{activeRecommendation.title}</h2>
-                <span className="gold-bar" />
+                <h2 className="section-title max-w-3xl text-3xl sm:text-4xl lg:text-5xl">{activeRecommendation.title}</h2>
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-stone-500 sm:text-base">{flowLabels.recommendationsDesc}</p>
               </div>
-              <Link to={activeRecommendation.to} className="inline-flex items-center gap-1 self-start border-b border-[#2C1F10]/25 pb-1 text-sm font-bold text-[#2C1F10] transition hover:border-[#2C1F10] md:self-auto">
+              <Link to={activeRecommendation.to} className="group inline-flex items-center gap-2 self-start rounded-full border border-stone-300 bg-white px-5 py-3 text-sm font-bold text-[#2C1F10] shadow-sm transition hover:-translate-y-0.5 hover:border-[#C09A6A] hover:shadow-md md:self-auto">
                 {activeRecommendation.action}
-                <ArrowRight size={15} />
+                <ArrowRight size={15} className="transition group-hover:translate-x-1" />
               </Link>
             </div>
 
-            <div className="mb-6 flex border-b border-gray-100">
+            <div className="relative mb-8 grid gap-2 rounded-[1.5rem] border border-stone-200 bg-white/90 p-2 shadow-[0_8px_30px_rgba(63,45,26,0.06)] backdrop-blur sm:grid-cols-3">
               {recommendationTabs.map(tab => (
                 <button
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveRecommendationTab(tab.id)}
-                  className={`flex-1 border-b-2 px-3 py-3 text-sm font-bold transition ${activeRecommendationTab === tab.id ? 'border-[#2C1F10] text-[#2C1F10]' : 'border-transparent text-[#2C1F10]/55 hover:text-[#2C1F10]'}`}
+                  className={`flex items-center justify-between rounded-[1.1rem] px-4 py-3 text-left text-sm font-bold transition ${activeRecommendationTab === tab.id ? 'bg-[#2C1F10] text-white shadow-lg' : 'text-[#2C1F10]/55 hover:bg-stone-100 hover:text-[#2C1F10]'}`}
                 >
-                  {tab.label}
+                  <span>{tab.label}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] ${activeRecommendationTab === tab.id ? 'bg-white/15 text-amber-200' : 'bg-stone-100 text-stone-400'}`}>{tab.count}</span>
                 </button>
               ))}
             </div>
@@ -507,15 +534,16 @@ export default function Home() {
                 {displayRooms.map(room => {
                   const cover = room.images?.[0] || room.image_url || ROOM_FALLBACK_IMAGE;
                   return (
-                    <Link key={room.id} to={`/rooms/${room.id}`} className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-elegant transition hover:-translate-y-1 hover:shadow-card-hover">
-                      <div className="h-52 overflow-hidden">
-                        <img src={cover} alt={room.name} onError={event => useFallbackImage(event, ROOM_FALLBACK_IMAGE)} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                    <Link key={room.id} to={`/rooms/${room.id}`} className="group overflow-hidden rounded-[1.75rem] border border-stone-200/80 bg-white shadow-[0_8px_30px_rgba(63,45,26,0.06)] transition hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(63,45,26,0.12)]">
+                      <div className="relative aspect-[4/3] overflow-hidden">
+                        <img src={cover} alt={room.name} onError={event => handleImageFallback(event, ROOM_FALLBACK_IMAGE)} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-stone-950/55 to-transparent" />
+                        <span className="absolute bottom-4 left-4 inline-flex items-center gap-1 rounded-full border border-white/25 bg-stone-950/45 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur"><MapPin size={12} />{localizeCityName(room.location || room.hotels?.city || '-')}</span>
                       </div>
                       <div className="p-5">
                         {room.hotels?.name && <p className="mb-2 flex items-center gap-1 text-xs font-semibold text-[#8B6840]"><Building2 size={13} />{room.hotels.name}</p>}
                         <h3 className="text-base font-bold text-gray-900">{room.name}</h3>
                         <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-500">
-                          <span className="flex items-center gap-1"><MapPin size={13} />{localizeCityName(room.location || room.hotels?.city || '-')}</span>
                           <span className="flex items-center gap-1"><Users size={13} />{room.capacity} {t.guests}</span>
                         </div>
                         <div className="mt-5 flex items-end justify-between border-t border-gray-100 pt-4">
@@ -532,9 +560,11 @@ export default function Home() {
             {activeRecommendationTab === 'shop' && (
               <div className="grid gap-6 md:grid-cols-3">
                 {displayProducts.map(product => (
-                  <Link key={product.id} to={`/shop/${product.id}`} className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-elegant transition hover:-translate-y-1 hover:shadow-card-hover">
-                    <div className="relative h-56 overflow-hidden bg-gray-100">
-                      <img src={product.image_url || PRODUCT_FALLBACK_IMAGE} alt={product.name} onError={event => useFallbackImage(event, PRODUCT_FALLBACK_IMAGE)} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                  <Link key={product.id} to={`/shop/${product.id}`} className="group overflow-hidden rounded-[1.75rem] border border-stone-200/80 bg-white shadow-[0_8px_30px_rgba(63,45,26,0.06)] transition hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(63,45,26,0.12)]">
+                    <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+                      <img src={product.image_url || PRODUCT_FALLBACK_IMAGE} alt={product.name} onError={event => handleImageFallback(event, PRODUCT_FALLBACK_IMAGE)} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                      <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-stone-950/45 to-transparent" />
+                      {product.origin && <span className="absolute bottom-4 left-4 rounded-full border border-white/25 bg-stone-950/45 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur">{product.origin}</span>}
                     </div>
                     <div className="p-5">
                       <h3 className="line-clamp-2 text-base font-bold text-gray-900">{product.name}</h3>
@@ -552,13 +582,15 @@ export default function Home() {
             {activeRecommendationTab === 'journal' && (
               <div className="grid gap-6 md:grid-cols-3">
                 {displayPosts.map(post => (
-                  <Link key={post.id} to={`/blog/${post.slug}`} className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-elegant transition hover:-translate-y-1 hover:shadow-card-hover">
-                    <div className="relative h-48 overflow-hidden bg-[#F0E4C8]">
+                  <Link key={post.id} to={`/blog/${post.slug}`} className="group overflow-hidden rounded-[1.75rem] border border-stone-200/80 bg-white shadow-[0_8px_30px_rgba(63,45,26,0.06)] transition hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(63,45,26,0.12)]">
+                    <div className="relative aspect-[4/3] overflow-hidden bg-[#F0E4C8]">
                       {post.cover_image_url ? (
-                        <img src={post.cover_image_url} alt={post.title} onError={event => useFallbackImage(event, BLOG_FALLBACK_IMAGE)} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                        <img src={post.cover_image_url} alt={post.title} onError={event => handleImageFallback(event, BLOG_FALLBACK_IMAGE)} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
                       ) : (
                         <div className="flex h-full items-center justify-center text-[#C09A6A]"><Coffee size={42} /></div>
                       )}
+                      <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-stone-950/45 to-transparent" />
+                      <span className="absolute bottom-4 left-4 rounded-full border border-white/25 bg-stone-950/45 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur">{post.category}</span>
                     </div>
                     <div className="p-5">
                       <h3 className="line-clamp-2 text-base font-bold text-gray-900 group-hover:text-[#8B6840]">{post.title}</h3>

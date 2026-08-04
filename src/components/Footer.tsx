@@ -2,6 +2,8 @@
 import { Link } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import {
+  ArrowUpRight,
+  Coffee,
   Facebook,
   FileText,
   Hotel,
@@ -70,6 +72,12 @@ export default function Footer() {
     terms: pick(locale, '服務條款', 'Terms of Service', '利用規約', '이용약관'),
     antiFraud: pick(locale, '防詐騙專區', 'Anti-Fraud', '詐欺防止', '사기 방지'),
     cookieSettings: pick(locale, 'Cookie 設定', 'Cookie Settings', 'Cookie 設定', '쿠키 설정'),
+    journeyEyebrow: pick(locale, '下一段旅程', 'Your next journey', '次の旅へ', '다음 여행'),
+    journeyTitle: pick(locale, '從想去的地方，開始規劃。', 'Start with somewhere you want to go.', '行きたい場所から、旅を始めよう。', '가고 싶은 곳에서 여행을 시작하세요.'),
+    journeyDesc: pick(locale, '找住宿、挑旅途用品，或先讀一篇在地故事。', 'Find a stay, pick up travel goods, or begin with a local story.', '宿を探し、旅の道具を選び、まずは土地の物語を読んでみましょう。', '숙소를 찾고 여행 용품을 고르거나 지역 이야기부터 읽어보세요.'),
+    stays: pick(locale, '探索住宿', 'Explore stays', '宿を探す', '숙소 찾기'),
+    shop: pick(locale, '逛旅行商城', 'Shop travel goods', '旅の買い物', '여행 상품 보기'),
+    journal: pick(locale, '閱讀旅誌', 'Read the journal', '旅の記事を読む', '여행 이야기 읽기'),
   } as const;
 
   const socialLinks = [
@@ -104,17 +112,55 @@ export default function Footer() {
     { src: '/20260407_nestobi_logo.svg', alt: 'Nestobi', className: 'h-14 w-auto' },
   ] as const;
 
+  const journeyLinks = [
+    { to: '/rooms', label: t.stays, eyebrow: 'STAY', icon: Hotel },
+    { to: '/shop', label: t.shop, eyebrow: 'SHOP', icon: ShoppingBag },
+    { to: '/blog', label: t.journal, eyebrow: 'JOURNAL', icon: Coffee },
+  ] as const;
+
   return (
-    <footer className="bg-[#F0E4C8] text-[#2C1F10]">
-      <div className="mx-auto max-w-7xl px-6 py-14 lg:px-12">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
+    <footer className="overflow-hidden bg-[#17130F] text-stone-100">
+      <div className="border-b border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(192,154,106,0.22),transparent_42%)]">
+        <div className="mx-auto grid max-w-[1440px] gap-8 px-5 py-12 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-end lg:px-12 lg:py-16">
           <div>
-            <div className="mb-6 flex flex-wrap items-center gap-4">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-amber-300">{t.journeyEyebrow}</p>
+            <h2 className="mt-3 max-w-xl font-serif text-3xl font-semibold leading-tight text-white sm:text-4xl lg:text-5xl">
+              {footerText('footer-journey-title', 'title', t.journeyTitle)}
+            </h2>
+            <p className="mt-4 max-w-xl text-sm leading-7 text-stone-300 sm:text-base">{t.journeyDesc}</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {journeyLinks.map(({ to, label, eyebrow, icon: Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                className="group flex min-h-32 flex-col justify-between rounded-3xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur transition hover:-translate-y-1 hover:border-amber-300/40 hover:bg-white/[0.1]"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold tracking-[0.18em] text-stone-400">{eyebrow}</span>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-amber-200 transition group-hover:bg-amber-300 group-hover:text-stone-950"><Icon size={17} /></span>
+                </div>
+                <span className="mt-6 flex items-end justify-between gap-3 font-semibold text-white">
+                  {label}
+                  <ArrowUpRight size={17} className="shrink-0 text-stone-500 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-amber-300" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-[1440px] px-5 py-12 sm:px-8 lg:px-12 lg:py-16">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1.1fr_0.9fr]">
+          <div>
+            <div className="mb-7 flex flex-wrap items-center gap-5 rounded-3xl bg-white/[0.04] p-5">
               {brandLogos.map((logo) => (
-                <img key={logo.alt} src={logo.src} alt={logo.alt} className={`${logo.className} object-contain`} />
+                <span key={logo.alt} className="flex min-h-16 min-w-28 flex-1 items-center justify-center rounded-2xl bg-[#F7F1E8] px-4">
+                  <img src={logo.src} alt={logo.alt} className={`${logo.className} max-w-full object-contain`} />
+                </span>
               ))}
             </div>
-            <p className="mb-5 max-w-2xl text-sm leading-7 text-[#2C1F10]/70">{t.intro}</p>
+            <p className="mb-6 max-w-2xl text-sm leading-7 text-stone-400">{t.intro}</p>
             <div className="flex flex-wrap gap-3">
               {socialLinks.map(({ href, label, icon: Icon }) => (
                 <a
@@ -124,7 +170,7 @@ export default function Footer() {
                   rel="noreferrer"
                   aria-label={label}
                   title={label}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[#C09A6A]/20 transition hover:bg-[#C09A6A] hover:text-white"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-stone-300 transition hover:-translate-y-0.5 hover:border-amber-300/40 hover:bg-amber-300 hover:text-stone-950"
                 >
                   <Icon size={16} />
                 </a>
@@ -134,42 +180,42 @@ export default function Footer() {
 
           <div className="space-y-6">
             <div>
-              <h4 className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-[#2C1F10]/50">{t.contact}</h4>
-              <div className="space-y-3 text-sm">
-                <div className="text-[#2C1F10]/70">
+              <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-amber-300">{t.contact}</h4>
+              <div className="grid gap-3 text-sm sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-stone-300">
                   <div className="mb-1 flex items-center gap-2">
                     <Phone size={14} />
-                    <span className="text-xs font-semibold uppercase tracking-[0.15em] text-[#2C1F10]/50">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-stone-500">
                       {pick(locale, '客服電話', 'Support Phone', 'サポート電話', '고객센터 전화')}
                     </span>
                   </div>
-                  <div className="font-medium text-[#2C1F10]">{settings.contact_phone || '02-27565663'}</div>
-                  <div className="mt-0.5 text-xs leading-5 text-[#2C1F10]/60">{t.workday}</div>
+                  <div className="font-medium text-white">{settings.contact_phone || '02-27565663'}</div>
+                  <div className="mt-1 text-xs leading-5 text-stone-500">{t.workday}</div>
                 </div>
 
-                <div className="text-[#2C1F10]/70">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-stone-300">
                   <div className="mb-1 flex items-center gap-2">
                     <Mail size={14} />
-                    <span className="text-xs font-semibold uppercase tracking-[0.15em] text-[#2C1F10]/50">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-stone-500">
                       {pick(locale, '客服信箱', 'Support Email', 'サポートメール', '고객센터 이메일')}
                     </span>
                   </div>
-                  <div className="font-medium text-[#2C1F10]">{settings.contact_email || 'service@dlalshop.com'}</div>
-                  <div className="mt-0.5 text-xs leading-5 text-[#2C1F10]/60">{t.aiHours}</div>
+                  <div className="break-all font-medium text-white">{settings.contact_email || 'service@dlalshop.com'}</div>
+                  <div className="mt-1 text-xs leading-5 text-stone-500">{t.aiHours}</div>
                 </div>
 
-                <div className="text-[#2C1F10]/70">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-stone-300 sm:col-span-2">
                   <div className="mb-1 flex items-center gap-2">
                     <MapPin size={14} />
-                    <span className="text-xs font-semibold uppercase tracking-[0.15em] text-[#2C1F10]/50">{t.companyInfo}</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-stone-500">{t.companyInfo}</span>
                   </div>
-                  <div className="font-medium text-[#2C1F10]">{settings.company_name || '若水金禾餐飲股份有限公司'}</div>
-                  <div className="mt-0.5 text-xs leading-5 text-[#2C1F10]/60">
+                  <div className="font-medium text-white">{settings.company_name || '若水金禾餐飲股份有限公司'}</div>
+                  <div className="mt-1 text-xs leading-5 text-stone-500">
                     {t.taxId}：{settings.company_no || '83122492'} / {t.headquarters}：{settings.headquarters_address || '台北市信義區忠孝東路四段553巷22弄4-1號'}
                   </div>
                 </div>
 
-                <Link to="/contact" className="inline-flex items-center gap-2 text-[#2C1F10]/70 transition hover:text-[#2C1F10]">
+                <Link to="/contact" className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2.5 text-stone-300 transition hover:border-amber-300/40 hover:text-amber-200 sm:col-span-2 sm:justify-self-start">
                   <FileText size={14} />
                   <span>{t.contactForm}</span>
                 </Link>
@@ -178,17 +224,17 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-[#2C1F10]/10 pt-8">
-          <div className="flex flex-col gap-5">
-            <div className="flex flex-wrap gap-x-5 gap-y-3 text-sm text-[#2C1F10]/75">
+        <div className="mt-12 border-t border-white/10 pt-7">
+          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+            <div className="flex flex-wrap gap-x-5 gap-y-3 text-sm text-stone-400">
               {policyLinks.map(({ to, label }) => (
-                <Link key={to} to={to} className="transition hover:text-[#2C1F10]">
+                <Link key={to} to={to} className="transition hover:text-amber-200">
                   {label}
                 </Link>
               ))}
             </div>
 
-            <div className="flex items-center gap-4 text-xs text-[#2C1F10]/55">
+            <div className="flex flex-wrap items-center gap-4 text-xs text-stone-500">
               <p>© {new Date().getFullYear()} 若水金禾 - 根本在旅行 / Nestobi</p>
               <div className="flex items-center gap-2">
                 {adminLinks.map(({ to, label, icon: Icon }) => (
@@ -197,7 +243,7 @@ export default function Footer() {
                     to={to}
                     aria-label={label}
                     title={label}
-                    className="flex h-6 w-6 items-center justify-center text-[#2C1F10]/55 transition hover:text-[#2C1F10]"
+                    className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 transition hover:border-amber-300/40 hover:text-amber-200"
                   >
                     <Icon size={14} />
                   </Link>

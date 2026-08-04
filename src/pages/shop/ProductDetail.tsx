@@ -324,7 +324,7 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="commerce-page">
         <Navigation />
         <div className="flex justify-center py-24">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#C09A6A] border-t-transparent" />
@@ -335,11 +335,11 @@ export default function ProductDetail() {
 
   if (!viewProduct) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="commerce-page">
         <Navigation />
         <div className="mx-auto max-w-3xl px-4 py-24 text-center">
           <h1 className="mb-4 text-2xl font-bold">{labels.notFound}</h1>
-          <Link to="/shop" className="inline-flex items-center gap-2 rounded-xl bg-[#C09A6A] px-5 py-3 font-semibold text-white">
+          <Link to="/shop" className="commerce-primary-button">
             <ArrowLeft className="h-4 w-4" />
             {labels.back}
           </Link>
@@ -354,7 +354,7 @@ export default function ProductDetail() {
   const averageRating = reviews.length ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="commerce-page">
       <SEOHead
         title={viewProduct.name}
         description={(viewProduct.description || '').replace(/<[^>]+>/g, ' ').slice(0, 160)}
@@ -363,7 +363,7 @@ export default function ProductDetail() {
         pageType="product"
       />
       <Navigation />
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="commerce-container">
         <nav className="mb-6 flex items-center gap-1.5 text-sm text-slate-500">
           <Link to="/shop" className="font-semibold hover:text-[#8B6840]">{labels.shop}</Link>
           {viewCategory && (
@@ -376,9 +376,9 @@ export default function ProductDetail() {
           <span className="max-w-[220px] truncate font-semibold text-slate-700">{viewProduct.name}</span>
         </nav>
 
-        <div className="grid gap-10 lg:grid-cols-[1.02fr_0.98fr]">
+        <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
           <motion.div initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }}>
-            <div className="aspect-square overflow-hidden rounded-2xl bg-white shadow-card">
+            <div className="commerce-card aspect-square overflow-hidden">
               <img src={mainImage} alt={viewProduct.name} className="h-full w-full object-cover" />
             </div>
             {images.length > 1 && (
@@ -388,7 +388,7 @@ export default function ProductDetail() {
                     key={image}
                     type="button"
                     onClick={() => setActiveImage(image)}
-                    className={`overflow-hidden rounded-xl border ${mainImage === image ? 'border-[#8B6840]' : 'border-gray-200'}`}
+                    className={`overflow-hidden rounded-2xl border-2 bg-white p-1 transition ${mainImage === image ? 'border-[#8B6840]' : 'border-transparent hover:border-stone-300'}`}
                   >
                     <img src={image} alt={viewProduct.name} className="h-16 w-full object-cover" />
                   </button>
@@ -397,10 +397,15 @@ export default function ProductDetail() {
             )}
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-            <h1 className="text-3xl font-bold text-charcoal">{viewProduct.name}</h1>
-            <div className="text-4xl font-bold text-[#2C1F10]">{formatCurrency(viewProduct.price)}</div>
-            <p className={`text-sm ${inStock ? 'text-emerald-700' : 'text-red-600'}`}>{inStock ? `${viewProduct.stock_quantity}` : labels.soldOut}</p>
+          <motion.div initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} className="commerce-card space-y-6 p-6 lg:sticky lg:top-24 lg:p-8">
+            <div>
+              <p className="commerce-kicker">{viewCategory?.name || labels.shop}</p>
+              <h1 className="mt-3 text-3xl font-bold leading-tight text-[#2C1F10] lg:text-4xl">{viewProduct.name}</h1>
+              <div className="mt-5 flex flex-wrap items-end justify-between gap-3">
+                <div className="text-4xl font-bold text-[#2C1F10]">{formatCurrency(viewProduct.price)}</div>
+                <p className={`rounded-full px-3 py-1.5 text-xs font-semibold ${inStock ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>{inStock ? `${viewProduct.stock_quantity}` : labels.soldOut}</p>
+              </div>
+            </div>
 
             {isSubscriptionProduct && (
               <div className="rounded-2xl border border-[#E8D8BF] bg-[#FCF8F0] p-4">
@@ -454,7 +459,7 @@ export default function ProductDetail() {
                 type="button"
                 onClick={handleAdd}
                 disabled={!inStock || adding}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-3 font-semibold text-gray-700 disabled:opacity-40"
+                className="commerce-secondary-button"
               >
                 <ShoppingCart className="h-4 w-4" />
                 {labels.addCart}
@@ -463,7 +468,7 @@ export default function ProductDetail() {
                 type="button"
                 onClick={() => handleAdd().then(() => navigate('/cart'))}
                 disabled={!inStock || adding}
-                className="rounded-xl bg-gray-900 px-4 py-3 font-semibold text-white disabled:opacity-40"
+                className="commerce-primary-button"
               >
                 {labels.buyNow}
               </button>
@@ -474,7 +479,7 @@ export default function ProductDetail() {
                 type="button"
                 onClick={handleSubscribe}
                 disabled={!inStock || subscribing}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#8B6840] to-[#C09A6A] px-4 py-3 font-semibold text-white shadow-sm transition hover:brightness-105 disabled:opacity-40"
+                className="commerce-primary-button w-full bg-gradient-to-r from-[#8B6840] to-[#C09A6A]"
               >
                 {subscribing ? labels.subscribing : labels.subscribeNow}
               </button>
@@ -505,12 +510,12 @@ export default function ProductDetail() {
         </div>
 
         {viewProduct.description ? (
-          <section className="mt-10 rounded-2xl border bg-white p-6">
+          <section className="commerce-card mt-10 p-6 lg:p-8">
             <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(viewProduct.description) }} />
           </section>
         ) : null}
 
-        <section className="mt-10 rounded-2xl border bg-white p-6">
+        <section className="commerce-card mt-8 p-6 lg:p-8">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-bold text-charcoal">{actionLabels.reviews}</h2>
             {reviews.length > 0 ? (
@@ -543,9 +548,9 @@ export default function ProductDetail() {
             <h2 className="mb-4 text-2xl font-bold text-charcoal">{labels.related}</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {viewRelated.map((item) => (
-                <Link key={item.id} to={`/shop/${item.id}`} className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-                  <img src={item.image_url || images[0]} alt={item.name} className="h-36 w-full object-cover" />
-                  <div className="p-3">
+                <Link key={item.id} to={`/shop/${item.id}`} className="group commerce-card overflow-hidden transition hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(63,45,26,0.12)]">
+                  <img src={item.image_url || images[0]} alt={item.name} className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105" />
+                  <div className="p-4">
                     <h3 className="line-clamp-2 text-sm font-semibold text-gray-800">{item.name}</h3>
                     <p className="mt-2 font-bold text-[#2C1F10]">{formatCurrency(item.price)}</p>
                   </div>

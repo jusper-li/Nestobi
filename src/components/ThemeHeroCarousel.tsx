@@ -1,6 +1,6 @@
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Compass } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../lib/i18n';
 import { fetchThemeBanners, getFallbackThemeBanners, type ThemeBanner, type ThemeKey } from '../lib/themeBanners';
@@ -13,6 +13,13 @@ interface ThemeHeroCarouselProps {
   accentClassName?: string;
   children?: ReactNode;
 }
+
+const themeMeta: Record<ThemeKey, { label: string; glow: string }> = {
+  home: { label: 'TRAVEL · SHOP · DISCOVER', glow: 'from-amber-300/35' },
+  nestopia: { label: 'NESTOBI STAYS', glow: 'from-emerald-300/35' },
+  genbon_travel: { label: 'GENBON TRAVEL SHOP', glow: 'from-amber-300/35' },
+  coffee_traveler: { label: 'COFFEE TRAVELER', glow: 'from-orange-300/35' },
+};
 
 function pickBannerText(locale: string, banner: ThemeBanner, field: 'title' | 'subtitle' | 'link_label') {
   return pickByLang(
@@ -33,7 +40,6 @@ export default function ThemeHeroCarousel({
   kicker,
   title,
   description,
-  accentClassName = 'text-[#8B6840]',
   children,
 }: ThemeHeroCarouselProps) {
   const { lang } = useLanguage();
@@ -62,7 +68,7 @@ export default function ThemeHeroCarousel({
     if (banners.length <= 1) return;
     const timer = window.setInterval(() => {
       setActiveIndex(current => (current + 1) % banners.length);
-    }, 5200);
+    }, 6200);
     return () => window.clearInterval(timer);
   }, [banners.length]);
 
@@ -75,74 +81,70 @@ export default function ThemeHeroCarousel({
     }),
     [activeBanner, locale],
   );
-
+  const meta = themeMeta[themeKey];
   const link = activeBanner.link_url.trim();
-  const linkClassName =
-    'inline-flex items-center gap-2 rounded-full bg-[#2C1F10] px-4 py-2 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-[#8B6840]';
-  const linkContent = (
-    <>
-      {bannerText.linkLabel}
-      <ArrowRight className="h-4 w-4" />
-    </>
-  );
+  const linkClassName = 'inline-flex min-h-11 items-center gap-2 rounded-full border border-white/25 bg-white px-5 py-2.5 text-sm font-bold text-stone-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-amber-50';
+  const linkContent = <>{bannerText.linkLabel}<ArrowRight className="h-4 w-4" /></>;
 
   return (
-    <section className="relative isolate overflow-hidden bg-[#FFF8EA] text-[#2C1F10]">
+    <section className="relative isolate overflow-hidden bg-stone-950 text-white">
       <div className="absolute inset-0">
         {banners.map((banner, index) => (
           <img
             key={banner.id}
             src={banner.image_url}
             alt={pickBannerText(locale, banner, 'title')}
-            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
-              index === activeIndex ? 'opacity-80' : 'opacity-0'
+            className={`absolute inset-0 h-full w-full object-cover transition duration-1000 ${
+              index === activeIndex ? 'scale-100 opacity-75' : 'scale-[1.03] opacity-0'
             }`}
           />
         ))}
       </div>
-      <div className="absolute inset-0 bg-gradient-to-r from-[#FFF8EA]/96 via-[#FFF8EA]/76 to-[#FFF8EA]/22" />
-      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#FFF8EA] to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-stone-950/95 via-stone-950/70 to-stone-950/25" />
+      <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-transparent to-stone-950/20" />
+      <div className={`absolute -left-20 top-0 h-80 w-80 rounded-full bg-gradient-to-br ${meta.glow} to-transparent blur-3xl`} />
 
-      <div className="relative mx-auto grid min-h-[560px] max-w-7xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_0.72fr] lg:items-end lg:px-8">
-        <div className="max-w-3xl self-center py-6">
-          {kicker && <p className={`text-xs font-semibold uppercase tracking-[0.22em] ${accentClassName}`}>{kicker}</p>}
-          <h1 className={`${kicker ? 'mt-4' : ''} font-serif text-5xl font-bold leading-tight sm:text-6xl`}>{title}</h1>
-          <p className="mt-5 max-w-2xl text-base leading-8 text-[#2C1F10]/72">{description}</p>
+      <div className="relative mx-auto grid min-h-[560px] max-w-[1440px] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(380px,0.72fr)] lg:items-end lg:px-10 lg:py-16 xl:px-14">
+        <div className="max-w-3xl self-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] font-bold tracking-[0.18em] text-white/85 backdrop-blur">
+            <Compass className="h-3.5 w-3.5 text-amber-300" />
+            {kicker || meta.label}
+          </div>
+          <h1 className="mt-5 max-w-3xl font-serif text-4xl font-semibold leading-[1.06] tracking-[-0.035em] text-white sm:text-5xl lg:text-6xl xl:text-7xl">
+            {title}
+          </h1>
+          <p className="mt-5 max-w-2xl text-sm leading-7 text-white/72 sm:text-base sm:leading-8">{description}</p>
 
-          <div className="mt-8 rounded-3xl border border-white/70 bg-white/78 p-5 shadow-xl backdrop-blur-md sm:p-6">
-            <p className="text-2xl font-bold leading-snug sm:text-3xl">{bannerText.title}</p>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[#2C1F10]/68">{bannerText.subtitle}</p>
-            {link && (
-              <div className="mt-5">
-                {isInternalLink(link) ? (
-                  <Link to={link} className={linkClassName}>
-                    {linkContent}
-                  </Link>
-                ) : (
-                  <a href={link} target="_blank" rel="noreferrer" className={linkClassName}>
-                    {linkContent}
-                  </a>
-                )}
-              </div>
-            )}
+          <div className="mt-9 max-w-2xl border-l-2 border-amber-300/80 pl-5">
+            <p className="whitespace-pre-line text-xl font-bold leading-snug text-white sm:text-2xl">{bannerText.title}</p>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-white/65">{bannerText.subtitle}</p>
           </div>
 
-          {banners.length > 1 && (
-            <div className="mt-5 flex gap-2">
-              {banners.map((banner, index) => (
-                <button
-                  key={banner.id}
-                  type="button"
-                  onClick={() => setActiveIndex(index)}
-                  className={`h-2.5 rounded-full transition-all ${index === activeIndex ? 'w-8 bg-[#2C1F10]' : 'w-2.5 bg-[#2C1F10]/24 hover:bg-[#2C1F10]/45'}`}
-                  aria-label={`Banner ${index + 1}`}
-                />
-              ))}
-            </div>
-          )}
+          <div className="mt-7 flex flex-wrap items-center gap-4">
+            {link ? (
+              isInternalLink(link) ? <Link to={link} className={linkClassName}>{linkContent}</Link> : <a href={link} target="_blank" rel="noreferrer" className={linkClassName}>{linkContent}</a>
+            ) : null}
+            {banners.length > 1 ? (
+              <div className="flex items-center gap-2" aria-label="Banner navigation">
+                {banners.map((banner, index) => (
+                  <button
+                    key={banner.id}
+                    type="button"
+                    onClick={() => setActiveIndex(index)}
+                    className={`h-1.5 rounded-full transition-all ${index === activeIndex ? 'w-9 bg-amber-300' : 'w-3 bg-white/35 hover:bg-white/60'}`}
+                    aria-label={`Banner ${index + 1}`}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
         </div>
 
-        {children && <div className="self-end pb-4 lg:pb-8">{children}</div>}
+        {children ? (
+          <div className="self-end rounded-[2rem] border border-white/20 bg-white/12 p-2 shadow-2xl backdrop-blur-xl [&>div]:!border-white/60 [&>div]:!bg-white/95">
+            {children}
+          </div>
+        ) : null}
       </div>
     </section>
   );
