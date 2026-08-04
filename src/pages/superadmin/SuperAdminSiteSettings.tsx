@@ -250,7 +250,7 @@ const SuperAdminSiteSettings: React.FC = () => {
                 <span className="text-sm text-gray-600">{PUBLIC_SITE_HOST}</span>
               </div>
               <p className="cursor-default text-lg font-medium leading-snug text-blue-700 hover:underline">{previewTitle || 'Untitled'}</p>
-              <p className="mt-0.5 text-sm leading-relaxed text-gray-600">{previewDesc || 'No description'}</p>
+              <p className="mt-0.5 text-sm leading-relaxed text-gray-600">{previewDesc || '尚未提供網站說明'}</p>
             </div>
             <div className="border-t border-gray-200 pt-4">
               <p className="mb-2 text-xs text-gray-500">OG 預覽</p>

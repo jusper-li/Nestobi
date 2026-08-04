@@ -46,7 +46,7 @@ const PERMISSION_GROUPS: PermissionGroup[] = [
     group: '會員與廠商',
     items: [
       { key: 'manage_users', label: '用戶管理', description: '查看會員資料與帳號狀態' },
-      { key: 'manage_vendors', label: '廠商管理', description: '審核並管理合作廠商帳號' },
+      { key: 'manage_vendors', label: '供應商管理', description: '審核並管理合作供應商帳號' },
     ],
   },
   {

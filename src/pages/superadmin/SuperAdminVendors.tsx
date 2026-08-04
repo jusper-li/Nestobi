@@ -145,16 +145,19 @@ const SuperAdminVendors: React.FC = () => {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-amber-100 rounded-xl"><Store className="w-6 h-6 text-amber-700" /></div>
-          <h1 className="text-2xl font-bold text-gray-900">廠商管理</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">供應商管理</h1>
+            <p className="mt-0.5 text-sm text-gray-500">集中管理合作供應商、聯絡資料與啟用狀態。</p>
+          </div>
         </div>
         <button onClick={openAdd} className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition shadow-sm">
-          <Plus className="w-4 h-4" />新增廠商
+          <Plus className="w-4 h-4" />新增供應商
         </button>
       </div>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="搜尋廠商名稱或信箱…"
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="搜尋供應商名稱或信箱…"
           className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
       </div>
 

@@ -71,7 +71,7 @@ const SuperAdminLayout: React.FC = () => {
         title: pick('總覽與營運', 'Overview & operations', '概要と運営', '개요 및 운영'),
         items: [
           { to: '/superadmin', icon: <LayoutDashboard className="h-5 w-5" />, label: pick('總覽', 'Dashboard', 'ダッシュボード', '대시보드'), end: true },
-          { to: '/superadmin/engagement', icon: <MessageSquare className="h-5 w-5" />, label: pick('互動總覽', 'Engagement', 'エンゲージメント', '상호작용') },
+          { to: '/superadmin/engagement', icon: <MessageSquare className="h-5 w-5" />, label: pick('互動總覽', 'Engagement', 'エンゲージメント', '참여 현황') },
           { to: '/superadmin/revenue', icon: <BarChart2 className="h-5 w-5" />, label: pick('營收報表', 'Revenue', '売上レポート', '매출 보고서') },
         ],
       },
@@ -81,7 +81,7 @@ const SuperAdminLayout: React.FC = () => {
         items: [
           { to: '/superadmin/products', icon: <ShoppingBag className="h-5 w-5" />, label: pick('商品管理', 'Products', '商品管理', '상품 관리') },
           { to: '/superadmin/product-categories', icon: <Tags className="h-5 w-5" />, label: pick('商品分類', 'Categories', '商品カテゴリ', '상품 분류') },
-          { to: '/superadmin/orders', icon: <Package className="h-5 w-5" />, label: pick('商店訂單', 'Store orders', 'ストア注文', '스토어 주문') },
+          { to: '/superadmin/orders', icon: <Package className="h-5 w-5" />, label: pick('商店訂單', 'Store orders', 'ショップ注文', '상점 주문') },
           { to: '/superadmin/vendors', icon: <Store className="h-5 w-5" />, label: pick('供應商管理', 'Vendors', '仕入先管理', '공급업체 관리') },
         ],
       },
@@ -99,11 +99,11 @@ const SuperAdminLayout: React.FC = () => {
         title: pick('內容與 AI', 'Content & AI', 'コンテンツと AI', '콘텐츠 및 AI'),
         items: [
           { to: '/superadmin/blog', icon: <Coffee className="h-5 w-5" />, label: pick('部落格', 'Blog', 'ブログ', '블로그') },
-          { to: '/superadmin/blog-categories', icon: <FolderOpen className="h-5 w-5" />, label: pick('文章分類', 'Article categories', '記事カテゴリ', '글 분류') },
+          { to: '/superadmin/blog-categories', icon: <FolderOpen className="h-5 w-5" />, label: pick('文章分類', 'Article categories', '記事カテゴリ', '게시글 분류') },
           { to: '/superadmin/coffee-quiz', icon: <Coffee className="h-5 w-5" />, label: pick('咖啡 AI 測驗', 'Coffee AI quiz', 'コーヒー AI 診断', '커피 AI 테스트') },
           { to: '/superadmin/ai-analytics', icon: <Brain className="h-5 w-5" />, label: pick('AI 分析', 'AI analytics', 'AI 分析', 'AI 분석') },
-          { to: '/superadmin/chatbot', icon: <MessageSquare className="h-5 w-5" />, label: pick('AI 客服', 'AI support', 'AI サポート', 'AI 고객센터') },
-          { to: '/superadmin/listing-command', icon: <Terminal className="h-5 w-5" />, label: pick('AI 上架指令', 'AI listing command', 'AI 出品コマンド', 'AI 등록 명령') },
+          { to: '/superadmin/chatbot', icon: <MessageSquare className="h-5 w-5" />, label: pick('AI 客服', 'AI support', 'AI サポート', 'AI 고객지원') },
+          { to: '/superadmin/listing-command', icon: <Terminal className="h-5 w-5" />, label: pick('AI 上架指令', 'AI listing command', 'AI 出品指示', 'AI 등록 명령') },
         ],
       },
       {
@@ -111,20 +111,20 @@ const SuperAdminLayout: React.FC = () => {
         title: pick('會員與點數', 'Members & points', '会員とポイント', '회원 및 포인트'),
         items: [
           { to: '/superadmin/users', icon: <Users className="h-5 w-5" />, label: pick('會員管理', 'Members', '会員管理', '회원 관리') },
-          { to: '/superadmin/point-rewards', icon: <Award className="h-5 w-5" />, label: pick('點數獎勵', 'Point rewards', 'ポイント特典', '포인트 적립') },
+          { to: '/superadmin/point-rewards', icon: <Award className="h-5 w-5" />, label: pick('點數獎勵', 'Point rewards', 'ポイント特典', '포인트 보상') },
           { to: '/superadmin/points-ledger', icon: <Coins className="h-5 w-5" />, label: pick('點數帳本', 'Points ledger', 'ポイント台帳', '포인트 원장') },
           { to: '/superadmin/permissions', icon: <Shield className="h-5 w-5" />, label: pick('權限管理', 'Permissions', '権限管理', '권한 관리') },
         ],
       },
       {
         id: 'system',
-        title: pick('網站與系統', 'Website & system', 'サイトとシステム', '웹사이트 및 시스템'),
+        title: pick('網站與系統', 'Website & system', 'サイトとシステム', '사이트 및 시스템'),
         items: [
           { to: '/superadmin/static-pages', icon: <FileText className="h-5 w-5" />, label: pick('靜態頁面', 'Static pages', '固定ページ', '정적 페이지') },
           { to: '/superadmin/faq', icon: <HelpCircle className="h-5 w-5" />, label: pick('常見問題', 'FAQ', 'よくある質問', '자주 묻는 질문') },
           { to: '/superadmin/site-settings', icon: <Settings className="h-5 w-5" />, label: pick('網站設定', 'Site settings', 'サイト設定', '사이트 설정') },
           { to: '/superadmin/theme-banners', icon: <Image className="h-5 w-5" />, label: pick('橫幅管理', 'Banners', 'バナー管理', '배너 관리') },
-          { to: '/superadmin/activity-logs', icon: <History className="h-5 w-5" />, label: pick('活動紀錄', 'Activity logs', 'アクティビティログ', '활동 기록') },
+          { to: '/superadmin/activity-logs', icon: <History className="h-5 w-5" />, label: pick('活動紀錄', 'Activity logs', '操作履歴', '활동 기록') },
           { to: '/superadmin/platform-info', icon: <Server className="h-5 w-5" />, label: pick('平台資訊', 'Platform info', 'プラットフォーム情報', '플랫폼 정보') },
           { to: '/superadmin/version-logs', icon: <BadgeCheck className="h-5 w-5" />, label: pick('版本與稽核', 'Versions & audit', 'バージョンと監査', '버전 및 감사') },
         ],
@@ -134,7 +134,10 @@ const SuperAdminLayout: React.FC = () => {
   );
 
   const navLinks = useMemo(() => navSections.flatMap(section => section.items), [navSections]);
-  const currentPage = useMemo(() => navLinks.find(link => link.to === location.pathname) || null, [location.pathname, navLinks]);
+  const currentPage = useMemo(
+    () => navLinks.find(link => link.to === location.pathname) || null,
+    [location.pathname, navLinks],
+  );
   const activeSectionId = useMemo(() => {
     const section = navSections.find(group => group.items.some(link =>
       link.to === location.pathname || (!link.end && location.pathname.startsWith(`${link.to}/`))
@@ -143,9 +146,7 @@ const SuperAdminLayout: React.FC = () => {
   }, [location.pathname, navSections]);
 
   const toggleSection = (sectionId: string) => {
-    setOpenSectionIds(prev =>
-      prev.includes(sectionId) ? prev.filter(id => id !== sectionId) : [...prev, sectionId]
-    );
+    setOpenSectionIds(prev => (prev.includes(sectionId) ? [] : [sectionId]));
   };
 
   const doSignOut = async () => {
@@ -165,21 +166,14 @@ const SuperAdminLayout: React.FC = () => {
       window.localStorage.setItem(baselineKey, '1');
       void recordVersionBaseline(
         APP_BUILD_LABEL,
-        {
-          source: 'superadmin-layout',
-          pathname: location.pathname,
-          commit: APP_COMMIT_LONG,
-        },
-        {
-          route: location.pathname,
-          summary: 'superadmin baseline recorded',
-        },
+        { source: 'superadmin-layout', pathname: location.pathname, commit: APP_COMMIT_LONG },
+        { route: location.pathname, summary: 'superadmin baseline recorded' },
       );
     }
   }, [loading, location.pathname, role, user]);
 
   useEffect(() => {
-    setOpenSectionIds(prev => (prev.includes(activeSectionId) ? prev : [...prev, activeSectionId]));
+    setOpenSectionIds([activeSectionId]);
   }, [activeSectionId]);
 
   const Sidebar = () => (
@@ -205,9 +199,8 @@ const SuperAdminLayout: React.FC = () => {
               <button
                 type="button"
                 onClick={() => toggleSection(section.id)}
-                className={`flex w-full items-center justify-between gap-2 rounded-2xl px-3 py-2 text-xs font-bold tracking-wide transition ${
-                  sectionActive ? 'text-amber-300' : 'text-slate-400 hover:text-white'
-                }`}
+                className={`flex w-full items-center justify-between gap-2 rounded-2xl px-3 py-2 text-xs font-bold tracking-wide transition ${sectionActive ? 'text-amber-300' : 'text-slate-400 hover:text-white'}`}
+                aria-expanded={sectionOpen}
               >
                 <span>{section.title}</span>
                 <div className="flex items-center gap-2">
@@ -277,14 +270,18 @@ const SuperAdminLayout: React.FC = () => {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-40 flex items-center gap-3 bg-slate-900 px-4 py-3 md:hidden">
-          <button type="button" onClick={() => setSidebarOpen(true)} className="rounded-lg p-2 hover:bg-slate-800">
+          <button type="button" onClick={() => setSidebarOpen(true)} className="rounded-lg p-2 hover:bg-slate-800" aria-label={pick('開啟選單', 'Open menu', 'メニューを開く', '메뉴 열기')}>
             <Menu className="h-5 w-5 text-white" />
           </button>
-          <span className="min-w-0 flex-1 truncate font-semibold text-white">{currentPage?.label || pick('超級管理員', 'Super Admin', 'スーパー管理者', '최고 관리자')}</span>
+          <span className="min-w-0 flex-1 truncate font-semibold text-white">
+            {currentPage?.label || pick('超級管理員', 'Super Admin', 'スーパー管理者', '최고 관리자')}
+          </span>
           <LanguageSwitcher compact inverted />
         </header>
         <main className="flex-1 overflow-auto p-3 sm:p-4 md:p-6">
-          <Outlet />
+          <div className="mx-auto w-full max-w-[1600px]">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

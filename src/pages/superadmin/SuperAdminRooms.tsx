@@ -82,8 +82,8 @@ const SuperAdminRooms: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="p-2 bg-amber-100 rounded-xl"><BedDouble className="w-6 h-6 text-amber-700" /></div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">所有房間</h1>
-            <p className="text-sm text-gray-400">跨廠商查看並管理所有房型</p>
+            <h1 className="text-2xl font-bold text-gray-900">住宿管理</h1>
+            <p className="text-sm text-gray-400">跨供應商查看並管理所有住宿與房型</p>
           </div>
         </div>
         <button

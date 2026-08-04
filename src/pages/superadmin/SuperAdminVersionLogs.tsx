@@ -6,6 +6,7 @@ import { APP_BUILD_LABEL, APP_COMMIT_LONG, APP_COMMIT_SHA } from '../../lib/appV
 import { logSystemCheck, recordVersionBaseline } from '../../lib/auditLog';
 import { supabase } from '../../lib/supabase';
 import { formatDateTime } from '../../lib/utils';
+import AdminPageHeader from '../../components/superadmin/AdminPageHeader';
 
 type SystemRecord = {
   id: string;
@@ -242,18 +243,12 @@ const SuperAdminVersionLogs: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="mb-2 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-amber-100 p-2">
-            <BadgeCheck className="h-6 w-6 text-amber-700" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{labels.title}</h1>
-            <p className="mt-1 text-sm text-gray-500">{labels.subtitle}</p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
+      <AdminPageHeader
+        title={labels.title}
+        description={labels.subtitle}
+        icon={<BadgeCheck className="h-6 w-6" />}
+        actions={
+          <>
           <button
             type="button"
             onClick={fetchRecords}
@@ -280,8 +275,9 @@ const SuperAdminVersionLogs: React.FC = () => {
             <ShieldCheck className="h-4 w-4" />
             {labels.runCheck}
           </button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {topStats.map(item => (

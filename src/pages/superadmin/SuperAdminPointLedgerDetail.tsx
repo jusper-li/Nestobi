@@ -189,9 +189,9 @@ export default function SuperAdminPointLedgerDetail() {
     if (!point) return [];
     return [
       { label: 'Points', value: `${point.amount >= 0 ? '+' : ''}${point.amount}` },
-      { label: 'Transaction', value: point.transaction_type },
-      { label: 'Source', value: point.source_type || '-' },
-      { label: 'Created at', value: formatDateTime(point.created_at) },
+      { label: '異動類型', value: point.transaction_type },
+      { label: '來源', value: point.source_type || '-' },
+      { label: '建立時間', value: formatDateTime(point.created_at) },
     ];
   }, [point]);
 
@@ -212,7 +212,7 @@ export default function SuperAdminPointLedgerDetail() {
           className="inline-flex items-center gap-2 text-sm font-medium text-amber-700 hover:text-amber-800"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to ledger
+          返回點數帳本
         </button>
         <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       </div>
@@ -230,13 +230,13 @@ export default function SuperAdminPointLedgerDetail() {
           className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back
+          返回
         </button>
         <div className="rounded-xl bg-amber-100 p-2">
           <Coins className="h-6 w-6 text-amber-700" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Point Ledger Detail</h1>
+          <h1 className="text-2xl font-bold text-gray-900">點數帳本詳情</h1>
           <p className="text-sm text-gray-500">{point.id}</p>
         </div>
       </div>
@@ -253,10 +253,10 @@ export default function SuperAdminPointLedgerDetail() {
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <section className="space-y-6">
           <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-bold text-gray-900">Record Info</h2>
+            <h2 className="mb-4 text-lg font-bold text-gray-900">異動資訊</h2>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <p className="text-xs font-medium text-gray-500">Member</p>
+                <p className="text-xs font-medium text-gray-500">會員</p>
                 <Link
                   to={`/superadmin/users?q=${encodeURIComponent(point.user_id)}`}
                   className="mt-1 inline-flex items-center gap-1 font-semibold text-amber-700 hover:text-amber-800 hover:underline"
@@ -267,15 +267,15 @@ export default function SuperAdminPointLedgerDetail() {
                 <p className="text-xs text-gray-400">{point.user_id}{member?.role ? ` · ${member.role}` : ''}</p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500">Description</p>
+                <p className="text-xs font-medium text-gray-500">說明</p>
                 <p className="mt-1 text-sm text-gray-700">{point.description || '-'}</p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500">Source type</p>
+                <p className="text-xs font-medium text-gray-500">來源類型</p>
                 <p className="mt-1 font-semibold text-gray-900">{point.source_type || '-'}</p>
               </div>
               <div>
-                <p className="text-xs font-medium text-gray-500">Reference</p>
+                <p className="text-xs font-medium text-gray-500">關聯編號</p>
                 <p className="mt-1 break-all text-sm text-gray-700">{point.reference_id || '-'}</p>
               </div>
             </div>
@@ -285,11 +285,11 @@ export default function SuperAdminPointLedgerDetail() {
             <div className="rounded-2xl bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <BedDouble className="h-5 w-5 text-amber-600" />
-                <h2 className="text-lg font-bold text-gray-900">Booking</h2>
+                <h2 className="text-lg font-bold text-gray-900">訂房紀錄</h2>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <p className="text-xs font-medium text-gray-500">Room</p>
+                  <p className="text-xs font-medium text-gray-500">住宿／房型</p>
                   {booking.tbl_rooms?.id && booking.tbl_rooms?.name ? (
                     <Link to={`/superadmin/rooms/detail/${booking.tbl_rooms.id}`} className="mt-1 inline-flex items-center gap-1 font-semibold text-amber-700 hover:underline">
                       {booking.tbl_rooms.name}
@@ -312,20 +312,20 @@ export default function SuperAdminPointLedgerDetail() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500">Amount</p>
+                  <p className="text-xs font-medium text-gray-500">金額</p>
                   <p className="mt-1 font-semibold text-gray-900">{formatCurrency(booking.total_price)}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500">Stay</p>
+                  <p className="text-xs font-medium text-gray-500">入住期間</p>
                   <p className="mt-1 text-sm text-gray-700">{booking.check_in_date} → {booking.check_out_date}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500">Status</p>
+                  <p className="text-xs font-medium text-gray-500">狀態</p>
                   <p className="mt-1 text-sm text-gray-700">{booking.status}</p>
                 </div>
               </div>
               <div className="mt-4">
-                <p className="text-xs font-medium text-gray-500">Special requests</p>
+                <p className="text-xs font-medium text-gray-500">特殊需求</p>
                 <p className="mt-1 rounded-2xl bg-gray-50 p-4 text-sm text-gray-700">{booking.special_requests || '-'}</p>
               </div>
             </div>
@@ -335,29 +335,29 @@ export default function SuperAdminPointLedgerDetail() {
             <div className="rounded-2xl bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <Package className="h-5 w-5 text-amber-600" />
-                <h2 className="text-lg font-bold text-gray-900">Order</h2>
+                <h2 className="text-lg font-bold text-gray-900">商品訂單</h2>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <p className="text-xs font-medium text-gray-500">Amount</p>
+                  <p className="text-xs font-medium text-gray-500">訂單金額</p>
                   <p className="mt-1 font-semibold text-gray-900">{formatCurrency(order.total_amount)}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500">Payment status</p>
+                  <p className="text-xs font-medium text-gray-500">付款狀態</p>
                   <p className="mt-1 text-sm text-gray-700">{order.payment_status}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500">Status</p>
+                  <p className="text-xs font-medium text-gray-500">訂單狀態</p>
                   <p className="mt-1 text-sm text-gray-700">{order.status}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500">Created at</p>
+                  <p className="text-xs font-medium text-gray-500">建立時間</p>
                   <p className="mt-1 text-sm text-gray-700">{formatDateTime(order.created_at)}</p>
                 </div>
               </div>
               {order.purchase_records && order.purchase_records.length > 0 && (
                 <div className="mt-4 space-y-3">
-                  <p className="text-xs font-medium text-gray-500">Items</p>
+                  <p className="text-xs font-medium text-gray-500">商品明細</p>
                   {order.purchase_records.map(item => (
                     <div key={item.id} className="rounded-2xl bg-gray-50 p-4">
                       <div className="flex items-start justify-between gap-4">
@@ -388,11 +388,11 @@ export default function SuperAdminPointLedgerDetail() {
             <div className="rounded-2xl bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <Repeat className="h-5 w-5 text-amber-600" />
-                <h2 className="text-lg font-bold text-gray-900">Subscription</h2>
+                <h2 className="text-lg font-bold text-gray-900">訂閱紀錄</h2>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <p className="text-xs font-medium text-gray-500">Product</p>
+                  <p className="text-xs font-medium text-gray-500">訂閱商品</p>
                   {subscription.products?.id && subscription.products?.name ? (
                     <Link to={`/superadmin/products/detail/${subscription.products.id}`} className="mt-1 inline-flex items-center gap-1 font-semibold text-amber-700 hover:underline">
                       {subscription.products.name}
@@ -403,7 +403,7 @@ export default function SuperAdminPointLedgerDetail() {
                   )}
                   {subscription.products?.vendors?.id ? (
                     <p className="mt-1 text-xs text-gray-400">
-                      Vendor{' '}
+                      供應商{' '}
                       <Link to={`/superadmin/vendors/detail/${subscription.products.vendors.id}`} className="hover:underline">
                         {subscription.products.vendors.name || subscription.products.vendors.id}
                       </Link>
@@ -411,24 +411,24 @@ export default function SuperAdminPointLedgerDetail() {
                   ) : null}
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500">Monthly amount</p>
+                  <p className="text-xs font-medium text-gray-500">每期金額</p>
                   <p className="mt-1 font-semibold text-gray-900">{formatCurrency(subscription.monthly_amount)}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500">Status</p>
+                  <p className="text-xs font-medium text-gray-500">訂閱狀態</p>
                   <p className="mt-1 text-sm text-gray-700">{subscription.status}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500">Last billed</p>
+                  <p className="text-xs font-medium text-gray-500">上次扣款</p>
                   <p className="mt-1 text-sm text-gray-700">{subscription.last_billed_at ? formatDateTime(subscription.last_billed_at) : '-'}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500">Next billing</p>
+                  <p className="text-xs font-medium text-gray-500">下次扣款</p>
                   <p className="mt-1 text-sm text-gray-700">{subscription.next_bill_at ? formatDateTime(subscription.next_bill_at) : '-'}</p>
                 </div>
               </div>
               <div className="mt-4">
-                <p className="text-xs font-medium text-gray-500">Notes</p>
+                <p className="text-xs font-medium text-gray-500">備註</p>
                 <p className="mt-1 rounded-2xl bg-gray-50 p-4 text-sm text-gray-700">{subscription.notes || '-'}</p>
               </div>
             </div>
@@ -436,18 +436,13 @@ export default function SuperAdminPointLedgerDetail() {
         </section>
 
         <aside className="space-y-6">
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-bold text-gray-900">Debug JSON</h2>
-            <pre className="overflow-x-auto rounded-2xl bg-gray-50 p-4 text-xs text-gray-700">{JSON.stringify({ point, booking, order, subscription }, null, 2)}</pre>
-          </div>
-
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
             <div className="flex items-center gap-2 font-semibold">
               <Users className="h-4 w-4" />
-              Helpful note
+              資料關聯說明
             </div>
             <p className="mt-2 leading-6">
-              This page keeps the original data links intact. If a point record points to booking, order, or subscription data, the related record is loaded below for quick review.
+              系統會依點數紀錄的來源，自動顯示關聯的訂房、商品訂單或訂閱資料，管理員不需要閱讀原始 JSON 即可完成查詢。
             </p>
           </div>
         </aside>

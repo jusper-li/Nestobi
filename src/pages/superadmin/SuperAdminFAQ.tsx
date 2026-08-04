@@ -96,12 +96,12 @@ const SuperAdminFAQ: React.FC = () => {
     <div className="mx-auto max-w-4xl">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">FAQ 管理</h1>
+          <h1 className="text-2xl font-bold text-gray-900">常見問題管理</h1>
           <p className="mt-0.5 text-sm text-gray-500">編輯常見問題並控制是否公開顯示。</p>
         </div>
         <button onClick={startNew} className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600">
           <Plus className="h-4 w-4" />
-          新增 FAQ
+          新增常見問題
         </button>
       </div>
 

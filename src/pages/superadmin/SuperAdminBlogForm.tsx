@@ -245,19 +245,19 @@ const SuperAdminBlogForm: React.FC = () => {
         </button>
         <div className="flex flex-1 items-center gap-2">
           <Coffee className="h-5 w-5 text-amber-700" />
-          <h1 className="text-xl font-bold text-gray-900">{isEdit ? 'Edit Blog Post' : 'New Blog Post'}</h1>
+          <h1 className="text-xl font-bold text-gray-900">{isEdit ? '編輯文章' : '新增文章'}</h1>
         </div>
         <div className="flex items-center gap-2">
           {saveStatus === 'success' && (
             <span className="flex items-center gap-1 text-sm font-medium text-green-600">
               <CheckCircle className="h-4 w-4" />
-              Saved
+              已儲存
             </span>
           )}
           {saveStatus === 'error' && (
             <span className="flex items-center gap-1 text-sm font-medium text-red-500">
               <AlertCircle className="h-4 w-4" />
-              Save failed
+              儲存失敗
             </span>
           )}
           <button
@@ -265,7 +265,7 @@ const SuperAdminBlogForm: React.FC = () => {
             disabled={saving || !form.title}
             className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-40"
           >
-            Save draft
+            儲存草稿
           </button>
           <button
             onClick={() => handleSave('published')}
@@ -273,7 +273,7 @@ const SuperAdminBlogForm: React.FC = () => {
             className="flex items-center gap-1.5 rounded-xl bg-amber-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-800 disabled:bg-gray-200"
           >
             {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Save className="h-4 w-4" />}
-            Publish
+            發布文章
           </button>
         </div>
       </div>
@@ -342,11 +342,11 @@ const SuperAdminBlogForm: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-700">
                         <CheckCircle className="h-4 w-4 text-amber-600" />
-                        Review scraped content
+                        檢查匯入內容
                       </p>
                       <button onClick={resetScraper} className="flex items-center gap-1 text-xs text-gray-400 transition hover:text-gray-600">
                         <X className="h-3.5 w-3.5" />
-                        Reset
+                        重新匯入
                       </button>
                     </div>
 
@@ -355,25 +355,25 @@ const SuperAdminBlogForm: React.FC = () => {
                         <img src={scraperResult.cover_image_url} alt="cover" className="h-36 w-full rounded-lg object-cover" />
                       )}
                       <div>
-                        <p className="mb-0.5 text-xs text-gray-400">Title</p>
+                        <p className="mb-0.5 text-xs text-gray-400">標題</p>
                         <p className="text-sm font-semibold text-gray-900">{scraperResult.title || '-'}</p>
                       </div>
                       <div>
-                        <p className="mb-0.5 text-xs text-gray-400">Excerpt</p>
+                        <p className="mb-0.5 text-xs text-gray-400">摘要</p>
                         <p className="line-clamp-2 text-sm text-gray-700">{scraperResult.excerpt || '-'}</p>
                       </div>
                       <div className="flex flex-wrap gap-3">
                         <div>
-                          <p className="mb-0.5 text-xs text-gray-400">Category</p>
+                          <p className="mb-0.5 text-xs text-gray-400">分類</p>
                           <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">{scraperResult.category || '-'}</span>
                         </div>
                         <div>
-                          <p className="mb-0.5 text-xs text-gray-400">Author</p>
+                          <p className="mb-0.5 text-xs text-gray-400">作者</p>
                           <p className="text-xs text-gray-700">{scraperResult.author_name || '-'}</p>
                         </div>
                         {scraperResult.published_date && (
                           <div>
-                            <p className="mb-0.5 text-xs text-gray-400">Published</p>
+                            <p className="mb-0.5 text-xs text-gray-400">發布日期</p>
                             <p className="text-xs text-gray-700">{scraperResult.published_date}</p>
                           </div>
                         )}
@@ -389,7 +389,7 @@ const SuperAdminBlogForm: React.FC = () => {
                         </div>
                       )}
                       <div>
-                        <p className="mb-0.5 text-xs text-gray-400">Content preview</p>
+                        <p className="mb-0.5 text-xs text-gray-400">內容預覽</p>
                         <div className="prose prose-sm line-clamp-3 max-w-none text-xs text-gray-600" dangerouslySetInnerHTML={{ __html: sanitizeHtml((scraperResult.content || '').slice(0, 300) + '...') }} />
                       </div>
                     </div>
@@ -397,10 +397,10 @@ const SuperAdminBlogForm: React.FC = () => {
                     <div className="flex gap-2">
                       <button onClick={applyScraperResult} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-700 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-800">
                         <CheckCircle className="h-4 w-4" />
-                        Apply to form
+                        套用至表單
                       </button>
                       <button onClick={resetScraper} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-600 transition hover:bg-gray-50">
-                        Cancel
+                        取消
                       </button>
                     </div>
                   </div>
@@ -415,16 +415,16 @@ const SuperAdminBlogForm: React.FC = () => {
         <div className="space-y-4 lg:col-span-2">
           <div className="space-y-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <div>
-              <label className="mb-1.5 block text-sm font-semibold text-gray-700">Title <span className="text-red-500">*</span></label>
+              <label className="mb-1.5 block text-sm font-semibold text-gray-700">文章標題 <span className="text-red-500">*</span></label>
               <input
                 value={form.title}
                 onChange={e => handleTitleChange(e.target.value)}
-                placeholder="Enter a title"
+                placeholder="輸入文章標題"
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 text-lg font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-semibold text-gray-700">Slug <span className="text-gray-400">(manual if needed)</span></label>
+              <label className="mb-1.5 block text-sm font-semibold text-gray-700">網址代稱 <span className="text-gray-400">（需要時可手動修改）</span></label>
               <div className="flex gap-2">
                 <span className="flex items-center rounded-l-xl border border-r-0 border-gray-200 bg-gray-50 px-3 text-sm text-gray-400">/blog/</span>
                 <input
@@ -439,12 +439,12 @@ const SuperAdminBlogForm: React.FC = () => {
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-semibold text-gray-700">Excerpt</label>
+              <label className="mb-1.5 block text-sm font-semibold text-gray-700">文章摘要</label>
               <textarea
                 value={form.excerpt}
                 onChange={e => setForm(current => ({ ...current, excerpt: e.target.value }))}
                 rows={2}
-                placeholder="Short summary for list pages"
+                placeholder="顯示於文章列表的簡短摘要"
                 className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
@@ -453,12 +453,12 @@ const SuperAdminBlogForm: React.FC = () => {
           <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <div className="mb-3 flex items-center justify-between">
               <label className="text-sm font-semibold text-gray-700">
-                Content <span className="text-red-500">*</span>
+                文章內容 <span className="text-red-500">*</span>
               </label>
               {isEdit && form.status === 'published' && (
                 <a href={`/blog/${form.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-amber-700 hover:underline">
                   <ExternalLink className="h-3.5 w-3.5" />
-                  Open live post
+                  開啟已發布文章
                 </a>
               )}
             </div>
@@ -474,20 +474,20 @@ const SuperAdminBlogForm: React.FC = () => {
 
         <div className="space-y-4">
           <div className="space-y-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <h3 className="text-sm font-semibold text-gray-900">Publish settings</h3>
+            <h3 className="text-sm font-semibold text-gray-900">發布設定</h3>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-gray-500">Status</label>
+              <label className="mb-1.5 block text-xs font-medium text-gray-500">狀態</label>
               <select
                 value={form.status}
                 onChange={e => setForm(current => ({ ...current, status: e.target.value as 'draft' | 'published' }))}
                 className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
               >
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
+                <option value="draft">草稿</option>
+                <option value="published">已發布</option>
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-gray-500">Category</label>
+              <label className="mb-1.5 block text-xs font-medium text-gray-500">分類</label>
               <select
                 value={form.category}
                 onChange={e => setForm(current => ({ ...current, category: e.target.value }))}
@@ -501,7 +501,7 @@ const SuperAdminBlogForm: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-gray-500">Author</label>
+              <label className="mb-1.5 block text-xs font-medium text-gray-500">作者</label>
               <input
                 value={form.author_name}
                 onChange={e => setForm(current => ({ ...current, author_name: e.target.value }))}
@@ -511,7 +511,7 @@ const SuperAdminBlogForm: React.FC = () => {
           </div>
 
           <div className="space-y-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <h3 className="text-sm font-semibold text-gray-900">Cover image</h3>
+            <h3 className="text-sm font-semibold text-gray-900">封面圖片</h3>
             <input
               value={form.cover_image_url}
               onChange={e => setForm(current => ({ ...current, cover_image_url: e.target.value }))}
@@ -530,7 +530,7 @@ const SuperAdminBlogForm: React.FC = () => {
           </div>
 
           <div className="space-y-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <h3 className="text-sm font-semibold text-gray-900">Tags</h3>
+            <h3 className="text-sm font-semibold text-gray-900">標籤</h3>
             <div className="flex min-h-[32px] flex-wrap gap-1.5">
               {form.tags.map(tag => (
                 <span key={tag} className="flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs text-amber-800">
@@ -546,7 +546,7 @@ const SuperAdminBlogForm: React.FC = () => {
                 value={tagInput}
                 onChange={e => setTagInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                placeholder="Add a tag"
+                placeholder="新增標籤"
                 className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
               <button onClick={handleAddTag} className="rounded-xl bg-amber-50 p-2 text-amber-700 transition hover:bg-amber-100">
@@ -556,12 +556,12 @@ const SuperAdminBlogForm: React.FC = () => {
           </div>
 
           <div className="space-y-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <h3 className="text-sm font-semibold text-gray-900">SEO description</h3>
+            <h3 className="text-sm font-semibold text-gray-900">SEO 說明</h3>
             <textarea
               value={form.meta_description}
               onChange={e => setForm(current => ({ ...current, meta_description: e.target.value }))}
               rows={3}
-              placeholder="Meta description"
+              placeholder="輸入搜尋結果摘要"
               className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
             <p className="text-xs text-gray-400">{form.meta_description.length} / 160</p>

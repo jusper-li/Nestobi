@@ -16,6 +16,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { formatDateTime } from '../../lib/utils';
+import AdminPageHeader from '../../components/superadmin/AdminPageHeader';
 
 type AdminActivityLog = {
   id: string;
@@ -192,25 +193,21 @@ const SuperAdminActivityLogs: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="mb-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-amber-100 p-2">
-            <ShieldCheck className="h-6 w-6 text-amber-700" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{labels.title}</h1>
-            <p className="mt-1 text-sm text-gray-500">{labels.subtitle}</p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={loadLogs}
-          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-        >
-          <RefreshCcw className="h-4 w-4" />
-          {labels.refresh}
-        </button>
-      </div>
+      <AdminPageHeader
+        title={labels.title}
+        description={labels.subtitle}
+        icon={<ShieldCheck className="h-6 w-6" />}
+        actions={
+          <button
+            type="button"
+            onClick={loadLogs}
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          >
+            <RefreshCcw className="h-4 w-4" />
+            {labels.refresh}
+          </button>
+        }
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[

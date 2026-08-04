@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
+import AdminPageHeader from '../../components/superadmin/AdminPageHeader';
 
 interface MonthlyData {
   month: string;
@@ -117,15 +118,16 @@ const SuperAdminRevenue: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="mb-2 flex items-center gap-3">
-        <div className="rounded-xl bg-amber-100 p-2">
-          <BarChart2 className="h-6 w-6 text-amber-700" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{pick('營收總覽', 'Revenue Overview', 'Revenue Overview', 'Revenue Overview')}</h1>
-          <p className="text-sm text-gray-400">{pick('檢視住宿與商店營收的整體表現。', 'View overall booking and order revenue performance.', 'View overall booking and order revenue performance.', 'View overall booking and order revenue performance.')}</p>
-        </div>
-      </div>
+      <AdminPageHeader
+        title={pick('營收報表', 'Revenue report', '売上レポート', '매출 보고서')}
+        description={pick(
+          '整合住宿與商店的已收款營收、月度趨勢及供應商表現。',
+          'Review paid revenue, monthly trends, and vendor performance across stays and store orders.',
+          '宿泊とショップ注文の入金済み売上、月次推移、仕入先実績を確認します。',
+          '숙박과 상점 주문의 결제 완료 매출, 월별 추이 및 공급업체 실적을 확인합니다.',
+        )}
+        icon={<BarChart2 className="h-6 w-6" />}
+      />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[

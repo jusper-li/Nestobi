@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type React from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Mail, MapPin, Pencil, Phone, Store, Package } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Mail, MapPin, Pencil, Phone, Store } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface VendorDetail {
@@ -74,9 +74,9 @@ export default function SuperAdminVendorDetail() {
       <div className="space-y-4">
         <button type="button" onClick={() => navigate('/superadmin/vendors')} className="inline-flex items-center gap-2 text-sm font-medium text-amber-700 hover:text-amber-800">
           <ArrowLeft className="h-4 w-4" />
-          Back to vendors
+          返回供應商管理
         </button>
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error || 'Load failed'}</div>
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error || '載入失敗'}</div>
       </div>
     );
   }
@@ -86,7 +86,7 @@ export default function SuperAdminVendorDetail() {
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" onClick={() => navigate('/superadmin/vendors')} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
           <ArrowLeft className="h-4 w-4" />
-          Back
+          返回
         </button>
         <div className="rounded-xl bg-amber-100 p-2">
           <Store className="h-6 w-6 text-amber-700" />
@@ -101,7 +101,7 @@ export default function SuperAdminVendorDetail() {
           className="ml-auto inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
         >
           <Pencil className="h-4 w-4" />
-          Edit
+          編輯供應商
         </button>
       </div>
 
@@ -118,72 +118,65 @@ export default function SuperAdminVendorDetail() {
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${vendor.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{vendor.is_active ? 'Active' : 'Inactive'}</span>
-                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">Products {productCount}</span>
-                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">Rooms {roomCount}</span>
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${vendor.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{vendor.is_active ? '啟用中' : '已停用'}</span>
+                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">商品 {productCount}</span>
+                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">住宿 {roomCount}</span>
                 </div>
-                <p className="mt-4 whitespace-pre-line text-gray-700">{vendor.description || 'No description'}</p>
+                <p className="mt-4 whitespace-pre-line text-gray-700">{vendor.description || '尚未提供供應商說明'}</p>
               </div>
             </div>
           </div>
 
           <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-bold text-gray-900">Contact</h2>
+            <h2 className="mb-4 text-lg font-bold text-gray-900">聯絡資訊</h2>
             <div className="grid gap-4 text-sm md:grid-cols-2">
-              <div><p className="text-xs font-medium text-gray-500">Email</p><p className="mt-1 inline-flex items-center gap-1 text-gray-700">{vendor.contact_email || '-'}<Mail className="h-3.5 w-3.5 text-gray-400" /></p></div>
-              <div><p className="text-xs font-medium text-gray-500">Phone</p><p className="mt-1 inline-flex items-center gap-1 text-gray-700">{vendor.contact_phone || '-'}<Phone className="h-3.5 w-3.5 text-gray-400" /></p></div>
-              <div className="md:col-span-2"><p className="text-xs font-medium text-gray-500">Address</p><p className="mt-1 inline-flex items-start gap-1 text-gray-700"><MapPin className="mt-0.5 h-3.5 w-3.5 text-gray-400" />{vendor.address || '-'}</p></div>
-              <div className="md:col-span-2"><p className="text-xs font-medium text-gray-500">Website</p>{vendor.website ? <a href={vendor.website} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-amber-700 hover:underline">{vendor.website}<ExternalLink className="h-3.5 w-3.5" /></a> : <p className="mt-1 text-gray-700">-</p>}</div>
-              <div><p className="text-xs font-medium text-gray-500">Created at</p><p className="mt-1 text-gray-700">{new Date(vendor.created_at).toLocaleString()}</p></div>
-              <div><p className="text-xs font-medium text-gray-500">Updated at</p><p className="mt-1 text-gray-700">{new Date(vendor.updated_at).toLocaleString()}</p></div>
+              <div><p className="text-xs font-medium text-gray-500">電子郵件</p><p className="mt-1 inline-flex items-center gap-1 text-gray-700">{vendor.contact_email || '-'}<Mail className="h-3.5 w-3.5 text-gray-400" /></p></div>
+              <div><p className="text-xs font-medium text-gray-500">電話</p><p className="mt-1 inline-flex items-center gap-1 text-gray-700">{vendor.contact_phone || '-'}<Phone className="h-3.5 w-3.5 text-gray-400" /></p></div>
+              <div className="md:col-span-2"><p className="text-xs font-medium text-gray-500">地址</p><p className="mt-1 inline-flex items-start gap-1 text-gray-700"><MapPin className="mt-0.5 h-3.5 w-3.5 text-gray-400" />{vendor.address || '-'}</p></div>
+              <div className="md:col-span-2"><p className="text-xs font-medium text-gray-500">網站</p>{vendor.website ? <a href={vendor.website} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-amber-700 hover:underline">{vendor.website}<ExternalLink className="h-3.5 w-3.5" /></a> : <p className="mt-1 text-gray-700">-</p>}</div>
+              <div><p className="text-xs font-medium text-gray-500">建立時間</p><p className="mt-1 text-gray-700">{new Date(vendor.created_at).toLocaleString()}</p></div>
+              <div><p className="text-xs font-medium text-gray-500">最後更新</p><p className="mt-1 text-gray-700">{new Date(vendor.updated_at).toLocaleString()}</p></div>
             </div>
           </div>
         </section>
 
         <aside className="space-y-6">
           <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-bold text-gray-900">Linked user</h2>
+            <h2 className="mb-4 text-lg font-bold text-gray-900">綁定會員</h2>
             {vendor.user_id ? (
               <Link to={`/superadmin/users?q=${encodeURIComponent(vendor.user_id)}`} className="inline-flex items-center gap-1 font-semibold text-amber-700 hover:underline">
                 {vendor.linked_display_name || vendor.user_id}
                 <ExternalLink className="h-3.5 w-3.5" />
               </Link>
             ) : (
-              <p className="text-sm text-gray-500">No linked user</p>
+              <p className="text-sm text-gray-500">尚未綁定會員</p>
             )}
           </div>
 
           <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-bold text-gray-900">Quick actions</h2>
+            <h2 className="mb-4 text-lg font-bold text-gray-900">快速操作</h2>
             <div className="space-y-3 text-sm">
               <Link to={`/superadmin/products?q=${encodeURIComponent(vendor.name)}`} className="block rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 font-medium text-gray-800 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800">
-                View related products
+                查看相關商品
               </Link>
               <Link to={`/superadmin/rooms?q=${encodeURIComponent(vendor.name)}`} className="block rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 font-medium text-gray-800 transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-800">
-                View related rooms
+                查看相關住宿
               </Link>
               <button
                 type="button"
                 onClick={() => navigate(`/superadmin/vendors/edit/${vendor.id}`)}
                 className="block w-full rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-left font-semibold text-amber-800 transition hover:bg-amber-100"
               >
-                Edit vendor
+                編輯供應商
               </button>
             </div>
           </div>
 
           <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-bold text-gray-900">Notes</h2>
+            <h2 className="mb-4 text-lg font-bold text-gray-900">內部備註</h2>
             <p className="whitespace-pre-line text-sm text-gray-700">{vendor.note || '-'}</p>
           </div>
 
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-            <div className="flex items-center gap-2 font-semibold"><Package className="h-4 w-4" />Inventory links</div>
-            <div className="mt-3 space-y-2">
-              <Link to={`/superadmin/products?q=${encodeURIComponent(vendor.name)}`} className="block font-medium text-amber-800 hover:underline">Go to products</Link>
-              <Link to={`/superadmin/rooms?q=${encodeURIComponent(vendor.name)}`} className="block font-medium text-amber-800 hover:underline">Go to rooms</Link>
-            </div>
-          </div>
         </aside>
       </div>
     </div>

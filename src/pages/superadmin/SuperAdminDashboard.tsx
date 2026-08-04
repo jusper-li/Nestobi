@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   Users,
   BedDouble,
   ShoppingBag,
   DollarSign,
   Shield,
-  UserPlus,
-  CheckCircle,
-  AlertCircle,
   RefreshCcw,
+  ArrowRight,
+  KeyRound,
 } from 'lucide-react';
-import { logAdminAction } from '../../lib/auditLog';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate } from '../../lib/utils';
+import AdminPageHeader from '../../components/superadmin/AdminPageHeader';
 
 interface AdminUser {
   id: string;
@@ -40,9 +40,6 @@ const SuperAdminDashboard: React.FC = () => {
   });
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [promoteUserId, setPromoteUserId] = useState('');
-  const [promoting, setPromoting] = useState(false);
-  const [promoteMsg, setPromoteMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const fetchData = async () => {
     const [
@@ -82,35 +79,8 @@ const SuperAdminDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  const handlePromote = async () => {
-    if (!promoteUserId.trim()) return;
-    setPromoting(true);
-    try {
-      const { data: existing } = await supabase.from('tbl_user_auth').select('id').eq('user_id', promoteUserId).maybeSingle();
-      if (!existing) {
-        setPromoteMsg({ type: 'error', text: '找不到這個 User ID' });
-        setTimeout(() => setPromoteMsg(null), 3000);
-        return;
-      }
-
-      const { error } = await supabase.from('tbl_user_auth').update({ role: 'admin' }).eq('user_id', promoteUserId);
-      if (!error) {
-        await logAdminAction('promote_admin', 'tbl_user_auth', promoteUserId, { role: 'admin' });
-        setPromoteUserId('');
-        await fetchData();
-        setPromoteMsg({ type: 'success', text: '已成功提升為管理員' });
-        setTimeout(() => setPromoteMsg(null), 3000);
-      } else {
-        setPromoteMsg({ type: 'error', text: '提升失敗，請稍後再試' });
-        setTimeout(() => setPromoteMsg(null), 3000);
-      }
-    } finally {
-      setPromoting(false);
-    }
-  };
-
   const ROLE_COLORS: Record<string, string> = {
-    superadmin: 'bg-purple-100 text-purple-700',
+    superadmin: 'bg-amber-100 text-amber-700',
     admin: 'bg-[#F0E4C8] text-[#2C1F10]',
     user: 'bg-gray-100 text-gray-600',
   };
@@ -125,35 +95,11 @@ const SuperAdminDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <AnimatePresence>
-        {promoteMsg && (
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            className={`fixed right-6 top-6 z-50 flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg ${
-              promoteMsg.type === 'success' ? 'bg-green-600' : 'bg-red-600'
-            } text-white`}
-          >
-            {promoteMsg.type === 'success' ? <CheckCircle className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
-            <span>{promoteMsg.text}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="mb-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="max-w-3xl">
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-amber-100 p-2">
-                <Shield className="h-6 w-6 text-amber-700" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">超級管理員總覽</h1>
-                <p className="mt-1 text-sm text-gray-500">快速查看會員、訂房、訂單與營收摘要。</p>
-              </div>
-            </div>
-          </div>
+      <AdminPageHeader
+        title="超級管理員總覽"
+        description="集中查看會員、住宿、商店訂單與已收營收；詳細操作請進入對應管理頁。"
+        icon={<Shield className="h-6 w-6" />}
+        actions={
           <button
             type="button"
             onClick={fetchData}
@@ -162,34 +108,38 @@ const SuperAdminDashboard: React.FC = () => {
             <RefreshCcw className="h-4 w-4" />
             重新整理
           </button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
-          { icon: <Users className="h-5 w-5 text-blue-600" />, label: '使用者總數', value: stats.totalUsers, color: 'bg-blue-50' },
-          { icon: <BedDouble className="h-5 w-5 text-teal-600" />, label: '住宿訂單數', value: stats.totalBookings, color: 'bg-teal-50' },
-          { icon: <ShoppingBag className="h-5 w-5 text-purple-600" />, label: '商店訂單數', value: stats.totalOrders, color: 'bg-purple-50' },
-          { icon: <DollarSign className="h-5 w-5 text-green-600" />, label: '已收總營收', value: formatCurrency(stats.totalRevenue), color: 'bg-green-50' },
+          { to: '/superadmin/users', icon: <Users className="h-5 w-5 text-blue-600" />, label: '使用者總數', value: stats.totalUsers, color: 'bg-blue-50' },
+          { to: '/superadmin/rooms', icon: <BedDouble className="h-5 w-5 text-teal-600" />, label: '住宿訂單數', value: stats.totalBookings, color: 'bg-teal-50' },
+          { to: '/superadmin/orders', icon: <ShoppingBag className="h-5 w-5 text-amber-600" />, label: '商店訂單數', value: stats.totalOrders, color: 'bg-amber-50' },
+          { to: '/superadmin/revenue', icon: <DollarSign className="h-5 w-5 text-green-600" />, label: '已收總營收', value: formatCurrency(stats.totalRevenue), color: 'bg-green-50' },
         ].map((stat, index) => (
           <motion.div
             key={index}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm"
+            className="group rounded-3xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-amber-200 hover:shadow-md"
           >
-            <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${stat.color}`}>{stat.icon}</div>
-            <p className="text-sm text-gray-500">{stat.label}</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{stat.value}</p>
+            <Link to={stat.to} className="block p-5" aria-label={`前往${stat.label}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${stat.color}`}>{stat.icon}</div>
+                <ArrowRight className="h-4 w-4 text-gray-300 transition group-hover:translate-x-1 group-hover:text-amber-600" />
+              </div>
+              <p className="text-sm text-gray-500">{stat.label}</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">{stat.value}</p>
+            </Link>
           </motion.div>
         ))}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+      <div className="max-w-4xl rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
           <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
-            <Shield className="h-5 w-5 text-purple-600" />
+            <Shield className="h-5 w-5 text-amber-600" />
             超級管理員與管理員
           </h3>
           {admins.length === 0 ? (
@@ -199,7 +149,7 @@ const SuperAdminDashboard: React.FC = () => {
               {admins.map(admin => (
                 <div key={admin.id} className="flex items-center justify-between border-b border-gray-50 py-2 last:border-0">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-purple-100 text-sm font-bold text-purple-700">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-sm font-bold text-amber-700">
                       {admin.display_name?.[0] || 'A'}
                     </div>
                     <div>
@@ -215,40 +165,16 @@ const SuperAdminDashboard: React.FC = () => {
             </div>
           )}
 
-          <div className="mt-4 border-t border-gray-100 pt-4">
-            <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-gray-700">
-              <UserPlus className="h-4 w-4" />
-              提升為管理員
-            </p>
-            <div className="flex gap-2">
-              <input
-                value={promoteUserId}
-                onChange={e => setPromoteUserId(e.target.value)}
-                placeholder="輸入 User ID"
-                className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
-              />
-              <button
-                onClick={handlePromote}
-                disabled={promoting}
-                className="flex items-center gap-1 rounded-xl bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700 disabled:opacity-60"
-              >
-                {promoting ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : '提升'}
-              </button>
-            </div>
+          <div className="mt-5 grid gap-3 border-t border-gray-100 pt-5 sm:grid-cols-2">
+            <Link to="/superadmin/users" className="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-amber-300 hover:bg-amber-50">
+              <span className="flex items-center gap-2"><Users className="h-4 w-4 text-amber-600" />管理會員角色</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link to="/superadmin/permissions" className="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-amber-300 hover:bg-amber-50">
+              <span className="flex items-center gap-2"><KeyRound className="h-4 w-4 text-amber-600" />設定功能權限</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-        </div>
-
-        <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-6 shadow-sm">
-          <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
-            <Shield className="h-5 w-5 text-emerald-700" />
-            後台資訊分工
-          </h3>
-          <div className="space-y-3 text-sm leading-7 text-emerald-950/80">
-            <p>平台 API、主機、信件與金流說明請看「平台資訊」。</p>
-            <p>操作軌跡請看「活動紀錄」。</p>
-            <p>版本、Commit、系統檢查與稽核基線請看「版本與稽核」。</p>
-          </div>
-        </div>
       </div>
     </div>
   );

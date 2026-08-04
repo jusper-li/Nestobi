@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, BadgeCheck, Bot, Database, ExternalLink, Globe2, KeyRound, Mail, RefreshCcw, Server, ShieldCheck } from 'lucide-react';
+import { Activity, BadgeCheck, Bot, Database, Globe2, KeyRound, Mail, RefreshCcw, Server, ShieldCheck } from 'lucide-react';
 import { APP_BUILD_LABEL, APP_COMMIT_LONG, APP_COMMIT_SHA } from '../../lib/appVersion';
 import { PLATFORM_OPENAI_MODELS, PLATFORM_OPERATION_NOTES, PLATFORM_SERVICES } from '../../lib/platformInfo';
 import { supabase } from '../../lib/supabase';
 import { formatDateTime } from '../../lib/utils';
+import AdminPageHeader from '../../components/superadmin/AdminPageHeader';
 
 type SiteSettingsSummary = {
   contact_email?: string | null;
@@ -94,28 +95,22 @@ const SuperAdminPlatformInfo: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <div className="mb-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-amber-100 p-2">
-            <ShieldCheck className="h-6 w-6 text-amber-700" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">本站設定與系統說明</h1>
-            <p className="mt-1 max-w-3xl text-sm text-gray-500">
-              快速確認目前平台使用的 AI、金流、發票、信件、資料庫與主機資訊。此頁只顯示安全摘要。
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={fetchInfo}
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
-          disabled={loading}
-        >
-          <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          重新整理
-        </button>
-      </div>
+      <AdminPageHeader
+        title="平台資訊"
+        description="集中確認 AI、金流、發票、物流、信件、資料庫與主機的安全摘要；操作軌跡與版本稽核分別保留在專屬頁面。"
+        icon={<ShieldCheck className="h-6 w-6" />}
+        actions={
+          <button
+            type="button"
+            onClick={fetchInfo}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
+            disabled={loading}
+          >
+            <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            重新整理
+          </button>
+        }
+      />
 
       {error && <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
@@ -126,7 +121,7 @@ const SuperAdminPlatformInfo: React.FC = () => {
         <InfoCard title="Supabase API" value={maskUrl(supabaseUrl)} hint="只顯示 API origin，不顯示 anon 或 service key" icon={<Database className="h-5 w-5" />} />
       </div>
 
-      <section className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+      <section>
         <div className="rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
@@ -157,33 +152,6 @@ const SuperAdminPlatformInfo: React.FC = () => {
           </div>
         </div>
 
-        <div className="rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-xl font-black text-slate-900">資訊分工</h2>
-              <p className="text-sm text-slate-500">避免與活動紀錄、版本與稽核重複</p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {[
-              { label: '操作軌跡', href: '/superadmin/activity-logs', text: '查看管理員新增、修改、刪除等操作紀錄。' },
-              { label: '版本稽核', href: '/superadmin/version-logs', text: '查看 build、commit、系統檢查與基線紀錄。' },
-              { label: '營運摘要', href: '/superadmin', text: '查看會員、訂房、訂單與營收數字。' },
-            ].map(link => (
-              <a key={link.href} href={link.href} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3 transition hover:bg-emerald-50">
-                <span>
-                  <span className="block text-sm font-bold text-slate-900">{link.label}</span>
-                  <span className="mt-0.5 block text-xs text-slate-500">{link.text}</span>
-                </span>
-                <ExternalLink className="h-4 w-4 text-slate-400" />
-              </a>
-            ))}
-          </div>
-        </div>
       </section>
 
       <section className="rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm">
