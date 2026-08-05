@@ -678,7 +678,7 @@ async function translateGenericOnDemand<
       target_lang: row.target_lang,
       translated_text: row.translated_text,
     }));
-    if (!contentTranslationsTableUnavailable && !translationWriteDisabled && inserts.length > 0) {
+    if (!contentTranslationsTableUnavailable && !translationWriteDisabled && inserts.length > 0 && await canWriteTranslationCache()) {
       translationWriteAttempts += inserts.length;
       const { error } = await supabase
         .from('content_translations')
