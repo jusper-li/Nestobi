@@ -96,12 +96,23 @@ let translationCacheWriteAttempts = 0;
 let translationCacheWriteSuccess = 0;
 let translationCacheWriteFailed = 0;
 let translationLastError = '';
+let verifiedTranslationWriter: Promise<boolean> | null = null;
 const STORAGE_KEY = 'nestobi:content-translations-unavailable';
 const AI_COOLDOWN_KEY = 'nestobi:translation-ai-cooldown-until';
 const AI_COOLDOWN_MS = 2 * 60 * 1000;
 const TRANSLATION_UNAVAILABLE_TTL_MS = 60 * 1000;
 const TRANSLATION_CONCURRENCY = 3;
 const TRANSLATION_BATCH_SIZE = 8;
+
+async function canWriteTranslationCache() {
+  if (translationWriteDisabled) return false;
+  if (!verifiedTranslationWriter) {
+    verifiedTranslationWriter = supabase.auth.getUser()
+      .then(({ data, error }) => Boolean(data.user && !error))
+      .catch(() => false);
+  }
+  return verifiedTranslationWriter;
+}
 
 function isMojibakeLike(text: string): boolean {
   if (!text) return false;
@@ -188,7 +199,7 @@ async function readTranslationCacheByHashes(
 async function upsertTranslationCacheRows(
   rows: Array<{ source_hash: string; source_text: string; source_lang: string; target_lang: string; translated_text: string }>,
 ) {
-  if (!rows.length || translationCacheTableUnavailable || translationWriteDisabled) return;
+  if (!rows.length || translationCacheTableUnavailable || translationWriteDisabled || !(await canWriteTranslationCache())) return;
   // Deduplicate rows in the same payload to avoid Postgres upsert conflict-on-conflict (500).
   const dedupedRows = Array.from(
     rows.reduce((map, row) => {
@@ -476,7 +487,7 @@ async function translateRoomsWithOptions<T extends RoomLike>(
     );
 
     const inserts = translatedRows.filter(Boolean);
-    if (options.allowWrite && !contentTranslationsTableUnavailable && !translationWriteDisabled && inserts.length > 0) {
+    if (options.allowWrite && !contentTranslationsTableUnavailable && !translationWriteDisabled && inserts.length > 0 && await canWriteTranslationCache()) {
       translationWriteAttempts += inserts.length;
       const { error } = await supabase
         .from('content_translations')
