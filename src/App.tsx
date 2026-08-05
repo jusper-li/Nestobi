@@ -11,6 +11,7 @@ import { UserRoute, AdminRoute, SuperAdminRoute, VendorRoute, GuestRoute, Permis
 
 import Home from './pages/Home';
 import Login from './pages/auth/Login';
+import AuthCallback from './pages/auth/AuthCallback';
 import Register from './pages/auth/Register';
 import VerifyEmail from './pages/auth/VerifyEmail';
 import ResetPassword from './pages/auth/ResetPassword';
@@ -149,6 +150,7 @@ function AppShell() {
                 <Route path="/store-locator" element={<StoreLocations />} />
 
                 <Route path="/auth/login" element={<GuestRoute><Login /></GuestRoute>} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/auth/register" element={<GuestRoute><Register /></GuestRoute>} />
                 <Route path="/auth/verify" element={<VerifyEmail />} />
                 <Route path="/auth/reset-password" element={<GuestRoute><ResetPassword /></GuestRoute>} />

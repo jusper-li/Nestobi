@@ -46,6 +46,10 @@ export default function Login() {
     passwordPlaceholder: pick('請輸入密碼', 'Enter your password', 'パスワードを入力', '비밀번호를 입력하세요'),
     forgot: pick('忘記密碼？', 'Forgot password?', 'パスワードをお忘れですか？', '비밀번호를 잊으셨나요?'),
     login: pick('登入', 'Login', 'ログイン', '로그인'),
+    googleLogin: pick('使用 Google 快速登入', 'Continue with Google', 'Google で続ける', 'Google로 계속하기'),
+    googleLoading: pick('正在前往 Google…', 'Opening Google…', 'Google を開いています…', 'Google로 이동 중…'),
+    googleFailed: pick('Google 登入服務尚未啟用或暫時無法使用', 'Google sign-in is not enabled or is temporarily unavailable.', 'Google ログインは未設定か一時的に利用できません。', 'Google 로그인이 설정되지 않았거나 일시적으로 사용할 수 없습니다.'),
+    or: pick('或使用電子郵件登入', 'or sign in with email', 'またはメールでログイン', '또는 이메일로 로그인'),
     noAccount: pick('還沒有帳號？', "Don't have an account?", 'アカウントをお持ちでないですか？', '아직 계정이 없으신가요?'),
     register: pick('立即註冊', 'Sign up now', '今すぐ登録', '지금 가입하기'),
   };
@@ -54,11 +58,39 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const redirectParam = new URLSearchParams(location.search).get('redirect');
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    setGoogleLoading(true);
+
+    const safeRedirect = redirectParam?.startsWith('/') && !redirectParam.startsWith('//')
+      ? redirectParam
+      : '/member';
+
+    try {
+      sessionStorage.setItem('nestobi_oauth_return_path', safeRedirect);
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: { prompt: 'select_account' },
+        },
+      });
+
+      if (oauthError) throw oauthError;
+    } catch (oauthError) {
+      console.error('Google OAuth start failed:', oauthError);
+      sessionStorage.removeItem('nestobi_oauth_return_path');
+      setError(text.googleFailed);
+      setGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,6 +160,27 @@ export default function Login() {
               {error}
             </div>
           )}
+
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={googleLoading || loading}
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white py-3 font-semibold text-gray-700 transition hover:border-[#C09A6A] hover:bg-[#FAF7F1] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+              <path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.8 3-4.3 3-7.3Z" />
+              <path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1a5.8 5.8 0 0 1-5.4-4H3.3v2.6A10 10 0 0 0 12 22Z" />
+              <path fill="#FBBC05" d="M6.6 14a6 6 0 0 1 0-3.9V7.5H3.3a10 10 0 0 0 0 9.1L6.6 14Z" />
+              <path fill="#EA4335" d="M12 6.1c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.3 7.5l3.3 2.6A5.8 5.8 0 0 1 12 6.1Z" />
+            </svg>
+            <span>{googleLoading ? text.googleLoading : text.googleLogin}</span>
+          </button>
+
+          <div className="my-6 flex items-center gap-3 text-xs text-gray-400">
+            <span className="h-px flex-1 bg-gray-200" />
+            <span>{text.or}</span>
+            <span className="h-px flex-1 bg-gray-200" />
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
