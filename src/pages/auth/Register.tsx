@@ -19,6 +19,7 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -34,9 +35,34 @@ export default function Register() {
     submit: pick('發送驗證碼', 'Send Verification Code', '認証コード送信', '인증 코드 보내기'),
     haveAccount: pick('已經有帳號？', 'Already have an account?', 'すでにアカウントがありますか？', '이미 계정이 있으신가요?'),
     login: pick('立即登入', 'Login now', '今すぐログイン', '지금 로그인'),
+    googleSignup: pick('使用 Google 快速註冊', 'Continue with Google', 'Google で登録', 'Google로 가입하기'),
+    googleLoading: pick('正在前往 Google…', 'Opening Google…', 'Google を開いています…', 'Google로 이동 중…'),
+    googleFailed: pick('Google 註冊服務尚未啟用或暫時無法使用', 'Google sign-up is not enabled or is temporarily unavailable.', 'Google 登録は未設定か一時的に利用できません。', 'Google 가입이 설정되지 않았거나 일시적으로 사용할 수 없습니다.'),
+    or: pick('或使用電子郵件註冊', 'or sign up with email', 'またはメールで登録', '또는 이메일로 가입'),
     pwMismatch: pick('兩次密碼不一致', 'Passwords do not match.', 'パスワードが一致しません。', '비밀번호가 일치하지 않습니다.'),
     pwLength: pick('密碼至少需要 6 個字元', 'Password must be at least 6 characters.', 'パスワードは6文字以上必要です。', '비밀번호는 최소 6자 이상이어야 합니다.'),
     failed: pick('發送驗證信失敗，請稍後再試', 'Failed to send verification email.', '認証メールの送信に失敗しました。', '인증 메일 전송에 실패했습니다.'),
+  };
+
+  const handleGoogleSignup = async () => {
+    setError('');
+    setGoogleLoading(true);
+    try {
+      sessionStorage.setItem('nestobi_oauth_return_path', '/member');
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: { prompt: 'select_account' },
+        },
+      });
+      if (oauthError) throw oauthError;
+    } catch (oauthError) {
+      console.error('Google OAuth signup failed:', oauthError);
+      sessionStorage.removeItem('nestobi_oauth_return_path');
+      setError(t.googleFailed);
+      setGoogleLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -112,6 +138,27 @@ export default function Register() {
               {error}
             </div>
           )}
+          <button
+            type="button"
+            onClick={handleGoogleSignup}
+            disabled={googleLoading || loading}
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white py-3 font-semibold text-gray-700 transition hover:border-[#C09A6A] hover:bg-[#FAF7F1] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+              <path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.8 3-4.3 3-7.3Z" />
+              <path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1a5.8 5.8 0 0 1-5.4-4H3.3v2.6A10 10 0 0 0 12 22Z" />
+              <path fill="#FBBC05" d="M6.6 14a6 6 0 0 1 0-3.9V7.5H3.3a10 10 0 0 0 0 9.1L6.6 14Z" />
+              <path fill="#EA4335" d="M12 6.1c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.3 7.5l3.3 2.6A5.8 5.8 0 0 1 12 6.1Z" />
+            </svg>
+            <span>{googleLoading ? t.googleLoading : t.googleSignup}</span>
+          </button>
+
+          <div className="my-6 flex items-center gap-3 text-xs text-gray-400">
+            <span className="h-px flex-1 bg-gray-200" />
+            <span>{t.or}</span>
+            <span className="h-px flex-1 bg-gray-200" />
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <label className="block text-sm font-medium text-gray-700">
               {t.name}
@@ -173,7 +220,7 @@ export default function Register() {
             </label>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || googleLoading}
               className="w-full rounded-xl bg-[#C09A6A] py-3 font-semibold text-white transition hover:bg-[#8B6840] disabled:opacity-60"
             >
               {loading ? '...' : t.submit}
