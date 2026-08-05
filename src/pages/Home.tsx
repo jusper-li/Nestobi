@@ -71,6 +71,11 @@ function pickBannerText(locale: string, banner: ThemeBanner, field: 'title' | 's
 function isInternalLink(url: string) {
   return url.startsWith('/');
 }
+
+function shuffleItems<T>(items: T[]) {
+  return [...items].sort(() => Math.random() - 0.5);
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const { lang } = useLanguage();
@@ -120,7 +125,7 @@ export default function Home() {
   const [translationNotice, setTranslationNotice] = useState('');
   const [homeSearch, setHomeSearch] = useState('');
   const [homeSearchTarget, setHomeSearchTarget] = useState<'rooms' | 'journal'>('rooms');
-  const [activeRecommendationTab, setActiveRecommendationTab] = useState<'stays' | 'shop' | 'journal'>('stays');
+  const [activeRecommendationTab] = useState<'stays' | 'shop' | 'journal'>('stays');
   const [homeBlocks, setHomeBlocks] = useState<SiteContentBlock[]>([]);
 
   useEffect(() => {
@@ -159,6 +164,10 @@ export default function Home() {
   };
 
   const flowLabels = {
+    collectionIntro: t4('住宿、商品與旅誌一次瀏覽，內容每次進入首頁都會換一批。', 'Browse stays, products, and travel stories together. The selection refreshes each visit.', '宿泊、商品、旅の記事をまとめて閲覧できます。表示内容は訪問ごとに変わります。', '숙소, 상품, 여행 이야기를 한 번에 둘러보세요. 방문할 때마다 새로운 콘텐츠를 보여드립니다.'),
+    roomsSection: t4('房間推薦', 'Stay picks', 'おすすめの宿', '추천 숙소'),
+    productsSection: t4('商品推薦', 'Product picks', 'おすすめの商品', '추천 상품'),
+    journalSection: t4('文章推薦', 'Story picks', 'おすすめの記事', '추천 이야기'),
     quickTitle: t4('常用入口', 'Quick Actions', 'よく使う入口', '자주 쓰는 메뉴'),
     quickSubtitle: t4('訂房、購物與會員工具都集中在這裡。', 'Bookings, shopping, and member tools stay together.', '予約、買い物、会員ツールをまとめています。', '예약, 쇼핑, 회원 도구를 한곳에 모았습니다.'),
     booking: t4('訂房', 'Book', '予約', '예약'),
@@ -240,7 +249,7 @@ export default function Home() {
             .from('tbl_rooms')
             .select('id,name,description,room_type,capacity,min_capacity,price_per_night,weekend_price,image_url,images,location,is_available,amenities,hotels(id,name,city,star_rating)')
             .eq('is_available', true)
-            .limit(3);
+            .limit(12);
           return (data as unknown as Room[]) || [];
         }).catch(() => fetchSnapshotList<Room>('/snapshots/rooms.json')),
         fetchPublicList<Product>('products', async () => {
@@ -249,7 +258,7 @@ export default function Home() {
             .select('id,name,price,image_url,description,origin')
             .eq('is_active', true)
             .order('created_at', { ascending: false })
-            .limit(3);
+            .limit(12);
           return (data as Product[]) || [];
         }).catch(() => fetchSnapshotList<Product>('/snapshots/products.json')),
         fetchPublicList<BlogPost>('blog-posts', async () => {
@@ -258,17 +267,20 @@ export default function Home() {
             .select('id,title,slug,excerpt,cover_image_url,category,published_at')
             .eq('status', 'published')
             .order('published_at', { ascending: false })
-            .limit(3);
+            .limit(12);
           return (data as BlogPost[]) || [];
         }).catch(() => fetchSnapshotList<BlogPost>('/snapshots/blog-posts.json')),
       ]);
       if (cancelled) return;
-      setFeaturedRooms(rooms.slice(0, 3));
-      setDisplayRooms(rooms.slice(0, 3));
-      setFeaturedProducts(products.slice(0, 3));
-      setDisplayProducts(products.slice(0, 3));
-      setFeaturedPosts(posts.slice(0, 3));
-      setDisplayPosts(posts.slice(0, 3));
+      const randomRooms = shuffleItems(rooms).slice(0, 3);
+      const randomProducts = shuffleItems(products).slice(0, 3);
+      const randomPosts = shuffleItems(posts).slice(0, 3);
+      setFeaturedRooms(randomRooms);
+      setDisplayRooms(randomRooms);
+      setFeaturedProducts(randomProducts);
+      setDisplayProducts(randomProducts);
+      setFeaturedPosts(randomPosts);
+      setDisplayPosts(randomPosts);
     };
     loadAll();
     return () => {
@@ -506,30 +518,20 @@ export default function Home() {
             <div className="relative mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end">
               <div>
                 <p className="section-label">{flowLabels.recommendations}</p>
-                <h2 className="section-title max-w-3xl text-3xl sm:text-4xl lg:text-5xl">{activeRecommendation.title}</h2>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-stone-500 sm:text-base">{flowLabels.recommendationsDesc}</p>
+                <h2 className="section-title max-w-3xl text-3xl sm:text-4xl lg:text-5xl">{flowLabels.roomsSection}、{flowLabels.productsSection}、{flowLabels.journalSection}</h2>
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-stone-500 sm:text-base">{flowLabels.collectionIntro}</p>
               </div>
-              <Link to={activeRecommendation.to} className="group inline-flex items-center gap-2 self-start rounded-full border border-stone-300 bg-white px-5 py-3 text-sm font-bold text-[#2C1F10] shadow-sm transition hover:-translate-y-0.5 hover:border-[#C09A6A] hover:shadow-md md:self-auto">
-                {activeRecommendation.action}
-                <ArrowRight size={15} className="transition group-hover:translate-x-1" />
-              </Link>
+              <div className="flex flex-wrap gap-2 self-start md:self-auto">
+                <Link to="/rooms" className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2.5 text-sm font-bold text-[#2C1F10] shadow-sm transition hover:-translate-y-0.5 hover:border-[#C09A6A] hover:shadow-md">{t.viewAllStays}<ArrowRight size={15} /></Link>
+                <Link to="/shop" className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-white px-4 py-2.5 text-sm font-bold text-[#2C1F10] shadow-sm transition hover:-translate-y-0.5 hover:border-[#C09A6A] hover:shadow-md">{t.viewAllShop}<ArrowRight size={15} /></Link>
+              </div>
             </div>
 
-            <div className="relative mb-8 grid gap-2 rounded-[1.5rem] border border-stone-200 bg-white/90 p-2 shadow-[0_8px_30px_rgba(63,45,26,0.06)] backdrop-blur sm:grid-cols-3">
-              {recommendationTabs.map(tab => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveRecommendationTab(tab.id)}
-                  className={`flex items-center justify-between rounded-[1.1rem] px-4 py-3 text-left text-sm font-bold transition ${activeRecommendationTab === tab.id ? 'bg-[#2C1F10] text-white shadow-lg' : 'text-[#2C1F10]/55 hover:bg-stone-100 hover:text-[#2C1F10]'}`}
-                >
-                  <span>{tab.label}</span>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] ${activeRecommendationTab === tab.id ? 'bg-white/15 text-amber-200' : 'bg-stone-100 text-stone-400'}`}>{tab.count}</span>
-                </button>
-              ))}
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <h3 className="text-xl font-bold text-[#2C1F10]">{flowLabels.roomsSection}</h3>
+              <Link to="/rooms" className="inline-flex items-center gap-1 text-sm font-bold text-[#8B6840] hover:text-[#2C1F10]">{t.viewAllStays}<ArrowRight size={14} /></Link>
             </div>
-
-            {activeRecommendationTab === 'stays' && (
+            {displayRooms.length > 0 && (
               <div className="grid gap-6 md:grid-cols-3">
                 {displayRooms.map(room => {
                   const cover = room.images?.[0] || room.image_url || ROOM_FALLBACK_IMAGE;
@@ -557,7 +559,11 @@ export default function Home() {
               </div>
             )}
 
-            {activeRecommendationTab === 'shop' && (
+            <div className="mb-5 mt-12 flex items-center justify-between gap-4">
+              <h3 className="text-xl font-bold text-[#2C1F10]">{flowLabels.productsSection}</h3>
+              <Link to="/shop" className="inline-flex items-center gap-1 text-sm font-bold text-[#8B6840] hover:text-[#2C1F10]">{t.viewAllShop}<ArrowRight size={14} /></Link>
+            </div>
+            {displayProducts.length > 0 && (
               <div className="grid gap-6 md:grid-cols-3">
                 {displayProducts.map(product => (
                   <Link key={product.id} to={`/shop/${product.id}`} className="group overflow-hidden rounded-[1.75rem] border border-stone-200/80 bg-white shadow-[0_8px_30px_rgba(63,45,26,0.06)] transition hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(63,45,26,0.12)]">
@@ -579,7 +585,11 @@ export default function Home() {
               </div>
             )}
 
-            {activeRecommendationTab === 'journal' && (
+            <div className="mb-5 mt-12 flex items-center justify-between gap-4">
+              <h3 className="text-xl font-bold text-[#2C1F10]">{flowLabels.journalSection}</h3>
+              <Link to="/blog" className="inline-flex items-center gap-1 text-sm font-bold text-[#8B6840] hover:text-[#2C1F10]">{t.viewAllJournal}<ArrowRight size={14} /></Link>
+            </div>
+            {displayPosts.length > 0 && (
               <div className="grid gap-6 md:grid-cols-3">
                 {displayPosts.map(post => (
                   <Link key={post.id} to={`/blog/${post.slug}`} className="group overflow-hidden rounded-[1.75rem] border border-stone-200/80 bg-white shadow-[0_8px_30px_rgba(63,45,26,0.06)] transition hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(63,45,26,0.12)]">
