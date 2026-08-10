@@ -456,7 +456,7 @@ export default function Translator() {
                 )}
                 className="w-full resize-none overflow-hidden rounded-2xl border border-gray-200 px-4 py-3 text-[17px] leading-7 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 sm:text-[17px]"
               />
-              <div className="mt-2 flex flex-wrap items-center gap-2">
+              <div className="hidden">
                 <button
                   type="button"
                   onClick={isListening ? onStopListening : onStartListening}
@@ -473,7 +473,7 @@ export default function Translator() {
                   </span>
                 )}
               </div>
-              {voiceError && <p className="mt-2 text-xs text-rose-500">{voiceError}</p>}
+              {voiceError && <p className="hidden">{voiceError}</p>}
             </div>
 
             <div>
@@ -487,9 +487,12 @@ export default function Translator() {
                   disabled={!resultText.trim()}
                   aria-label={isSpeaking ? 'Stop speaking' : 'Read aloud'}
                   title={isSpeaking ? 'Stop speaking' : 'Read aloud'}
-                  className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full text-transparent transition hover:bg-gray-100 hover:text-transparent disabled:cursor-not-allowed disabled:opacity-30"
+                  className="hidden"
                 >
-                  {isSpeaking ? <Square className="h-3.5 w-3.5 fill-gray-400 text-gray-400" /> : <Volume2 className="h-3.5 w-3.5 text-gray-400" />}
+                  {isSpeaking ? <Square className="h-3.5 w-3.5 fill-teal-600 text-teal-600" /> : <Volume2 className="h-4 w-4 text-teal-600" />}
+                  <span className="text-xs font-semibold text-teal-700">
+                    {isSpeaking ? '停止朗讀' : '朗讀結果'}
+                  </span>
                   {isSpeaking
                     ? pick(locale, '\u505c\u6b62\u6717\u8b80', 'Stop speaking', '\u8aad\u307f\u4e0a\u3052\u3092\u505c\u6b62', '\uc77d\uae30 \uc911\uc9c0')
                     : pick(locale, '\u6717\u8b80\u7ffb\u8b6f\u7d50\u679c', 'Read aloud', '\u7ffb\u8a33\u3092\u8aad\u307f\u4e0a\u3052る', '\ubc88역 \uacb0과 \uc77d\uae30')}
@@ -508,6 +511,26 @@ export default function Translator() {
                 )}
                 className="w-full resize-none overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-[17px] leading-7 text-gray-900 outline-none placeholder:text-gray-400 sm:text-[17px]"
               />
+              <div className="hidden">
+                <button
+                  type="button"
+                  onClick={isListening ? onStopListening : onStartListening}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${isListening ? 'bg-rose-500 text-white shadow-sm' : 'border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100'}`}
+                >
+                  {isListening ? <Square className="h-3.5 w-3.5 fill-current" /> : <Mic className="h-3.5 w-3.5" />}
+                  {isListening ? '停止收音' : '開始說話'}
+                </button>
+                <button
+                  type="button"
+                  onClick={isSpeaking ? onStopSpeaking : onSpeakResult}
+                  disabled={!resultText.trim()}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400"
+                >
+                  {isSpeaking ? <Square className="h-3.5 w-3.5 fill-current" /> : <Volume2 className="h-3.5 w-3.5" />}
+                  {isSpeaking ? '停止朗讀' : '朗讀結果'}
+                </button>
+                {voiceError && <span className="basis-full text-xs text-rose-500">{voiceError}</span>}
+              </div>
             </div>
 
             <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3 sm:p-4">
@@ -569,6 +592,26 @@ export default function Translator() {
                     </>
                   )}
                 </button>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={isListening ? onStopListening : onStartListening}
+                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${isListening ? 'bg-rose-500 text-white shadow-sm' : 'border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100'}`}
+              >
+                {isListening ? <Square className="h-3.5 w-3.5 fill-current" /> : <Mic className="h-3.5 w-3.5" />}
+                {isListening ? '停止收音' : '開始說話'}
+              </button>
+              <button
+                type="button"
+                onClick={isSpeaking ? onStopSpeaking : onSpeakResult}
+                disabled={!resultText.trim()}
+                className="inline-flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-700 transition hover:bg-teal-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400"
+              >
+                {isSpeaking ? <Square className="h-3.5 w-3.5 fill-current" /> : <Volume2 className="h-3.5 w-3.5" />}
+                {isSpeaking ? '停止朗讀' : '朗讀結果'}
+              </button>
+              {voiceError && <p className="basis-full text-center text-xs text-rose-500">{voiceError}</p>}
               </div>
             </div>
 
