@@ -438,19 +438,10 @@ export default function Translator() {
 
           <div className="mt-3 grid gap-3 sm:mt-4 sm:gap-4">
             <div>
-              <div className="mb-2 flex items-center justify-between gap-3">
+              <div className="mb-2 flex items-center gap-2">
                 <p className="text-base font-semibold text-gray-700">
                   {pick(locale, '\u8f38\u5165\u6587\u5b57', 'Input text', '\u5165\u529b\u30c6\u30ad\u30b9\u30c8', '\uc785\ub825\ud560 \ubb38\uc7a5')}
                 </p>
-                <button
-                  type="button"
-                  onClick={onClear}
-                  disabled={!sourceText && !resultText}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  {pick(locale, '\u6e05\u9664\u5167\u5bb9', 'Clear', '\u30af\u30ea\u30a2', '\ub0b4\uc6a9 \uc9c0\uc6b0\uae30')}
-                </button>
               </div>
               <textarea
                 ref={sourceTextareaRef}
@@ -486,7 +477,7 @@ export default function Translator() {
             </div>
 
             <div>
-              <div className="mb-2 flex items-center justify-between gap-3">
+              <div className="mb-2 flex items-center gap-2">
                 <p className="text-base font-semibold text-gray-700">
                   {pick(locale, '\u7ffb\u8b6f\u7d50\u679c', 'Result', '\u7ffb\u8a33\u7d50\u679c', '\ubc88\uc5ed \uacb0\uacfc')}
                 </p>
@@ -494,9 +485,11 @@ export default function Translator() {
                   type="button"
                   onClick={isSpeaking ? onStopSpeaking : onSpeakResult}
                   disabled={!resultText.trim()}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label={isSpeaking ? 'Stop speaking' : 'Read aloud'}
+                  title={isSpeaking ? 'Stop speaking' : 'Read aloud'}
+                  className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full text-transparent transition hover:bg-gray-100 hover:text-transparent disabled:cursor-not-allowed disabled:opacity-30"
                 >
-                  {isSpeaking ? <Square className="h-3.5 w-3.5 fill-current" /> : <Volume2 className="h-3.5 w-3.5" />}
+                  {isSpeaking ? <Square className="h-3.5 w-3.5 fill-gray-400 text-gray-400" /> : <Volume2 className="h-3.5 w-3.5 text-gray-400" />}
                   {isSpeaking
                     ? pick(locale, '\u505c\u6b62\u6717\u8b80', 'Stop speaking', '\u8aad\u307f\u4e0a\u3052\u3092\u505c\u6b62', '\uc77d\uae30 \uc911\uc9c0')
                     : pick(locale, '\u6717\u8b80\u7ffb\u8b6f\u7d50\u679c', 'Read aloud', '\u7ffb\u8a33\u3092\u8aad\u307f\u4e0a\u3052る', '\ubc88역 \uacb0과 \uc77d\uae30')}
