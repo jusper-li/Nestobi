@@ -116,6 +116,7 @@ export default function Translator() {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceError, setVoiceError] = useState('');
+  const [showVoiceConversation, setShowVoiceConversation] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -266,6 +267,7 @@ export default function Translator() {
     }
 
     setVoiceError('');
+    setShowVoiceConversation(true);
     const recognition = new SpeechRecognition();
     voiceTextRef.current = '';
     shouldTranslateVoiceRef.current = true;
@@ -446,7 +448,10 @@ export default function Translator() {
               <textarea
                 ref={sourceTextareaRef}
                 value={sourceText}
-                onChange={e => setSourceText(e.target.value)}
+                onChange={e => {
+                  setSourceText(e.target.value);
+                  setShowVoiceConversation(false);
+                }}
                 placeholder={pick(
                   locale,
                   '\u8f38\u5165\u8981\u7ffb\u8b6f\u7684\u6587\u5b57\uff0c\u7cfb\u7d71\u6703\u81ea\u52d5\u8fa8\u8b58\u8a9e\u8a00...',
@@ -533,7 +538,7 @@ export default function Translator() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3 sm:p-4">
+            {false && <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3 sm:p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-slate-700">
@@ -561,7 +566,7 @@ export default function Translator() {
                   <p className="min-h-6 text-sm leading-6 text-slate-700">{resultText || '—'}</p>
                 </div>
               </div>
-            </div>
+            </div>}
 
             <div className="sticky bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-10 -mx-1 rounded-2xl border border-slate-100 bg-white/95 p-1.5 shadow-[0_12px_30px_rgba(15,23,42,0.10)] backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-0">
               <div className="grid gap-1.5 sm:grid-cols-[auto_1fr]">
