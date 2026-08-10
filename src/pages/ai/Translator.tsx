@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeftRight, Languages, Sparkles, Trash2 } from 'lucide-react';
+import { ArrowLeftRight, Languages, Mic, Volume2, Square, Sparkles, Trash2 } from 'lucide-react';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -69,6 +69,32 @@ type StoredPreferences = {
   targetLang?: TranslateLang;
 };
 
+type SpeechRecognitionEventLike = Event & {
+  results: {
+    length: number;
+    [index: number]: {
+      isFinal: boolean;
+      length: number;
+      [index: number]: { transcript: string };
+    };
+  };
+};
+
+type SpeechRecognitionLike = {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  continuous: boolean;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+};
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
 const isTranslateLang = (value: unknown): value is TranslateLang =>
   value === 'auto' || value === 'zh-TW' || value === 'en' || value === 'ja' || value === 'ko';
 
@@ -78,12 +104,18 @@ export default function Translator() {
   const lastManualSourceLang = useRef<Exclude<TranslateLang, 'auto'>>('zh-TW');
   const sourceTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const resultTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const voiceTextRef = useRef('');
+  const shouldTranslateVoiceRef = useRef(false);
 
   const [sourceLang, setSourceLang] = useState<TranslateLang>('auto');
   const [targetLang, setTargetLang] = useState<Exclude<TranslateLang, 'auto'>>('en');
   const [sourceText, setSourceText] = useState('');
   const [resultText, setResultText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceError, setVoiceError] = useState('');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -136,6 +168,11 @@ export default function Translator() {
     resizeTextarea(resultTextareaRef.current);
   }, [resultText]);
 
+  useEffect(() => () => {
+    recognitionRef.current?.abort();
+    if (typeof window !== 'undefined') window.speechSynthesis?.cancel();
+  }, []);
+
   const title = useMemo(() => pick(locale, '\u0041\u0049 \u5373\u6642\u7ffb\u8b6f', 'AI Translator', 'AI \u7ffb\u8a33', 'AI \ube0c\ub79c\uc2f1'), [locale]);
   const subtitle = useMemo(
     () =>
@@ -177,12 +214,12 @@ export default function Translator() {
     setResultText('');
   };
 
-  const onTranslate = async () => {
-    if (!sourceText.trim() || loading) return;
+  const translateText = async (text: string) => {
+    if (!text.trim() || loading) return;
     setLoading(true);
     try {
       const translated = await callAI<string>('translate', {
-        text: sourceText,
+        text,
         sourceLang,
         targetLang,
         language: locale,
@@ -201,6 +238,88 @@ export default function Translator() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const onTranslate = () => void translateText(sourceText);
+
+  const getSpeechConstructor = (): SpeechRecognitionConstructor | null => {
+    if (typeof window === 'undefined') return null;
+    const speechWindow = window as Window & {
+      SpeechRecognition?: SpeechRecognitionConstructor;
+      webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    };
+    return speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition || null;
+  };
+
+  const speechLang = (value: TranslateLang) => {
+    if (value === 'en') return 'en-US';
+    if (value === 'ja') return 'ja-JP';
+    if (value === 'ko') return 'ko-KR';
+    return 'zh-TW';
+  };
+
+  const onStartListening = () => {
+    const SpeechRecognition = getSpeechConstructor();
+    if (!SpeechRecognition) {
+      setVoiceError(pick(locale, '\u6b64\u700f\u89bd\u5668\u4e0d\u652f\u63f4\u8a9e\u97f3\u8f38\u5165\uff0c\u8acb\u6539\u7528 Chrome \u6216 Edge\u3002', 'Voice input is not supported in this browser. Try Chrome or Edge.', '\u3053\u306e\u30d6\u30e9\u30a6\u30b6\u306f\u97f3\u58f0\u5165\u529b\u306b\u5bfe\u5fdc\u3057\u3066\u3044\u307e\u305b\u3093\u3002', '\uc774 \ube0c\ub77c\uc6b0\uc800\ub294 \uc74c\uc131 \uc785\ub825\uc744 \uc9c0\uc6d0\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.'));
+      return;
+    }
+
+    setVoiceError('');
+    const recognition = new SpeechRecognition();
+    voiceTextRef.current = '';
+    shouldTranslateVoiceRef.current = true;
+    recognition.lang = speechLang(sourceLang === 'auto' ? lastManualSourceLang.current : sourceLang);
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+    recognition.onresult = event => {
+      let finalText = '';
+      let interimText = '';
+      for (let index = 0; index < event.results.length; index += 1) {
+        const result = event.results[index];
+        const transcript = result[0]?.transcript || '';
+        if (result.isFinal) finalText += transcript;
+        else interimText += transcript;
+      }
+      voiceTextRef.current = finalText || interimText;
+      setSourceText(voiceTextRef.current);
+    };
+    recognition.onerror = () => {
+      shouldTranslateVoiceRef.current = false;
+      setIsListening(false);
+      setVoiceError(pick(locale, '\u7121\u6cd5\u53d6\u5f97\u9ea5\u514b\u98a8\u8a31\u53ef\u6216\u8fa8\u8b58\u8a9e\u97f3\uff0c\u8acb\u6aa2\u67e5\u700f\u89bd\u5668\u6b0a\u9650\u3002', 'Microphone access or speech recognition failed. Check your browser permission.', '\u30de\u30a4\u30afの許\u53ef\u307eた\u306f\u97f3\u58f0\u8a8d\u8b58\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002', '\ub9c8\uc774\ud06c \uad8c\ud55c \ub610\ub294 \uc74c\uc131 \uc778\uc2dd\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4.'));
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+      const text = voiceTextRef.current.trim();
+      if (shouldTranslateVoiceRef.current && text) void translateText(text);
+      shouldTranslateVoiceRef.current = false;
+    };
+    recognitionRef.current = recognition;
+    setIsListening(true);
+    recognition.start();
+  };
+
+  const onStopListening = () => {
+    shouldTranslateVoiceRef.current = true;
+    recognitionRef.current?.stop();
+  };
+
+  const onSpeakResult = () => {
+    if (!resultText.trim() || typeof window === 'undefined' || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(resultText);
+    utterance.lang = speechLang(targetLang);
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const onStopSpeaking = () => {
+    window.speechSynthesis?.cancel();
+    setIsSpeaking(false);
   };
 
   return (
@@ -346,12 +465,43 @@ export default function Translator() {
                 )}
                 className="w-full resize-none overflow-hidden rounded-2xl border border-gray-200 px-4 py-3 text-[17px] leading-7 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 sm:text-[17px]"
               />
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={isListening ? onStopListening : onStartListening}
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition ${isListening ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100'}`}
+                >
+                  {isListening ? <Square className="h-3.5 w-3.5 fill-current" /> : <Mic className="h-4 w-4" />}
+                  {isListening
+                    ? pick(locale, '\u505c\u6b62\u6536\u97f3', 'Stop listening', '\u9332\u97f3\u3092\u505c\u6b62', '\uc74c\uc131 \uc785\ub825 \uc911\uc9c0')
+                    : pick(locale, '\u958b\u59cb\u8aaa\u8a71', 'Speak to translate', '\u8a71\u3057\u3066\u7ffb\u8a33', '\ub9d0\ud574\uc11c \ubc88\uc5ed')}
+                </button>
+                {isListening && (
+                  <span className="text-xs text-rose-500">
+                    {pick(locale, '\u6b63\u5728\u807d\u53d6\u8a9e\u97f3\uff0c\u8aaa\u5b8c\u5f8c\u5c07\u81ea\u52d5\u7ffb\u8b6f', 'Listening. Translation starts when you finish speaking.', '\u97f3\u58f0\u3092\u805e\u3044\u3066\u3044\u307e\u3059\u3002\u8a71\u3057\u7d42\u308f\u308b\u3068\u7ffb\u8a33\u3057\u307e\u3059\u3002', '\uc74c\uc131\uc744 \ub4e3고 \uc788어요. \ub9d0이 \ub05d나면 \ubc88역합니다.')}
+                  </span>
+                )}
+              </div>
+              {voiceError && <p className="mt-2 text-xs text-rose-500">{voiceError}</p>}
             </div>
 
             <div>
-              <p className="mb-2 text-base font-semibold text-gray-700">
-                {pick(locale, '\u7ffb\u8b6f\u7d50\u679c', 'Result', '\u7ffb\u8a33\u7d50\u679c', '\ubc88\uc5ed \uacb0\uacfc')}
-              </p>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <p className="text-base font-semibold text-gray-700">
+                  {pick(locale, '\u7ffb\u8b6f\u7d50\u679c', 'Result', '\u7ffb\u8a33\u7d50\u679c', '\ubc88\uc5ed \uacb0\uacfc')}
+                </p>
+                <button
+                  type="button"
+                  onClick={isSpeaking ? onStopSpeaking : onSpeakResult}
+                  disabled={!resultText.trim()}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {isSpeaking ? <Square className="h-3.5 w-3.5 fill-current" /> : <Volume2 className="h-3.5 w-3.5" />}
+                  {isSpeaking
+                    ? pick(locale, '\u505c\u6b62\u6717\u8b80', 'Stop speaking', '\u8aad\u307f\u4e0a\u3052\u3092\u505c\u6b62', '\uc77d\uae30 \uc911\uc9c0')
+                    : pick(locale, '\u6717\u8b80\u7ffb\u8b6f\u7d50\u679c', 'Read aloud', '\u7ffb\u8a33\u3092\u8aad\u307f\u4e0a\u3052る', '\ubc88역 \uacb0과 \uc77d\uae30')}
+                </button>
+              </div>
               <textarea
                 ref={resultTextareaRef}
                 value={resultText}
@@ -365,6 +515,36 @@ export default function Translator() {
                 )}
                 className="w-full resize-none overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-[17px] leading-7 text-gray-900 outline-none placeholder:text-gray-400 sm:text-[17px]"
               />
+            </div>
+
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3 sm:p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-700">
+                    {pick(locale, '\u96d9\u5411\u8a9e\u97f3\u5c0d\u8a71', 'Voice conversation', '\u53cc\u65b9\u5411\u306e\u97f3\u58f0\u4f1a\u8a71', '\uc591\ubc29\ud5a5 \uc74c\uc131 \ub300\ud654')}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-400">
+                    {pick(locale, '\u8aaa\u5b8c\u5373\u6642\u7ffb\u8b6f\uff0c\u53ef\u96a8\u6642\u91cd\u65b0\u6717\u8b80\u3002', 'Speak, translate, and replay whenever you need.', '\u8a71\u3059\u3068\u3059\u3050\u7ffb\u8a33\u3002\u5fc5\u8981\u306a\u3068\u304d\u306b\u518d\u751f\u3067\u304d\u307e\u3059\u3002', '\ub9d0하면 바로 번역하고, 필요할 때 다시 읽을 수 있어요.')}
+                  </p>
+                </div>
+                <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-teal-600 shadow-sm">
+                  {sourceLabel} → {targetLabel}
+                </span>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="rounded-2xl rounded-tl-md bg-white p-3 shadow-sm">
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                    {pick(locale, '\u4f60\u8aaa', 'You said', '\u3042\u306a\u305f\u306e\u767a\u8a00', '\ub0b4\uac00 \ub9d0\ud55c \uac83')}
+                  </p>
+                  <p className="min-h-6 text-sm leading-6 text-slate-700">{sourceText || '—'}</p>
+                </div>
+                <div className="rounded-2xl rounded-tr-md bg-teal-50 p-3 shadow-sm">
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-teal-600">
+                    {pick(locale, '\u7ffb\u8b6f\u56de\u61c9', 'Translation', '\u7ffb\u8a33\u7d50\u679c', '\ubc88역 \uacb0과')}
+                  </p>
+                  <p className="min-h-6 text-sm leading-6 text-slate-700">{resultText || '—'}</p>
+                </div>
+              </div>
             </div>
 
             <div className="sticky bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-10 -mx-1 rounded-2xl border border-slate-100 bg-white/95 p-1.5 shadow-[0_12px_30px_rgba(15,23,42,0.10)] backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-0">
