@@ -589,8 +589,8 @@ function orderEmail(locale: Locale, data: Record<string, unknown>) {
 
   const infoRows = [
     merchantOrderNo ? row(c.orderNo, merchantOrderNo, locale) : "",
-    row(text(locale, { "zh-TW": "???", en: "Customer", ja: "???", ko: "???" }), displayName, locale),
-    shippingName ? row(text(locale, { "zh-TW": "???", en: "Recipient", ja: "???", ko: "???" }), shippingName, locale) : "",
+    row(text(locale, { "zh-TW": "顧客", en: "Customer", ja: "お客様", ko: "고객" }), displayName, locale),
+    shippingName ? row(text(locale, { "zh-TW": "收件人", en: "Recipient", ja: "受取人", ko: "수령인" }), shippingName, locale) : "",
     customerEmail ? row(c.email, customerEmail, locale) : "",
     customerPhone ? row(c.phone, customerPhone, locale) : "",
     shippingMethod ? row(c.shippingMethod, shippingMethod, locale) : "",

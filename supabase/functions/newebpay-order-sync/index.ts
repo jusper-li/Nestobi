@@ -369,6 +369,12 @@ Deno.serve(async (req: Request) => {
     });
   } catch (error) {
     console.error("[newebpay-order-sync] Error:", error);
+    // ReturnURL is opened by the customer's browser. Never expose raw callback
+    // or decryption errors there; the NotifyURL webhook handles order syncing.
+    const siteUrl = (Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_SITE_URL") || "https://nestobi.com").replace(/\/$/, "");
+    if (!(req.headers.get("content-type") || "").includes("application/json")) {
+      return Response.redirect(`${siteUrl}/member/orders`, 303);
+    }
     return jsonResponse({
       success: false,
       error: error instanceof Error ? error.message : "Order sync failed.",

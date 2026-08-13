@@ -262,7 +262,6 @@ export default function Cart() {
             </h1>
           </div>
         </div>
-        <Footer />
 
         {loading ? (
           <div className="flex justify-center py-24">
