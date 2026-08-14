@@ -329,8 +329,6 @@ export default function Translator() {
       ? { sourceLang: myLanguage, targetLang: conversationTarget }
       : { sourceLang: conversationTarget, targetLang: myLanguage };
     continueConversationRef.current = true;
-    setSourceLang(pair.sourceLang);
-    setTargetLang(pair.targetLang);
     setActiveSpeaker(speaker);
     setVoiceStatus('recording');
     const recognition = new SpeechRecognition();
@@ -367,6 +365,7 @@ export default function Translator() {
       if (shouldTranslateVoiceRef.current && text) {
         void translateText(text, pair).then(translatedText => {
           if (!translatedText) return;
+          speakText(translatedText, pair.targetLang);
           setConversationMessages(messages => [...messages, {
             id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
             speaker,
