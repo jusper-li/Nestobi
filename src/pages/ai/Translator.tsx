@@ -15,6 +15,13 @@ const pick = (locale: Locale, zh: string, en: string, ja: string, ko: string) =>
 const languageLabel = (value: TranslateLang, locale: Locale) =>
   SOURCE_OPTIONS.find(option => option.value === value)?.label[locale] || value;
 
+const speakerSelfLabel = (value: TranslateLang) => {
+  if (value === 'en') return 'I speak';
+  if (value === 'ja') return '\u79c1\u304c\u8a71\u3057\u307e\u3059';
+  if (value === 'ko') return '\ub098\ub294 \ub9d0\ud574\uc694';
+  return '\u6211\u8aaa';
+};
+
 const STORAGE_KEY = 'nestobi-ai-translator-preferences';
 
 const SOURCE_OPTIONS: Array<{ value: TranslateLang; label: Record<Locale, string> }> = [
@@ -493,13 +500,7 @@ export default function Translator() {
                   <p className="text-[8px] font-semibold uppercase tracking-[0.14em] text-gray-400 sm:text-[11px]">
                     {pick(locale, '\u4f86\u6e90\u8a9e\u8a00', 'From', '\u5143\u306e\u8a00\u8a9e', '\uc6d0\ubb38 \uc5b8\uc5b4')}
                   </p>
-                  <p className="mt-0.5 truncate text-[12px] font-semibold text-gray-800 sm:mt-1 sm:text-sm">{sourceLabel}</p>
                 </div>
-                {sourceLang === 'auto' && (
-                  <span className="shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[8px] font-semibold text-emerald-700 sm:px-2.5 sm:py-1 sm:text-[11px]">
-                    {pick(locale, '\u81ea\u52d5\u8fa8\u8b58', 'Auto', '\u81ea\u52d5\u5224\u5b9a', '\uc790\ub3d9 \uac10\uc9c0')}
-                  </span>
-                )}
               </div>
               <select
                 value={sourceLang}
@@ -529,7 +530,6 @@ export default function Translator() {
                   <p className="text-[8px] font-semibold uppercase tracking-[0.14em] text-gray-400 sm:text-[11px]">
                     {pick(locale, '\u7ffb\u8b6f\u6210', 'To', '\u7ffb\u8a33\u5148', '\ubc88\uc5ed \uc5b8\uc5b4')}
                   </p>
-                  <p className="mt-0.5 truncate text-[12px] font-semibold text-gray-800 sm:mt-1 sm:text-sm">{targetLabel}</p>
                 </div>
               </div>
               <select
@@ -750,6 +750,8 @@ export default function Translator() {
                       <span className="flex items-center justify-between gap-2">
                         <span className="text-sm font-semibold">
                           {speaker === 'me' ? pick(locale, '\u6211\u8aaa', 'I speak', '\u79c1\u304c\u8a00\u3046', '\ub0b4가 \ub9d0하기') : pick(locale, '\u5c0d\u65b9\u8aaa', 'Other person speaks', '\u76f8\u624b\u304c\u8a00\u3046', '\uc0c1대방이 \ub9d0하기')}
+                          {speaker === 'other' && <span className="ml-1 font-medium text-teal-600">/ {speakerSelfLabel(language)}</span>}
+                          <span className="ml-1 font-medium text-slate-400">({languageLabel(language, locale)})</span>
                         </span>
                         {isActive ? <Square className="h-4 w-4 fill-current" /> : <Mic className="h-4 w-4 text-teal-600" />}
                       </span>
@@ -761,7 +763,7 @@ export default function Translator() {
               {voiceError && <p className="fixed inset-x-4 bottom-[calc(10.75rem+env(safe-area-inset-bottom))] z-30 mx-auto max-w-2xl text-center text-xs text-rose-500 sm:inset-x-6 sm:bottom-24">{voiceError}</p>}
               {conversationMessages.length > 0 && (
                 <div className="order-1 mt-4 space-y-3 border-t border-slate-200 pt-4">
-                  {conversationMessages.slice(-5).map(message => (
+                  {conversationMessages.slice(-5).reverse().map(message => (
                     <div key={message.id} className={`flex ${message.speaker === 'me' ? 'justify-start' : 'justify-end'}`}>
                       <div className={`max-w-[92%] rounded-2xl p-3 shadow-sm ${message.speaker === 'me' ? 'rounded-bl-md bg-teal-600 text-white' : 'rounded-br-md bg-white text-slate-800'}`}>
                       <p className="text-[11px] font-semibold text-teal-700">{message.speaker === 'me' ? pick(locale, '\u6211\u8aaa', 'I said', '\u79c1\u304c\u8a00\u3063\u305f', '\ub0b4가 \ub9d0한 \uac83') : pick(locale, '\u5c0d\u65b9\u8aaa', 'They said', '\u76f8\u624b\u304c\u8a00\u3063\u305f', '\uc0c1대방이 \ub9d0한 \uac83')}</p>
