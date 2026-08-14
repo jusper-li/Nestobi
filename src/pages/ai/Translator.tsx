@@ -716,7 +716,7 @@ export default function Translator() {
               </div>
             </div>}
 
-            <div className={`flex flex-col rounded-2xl border border-slate-100 bg-slate-50 p-3 sm:p-4 ${translatorMode === 'text' ? 'hidden' : ''}`}>
+            <div className={`flex flex-col rounded-2xl border border-slate-100 bg-slate-50 p-3 pb-32 sm:p-4 sm:pb-32 ${translatorMode === 'text' ? 'hidden' : ''}`}>
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-slate-700">
@@ -735,7 +735,7 @@ export default function Translator() {
                             : pick(locale, '\u5f85\u6a5f', 'Ready', '\u6e96\u5099\u5b8c\u4e86', '\uc900비')}
                 </span>
               </div>
-              <div className="order-2 grid grid-cols-2 gap-2">
+              <div className="fixed inset-x-4 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-30 order-2 mx-auto grid max-w-2xl grid-cols-2 gap-2 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-[0_12px_32px_rgba(15,23,42,0.16)] backdrop-blur sm:inset-x-6 sm:bottom-6 sm:p-3">
                 {(['me', 'other'] as VoiceSpeaker[]).map(speaker => {
                   const isActive = activeSpeaker === speaker && isListening;
                   const language = speaker === 'me' ? (sourceLang === 'auto' ? lastManualSourceLang.current : sourceLang) : targetLang;
@@ -758,7 +758,7 @@ export default function Translator() {
                   );
                 })}
               </div>
-              {voiceError && <p className="mt-2 text-xs text-rose-500">{voiceError}</p>}
+              {voiceError && <p className="fixed inset-x-4 bottom-[calc(10.75rem+env(safe-area-inset-bottom))] z-30 mx-auto max-w-2xl text-center text-xs text-rose-500 sm:inset-x-6 sm:bottom-24">{voiceError}</p>}
               {conversationMessages.length > 0 && (
                 <div className="order-1 mt-4 space-y-3 border-t border-slate-200 pt-4">
                   {conversationMessages.slice(-5).map(message => (
