@@ -14,6 +14,18 @@ interface NewebPayCredentials {
   refundUrl: string | null;
 }
 
+class NewebPayRefundError extends Error {
+  providerStatus: number;
+  payload: Record<string, unknown>;
+
+  constructor(message: string, providerStatus: number, payload: Record<string, unknown>) {
+    super(message);
+    this.name = "NewebPayRefundError";
+    this.providerStatus = providerStatus;
+    this.payload = payload;
+  }
+}
+
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -74,11 +86,13 @@ async function isElevatedUser(supabase: ReturnType<typeof createServiceClient>, 
 }
 
 async function getNewebPayCredentials(): Promise<NewebPayCredentials> {
-  const merchantId = Deno.env.get("NEWEBPAY_MERCHANT_ID") ?? null;
-  const hashKey = Deno.env.get("NEWEBPAY_HASH_KEY") ?? null;
-  const hashIV = Deno.env.get("NEWEBPAY_HASH_IV") ?? null;
-  const configuredRefundUrl = Deno.env.get("NEWEBPAY_CREDIT_REFUND_URL") ?? Deno.env.get("NEWEBPAY_CREDIT_CLOSE_URL") ?? null;
-  const mpgUrl = Deno.env.get("NEWEBPAY_MPG_URL") ?? null;
+  const readSecret = (name: string) => Deno.env.get(name)?.trim() || null;
+  const merchantId = readSecret("NEWEBPAY_MERCHANT_ID");
+  const hashKey = readSecret("NEWEBPAY_HASH_KEY");
+  const hashIV = readSecret("NEWEBPAY_HASH_IV");
+  const configuredRefundUrl = readSecret("NEWEBPAY_CREDIT_REFUND_URL")
+    || readSecret("NEWEBPAY_CREDIT_CLOSE_URL");
+  const mpgUrl = readSecret("NEWEBPAY_MPG_URL");
   const refundUrl = configuredRefundUrl
     || (mpgUrl?.includes("ccore")
       ? "https://ccore.newebpay.com/API/CreditCard/Close"
@@ -149,19 +163,21 @@ async function refundCreditCard(
     payload = { raw: rawText };
   }
 
-  const status = String((payload.Status ?? payload.status ?? (payload.Result as Record<string, unknown> | undefined)?.Status ?? "")).toUpperCase();
-  if (!response.ok || (status && status !== "SUCCESS")) {
+  const result = payload.Result && typeof payload.Result === "object"
+    ? payload.Result as Record<string, unknown>
+    : null;
+  const status = String(payload.Status ?? payload.status ?? result?.Status ?? "").toUpperCase();
+  if (!response.ok || status !== "SUCCESS") {
     const message = String(
       payload.Message
       ?? payload.message
-      ?? (payload.Result as Record<string, unknown> | undefined)?.Message
-      ?? rawText
-      ?? "NewebPay refund failed.",
+      ?? result?.Message
+      ?? (rawText.trim() || "NewebPay refund failed."),
     );
-    throw new Error(message);
+    throw new NewebPayRefundError(message, response.status, payload);
   }
 
-  return { payload, requestParams };
+  return { payload, requestParams, providerStatus: response.status };
 }
 
 async function voidIssuedInvoice(
@@ -372,12 +388,24 @@ Deno.serve(async (req: Request) => {
         }).eq("id", refundAuditId);
       } catch (refundError) {
         const message = refundError instanceof Error ? refundError.message : "NewebPay refund failed.";
+        const providerResponse = refundError instanceof NewebPayRefundError
+          ? refundError.payload
+          : { error: message };
         await supabase.from("payment_refunds").update({
           status: "failed",
+          raw_response: providerResponse,
           error_message: message,
           completed_at: new Date().toISOString(),
         }).eq("id", refundAuditId);
-        return jsonResponse({ success: false, error: message, refundAuditId }, 502);
+        return jsonResponse({
+          success: false,
+          error: message,
+          refundAuditId,
+          providerStatus: refundError instanceof NewebPayRefundError
+            ? refundError.providerStatus
+            : null,
+          providerResponse,
+        }, 502);
       }
     }
 

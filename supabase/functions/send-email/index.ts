@@ -30,6 +30,7 @@ type MailCopy = {
   bookingTitle: string;
   bookingBody: string;
   orderTitle: string;
+  orderSenderName: string;
   orderBody: string;
   contactTitle: string;
   contactBody: string;
@@ -89,7 +90,7 @@ function text(locale: Locale, values: Record<Locale, string>): string {
 function copy(locale: Locale): MailCopy {
   return {
     wrapperTitle: text(locale, {
-      "zh-TW": "Nestobi 根本在旅行",
+      "zh-TW": "若水金禾 根本在旅行",
       en: "Nestobi Rooted Travel",
       ja: "Nestobi 旅行",
       ko: "Nestobi 여행",
@@ -159,6 +160,12 @@ function copy(locale: Locale): MailCopy {
       en: "Order confirmed",
       ja: "注文が確認されました",
       ko: "주문이 확인되었습니다",
+    }),
+    orderSenderName: text(locale, {
+      "zh-TW": "若水金禾 訂購單",
+      en: "Nestobi Order",
+      ja: "Nestobi 注文書",
+      ko: "Nestobi 주문서",
     }),
     orderBody: text(locale, {
       "zh-TW": "以下是您的訂單明細，請妥善保存。",
@@ -729,7 +736,7 @@ Deno.serve(async (req) => {
       subject = copy(locale).bookingTitle;
       html = bookingEmail(locale, data as Record<string, unknown>);
     } else if (emailType === "order-confirmation") {
-      subject = copy(locale).orderTitle;
+      subject = copy(locale).orderSenderName;
       html = orderEmail(locale, data as Record<string, unknown>);
     } else if (emailType === "contact") {
       const c = copy(locale);
@@ -755,9 +762,15 @@ Deno.serve(async (req) => {
           : [];
 
     const resendApiKey = await getSecret("RESEND_API_KEY");
-    const fromAddress = await getSecret("RESEND_FROM_EMAIL")
-      .then((email) => (email.includes("<") ? email : `Nestobi <${email}>`))
-      .catch(() => "Nestobi <onboarding@resend.dev>");
+    const configuredFrom = await getSecret("RESEND_FROM_EMAIL")
+      .catch(() => "onboarding@resend.dev");
+    const fromEmail = configuredFrom.match(/<([^>]+)>/)?.[1]?.trim() || configuredFrom.trim();
+    const senderName = emailType === "order-confirmation"
+      ? copy(locale).orderSenderName
+      : locale === "zh-TW"
+        ? "若水金禾"
+        : "Nestobi";
+    const fromAddress = `${senderName} <${fromEmail}>`;
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
