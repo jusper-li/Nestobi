@@ -265,6 +265,7 @@ export default function Home() {
             .from('blog_posts')
             .select('id,title,slug,excerpt,cover_image_url,category,published_at')
             .eq('status', 'published')
+            .neq('slug', 'system-store-locations')
             .order('published_at', { ascending: false })
             .limit(12);
           return (data as BlogPost[]) || [];
