@@ -31,6 +31,7 @@ import {
   supabase,
 } from '../lib/supabase';
 import { FALLBACK_CATEGORIES, FALLBACK_PRODUCTS, OBSOLETE_PRODUCT_SLUGS } from '../data/fallbackProducts';
+import ShopEditorialLanding from './ShopEditorialLanding';
 
 interface Product {
   id: string;
@@ -550,6 +551,50 @@ export default function Shop() {
     if (addToastTimeoutRef.current) window.clearTimeout(addToastTimeoutRef.current);
     addToastTimeoutRef.current = window.setTimeout(() => setAddedProductName(''), 2400);
   };
+
+  return (
+    <div className="min-h-screen bg-[#F7F5F1]">
+      <SiteHeader />
+      <ShopEditorialLanding
+        products={displayProducts}
+        categories={categories}
+        categoryNameById={categoryNameById}
+        selectedCategory={selectedCategory}
+        setCategory={handleCategorySelect}
+        searchQuery={searchQuery}
+        onSearch={handleTextSearch}
+        onClear={handleClearSearch}
+        onAddToCart={handleAddToCart}
+        sortKey={sortKey}
+        setSortKey={setSortKey}
+        loading={loading}
+        addedProductName={addedProductName}
+        labels={{
+          coffee: t('shop.editorial.coffee', 'COFFEE'),
+          drinkLike: t('shop.editorial.drinkLike', 'DRINK LIKE A LOCAL'),
+          heroBody: t('shop.editorial.heroBody', '把喜歡的咖啡，帶在旅行的途中。'),
+          explore: t('shop.editorial.explore', '探索咖啡'),
+          newArrivals: t('shop.editorial.newArrivals', '最新選品'),
+          viewAll: t('shop.viewAll', '查看全部'),
+          subscription: t('shop.editorial.subscription', '每月寄一盒喜歡的咖啡。'),
+          subscriptionBody: t('shop.editorial.subscriptionBody', '每月為你挑選當季咖啡，讓日常也保留一點旅行感。'),
+          learnMore: t('shop.editorial.learnMore', '了解更多'),
+          journal: t('shop.editorial.journal', '咖啡旅行家'),
+          searchPlaceholder: t('shop.search.placeholder', '搜尋商品、禮盒名稱或關鍵字'),
+          all: t('shop.category.all', '全部'),
+          add: t('shop.addToCart', '加入購物車'),
+          soldOut: t('shop.soldOut', '售罄'),
+          currency: 'NT$ ',
+          sort: t('shop.sort.label', '排序'),
+          newest: sortOptions[0].label,
+          priceAsc: sortOptions[1].label,
+          priceDesc: sortOptions[2].label,
+          discount: sortOptions[3].label,
+        }}
+      />
+      <SiteFooter />
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex flex-col" style={{ scrollSnapType: 'none' }}>

@@ -9,6 +9,7 @@ import { normalizeLang, pickByLang } from '../lib/i18n';
 import { getTranslationRuntimeState, translateStoreLocationsFromCacheOnly, translateStoreLocationsOnDemand } from '../lib/contentTranslations';
 import { STORE_FALLBACK_IMAGE, useFallbackImage } from '../lib/images';
 import { fetchStoreLocations, storeLocationToSearchText, type StoreLocation } from '../lib/storeLocations';
+import StoreEditorialLanding from './StoreEditorialLanding';
 
 export default function StoreLocations() {
   const { lang } = useLanguage();
@@ -93,6 +94,8 @@ export default function StoreLocations() {
     if (!q) return displayLocations;
     return displayLocations.filter(item => storeLocationToSearchText(item).includes(q));
   }, [displayLocations, search]);
+
+  return <StoreEditorialLanding locations={locations} filtered={filtered} loading={loading} search={search} notice={notice} translationNotice={translationNotice} labels={labels} onSearchChange={setSearch} />;
 
   return (
     <div className="min-h-screen bg-[#F8F4EA] text-[#2C1F10]">

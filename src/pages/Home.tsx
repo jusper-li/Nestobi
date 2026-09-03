@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Building2, Calendar, Coffee, Hotel, MapPin, Search, ShoppingBag, Users } from 'lucide-react';
 import Footer from '../components/Footer';
 import Navigation from '../components/Navigation';
+import EditorialHome from '../components/home/EditorialHome';
 import SEOHead from '../components/SEOHead';
 import { useLanguage } from '../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../lib/i18n';
@@ -125,7 +126,6 @@ export default function Home() {
   const [translationNotice, setTranslationNotice] = useState('');
   const [homeSearch, setHomeSearch] = useState('');
   const [homeSearchTarget, setHomeSearchTarget] = useState<'rooms' | 'journal'>('rooms');
-  const [activeRecommendationTab] = useState<'stays' | 'shop' | 'journal'>('stays');
   const [homeBlocks, setHomeBlocks] = useState<SiteContentBlock[]>([]);
 
   useEffect(() => {
@@ -205,7 +205,6 @@ export default function Home() {
       count: displayPosts.length,
     },
   ];
-  const activeRecommendation = recommendationTabs.find(tab => tab.id === activeRecommendationTab) || recommendationTabs[0];
   const hasRecommendations = recommendationTabs.some(tab => tab.count > 0);
 
   const submitHomeSearch = (event: FormEvent) => {
@@ -385,6 +384,58 @@ export default function Home() {
     }).catch(() => {});
     return () => { cancelled = true; };
   }, [featuredPosts, normalizedLang]);
+
+  const editorialBanner = {
+    id: activeHomeBanner.id,
+    image_url: activeHomeBanner.image_url,
+    title: t4('根本在旅行', 'Travel, at the root of things', '根本在旅行', '여행의 본질'),
+    subtitle: t4('咖啡、住宿與地方故事，從一段旅程開始。', 'Coffee, stays, and local stories, all beginning with a journey.', 'コーヒー、宿、土地の物語。旅はここから始まります。', '커피, 숙소, 지역의 이야기. 여행은 여기서 시작됩니다.'),
+    linkLabel: homeBannerText.linkLabel,
+    linkUrl: homeBannerLink,
+  };
+  const editorialBanners = homeBanners.map(item => ({
+    id: item.id,
+    image_url: item.image_url,
+    title: t4('根本在旅行', 'Travel, at the root of things', '根本在旅行', '여행의 본질'),
+    subtitle: pickBannerText(normalizedLang, item, 'subtitle'),
+    linkLabel: pickBannerText(normalizedLang, item, 'link_label'),
+    linkUrl: item.link_url,
+  }));
+
+  return (
+    <div className="min-h-screen bg-[#F4F1EC]">
+      <SEOHead title={t.pageTitle} description={t.pageDesc} keywords={`Nestobi, ${t.stays}, ${t.shop}`} pageType="home" ogType="website" />
+      <Navigation />
+      <EditorialHome
+        banner={editorialBanner}
+        banners={editorialBanners}
+        bannerIndex={homeBannerIndex}
+        setBannerIndex={setHomeBannerIndex}
+        rooms={displayRooms}
+        products={displayProducts}
+        posts={displayPosts}
+        search={homeSearch}
+        setSearch={setHomeSearch}
+        onSearch={submitHomeSearch}
+        dateLocale={dateLocale}
+        fallbackRoom={ROOM_FALLBACK_IMAGE}
+        fallbackProduct={PRODUCT_FALLBACK_IMAGE}
+        fallbackBlog={BLOG_FALLBACK_IMAGE}
+        onImageError={handleImageFallback}
+        labels={{
+          searchPlaceholder: homeSearchLabels.placeholder,
+          search: homeSearchLabels.submit,
+          story: t4('把旅程過成日常', 'Make travel part of everyday life', '旅を日常に', '여행을 일상으로'),
+          storyBody: t4('一杯咖啡、一個住下來的地方，或是一篇在路上遇見的故事。我們把這些片段整理好，讓你慢慢走進自己的旅程。', 'A cup of coffee, a place to stay, or a story found along the way. We gather these fragments so you can find your own pace of travel.', '一杯のコーヒー、泊まる場所、旅の途中で出会う物語。小さな断片を集め、自分の旅へゆっくり歩き出します。', '커피 한 잔, 머물 곳, 길에서 만난 이야기. 작은 조각들을 모아 나만의 여행으로 천천히 걸어갑니다.'),
+          coffee: t4('咖啡', 'COFFEE', 'COFFEE', 'COFFEE'), stay: t4('住宿', 'STAY', 'STAY', 'STAY'), journal: t4('旅誌', 'JOURNAL', 'JOURNAL', 'JOURNAL'),
+          coffeeBody: t4('像在地人一樣喝一杯。', 'Drink like a local.', '土地の一杯を味わう。', '현지인처럼 한 잔.'), stayBody: t4('住進下一段風景。', 'Stay inside the next view.', '次の景色に泊まる。', '다음 풍경에 머물다.'), journalBody: t4('把路上的故事帶回家。', 'Stories from the road.', '旅の物語を持ち帰る。', '길 위의 이야기를 가져오다.'),
+          next: t4('下一站，去哪裡？', 'Where to next?', '次はどこへ？', '다음은 어디로 갈까요?'), explore: t4('探索更多', 'Explore more', 'もっと見る', '더 보기'), viewStays: t.viewAllStays, viewShop: t.viewAllShop, viewJournal: t.viewAllJournal,
+          guests: t.guests, perNight: t.perNight, translationNotice: translationNotice || t4('從住宿、商品與文章開始，慢慢規劃下一段旅程。', 'Start with a stay, a product, or a story, and shape the next journey at your own pace.', '宿泊、商品、記事から次の旅をゆっくり整えましょう。', '숙소, 상품, 이야기에서 다음 여행을 천천히 계획해 보세요.'),
+        }}
+      />
+      <Footer />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#F7F5F1]">

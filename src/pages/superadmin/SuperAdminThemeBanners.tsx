@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Edit3, Image, Link as LinkIcon, Plus, Save, Trash2, X } from 'lucide-react';
+import { Edit3, Link as LinkIcon, Plus, Save, Trash2, X } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
 import { logAdminAction } from '../../lib/auditLog';
 import type { ThemeKey } from '../../lib/themeBanners';
+import ImageUpload from '../../components/ImageUpload';
 
 interface ThemeBannerRecord {
   id: string;
@@ -79,6 +80,7 @@ export default function SuperAdminThemeBanners() {
   const themeOptions = useMemo(
     () => [
       { value: 'home' as const, label: t('首頁', 'Home', 'ホーム', '홈') },
+      { value: 'home_spots' as const, label: t('首頁景點', 'Home Destinations', 'ホームの行き先', '홈 여행지') },
       { value: 'nestopia' as const, label: t('nestobi 住宿', 'nestobi Stays', 'nestobi 宿泊', 'nestobi 숙소') },
       { value: 'genbon_travel' as const, label: t('根本在旅行', 'Genbon Travel', '根本在旅行', '근본재여행') },
       { value: 'coffee_traveler' as const, label: t('咖啡旅行家', 'Coffee Traveler', 'Coffee Traveler', 'Coffee Traveler') },
@@ -267,10 +269,14 @@ export default function SuperAdminThemeBanners() {
             <span className="text-sm font-semibold text-gray-700">{t('排序', 'Order', '順序', '순서')}</span>
             <input type="number" value={form.display_order} onChange={event => updateForm('display_order', Number(event.target.value))} className="w-full rounded-xl border border-gray-200 px-3 py-2" />
           </label>
-          <label className="space-y-1 md:col-span-2">
-            <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-700"><Image className="h-4 w-4" />{t('圖片網址', 'Image URL', '画像URL', '이미지 URL')}</span>
-            <input value={form.image_url} onChange={event => updateForm('image_url', event.target.value)} className="w-full rounded-xl border border-gray-200 px-3 py-2" placeholder="https://..." />
-          </label>
+          <div className="space-y-1 md:col-span-2">
+            <ImageUpload
+              value={form.image_url}
+              onChange={value => updateForm('image_url', value)}
+              bucket="site-assets"
+              label={t('圖片網址或上傳圖片', 'Image URL or upload', '画像URLまたはアップロード', '이미지 URL 또는 업로드')}
+            />
+          </div>
           <label className="space-y-1 md:col-span-2">
             <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-700"><LinkIcon className="h-4 w-4" />{t('連結', 'Link', 'リンク', '링크')}</span>
             <input value={form.link_url} onChange={event => updateForm('link_url', event.target.value)} className="w-full rounded-xl border border-gray-200 px-3 py-2" placeholder="/shop" />

@@ -187,7 +187,7 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-stone-200/80 bg-[#FFFCF7]/92 shadow-[0_4px_24px_rgba(53,38,22,0.06)] backdrop-blur-xl">
+    <nav className="sticky top-0 z-50 border-b border-[#D8D3CA]/55 bg-[#F7F5F1]/72 text-[#24231F] shadow-[0_4px_24px_rgba(53,38,22,0.04)] backdrop-blur-xl">
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10 xl:px-14">
         <div className="flex h-[4.5rem] items-center justify-between gap-3">
           <Link to={brand.to} className="flex min-w-0 items-center gap-3">
@@ -206,7 +206,7 @@ export default function Navigation() {
                 aria-label={label}
                 title={label}
                 className={`flex min-h-10 items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold transition ${
-                  isActive(to) ? 'bg-[#2C1F10] text-white shadow-sm' : 'text-stone-600 hover:bg-[#F0E4C8] hover:text-[#2C1F10]'
+                  isActive(to) ? 'bg-[#282824] text-white shadow-sm' : 'text-[#69665F] hover:bg-[#E9E2D8] hover:text-[#24231F]'
                 }`}
               >
                 <Icon size={16} />
@@ -223,7 +223,7 @@ export default function Navigation() {
                   setLangMenuOpen(open => !open);
                   setUserMenuOpen(false);
                 }}
-                className="flex min-h-10 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-stone-600 transition hover:bg-[#F0E4C8]"
+                className="flex min-h-10 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-[#69665F] transition hover:bg-[#E9E2D8]"
               >
                 <Globe size={16} />
                 <span className="hidden sm:block">{currentLangOption.short}</span>
@@ -257,7 +257,7 @@ export default function Navigation() {
               </AnimatePresence>
             </div>
 
-            <Link to="/cart" className="relative flex h-10 w-10 items-center justify-center rounded-full text-stone-600 transition hover:bg-[#F0E4C8] hover:text-[#2C1F10]" aria-label={labels.cart}>
+            <Link to="/cart" className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#69665F] transition hover:bg-[#E9E2D8] hover:text-[#24231F]" aria-label={labels.cart}>
               <ShoppingCart size={21} />
               {totalItems > 0 && <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[11px] font-bold text-white">{totalItems > 9 ? '9+' : totalItems}</span>}
             </Link>
@@ -298,12 +298,12 @@ export default function Navigation() {
                         </Link>
                       ))}
                       {(role === 'admin' || role === 'superadmin') && (
-                        <Link to="/admin" onClick={() => setUserMenuOpen(false)} aria-label={labels.adminPanel} title={labels.adminPanel} className="flex items-center justify-center border-t border-gray-100 px-4 py-2 text-[#2C1F10] transition hover:bg-[#F0E4C8]">
+                        <Link to="/admin" onClick={() => setUserMenuOpen(false)} aria-label={labels.adminPanel} title={labels.adminPanel} className="flex items-center justify-center border-t border-gray-100 px-4 py-2 text-[#24231F] transition hover:bg-[#E9E2D8]">
                           <LayoutDashboard size={16} />
                         </Link>
                       )}
                       {role === 'superadmin' && (
-                        <Link to="/superadmin" onClick={() => setUserMenuOpen(false)} aria-label={labels.superAdmin} title={labels.superAdmin} className="flex items-center justify-center px-4 py-2 text-[#2C1F10] transition hover:bg-[#F0E4C8]">
+                        <Link to="/superadmin" onClick={() => setUserMenuOpen(false)} aria-label={labels.superAdmin} title={labels.superAdmin} className="flex items-center justify-center px-4 py-2 text-[#24231F] transition hover:bg-[#E9E2D8]">
                           <Globe size={16} />
                         </Link>
                       )}
@@ -326,7 +326,7 @@ export default function Navigation() {
               </div>
             )}
 
-            <button type="button" onClick={() => setMenuOpen(open => !open)} className="flex h-10 w-10 items-center justify-center rounded-full text-stone-600 transition hover:bg-[#F0E4C8]">
+            <button type="button" onClick={() => setMenuOpen(open => !open)} className="flex h-10 w-10 items-center justify-center rounded-full text-[#69665F] transition hover:bg-[#E9E2D8]">
               {menuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
@@ -335,7 +335,7 @@ export default function Navigation() {
 
       <AnimatePresence>
         {menuOpen && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-t border-stone-200 bg-[#FFFCF7]">
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-t border-[#D8D3CA] bg-[#F7F5F1]">
             <div className="mx-auto grid max-w-[1440px] gap-1 px-4 py-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:px-10 xl:px-14">
               {menuLinks.map(({ to, label, icon: Icon, requiresAuth }) => {
                 if (requiresAuth && !user) return null;

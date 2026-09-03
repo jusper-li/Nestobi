@@ -39,6 +39,7 @@ import {
   sortCategoriesForTree,
   type CategoryTreeItem,
 } from '../../lib/categoryTree';
+import BlogEditorialLanding from './BlogEditorialLanding';
 
 interface BlogCategory extends CategoryTreeItem {
   description?: string;
@@ -137,6 +138,7 @@ async function fetchBlogCategoriesFromSupabase() {
 
 const BlogList: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const showAll = searchParams.get('view') === 'all';
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
   const dateLocale = pickByLang(normalizedLang, 'zh-TW', 'en-US', 'ja-JP', 'ko-KR');
@@ -163,6 +165,14 @@ const BlogList: React.FC = () => {
     seoKeywords: t4('咖啡旅行家, 日本旅行, 沖繩咖啡, 咖啡文章, 旅行文章', 'coffee traveler, japan travel, okinawa coffee, coffee journal, travel articles', 'コーヒートラベラー, 日本旅行, 沖縄コーヒー, コーヒー記事, 旅行記事', '커피 여행가, 일본 여행, 오키나와 커피, 커피 글, 여행 글'),
     heroTitle: t4('咖啡旅行家', 'Coffee Traveler', 'Coffee Traveler', 'Coffee Traveler'),
     heroDesc: t4('咖啡是一條旅行路線。從城市角落、地方店家到沖繩與日本街區，把每一杯背後的風景寫下來。', 'Coffee is a travel route. From city corners and local shops to Okinawa and Japan neighborhoods, collect the views behind every cup.', 'コーヒーは旅のルートです。街角やローカル店、沖縄と日本の街から、一杯の後ろにある景色を綴ります。', '커피는 여행 경로입니다. 도시의 골목, 로컬 매장, 오키나와와 일본 동네에서 한 잔 뒤의 풍경을 기록합니다.'),
+    latest: t4('最新文章', 'Latest Stories', '最新記事', '최신 글'),
+    showMore: t4('顯示更多', 'View More', 'もっと見る', '더 보기'),
+    localGuide: t4('城市指南', 'City Guide', '街のガイド', '도시 가이드'),
+    localGuideBody: t4('規劃我們最喜歡的城市角落，從一杯咖啡開始認識地方生活。', 'Explore our favorite corners of each city, one cup of coffee at a time.', '好きな街角を、一杯のコーヒーから訪ねます。', '커피 한 잔으로 우리가 좋아하는 도시의 골목을 만나보세요.'),
+    exploreGuide: t4('探索指南', 'Explore Guide', 'ガイドを見る', '가이드 보기'),
+    stayInTouch: t4('訂閱旅行誌', 'Stay in Touch', 'ニュースレター', '소식 받기'),
+    stayInTouchBody: t4('訂閱電子報，讓最新故事與活動寄到你的信箱。', 'Subscribe for the latest stories and events in your inbox.', '最新の物語やイベントをメールでお届けします。', '새로운 이야기와 이벤트를 이메일로 받아보세요.'),
+    emailPlaceholder: t4('輸入你的 Email', 'Your email', 'メールアドレス', '이메일 주소'),
     searchPlaceholder: t4('輸入想看的主題，AI 幫你找文章', 'Type any topic, AI will find articles', '見たいテーマを入力すると AI が記事を探します', '보고 싶은 주제를 입력하면 AI가 글을 찾아줍니다'),
     search: t4('搜尋', 'Search', '検索', '검색'),
     clear: t4('清除', 'Clear', 'クリア', '지우기'),
@@ -403,6 +413,23 @@ const BlogList: React.FC = () => {
       ),
     [filtered, labels.pageTitle],
   );
+
+  return <BlogEditorialLanding
+    articles={filtered}
+    latestArticles={visiblePosts}
+    categories={orderedCategories}
+    activeCategory={categoryId}
+    search={search}
+    loading={loading || aiLoading}
+    labels={labels}
+    dateLocale={dateLocale}
+    onCategoryChange={handleCategoryChange}
+    onSearchChange={value => { setSearch(value); setSemanticMatches(null); setAiFilters(null); }}
+    onSearch={handleSearch}
+    showAll={showAll}
+    hasMore={hasMore}
+    onLoadMore={loadMore}
+  />;
 
   return (
     <div className="min-h-screen bg-[#F5F5F3]">

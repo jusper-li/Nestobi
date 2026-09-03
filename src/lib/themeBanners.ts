@@ -1,7 +1,7 @@
-import { BLOG_FALLBACK_IMAGE, PRODUCT_FALLBACK_IMAGE, ROOM_FALLBACK_IMAGE, SCENIC_GALLERY_IMAGES, STORE_FALLBACK_IMAGE } from './images';
+import { BLOG_FALLBACK_IMAGE, PRODUCT_FALLBACK_IMAGE, ROOM_FALLBACK_IMAGE, STORE_FALLBACK_IMAGE } from './images';
 import { supabase } from './supabase';
 
-export type ThemeKey = 'home' | 'nestopia' | 'genbon_travel' | 'coffee_traveler';
+export type ThemeKey = 'home' | 'home_spots' | 'nestopia' | 'genbon_travel' | 'coffee_traveler';
 
 export interface ThemeBanner {
   id: string;
@@ -36,7 +36,7 @@ const FALLBACK_BANNERS: Record<ThemeKey, ThemeBanner[]> = {
       subtitle_en: 'Search stays and trip ideas first, then connect articles, travel goods, and AI support before you go.',
       subtitle_ja: 'まず宿泊と旅のヒントを探し、記事、旅のアイテム、AIサポートまで出発前にまとめて確認できます。',
       subtitle_ko: '먼저 숙소와 여행 아이디어를 찾고, 글과 여행 상품, AI 상담까지 출발 전에 한곳에서 확인하세요.',
-      image_url: SCENIC_GALLERY_IMAGES[0] || ROOM_FALLBACK_IMAGE,
+      image_url: '/homepage-images/homepage-banner-beach.png',
       link_url: '/rooms',
       link_label_zh: '開始搜尋住宿',
       link_label_en: 'Search Stays',
@@ -55,7 +55,7 @@ const FALLBACK_BANNERS: Record<ThemeKey, ThemeBanner[]> = {
       subtitle_en: 'Search stays and articles first, then let AI help with plans, translation, and support.',
       subtitle_ja: '宿泊や記事をすばやく探し、AIで旅程、翻訳、サポートを整えます。',
       subtitle_ko: '숙소와 글을 먼저 찾고, AI로 일정, 번역, 고객지원을 이어갑니다.',
-      image_url: SCENIC_GALLERY_IMAGES[1] || PRODUCT_FALLBACK_IMAGE,
+      image_url: '/homepage-images/homepage-banner-coffee-mountain.png',
       link_url: '/rooms',
       link_label_zh: '前往 nestobi',
       link_label_en: 'Explore nestobi',
@@ -63,6 +63,12 @@ const FALLBACK_BANNERS: Record<ThemeKey, ThemeBanner[]> = {
       link_label_ko: 'nestobi 보기',
       display_order: 20,
     },
+  ],
+  home_spots: [
+    { id: 'fallback-home-spot-1', theme_key: 'home_spots', title_zh: '台北', title_en: 'Taipei', title_ja: '台北', title_ko: '타이베이', subtitle_zh: '台北', subtitle_en: 'Taipei', subtitle_ja: '台北', subtitle_ko: '타이베이', image_url: '/homepage-images/homepage-hero-03.jpg', link_url: '/rooms?search=台北', link_label_zh: '查看住宿', link_label_en: 'View stays', link_label_ja: '宿を見る', link_label_ko: '숙소 보기', display_order: 10 },
+    { id: 'fallback-home-spot-2', theme_key: 'home_spots', title_zh: '宜蘭', title_en: 'Yilan', title_ja: '宜蘭', title_ko: '이란', subtitle_zh: '宜蘭', subtitle_en: 'Yilan', subtitle_ja: '宜蘭', subtitle_ko: '이란', image_url: '/homepage-images/homepage-hero-04.jpg', link_url: '/rooms?search=宜蘭', link_label_zh: '查看住宿', link_label_en: 'View stays', link_label_ja: '宿を見る', link_label_ko: '숙소 보기', display_order: 20 },
+    { id: 'fallback-home-spot-3', theme_key: 'home_spots', title_zh: '東京', title_en: 'Tokyo', title_ja: '東京', title_ko: '도쿄', subtitle_zh: '東京', subtitle_en: 'Tokyo', subtitle_ja: '東京', subtitle_ko: '도쿄', image_url: '/homepage-images/homepage-hero-05.jpg', link_url: '/rooms?search=東京', link_label_zh: '查看住宿', link_label_en: 'View stays', link_label_ja: '宿を見る', link_label_ko: '숙소 보기', display_order: 30 },
+    { id: 'fallback-home-spot-4', theme_key: 'home_spots', title_zh: '沖繩', title_en: 'Okinawa', title_ja: '沖縄', title_ko: '오키나와', subtitle_zh: '沖繩', subtitle_en: 'Okinawa', subtitle_ja: '沖縄', subtitle_ko: '오키나와', image_url: '/homepage-images/homepage-hero-02.jpg', link_url: '/rooms?search=沖繩', link_label_zh: '查看住宿', link_label_en: 'View stays', link_label_ja: '宿を見る', link_label_ko: '숙소 보기', display_order: 40 },
   ],
   nestopia: [
     {

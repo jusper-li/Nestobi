@@ -6,6 +6,7 @@ import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import ThemeHeroCarousel from '../../components/ThemeHeroCarousel';
+import RoomEditorialLanding from './RoomEditorialLanding';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getTranslationRuntimeState, translateRoomsFromCacheOnly, translateRoomsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
@@ -331,6 +332,46 @@ export default function RoomList() {
       setAvailabilityLoading(false);
     }
   };
+
+  return (
+    <div className="min-h-screen bg-[#F4F1EC]">
+      <SEOHead title={labels.seoTitle} description={labels.seoDesc} jsonLd={roomJsonLd} />
+      <Navigation />
+      <RoomEditorialLanding
+        rooms={displayRooms}
+        filtered={filtered}
+        loading={loading}
+        search={search}
+        setSearch={value => { setSearch(value); setSemanticMatches(null); setAiSummary(''); }}
+        checkInDate={checkInDate}
+        setCheckInDate={value => { setCheckInDate(value); setAvailableRoomIds(null); }}
+        checkOutDate={checkOutDate}
+        setCheckOutDate={value => { setCheckOutDate(value); setAvailableRoomIds(null); }}
+        guestCount={guestCount}
+        setGuestCount={value => { setGuestCount(value); setAvailableRoomIds(null); }}
+        handleAISearch={handleAISearch}
+        roomType={roomType}
+        setRoomType={setRoomType}
+        roomTypes={ROOM_TYPES}
+        typeLabels={typeLabels}
+        maxPrice={maxPrice}
+        setMaxPrice={setMaxPrice}
+        sortMode={sortMode}
+        setSortMode={setSortMode}
+        labels={{ ...labels, heroDesc: labels.heroDesc }}
+        searchLabels={searchLabels}
+        aiLoading={aiLoading}
+        availabilityLoading={availabilityLoading}
+        aiError={aiError}
+        availabilityError={availabilityError}
+        aiSummary={aiSummary}
+        translationNotice={translationNotice}
+        fallbackImage={ROOM_FALLBACK_IMAGE}
+        onImageError={handleImageFallback}
+      />
+      <Footer />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#F7F5F1]">

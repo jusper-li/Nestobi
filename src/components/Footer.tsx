@@ -84,7 +84,7 @@ export default function Footer() {
   ] as const;
 
   return (
-    <footer className="bg-[#F0E4C8] text-[#2C1F10]">
+    <footer className="bg-[#F4F1EC] text-[#24231F]">
       <div className="mx-auto max-w-[1440px] px-5 py-10 sm:px-8 lg:px-12 lg:py-12">
         <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           <div>

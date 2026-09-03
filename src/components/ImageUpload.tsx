@@ -7,9 +7,10 @@ interface ImageUploadProps {
   value: string;
   onChange: (url: string) => void;
   label?: string;
+  bucket?: string;
 }
 
-export default function ImageUpload({ value, onChange, label }: ImageUploadProps) {
+export default function ImageUpload({ value, onChange, label, bucket = 'homepage-images' }: ImageUploadProps) {
   const { t } = useLanguage();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,10 +30,10 @@ export default function ImageUpload({ value, onChange, label }: ImageUploadProps
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage.from('homepage-images').upload(fileName, file);
+      const { error: uploadError } = await supabase.storage.from(bucket).upload(fileName, file);
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage.from('homepage-images').getPublicUrl(fileName);
+      const { data } = supabase.storage.from(bucket).getPublicUrl(fileName);
       onChange(data.publicUrl);
     } catch (error) {
       console.error('Upload failed:', error);

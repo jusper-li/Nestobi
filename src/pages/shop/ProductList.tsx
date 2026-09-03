@@ -25,6 +25,7 @@ import { getCategoryDepth, getDescendantCategoryIds, getProductCategoryIds, sort
 import { buildItemListSchema } from '../../lib/seoSchemas';
 import { SemanticSearchMatch, semanticSearch, sortBySemanticMatches } from '../../lib/semanticSearch';
 import { formatCurrency } from '../../lib/utils';
+import ProductEditorialLanding from './ProductEditorialLanding';
 
 interface Product {
   id: string;
@@ -83,6 +84,7 @@ function sortProducts(products: Product[], sortMode: SortMode) {
 
 export default function ProductList() {
   const [searchParams] = useSearchParams();
+  const showCatalog = searchParams.get('view') === 'all';
   const { lang } = useLanguage();
   const normalizedLang = normalizeLang(lang);
   const shouldTranslate = pickByLang(normalizedLang, '0', '1', '1', '1') === '1';
@@ -417,6 +419,56 @@ export default function ProductList() {
         pageType="list"
         jsonLd={productJsonLd}
       />
+      <ProductEditorialLanding
+        products={showCatalog ? visibleProducts : filtered}
+        categories={displayCategories}
+        selectedCategory={selectedCategory}
+        search={search}
+        sortMode={sortMode}
+        loading={loading}
+        heroImage={displayProducts[0]?.image_url || PRODUCT_FALLBACK_IMAGE}
+        onSearchChange={value => { setSearch(value); setSemanticMatches(null); setAiSummary(''); setAiError(''); }}
+        onSearch={handleAISearch}
+        onCategoryChange={handleCategoryChange}
+        onSortChange={value => setSortMode(value as SortMode)}
+        onAddToCart={handleAddToCart}
+        showAll={showCatalog}
+        hasMore={hasMore}
+        onLoadMore={loadMore}
+        labels={{
+          heroDesc: labels.heroDesc,
+          explore: t4('探索咖啡', 'Explore Coffee', 'コーヒーを見る', '커피 둘러보기'),
+          newArrivals: t4('最新選品', 'New Arrivals', '新着商品', '신상품'),
+          viewAll: t4('查看全部', 'View All', 'すべて見る', '전체 보기'),
+          searchPlaceholder: labels.heroPlaceholder,
+          search: labels.search,
+          allProducts: labels.allProducts,
+          recommended: labels.recommended,
+          priceAsc: labels.priceAsc,
+          priceDesc: labels.priceDesc,
+          stockMost: labels.stockMost,
+          subscription: t4('每月寄一盒喜歡的咖啡。', 'A box of coffee you love, every month.', '好きなコーヒーを毎月一箱。', '좋아하는 커피를 매달 한 상자.'),
+          subscriptionBody: t4('每月為你挑選當季咖啡，讓日常也保留一點旅行感。', 'Seasonal coffee selected for your everyday travels.', '季節のコーヒーを選び、日常に旅の気配を届けます。', '계절 커피를 골라 일상에 여행의 감각을 더합니다.'),
+          learnMore: t4('了解更多', 'Learn More', '詳しく見る', '더 알아보기'),
+          journal: t4('咖啡旅行家', 'Coffee Journal', 'コーヒージャーナル', '커피 저널'),
+          add: labels.addOn,
+          soldOut: labels.soldOut,
+          loadMore: labels.loadMore,
+        }}
+      />
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-[#F7F5F1]">
+      <SEOHead
+        title={labels.seoTitle}
+        description={labels.seoDesc}
+        keywords={labels.seoKeywords}
+        ogType="website"
+        pageType="list"
+        jsonLd={productJsonLd}
+      />
       <Navigation />
 
       <ThemeHeroCarousel
@@ -655,4 +707,3 @@ export default function ProductList() {
     </div>
   );
 }
-
