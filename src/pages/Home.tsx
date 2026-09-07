@@ -121,7 +121,8 @@ export default function Home() {
   const [featuredPosts, setFeaturedPosts] = useState<BlogPost[]>([]);
   const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
   const [displayPosts, setDisplayPosts] = useState<BlogPost[]>([]);
-  const [homeBanners, setHomeBanners] = useState<ThemeBanner[]>(() => getFallbackThemeBanners('home'));
+  const [homeBanners, setHomeBanners] = useState<ThemeBanner[]>([]);
+  const [homeBannersReady, setHomeBannersReady] = useState(false);
   const [homeBannerIndex, setHomeBannerIndex] = useState(0);
   const [translationNotice, setTranslationNotice] = useState('');
   const [homeSearch, setHomeSearch] = useState('');
@@ -216,16 +217,17 @@ export default function Home() {
 
   useEffect(() => {
     let cancelled = false;
-    setHomeBanners(getFallbackThemeBanners('home'));
     setHomeBannerIndex(0);
     fetchThemeBanners('home')
       .then(rows => {
-        if (!cancelled && rows.length) {
-          setHomeBanners(rows);
-          setHomeBannerIndex(0);
-        }
+        if (cancelled) return;
+        setHomeBanners(rows);
+        setHomeBannerIndex(0);
+        setHomeBannersReady(true);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setHomeBannersReady(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -407,7 +409,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#F4F1EC]">
       <SEOHead title={t.pageTitle} description={t.pageDesc} keywords={`Nestobi, ${t.stays}, ${t.shop}`} pageType="home" ogType="website" />
       <Navigation />
-      <EditorialHome
+      {homeBannersReady && homeBanners.length > 0 && <EditorialHome
         banner={editorialBanner}
         banners={editorialBanners}
         bannerIndex={homeBannerIndex}
@@ -433,7 +435,7 @@ export default function Home() {
           next: t4('下一站，去哪裡？', 'Where to next?', '次はどこへ？', '다음은 어디로 갈까요?'), explore: t4('探索更多', 'Explore more', 'もっと見る', '더 보기'), viewStays: t.viewAllStays, viewShop: t.viewAllShop, viewJournal: t.viewAllJournal,
           guests: t.guests, perNight: t.perNight, translationNotice: translationNotice || t4('從住宿、商品與文章開始，慢慢規劃下一段旅程。', 'Start with a stay, a product, or a story, and shape the next journey at your own pace.', '宿泊、商品、記事から次の旅をゆっくり整えましょう。', '숙소, 상품, 이야기에서 다음 여행을 천천히 계획해 보세요.'),
         }}
-      />
+      />}
       <Footer />
     </div>
   );

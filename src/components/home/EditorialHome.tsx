@@ -33,15 +33,8 @@ interface Props {
   onImageError: (event: { currentTarget: HTMLImageElement }, fallback: string) => void;
 }
 
-const fallbackDestinations = [
-  { name: 'TAIPEI', local: '台北', image: '/homepage-images/homepage-hero-03.jpg', to: '/rooms?search=台北' },
-  { name: 'YILAN', local: '宜蘭', image: '/homepage-images/homepage-hero-04.jpg', to: '/rooms?search=宜蘭' },
-  { name: 'TOKYO', local: '東京', image: '/homepage-images/homepage-hero-05.jpg', to: '/rooms?search=東京' },
-  { name: 'OKINAWA', local: '沖繩', image: '/homepage-images/homepage-hero-02.jpg', to: '/rooms?search=沖繩' },
-];
-
 export default function EditorialHome({ banner, banners, bannerIndex, setBannerIndex, rooms, products, posts, search, setSearch, onSearch, labels, dateLocale, fallbackRoom, fallbackProduct, fallbackBlog, onImageError }: Props) {
-  const [spotBanners, setSpotBanners] = useState<ThemeBanner[]>(() => getFallbackThemeBanners('home_spots'));
+  const [spotBanners, setSpotBanners] = useState<ThemeBanner[]>([]);
   useEffect(() => {
     let cancelled = false;
     fetchThemeBanners('home_spots').then(items => {
@@ -49,12 +42,12 @@ export default function EditorialHome({ banner, banners, bannerIndex, setBannerI
     }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
-  const destinations = spotBanners.length > 0 ? spotBanners.map(item => ({
+  const destinations = spotBanners.map(item => ({
     name: item.title_en || item.title_zh,
     local: item.title_zh,
     image: item.image_url,
     to: item.link_url?.startsWith('/rooms') ? item.link_url : `/rooms?search=${encodeURIComponent(item.title_zh)}`,
-  })) : fallbackDestinations;
+  }));
   const pillars = [
     { key: '01', title: labels.coffee, body: labels.coffeeBody, image: products[0]?.image_url || '/product-images/the-one-and-only-champion-blend-beans-1.jpg', to: '/shop', action: labels.viewShop },
     { key: '02', title: labels.stay, body: labels.stayBody, image: rooms[0]?.images?.[0] || rooms[0]?.image_url || fallbackRoom, to: '/rooms', action: labels.viewStays },
