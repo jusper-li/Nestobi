@@ -11,9 +11,9 @@ interface Store {
   address: string;
   phone: string;
   email: string | null;
-  opening_hours: any;
+  opening_hours: Record<string, string> | string | null;
   is_active: boolean;
-  location: any;
+  location: { lat?: number; lng?: number } | null;
   images: string[];
 }
 
@@ -250,12 +250,11 @@ export default function StoreManagement() {
             <div className="max-h-[calc(100vh-16rem)] space-y-4 overflow-y-auto p-6">
               <div>
                 <MultiImageUpload
-                  images={storeForm.images}
-                  onImagesChange={(newImages: string[]) => {
+                  values={storeForm.images}
+                  onChange={(newImages: string[]) => {
                     setStoreForm({ ...storeForm, images: newImages });
                   }}
-                  bucket="store-images"
-                  label={t('store_management.images', '門市圖片')}
+                  storageFolder="stores"
                 />
               </div>
 

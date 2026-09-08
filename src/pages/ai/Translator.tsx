@@ -155,8 +155,10 @@ export default function Translator() {
   const [voiceError, setVoiceError] = useState('');
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>('idle');
   const [activeSpeaker, setActiveSpeaker] = useState<VoiceSpeaker | null>(null);
+  const [phraseSide, setPhraseSide] = useState<PhraseSide>('me');
   const [conversationMessages, setConversationMessages] = useState<ConversationMessage[]>([]);
   const [translatorMode, setTranslatorMode] = useState<TranslatorMode>('text');
+  const legacyPhraseToolsEnabled = useMemo(() => false, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -570,7 +572,7 @@ export default function Translator() {
               <div className="hidden">
                 <button
                   type="button"
-                  onClick={isListening ? onStopListening : onStartListening}
+                   onClick={() => (isListening ? onStopListening() : onStartListening())}
                   className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition ${isListening ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100'}`}
                 >
                   {isListening ? <Square className="h-3.5 w-3.5 fill-current" /> : <Mic className="h-4 w-4" />}
@@ -625,7 +627,7 @@ export default function Translator() {
               <div className="hidden">
                 <button
                   type="button"
-                  onClick={isListening ? onStopListening : onStartListening}
+                   onClick={() => (isListening ? onStopListening() : onStartListening())}
                   className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${isListening ? 'bg-rose-500 text-white shadow-sm' : 'border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100'}`}
                 >
                   {isListening ? <Square className="h-3.5 w-3.5 fill-current" /> : <Mic className="h-3.5 w-3.5" />}
@@ -644,7 +646,7 @@ export default function Translator() {
               </div>
             </div>
 
-            {false && <div className="hidden">
+            {legacyPhraseToolsEnabled && <div className="hidden">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-slate-700">
@@ -674,7 +676,7 @@ export default function Translator() {
               </div>
               </div>}
 
-            {false && <div className="hidden">
+            {legacyPhraseToolsEnabled && <div className="hidden">
               <div className="mb-2 flex items-center gap-2">
                 <p className="text-sm font-semibold text-slate-700">
                   {pick(locale, '\u5feb\u901f\u5c0d\u8a71', 'Quick conversation', '\u30af\u30a4\u30c3\u30af\u4f1a\u8a71', '\ube60\ub978 \ub300\ud654')}
@@ -819,10 +821,10 @@ export default function Translator() {
                   )}
                 </button>
               </div>
-              {false && <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+              {legacyPhraseToolsEnabled && <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
               <button
                 type="button"
-                onClick={isListening ? onStopListening : onStartListening}
+                   onClick={() => (isListening ? onStopListening() : onStartListening())}
                 className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition ${isListening ? 'bg-rose-500 text-white shadow-sm' : 'border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100'}`}
               >
                 {isListening ? <Square className="h-3.5 w-3.5 fill-current" /> : <Mic className="h-3.5 w-3.5" />}

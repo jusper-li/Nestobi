@@ -188,7 +188,7 @@ export default function MemberOrders() {
         .select('id, quantity, unit_price, total_price, products(id, name)')
         .eq('order_id', currentOrder.id);
 
-      const records = (data || []) as PurchaseRecord[];
+      const records = (data || []) as unknown as PurchaseRecord[];
       trackPurchase({
         transaction_id: currentOrder.merchant_order_no || currentOrder.id,
         value: Number(currentOrder.total_amount || 0),

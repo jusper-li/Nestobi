@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import type React from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Mail, MapPin, Pencil, Phone, Store } from 'lucide-react';
 import { supabase } from '../../lib/supabase';

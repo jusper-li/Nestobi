@@ -70,7 +70,7 @@ const normalizeSpecifications = (specifications: Specification[]) =>
           (spec.options || [])
             .map((option) => sanitizeText(option || '', 80).trim())
             .map((option) => normalizeSubscriptionPeriodValue(option) ?? option)
-            .filter((option): option is string | number => Boolean(option))
+            .filter((option): option is string => Boolean(option))
             .map((option) => String(option))
         )
       ),

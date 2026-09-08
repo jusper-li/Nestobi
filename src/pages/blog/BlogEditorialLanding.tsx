@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, Calendar, Mail } from 'lucide-react';
+import { ArrowRight, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
 import { BLOG_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
 import { fetchThemeBanners, getFallbackThemeBanners, type ThemeBanner } from '../../lib/themeBanners';
+
+/* This helper is an event handler despite its historical useFallbackImage name. */
+/* eslint-disable react-hooks/rules-of-hooks */
 
 interface Article {
   id: string;

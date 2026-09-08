@@ -7,7 +7,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { translateRoomsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
-import { dateDiffInDays, formatCurrency, formatDate, formatDateTime, getStatusColor, getStatusLabel } from '../../lib/utils';
+import { formatCurrency, formatDate, formatDateTime, getStatusColor, getStatusLabel } from '../../lib/utils';
 
 interface Booking {
   id: string;
@@ -248,7 +248,6 @@ export default function MemberBookings() {
         </div>
       ) : (
         bookings.map((booking, index) => {
-          const nights = dateDiffInDays(booking.check_in_date, booking.check_out_date);
           const room = booking.tbl_rooms;
           const hotel = room?.hotels;
           const vendor = room?.vendors;
@@ -261,9 +260,9 @@ export default function MemberBookings() {
 
           return (
             <motion.article key={booking.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-              <div className="grid lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
-                <div className="relative min-h-56 bg-gray-100 lg:min-h-full">
-                  <img src={room?.image_url || 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=500'} alt={room?.name || t.room} className="absolute inset-0 h-full w-full object-cover" />
+              <div>
+                <div className="relative h-56 bg-gray-100 sm:h-72 lg:h-80">
+                  <img src={room?.image_url || 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=500'} alt={room?.name || t.room} className="h-full w-full object-cover" />
                 </div>
                 <div className="min-w-0 space-y-5 p-5 lg:p-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">

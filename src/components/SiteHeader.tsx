@@ -105,7 +105,7 @@ export default function SiteHeader() {
     link_groups: DEFAULT_FOOTER_SETTINGS.link_groups,
   });
   const [socials, setSocials] = useState<Social[]>([]);
-  const { itemCount } = useCart();
+  const { totalItems: itemCount } = useCart();
   const { currentLanguage, languages, setLanguage, t } = useLanguage();
   const { user, profile } = useMemberAuth();
   const navigate = useNavigate();
@@ -702,5 +702,4 @@ export default function SiteHeader() {
     </>
   );
 }
-
 

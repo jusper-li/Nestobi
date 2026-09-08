@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, BedDouble, Building2, ExternalLink, ImageOff, Pencil, Store, Tags } from 'lucide-react';
+import { ArrowLeft, BedDouble, ExternalLink, ImageOff, Pencil, Tags } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
 

@@ -9,7 +9,7 @@ import ProductImagePlaceholder from '../components/ProductImagePlaceholder';
 
 export default function Cart() {
   const { t } = useLanguage();
-  const { items, removeFromCart, updateQuantity, total, itemCount } = useCart();
+  const { items, removeItem, updateQuantity, totalPrice, totalItems } = useCart();
 
   const cartPromises = [
     { icon: Truck, label: t('cart.promise.shipping.title', '全台免運'), text: t('cart.promise.shipping.desc', '本次訂單免收運費') },
@@ -66,7 +66,7 @@ export default function Cart() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-px bg-[#cfa87a]/50" />
               <p className="text-xs text-stone-400 tracking-[0.2em] font-light">
-                {t('cart.count', `共 ${itemCount} 件商品`)}
+                {t('cart.count', `共 ${totalItems} 件商品`)}
               </p>
             </div>
           </div>
@@ -77,22 +77,22 @@ export default function Cart() {
             <div className="lg:col-span-2 space-y-3">
               {items.map((item) => (
                 <div
-                  key={item.productId}
+                  key={item.id}
                   className="bg-[#fffaf2] p-5 border border-[#eadfd1] hover:border-[#d8bda4] hover:shadow-[0_6px_24px_rgba(120,100,80,0.08)] transition-all duration-300"
                 >
                   <div className="flex gap-5">
-                    <Link to={`/product/${item.slug}`} className="flex-shrink-0">
+                    <Link to={`/shop/${item.products.id}`} className="flex-shrink-0">
                       <div className="w-20 h-20 md:w-24 md:h-24 bg-[#f7efe5] overflow-hidden border border-[#eadfd1]">
-                        {item.image ? (
+                        {item.products.image_url ? (
                           <ProductImage
-                            src={item.image}
-                            alt={item.name}
+                            src={item.products.image_url}
+                            alt={item.products.name}
                             compactPlaceholder
                             className="w-full h-full object-cover"
                             sizes="96px"
                           />
                         ) : (
-                          <ProductImagePlaceholder name={item.name} compact />
+                          <ProductImagePlaceholder name={item.products.name} compact />
                         )}
                       </div>
                     </Link>
@@ -100,31 +100,20 @@ export default function Cart() {
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex-1 pr-3">
-                          <Link to={`/product/${item.slug}`}>
+                          <Link to={`/shop/${item.products.id}`}>
                             <h3 className="text-sm font-medium text-stone-700 mb-1.5 hover:text-[#8e6448] transition-colors tracking-wide line-clamp-1">
-                              {item.name}
+                              {item.products.name}
                             </h3>
                           </Link>
                           <div className="flex items-baseline gap-2">
-                            {item.salePrice ? (
-                              <>
-                                <span className="text-sm font-semibold text-stone-700">
-                                  NT$ {item.salePrice.toLocaleString()}
-                                </span>
-                                <span className="text-xs text-stone-300 line-through font-light">
-                                  {item.price.toLocaleString()}
-                                </span>
-                              </>
-                            ) : (
-                              <span className="text-sm font-semibold text-stone-700">
-                                NT$ {item.price.toLocaleString()}
-                              </span>
-                            )}
+                            <span className="text-sm font-semibold text-stone-700">
+                              NT$ {item.products.price.toLocaleString()}
+                            </span>
                           </div>
                         </div>
 
                         <button
-                          onClick={() => removeFromCart(item.productId)}
+                          onClick={() => void removeItem(item.id)}
                           className="text-stone-300 hover:text-stone-500 transition-colors p-1.5"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -134,14 +123,14 @@ export default function Cart() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center border border-[#d8c8b6]">
                           <button
-                            onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                            onClick={() => void updateQuantity(item.id, item.quantity - 1)}
                             className="w-7 h-7 flex items-center justify-center hover:bg-[#f7efe5] transition-all duration-200 text-stone-500"
                           >
                             <Minus className="w-3 h-3" />
                           </button>
                           <span className="w-10 text-center text-sm text-stone-700 font-medium">{item.quantity}</span>
                           <button
-                            onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                            onClick={() => void updateQuantity(item.id, item.quantity + 1)}
                             className="w-7 h-7 flex items-center justify-center hover:bg-[#f7efe5] transition-all duration-200 text-stone-500"
                           >
                             <Plus className="w-3 h-3" />
@@ -153,7 +142,7 @@ export default function Cart() {
                             {t('cart.subtotal', '小計')}
                           </p>
                           <p className="text-sm font-semibold text-stone-700">
-                            NT$ {((item.salePrice || item.price) * item.quantity).toLocaleString()}
+                            NT$ {(item.products.price * item.quantity).toLocaleString()}
                           </p>
                         </div>
                       </div>
@@ -163,7 +152,7 @@ export default function Cart() {
               ))}
 
               <p className="text-xs text-stone-400 tracking-[0.1em] pt-2 font-light">
-                {t('cart.count', `共 ${itemCount} 件商品`)}
+                {t('cart.count', `共 ${totalItems} 件商品`)}
               </p>
             </div>
 
@@ -176,7 +165,7 @@ export default function Cart() {
                 <div className="space-y-3.5 mb-6">
                   <div className="flex justify-between text-sm text-stone-500 tracking-wide font-light">
                     <span>{t('cart.subtotal', '商品小計')}</span>
-                    <span>NT$ {total.toLocaleString()}</span>
+                    <span>NT$ {totalPrice.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-sm text-stone-500 tracking-wide font-light">
                     <span>{t('cart.shipping', '運費')}</span>
@@ -185,7 +174,7 @@ export default function Cart() {
                   <div className="border-t border-[#d8c8b6] pt-4 mt-4">
                     <div className="flex justify-between items-baseline">
                       <span className="text-xs text-stone-500 tracking-[0.1em] uppercase font-medium">{t('cart.total', '總計')}</span>
-                      <span className="text-xl font-semibold text-stone-700">NT$ {total.toLocaleString()}</span>
+                      <span className="text-xl font-semibold text-stone-700">NT$ {totalPrice.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>

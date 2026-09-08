@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, CreditCard, Gift, Lock, MapPin, Receipt, Truck, User } from 'lucide-react';
+import { ChevronRight, Gift, Lock, Receipt, Truck, User } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useCart } from '../contexts/CartContext';
 import { trackBeginCheckout, trackPurchase } from '../lib/analytics';
@@ -45,7 +45,7 @@ const submitNewebpayForm = (
 export default function Checkout() {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { items, total, clearCart } = useCart();
+  const { items, totalPrice, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<{ orderNumber: string } | null>(null);
   const [formData, setFormData] = useState({
@@ -69,12 +69,6 @@ export default function Checkout() {
       navigate('/cart');
     }
   }, [items, navigate]);
-
-  const paymentOptions = [
-    { value: 'credit_card', label: t('checkout.payment.creditCard', '信用卡') },
-    { value: 'bank_transfer', label: t('checkout.payment.transfer', '銀行轉帳') },
-    { value: 'cash_on_delivery', label: t('checkout.payment.cod', '貨到付款') },
-  ];
 
   const deliveryPromise = [
     { icon: Lock, label: t('checkout.promise.secure', '安全結帳') },
@@ -117,11 +111,11 @@ export default function Checkout() {
       }
 
       trackBeginCheckout({
-        value: total,
+        value: totalPrice,
         items: items.map((item) => ({
-          item_id: item.productId,
-          item_name: item.name,
-          price: item.salePrice || item.price,
+          item_id: item.product_id,
+          item_name: item.products.name,
+          price: item.products.price,
           quantity: item.quantity,
         })),
       });
@@ -133,10 +127,10 @@ export default function Checkout() {
         id: orderId,
         order_number: orderNumber,
         status: 'pending',
-        subtotal: total,
+        subtotal: totalPrice,
         tax: 0,
         shipping: 0,
-        total,
+        total: totalPrice,
         payment_status: 'pending',
         shipping_address: {
           name: formData.name,
@@ -168,11 +162,11 @@ export default function Checkout() {
 
       const orderItems = items.map((item) => ({
         order_id: orderId,
-        product_id: item.productId,
-        product_name: item.name,
+        product_id: item.product_id,
+        product_name: item.products.name,
         quantity: item.quantity,
-        price: item.salePrice || item.price,
-        total: (item.salePrice || item.price) * item.quantity,
+        price: item.products.price,
+        total: item.products.price * item.quantity,
       }));
 
       const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
@@ -180,7 +174,7 @@ export default function Checkout() {
 
       const { error: paymentError } = await supabase.from('payments').insert({
         order_id: orderId,
-        amount: total,
+        amount: totalPrice,
         method: formData.paymentMethod,
         status: 'pending',
         metadata: {
@@ -228,8 +222,8 @@ export default function Checkout() {
             customerName: formData.name,
             customerEmail: formData.email,
             items: orderItems,
-            total,
-            totalAmount: total,
+            total: totalPrice,
+            totalAmount: totalPrice,
             address: `${formData.address}, ${formData.city} ${formData.postalCode}`,
             paymentMethod: formData.paymentMethod,
             siteUrl: window.location.origin,
@@ -242,7 +236,7 @@ export default function Checkout() {
       if (formData.paymentMethod !== 'credit_card') {
         trackPurchase({
           transaction_id: orderNumber,
-          value: total,
+          value: totalPrice,
           items: orderItems.map((item) => ({
             item_id: item.product_id,
             item_name: item.product_name,
@@ -496,28 +490,28 @@ export default function Checkout() {
                   {items.map((item) => (
                     <div key={item.id} className="flex gap-3 border-b border-stone-100 pb-4 last:border-b-0 last:pb-0">
                       <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-stone-100">
-                        {item.image ? (
+                        {item.products.image_url ? (
                           <ProductImage
-                            src={item.image}
-                            alt={item.name}
+                            src={item.products.image_url}
+                            alt={item.products.name}
                             className="h-full w-full object-cover"
                             loading="lazy"
                             sizes="64px"
                           />
                         ) : (
-                          <ProductImagePlaceholder name={item.name} />
+                          <ProductImagePlaceholder name={item.products.name} />
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-stone-800">{item.name}</p>
+                            <p className="truncate text-sm font-medium text-stone-800">{item.products.name}</p>
                             <p className="mt-1 text-xs text-stone-400">
                               {t('checkout.summary.quantity', '數量')} x {item.quantity}
                             </p>
                           </div>
                           <p className="text-sm font-medium text-stone-700">
-                            {formatCurrency((item.salePrice || item.price) * item.quantity)}
+                            {formatCurrency(item.products.price * item.quantity)}
                           </p>
                         </div>
                       </div>
@@ -528,7 +522,7 @@ export default function Checkout() {
                 <div className="mt-6 space-y-3 border-t border-stone-100 pt-4 text-sm">
                   <div className="flex items-center justify-between text-stone-500">
                     <span>{t('checkout.summary.subtotal', '小計')}</span>
-                    <span>{formatCurrency(total)}</span>
+                    <span>{formatCurrency(totalPrice)}</span>
                   </div>
                   <div className="flex items-center justify-between text-stone-500">
                     <span>{t('checkout.summary.shipping', '運費')}</span>
@@ -538,7 +532,7 @@ export default function Checkout() {
                     <span className="text-sm font-medium tracking-wide text-stone-800">
                       {t('checkout.summary.total', '總計')}
                     </span>
-                    <span className="text-lg font-semibold text-stone-900">{formatCurrency(total)}</span>
+                    <span className="text-lg font-semibold text-stone-900">{formatCurrency(totalPrice)}</span>
                   </div>
                 </div>
               </section>

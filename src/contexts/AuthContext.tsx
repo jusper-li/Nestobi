@@ -15,11 +15,16 @@ interface AuthContextType {
   role: 'user' | 'admin' | 'superadmin' | 'vendor';
   permissions: Record<string, boolean>;
   loading: boolean;
+  isLoading: boolean;
+  admin: { name: string; email: string } | null;
   hasPermission: (key: string) => boolean;
   hasStorePermission: (storeId: string, permission?: 'any' | 'info' | 'products' | 'inventory' | 'points' | 'sales') => boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signOut: () => Promise<void>;
+  logout: () => Promise<void>;
+  requestLoginCode: (email: string) => Promise<void>;
+  verifyLoginCode: (email: string, code: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateProfile: (data: Partial<MemberProfile>) => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -62,8 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .catch(() => null),
       ]);
 
-      if (profileRes.data) setProfile(profileRes.data as MemberProfile);
-      if (authRes.data) {
+      if (profileRes?.data) setProfile(profileRes.data as MemberProfile);
+      if (authRes?.data) {
         setUserAuth(authRes.data as UserAuth);
         const userRole = authRes.data.role as 'user' | 'admin' | 'superadmin' | 'vendor';
         setRole(userRole);
@@ -74,7 +79,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .select('permission, granted')
             .eq('user_id', userId);
           const permMap: Record<string, boolean> = {};
-          (perms || []).forEach((p: any) => { permMap[p.permission] = p.granted; });
+          (perms || []).forEach((p: { permission?: string; granted?: boolean }) => {
+            if (p.permission) permMap[p.permission] = p.granted === true;
+          });
           setPermissions(permMap);
         } else {
           setPermissions({});
@@ -132,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [clearAuthenticatedState]);
 
   const hasPermission = useCallback((key: string): boolean => {
     if (role === 'superadmin') return true;
@@ -177,7 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      const authClient = supabase.auth as any;
+      const authClient = supabase.auth as unknown as { _removeSession?: () => Promise<void> };
 
       if (typeof authClient._removeSession === 'function') {
         await authClient._removeSession();
@@ -191,6 +198,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       clearAuthenticatedState();
     }
+  };
+
+  const requestLoginCode = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim().toLowerCase(),
+      options: { shouldCreateUser: false },
+    });
+    if (error) throw error;
+  };
+
+  const verifyLoginCode = async (email: string, code: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token: code.trim(),
+      type: 'email',
+    });
+    if (error) throw error;
   };
 
   const resetPassword = async (email: string) => {
@@ -236,7 +260,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select('permission, granted')
       .eq('user_id', user.id);
     const permMap: Record<string, boolean> = {};
-    (perms || []).forEach((p: any) => { permMap[p.permission] = p.granted; });
+    (perms || []).forEach((p: { permission?: string; granted?: boolean }) => {
+      if (p.permission) permMap[p.permission] = p.granted === true;
+    });
     setPermissions(permMap);
   };
 
@@ -262,7 +288,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, session, profile, userAuth, storeAssignments, role, permissions, loading,
-      hasPermission, hasStorePermission, signIn, signUp, signOut, resetPassword, updateProfile, refreshProfile, refreshPermissions
+      isLoading: loading,
+      admin: user ? { name: profile?.display_name || user.email || '', email: user.email || '' } : null,
+      hasPermission, hasStorePermission, signIn, signUp, signOut, logout: signOut,
+      requestLoginCode, verifyLoginCode, resetPassword, updateProfile, refreshProfile, refreshPermissions
     }}>
       {children}
     </AuthContext.Provider>

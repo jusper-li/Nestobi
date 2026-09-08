@@ -113,17 +113,19 @@ export async function fetchSiteContentBlocks(area: SiteContentArea) {
   if (!cache.has(area)) {
     cache.set(
       area,
-      supabase
-        .from('site_content_blocks')
-        .select(SELECT_COLUMNS)
-        .eq('area', area)
-        .eq('is_active', true)
-        .order('display_order', { ascending: true })
-        .order('created_at', { ascending: true })
-        .then(({ data, error }) => {
-          if (error) throw error;
-          return (data || []) as SiteContentBlock[];
-        }),
+      Promise.resolve(
+        supabase
+          .from('site_content_blocks')
+          .select(SELECT_COLUMNS)
+          .eq('area', area)
+          .eq('is_active', true)
+          .order('display_order', { ascending: true })
+          .order('created_at', { ascending: true })
+          .then(({ data, error }) => {
+            if (error) throw error;
+            return (data || []) as unknown as SiteContentBlock[];
+          }),
+      ),
     );
   }
   return cache.get(area)!;

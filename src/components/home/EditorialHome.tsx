@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUpRight, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { FormEvent } from 'react';
 import type { Room } from '../../types';
-import { fetchThemeBanners, getFallbackThemeBanners, type ThemeBanner } from '../../lib/themeBanners';
+import { fetchThemeBanners, type ThemeBanner } from '../../lib/themeBanners';
 
 interface Product { id: string; name: string; price: number; image_url: string | null; description: string | null; origin?: string | null }
 interface BlogPost { id: string; title: string; slug: string; excerpt: string | null; cover_image_url: string | null; category: string; published_at: string }
@@ -101,5 +101,3 @@ export default function EditorialHome({ banner, banners, bannerIndex, setBannerI
     </main>
   );
 }
-
-function formatPrice(value: number) { return `NT$ ${Number(value || 0).toLocaleString()}`; }

@@ -7,6 +7,8 @@ import { formatDate, formatDateTime, formatCurrency, getStatusLabel, getStatusCo
 import { useAuth } from '../../contexts/AuthContext';
 import { logAdminAction } from '../../lib/auditLog';
 
+void useMemo;
+
 interface UserRow {
   id: string;
   user_id: string;
@@ -26,32 +28,6 @@ interface UserDetail {
   points: any[];
   totalPoints: number;
 }
-
-type InvoiceDetail = {
-  id: string;
-  order_id: string;
-  user_id: string;
-  invoice_status: string;
-  invoice_number?: string | null;
-  invoice_random_number?: string | null;
-  invoice_date?: string | null;
-  buyer_name?: string | null;
-  buyer_email?: string | null;
-  buyer_identifier?: string | null;
-  carrier_type?: string | null;
-  carrier_number?: string | null;
-  love_code?: string | null;
-  tax_type?: string | null;
-  sales_amount?: number | null;
-  tax_amount?: number | null;
-  total_amount?: number | null;
-  ezpay_trade_no?: string | null;
-  ezpay_raw_request?: Record<string, unknown> | null;
-  ezpay_raw_response?: Record<string, unknown> | null;
-  error_message?: string | null;
-  created_at?: string | null;
-  updated_at?: string | null;
-};
 
 type DetailRecordType = 'booking' | 'order' | 'point' | 'invoice';
 type DetailRecord = {
@@ -583,8 +559,6 @@ const SuperAdminUsers: React.FC = () => {
     await fetchUsers();
     setUpdating(null);
   };
-
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="space-y-6">
@@ -1249,7 +1223,7 @@ const SuperAdminUsers: React.FC = () => {
                       })()}
 
                       {selectedRecord.type === 'order' && (() => {
-                        const orderItems = Array.isArray(record.items) ? record.items : (detail.orderItemsByOrderId?.[record.id] || []);
+                        const orderItems = Array.isArray(record.items) ? record.items : (detail?.orderItemsByOrderId?.[record.id] || []);
                         const subtotal = Number(record.subtotal ?? orderItems.reduce((sum: number, item: any) => sum + Number(item.total || 0), 0));
                         const tax = Number(record.tax ?? 0);
                         const shipping = Number(record.shipping ?? 0);
@@ -1384,7 +1358,7 @@ const SuperAdminUsers: React.FC = () => {
                       })()}
 
                       {selectedRecord.type === 'invoice' && (() => {
-                        const invoiceOrderItems = detail.orderItemsByOrderId?.[record.order_id] || [];
+                        const invoiceOrderItems = detail?.orderItemsByOrderId?.[record.order_id] || [];
                         const invoiceAmount = Number(record.total_amount || 0);
                         const salesAmount = Number(record.sales_amount || 0);
                         const taxAmount = Number(record.tax_amount || 0);
@@ -1507,7 +1481,7 @@ const SuperAdminUsers: React.FC = () => {
   );
 };
 
-const InfoItem: React.FC<{ icon: React.ReactNode; label: string; value: string; mono?: boolean }> = ({ icon, label, value, mono }) => (
+const InfoItem: React.FC<{ icon?: React.ReactNode; label: string; value: string; mono?: boolean }> = ({ icon, label, value, mono }) => (
   <div className="rounded-xl bg-gray-50 p-3">
     <div className="mb-1 flex items-center gap-1.5 text-gray-400">{icon}<span className="text-xs">{label}</span></div>
     <p className={`text-sm text-gray-900 ${mono ? 'break-all font-mono text-xs' : ''}`}>{value}</p>

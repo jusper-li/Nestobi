@@ -27,7 +27,7 @@ import {
   translateBlogPostsFromCacheOnly,
   translateBlogPostsOnDemand,
 } from '../../lib/contentTranslations';
-import { BLOG_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
+import { BLOG_FALLBACK_IMAGE, useFallbackImage as handleFallbackImage } from '../../lib/images';
 import { fetchPublicList, fetchSnapshotList, readCachedList, withRetry, writeCachedList } from '../../lib/listData';
 import { supabase } from '../../lib/supabase';
 import { buildItemListSchema } from '../../lib/seoSchemas';
@@ -487,9 +487,9 @@ const BlogList: React.FC = () => {
           <div className="mb-6 flex flex-wrap items-center gap-2">
             <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5">
               <Sparkles className="h-4 w-4 flex-shrink-0 text-amber-600" />
-              <span className="truncate text-sm font-medium text-amber-800">{labels.aiSummary}: {aiFilters.summary}</span>
-              {aiFilters.categories.length > 0 && (
-                <span className="flex-shrink-0 text-xs text-amber-600">{labels.aiCategories}: {aiFilters.categories.join(', ')}</span>
+              <span className="truncate text-sm font-medium text-amber-800">{labels.aiSummary}: {aiFilters?.summary}</span>
+              {(aiFilters?.categories?.length ?? 0) > 0 && (
+                <span className="flex-shrink-0 text-xs text-amber-600">{labels.aiCategories}: {aiFilters?.categories?.join(', ')}</span>
               )}
             </div>
             <button onClick={clearAI} className="flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs text-gray-500 transition hover:bg-gray-50">
@@ -629,7 +629,7 @@ const BlogList: React.FC = () => {
                         alt={featured.title}
                         loading="eager"
                         decoding="async"
-                        onError={event => useFallbackImage(event, BLOG_FALLBACK_IMAGE)}
+                        onError={event => handleFallbackImage(event, BLOG_FALLBACK_IMAGE)}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
@@ -668,7 +668,7 @@ const BlogList: React.FC = () => {
                         alt={post.title}
                         loading={index < 6 ? 'eager' : 'lazy'}
                         decoding="async"
-                        onError={event => useFallbackImage(event, BLOG_FALLBACK_IMAGE)}
+                        onError={event => handleFallbackImage(event, BLOG_FALLBACK_IMAGE)}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>

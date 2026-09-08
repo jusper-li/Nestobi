@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Activity,
   CalendarClock,
   ChevronRight,
   Clock3,

@@ -2,10 +2,7 @@
 import { useLocation, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ArrowLeft,
-  Calendar,
   Clock3,
-  Copy,
   DollarSign,
   ExternalLink,
   Filter,
@@ -17,7 +14,6 @@ import {
   ShoppingBag,
   Printer,
   Truck,
-  User,
   Users,
   BedDouble,
   X,
@@ -522,8 +518,7 @@ const SuperAdminOrders: React.FC = () => {
 
     try {
       if (detail.type === 'shop') {
-        const [{ data: orderData }, emailMap] = await Promise.all([
-          supabase
+        const { data: orderData } = await supabase
             .from('orders')
             .select(`
               id,user_id,total_amount,subtotal_amount,points_discount,status,payment_method,payment_status,merchant_order_no,
@@ -538,11 +533,9 @@ const SuperAdminOrders: React.FC = () => {
               )
             `)
             .eq('id', detail.id)
-            .maybeSingle(),
-          fetchMemberEmails([]),
-        ]);
+            .maybeSingle();
 
-        const shopRow = (orderData as ShopOrderDetail) || null;
+        const shopRow = (orderData as unknown as ShopOrderDetail) || null;
         setShopDetail(shopRow);
         if (shopRow?.id) {
           void fetchInvoiceDetail(shopRow.id);
@@ -566,8 +559,7 @@ const SuperAdminOrders: React.FC = () => {
         setDetailActivityLogs((logsRes.data || []) as ActivityLog[]);
         setDetailAfterSales((afterSalesRes.data || []) as AfterSalesRequest[]);
       } else {
-        const [{ data: bookingData }, buyerEmails] = await Promise.all([
-          supabase
+        const { data: bookingData } = await supabase
             .from('tbl_bookings')
             .select(`
               id,user_id,room_id,check_in_date,check_out_date,guests,total_price,subtotal_price,points_discount,status,payment_method,payment_status,special_requests,created_at,updated_at,
@@ -578,9 +570,7 @@ const SuperAdminOrders: React.FC = () => {
               )
             `)
             .eq('id', detail.id)
-            .maybeSingle(),
-          fetchMemberEmails([]),
-        ]);
+            .maybeSingle();
 
         const bookingRow = (bookingData as BookingOrderDetail) || null;
         setBookingDetail(bookingRow);
@@ -936,7 +926,7 @@ const SuperAdminOrders: React.FC = () => {
           <Filter className="h-4 w-4 text-gray-400" />
           <div className="flex flex-wrap gap-1.5">
             {(tab === 'shop' ? shopStatuses : bookingStatuses).map((value) => {
-              const labels = tab === 'shop'
+              const labels: Record<string, string> = tab === 'shop'
                 ? { ...SHOP_STATUS_LABELS, all: '全部' }
                 : { ...BOOKING_STATUS_LABELS, all: '全部' };
               return (
@@ -1520,5 +1510,3 @@ function NoteBlock({ label, value }: { label: string; value: string }) {
 }
 
 export default SuperAdminOrders;
-
-

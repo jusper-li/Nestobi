@@ -16,6 +16,7 @@ interface ThemeHeroCarouselProps {
 
 const themeMeta: Record<ThemeKey, { label: string; glow: string }> = {
   home: { label: 'TRAVEL · SHOP · DISCOVER', glow: 'from-amber-300/35' },
+  home_spots: { label: 'WHERE TO NEXT?', glow: 'from-sky-300/35' },
   nestopia: { label: 'NESTOBI STAYS', glow: 'from-emerald-300/35' },
   genbon_travel: { label: 'GENBON TRAVEL SHOP', glow: 'from-amber-300/35' },
   coffee_traveler: { label: 'COFFEE TRAVELER', glow: 'from-orange-300/35' },

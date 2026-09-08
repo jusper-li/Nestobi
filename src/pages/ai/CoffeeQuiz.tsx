@@ -1,4 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
+import { useCallback } from 'react';
 import { ArrowLeft, Coffee, RotateCcw, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navigation from '../../components/Navigation';
@@ -27,7 +28,6 @@ import type { BeanFinderResult } from '../../features/bean-finder/types';
 type OptionKey = 'A' | 'B' | 'C' | 'D' | 'E';
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 type CoffeeProfileKey = 'bright_explorer' | 'balanced_daily' | 'sweet_smooth' | 'bold_classic';
-type ScoreKey = CoffeeProfileKey | 'adventure';
 type ProductRecommendation = BeanFinderProductRecommendation;
 type RankedProductRecommendation = RankedBeanFinderProductRecommendation;
 
@@ -81,8 +81,8 @@ type CoffeeProfileResult = BeanFinderResult;
 
 type QuizSubmissionRow = {
   result_type: string;
-  answers: Record<string, OptionKey> | null;
-  created_at: string;
+  answers: Record<string, unknown> | null;
+  created_at?: string;
 };
 
 type QuizResultCache = {
@@ -171,12 +171,12 @@ const COFFEE_PROFILE_BREW_HINTS: Record<CoffeeProfileKey, Record<UiLang, string>
   },
 };
 
-function buildResultFromSavedSubmission(questions: Question[], row: QuizSubmissionRow, locale: UiLang): CoffeeProfileResult | null {
+function buildResultFromSavedSubmission(questions: Question[], row: QuizSubmissionRow): CoffeeProfileResult | null {
   const savedAnswers = row.answers || {};
   const restoredAnswers = Object.fromEntries(
     questions
       .map((question) => {
-        const answerKey = savedAnswers[String(question.display_order)];
+        const answerKey = savedAnswers[String(question.display_order)] as OptionKey | undefined;
         if (!answerKey) return null;
         return [question.id, answerKey] as const;
       })
@@ -187,6 +187,10 @@ function buildResultFromSavedSubmission(questions: Question[], row: QuizSubmissi
 
   return computeResult(questions, restoredAnswers);
 }
+
+void COFFEE_PROFILE_LABELS;
+void COFFEE_PROFILE_SUMMARIES;
+void COFFEE_PROFILE_BREW_HINTS;
 
 const FALLBACK_QUIZ_QUESTIONS: Question[] = [
   {
@@ -551,11 +555,7 @@ const FALLBACK_QUIZ_QUESTIONS: Question[] = [
   },
 ];
 
-function normalizeScore(value: number, max: number) {
-  if (max <= 0) return 0;
-  if (value <= 0) return 0;
-  return Math.max(1, Math.min(10, Math.round((value / max) * 10)));
-}
+void FALLBACK_QUIZ_QUESTIONS;
 
 function collectSelectedChoiceIds(questions: Question[], answers: Partial<Record<string, OptionKey>>) {
   return questions
@@ -619,7 +619,7 @@ export default function CoffeeQuiz() {
   const locale = normalizeLang(lang);
   const uiLang = locale as UiLang;
   const shouldTranslate = pickByLang(locale, '0', '1', '1', '1') === '1';
-  const t = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
+  const t = useCallback((zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko), [locale]);
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -666,7 +666,7 @@ export default function CoffeeQuiz() {
 
     const loadSavedSubmission = async () => {
       const cached = readCoffeeQuizStorage();
-      const cachedResult = isMeaningfulQuizResult(cached?.result) ? cached.result : null;
+      const cachedResult = isMeaningfulQuizResult(cached?.result) ? cached?.result ?? null : null;
       if (!user) {
         setSavedSubmissionResult(cachedResult);
         return;
@@ -692,7 +692,7 @@ export default function CoffeeQuiz() {
         return;
       }
 
-      setSavedSubmissionResult(buildResultFromSavedSubmission(questions, row, uiLang) || cachedResult);
+      setSavedSubmissionResult(buildResultFromSavedSubmission(questions, row) || cachedResult);
     };
 
     void loadSavedSubmission();
@@ -786,7 +786,7 @@ export default function CoffeeQuiz() {
     return () => {
       active = false;
     };
-  }, [activeResult, locale, shouldTranslate]);
+  }, [activeResult, locale, shouldTranslate, t]);
 
   useEffect(() => {
     let cancelled = false;

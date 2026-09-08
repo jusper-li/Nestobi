@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import {
   AlertCircle,
   ArrowRight,
-  BarChart3,
   BedDouble,
   Calendar,
   CheckCircle2,
@@ -72,7 +71,7 @@ const VendorDashboard: React.FC = () => {
   const [vendorName, setVendorName] = useState('');
   const [loading, setLoading] = useState(true);
   const [noVendor, setNoVendor] = useState(false);
-  const [period, setPeriod] = useState<Period>('week');
+  const [period] = useState<Period>('week');
   const [refreshing, setRefreshing] = useState(false);
 
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -97,16 +96,16 @@ const VendorDashboard: React.FC = () => {
     const roomList = (roomsRes.data || []) as Room[];
     setRooms(roomList);
 
-    const bookingList = (statsRes.data || []) as Booking[];
+    const bookingList = (statsRes.data || []) as unknown as Booking[];
     setPeriodStats({
       revenue: bookingList.filter(b => b.status === 'completed').reduce((sum, b) => sum + (b.total_price || 0), 0),
       bookings: bookingList.length,
       checkins: bookingList.filter(b => b.status !== 'cancelled').length,
     });
 
-    const checkinList = (checkinsRes.data || []) as Booking[];
-    const checkoutList = (checkoutsRes.data || []) as Booking[];
-    const recentList = (recentRes.data || []) as Booking[];
+    const checkinList = (checkinsRes.data || []) as unknown as Booking[];
+    const checkoutList = (checkoutsRes.data || []) as unknown as Booking[];
+    const recentList = (recentRes.data || []) as unknown as Booking[];
     setTodayCheckins(checkinList);
     setTodayCheckouts(checkoutList);
     setRecentBookings(recentList);

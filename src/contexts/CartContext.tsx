@@ -8,10 +8,21 @@ interface CartItemWithProduct extends CartItem {
   products: Product;
 }
 
+interface LegacyCartProduct {
+  id: string;
+  productId?: string;
+  name: string;
+  price: number;
+  salePrice?: number | null;
+  image?: string;
+  slug?: string;
+}
+
 interface CartContextType {
   items: CartItemWithProduct[];
   loading: boolean;
   addItem: (product: Product | string, quantity?: number) => Promise<void>;
+  addToCart: (product: LegacyCartProduct, quantity?: number) => Promise<void>;
   removeItem: (cartItemId: string) => Promise<void>;
   updateQuantity: (cartItemId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -215,12 +226,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
   };
 
+  const addToCart = async (product: LegacyCartProduct, quantity = 1) => {
+    await addItem({
+      id: product.productId || product.id,
+      category_id: null,
+      vendor_id: null,
+      name: product.name,
+      price: product.price,
+      image_url: product.image || '',
+      description: '',
+      stock_quantity: 0,
+      is_active: true,
+      sku: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }, quantity);
+  };
+
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = items.reduce((sum, i) => sum + (i.products?.price ?? 0) * i.quantity, 0);
 
   return (
     <CartContext.Provider value={{
-      items, loading, addItem, removeItem, updateQuantity, clearCart,
+      items, loading, addItem, addToCart, removeItem, updateQuantity, clearCart,
       totalItems, totalPrice, refresh: fetchCart
     }}>
       {children}

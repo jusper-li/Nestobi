@@ -174,7 +174,7 @@ function normalizeSpecifications(specifications: Specification[]) {
           (spec.options || [])
             .map((option) => sanitizeText(option || '', 80).trim())
             .map((option) => normalizeSubscriptionPeriodValue(option) ?? option)
-            .filter((option): option is string | number => Boolean(option))
+            .filter((option): option is string => Boolean(option))
             .map((option) => String(option))
         )
       ),
@@ -293,16 +293,6 @@ export default function VendorProducts() {
     () => orderedCategories.filter(category => getCategoryDepth(category, categories) === 0),
     [orderedCategories, categories],
   );
-  const childCategoriesByParent = useMemo(() => {
-    const map = new Map<string, Category[]>();
-    orderedCategories.forEach(category => {
-      if (!category.parent_id) return;
-      const children = map.get(category.parent_id) || [];
-      children.push(category);
-      map.set(category.parent_id, children);
-    });
-    return map;
-  }, [orderedCategories]);
   const categoryStats = useMemo(() => {
     const directCounts = new Map<string, number>();
     products.forEach((product) => {

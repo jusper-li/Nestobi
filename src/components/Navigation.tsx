@@ -288,7 +288,7 @@ export default function Navigation() {
                       className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-xl border border-gray-100 bg-white py-1 shadow-xl"
                     >
                       <div className="border-b border-gray-100 px-4 py-3">
-                        <p className="truncate text-sm font-bold text-gray-900">{profile?.display_name || labels.member}</p>
+                        <p className="truncate text-sm font-bold text-gray-900">{profile?.display_name || labels.memberCenter}</p>
                         <p className="mt-0.5 truncate text-xs text-gray-500">{user.email}</p>
                       </div>
                       {memberLinks.map(({ to, label, icon: Icon }) => (
@@ -337,12 +337,13 @@ export default function Navigation() {
         {menuOpen && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-t border-[#D8D3CA] bg-[#F7F5F1]">
             <div className="mx-auto grid max-w-[1440px] gap-1 px-4 py-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:px-10 xl:px-14">
-              {menuLinks.map(({ to, label, icon: Icon, requiresAuth }) => {
-                if (requiresAuth && !user) return null;
+              {menuLinks.map(link => {
+                if ('requiresAuth' in link && link.requiresAuth && !user) return null;
+                const Icon = link.icon;
                 return (
-                  <Link key={to} to={to} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100">
+                  <Link key={link.to} to={link.to} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100">
                     <Icon size={16} />
-                    <span>{label}</span>
+                    <span>{link.label}</span>
                   </Link>
                 );
               })}

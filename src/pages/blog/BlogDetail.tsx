@@ -5,7 +5,7 @@ import { ArrowLeft, BookOpen, Calendar, ChevronRight, Coffee, Heart, Tag, User }
 import Navigation from '../../components/Navigation';
 import Footer from '../../components/Footer';
 import SEOHead from '../../components/SEOHead';
-import { BLOG_FALLBACK_IMAGE, useFallbackImage } from '../../lib/images';
+import { BLOG_FALLBACK_IMAGE, useFallbackImage as handleFallbackImage } from '../../lib/images';
 import { sanitizeHtml } from '../../lib/security';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -155,11 +155,11 @@ export default function BlogDetail() {
         <motion.article initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-md">
             <div className="relative h-72 md:h-[440px]">
-              <img src={viewPost.cover_image_url || BLOG_FALLBACK_IMAGE} alt={viewPost.title} onError={e => useFallbackImage(e, BLOG_FALLBACK_IMAGE)} className="h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <img src={viewPost.cover_image_url || BLOG_FALLBACK_IMAGE} alt={viewPost.title} onError={e => handleFallbackImage(e, BLOG_FALLBACK_IMAGE)} className="h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
               <div className="absolute bottom-8 left-8 right-8 text-white">
                 <span className="mb-4 inline-block rounded-full bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white">{viewPost.category}</span>
-                <h1 className="font-serif text-2xl font-bold leading-tight md:text-4xl">{viewPost.title}</h1>
+                <h1 className="!text-white font-serif text-2xl font-bold leading-tight drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)] md:text-4xl">{viewPost.title}</h1>
               </div>
             </div>
             <div className="p-8 md:p-12">
@@ -197,7 +197,7 @@ export default function BlogDetail() {
                 <motion.div key={rel.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
                   <Link to={`/blog/${rel.slug}`} className="group block overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md">
                     <div className="h-36 overflow-hidden">
-                      <img src={rel.cover_image_url || BLOG_FALLBACK_IMAGE} alt={rel.title} onError={e => useFallbackImage(e, BLOG_FALLBACK_IMAGE)} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                      <img src={rel.cover_image_url || BLOG_FALLBACK_IMAGE} alt={rel.title} onError={e => handleFallbackImage(e, BLOG_FALLBACK_IMAGE)} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
                     </div>
                     <div className="p-4">
                       <span className="text-xs font-medium text-amber-700">{rel.category}</span>

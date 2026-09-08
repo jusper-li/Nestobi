@@ -1,5 +1,5 @@
 export type RoastLabel = '淺焙' | '淺中焙' | '中焙' | '中深焙' | '深焙';
-export type Level = '新手' | '專家';
+export type Level = '無' | '新手' | '專家';
 export type SpecialTag = '專家' | '香氣' | '厚實' | '怕酸' | '怕苦';
 
 export type BeanFinderQuestionOption = {

@@ -80,9 +80,7 @@ export default function Register() {
         JSON.stringify({ email, otp, expiresAt, password, displayName }),
       );
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      await supabase.auth.getSession();
 
       const res = await fetch(EDGE_URL, {
         method: 'POST',
@@ -237,5 +235,4 @@ export default function Register() {
     </div>
   );
 }
-
 

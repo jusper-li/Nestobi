@@ -3,10 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
   BedDouble,
-  Calendar,
   Clock3,
-  ExternalLink,
-  Mail,
   MapPin,
   MessageSquare,
   Package,
@@ -14,7 +11,6 @@ import {
   Receipt,
   Search,
   ShoppingBag,
-  Truck,
   User,
   X,
 } from 'lucide-react';
@@ -39,13 +35,15 @@ interface Booking {
   tbl_rooms?: { name: string; location: string } | null;
 }
 
-interface BookingDetail extends Booking {
+interface BookingDetail extends Omit<Booking, 'tbl_rooms'> {
+  special_requests?: string | null;
+  updated_at?: string | null;
   room?: { id?: string | null; name?: string | null; location?: string | null } | null;
   tbl_rooms?: {
     id?: string | null;
     name?: string | null;
     location?: string | null;
-    vendors?: { name?: string | null; contact_phone?: string | null; contact_email?: string | null } | null;
+    vendors?: { name?: string | null; contact_phone?: string | null; contact_email?: string | null; address?: string | null } | null;
     hotels?: { name?: string | null; phone?: string | null; email?: string | null; address?: string | null } | null;
   } | null;
 }
@@ -76,7 +74,7 @@ interface ProductOrderLine {
   payment_method: string;
   status: string;
   created_at: string;
-  products?: { id: string; name: string; image_url?: string | null; sku?: string | null; vendor_id?: string | null } | null;
+  products?: { id: string; name: string; image_url?: string | null; sku?: string | null; vendor_id?: string | null; vendors?: { name?: string | null; contact_phone?: string | null } | null } | null;
   after_sales_requests?: AfterSalesRequest[] | null;
   orders?: {
     id: string;
@@ -126,7 +124,7 @@ interface SubscriptionOrderLine {
   notes?: string | null;
   created_at: string;
   updated_at?: string | null;
-  products?: { id: string; name: string; image_url?: string | null; sku?: string | null; vendor_id?: string | null } | null;
+  products?: { id: string; name: string; image_url?: string | null; sku?: string | null; vendor_id?: string | null; vendors?: { name?: string | null; contact_phone?: string | null } | null } | null;
   orders?: {
     id: string;
     user_id: string;
@@ -593,9 +591,9 @@ const VendorOrders: React.FC = () => {
       setMessage(bookingRes.error?.message || productRes.error?.message || subscriptionRes.error?.message || labels.updateFailed);
     }
 
-    const bookingData = (bookingRes.data || []) as Booking[];
-    const productData = (productRes.data || []) as ProductOrderLine[];
-    const subscriptionData = (subscriptionRes.data || []) as SubscriptionOrderLine[];
+    const bookingData = (bookingRes.data || []) as unknown as Booking[];
+    const productData = (productRes.data || []) as unknown as ProductOrderLine[];
+    const subscriptionData = (subscriptionRes.data || []) as unknown as SubscriptionOrderLine[];
     const productOrderIds = Array.from(new Set(productData.map(item => item.order_id).filter(Boolean)));
     let afterSalesByOrderId = new Map<string, AfterSalesRequest[]>();
 

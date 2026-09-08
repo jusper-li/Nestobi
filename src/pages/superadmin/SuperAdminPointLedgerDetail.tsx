@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import type React from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, BedDouble, Coins, ExternalLink, Package, Repeat, Users } from 'lucide-react';
@@ -143,14 +142,14 @@ export default function SuperAdminPointLedgerDetail() {
           .select('id,check_in_date,check_out_date,total_price,status,special_requests,tbl_rooms(id,name,room_type,vendors(id,name))')
           .eq('id', sourceId)
           .maybeSingle();
-        setBooking((data as BookingDetail) || null);
+        setBooking((data as unknown as BookingDetail) || null);
       } else if (row.source_type === 'order' && sourceId) {
         const { data } = await supabase
           .from('orders')
           .select('id,total_amount,status,payment_status,created_at,purchase_records(id,quantity,unit_price,total_price,products(id,name,sku,vendors(id,name)))')
           .eq('id', sourceId)
           .maybeSingle();
-        const orderRow = (data as OrderDetail) || null;
+        const orderRow = (data as unknown as OrderDetail) || null;
         setOrder(orderRow);
 
         if (orderRow?.id) {
@@ -159,7 +158,7 @@ export default function SuperAdminPointLedgerDetail() {
             .select('id,monthly_amount,status,next_bill_at,last_billed_at,notes,products(id,name,sku,vendors(id,name)),orders(id,total_amount,status,payment_status,created_at)')
             .eq('id', row.source_id || row.reference_id)
             .maybeSingle();
-          setSubscription((subData as SubscriptionDetail) || null);
+          setSubscription((subData as unknown as SubscriptionDetail) || null);
         }
       } else if (row.source_type === 'subscription' && sourceId) {
         const { data } = await supabase
@@ -167,7 +166,7 @@ export default function SuperAdminPointLedgerDetail() {
           .select('id,monthly_amount,status,next_bill_at,last_billed_at,notes,products(id,name,sku,vendors(id,name)),orders(id,total_amount,status,payment_status,created_at)')
           .eq('id', sourceId)
           .maybeSingle();
-        const subRow = (data as SubscriptionDetail) || null;
+        const subRow = (data as unknown as SubscriptionDetail) || null;
         setSubscription(subRow);
         if (subRow?.orders?.id) {
           const { data: orderData } = await supabase
@@ -175,7 +174,7 @@ export default function SuperAdminPointLedgerDetail() {
             .select('id,total_amount,status,payment_status,created_at,purchase_records(id,quantity,unit_price,total_price,products(id,name,sku,vendors(id,name)))')
             .eq('id', subRow.orders.id)
             .maybeSingle();
-          setOrder((orderData as OrderDetail) || null);
+          setOrder((orderData as unknown as OrderDetail) || null);
         }
       }
 

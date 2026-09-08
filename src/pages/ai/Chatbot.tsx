@@ -1,4 +1,5 @@
 ﻿import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Bot, ChevronDown, ChevronUp, Hotel, MessageSquareText, Package, Send, Sparkles, User } from 'lucide-react';
 import Navigation from '../../components/Navigation';
@@ -143,7 +144,7 @@ export default function Chatbot() {
   const skipNextAutoScrollRef = useRef(false);
 
   const storageKey = useMemo(
-    () => (user ? `nestobi:ai-chat-session:${user.id}` : 'nestobi:ai-chat-session'),
+    () => (user?.id ? `nestobi:ai-chat-session:${user.id}` : 'nestobi:ai-chat-session'),
     [user?.id],
   );
 
@@ -155,13 +156,13 @@ export default function Chatbot() {
     '안녕하세요. Nestobi AI 고객지원입니다. 숙박, 상품, 글, FAQ를 찾아서 알맞은 페이지로 안내해 드립니다.',
   );
 
-  const createWelcomeMessage = (): MessageItem => ({
+  const createWelcomeMessage = useCallback((): MessageItem => ({
     id: 'welcome',
     role: 'assistant',
     content: welcomeText,
     time: formatMessageTime(),
     createdAt: new Date().toISOString(),
-  });
+  }), [welcomeText]);
 
   const [messages, setMessages] = useState<MessageItem[]>([createWelcomeMessage()]);
   const [sessionId, setSessionId] = useState(createSessionId);
@@ -227,7 +228,7 @@ export default function Chatbot() {
       if (first.id !== 'welcome') return prev;
       return [{ ...first, content: welcomeText }, ...rest];
     });
-  }, [welcomeText]);
+  }, [createWelcomeMessage, welcomeText]);
 
   useEffect(() => {
     if (!user) {
@@ -294,7 +295,7 @@ export default function Chatbot() {
     return () => {
       cancelled = true;
     };
-  }, [locale, storageKey, user?.id, welcomeText]);
+  }, [createWelcomeMessage, locale, storageKey, user]);
 
   const loadOlderHistory = async () => {
     if (!user || historyLoading || historyLoadingMore || !hasMoreHistory || !oldestHistoryCursorRef.current) return;
@@ -484,8 +485,6 @@ export default function Chatbot() {
   };
 
   const pageTitle = pick(locale, 'AI 客服中心', 'AI Support Center', 'AI サポートセンター', 'AI 고객지원 센터');
-  const quickFaqTitle = pick(locale, '快速常見問題', 'Quick FAQ', 'よくある質問', '자주 묻는 질문');
-  const quickFaqHint = pick(locale, '點一下就能直接發問', 'Tap to ask instantly', 'タップですぐ質問できます', '눌러서 바로 질문하세요');
   const pageDesc = pick(
     locale,
     '可搜尋住宿、商品、文章與 FAQ，並保留你的歷史對話。',
