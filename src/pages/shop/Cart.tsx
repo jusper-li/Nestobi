@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AlertTriangle, CheckCircle, Minus, Plus, ShieldCheck, ShoppingBag, Trash2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Mail, Minus, Plus, ShieldCheck, ShoppingBag, Trash2 } from 'lucide-react';
 import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,7 +10,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { trackBeginCheckout, trackPurchase } from '../../lib/analytics';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
-import { createShopCheckout, submitNewebPayMpgForm, type NewebPayPaymentMethod } from '../../lib/shopCheckout';
+import { createGuestShopCheckout, createShopCheckout, submitNewebPayMpgForm, type NewebPayPaymentMethod } from '../../lib/shopCheckout';
 import { formatCurrency } from '../../lib/utils';
 
 interface CartProduct {
@@ -46,6 +46,17 @@ export default function Cart() {
   const [checkoutError, setCheckoutError] = useState('');
   const [success, setSuccess] = useState(false);
   const [availablePoints, setAvailablePoints] = useState(0);
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [pointUsage, setPointUsage] = useState(0);
+  const [pointSessionId, setPointSessionId] = useState('');
+  const [pointOtpRequestId, setPointOtpRequestId] = useState('');
+  const [pointOtp, setPointOtp] = useState('');
+  const [pointModalOpen, setPointModalOpen] = useState(false);
+  const [pointLoading, setPointLoading] = useState(false);
+  const [pointMessage, setPointMessage] = useState('');
+  const [memberToken, setMemberToken] = useState('');
+  const [guestCheckoutToken, setGuestCheckoutToken] = useState('');
+  const [guestPaymentHandled, setGuestPaymentHandled] = useState(false);
   const [paymentChoice, setPaymentChoice] = useState<PaymentChoice>('CREDIT');
   const [shippingName, setShippingName] = useState('');
   const [shippingPhone, setShippingPhone] = useState('');
@@ -55,8 +66,8 @@ export default function Cart() {
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
 
   const t = {
-    loginTitle: pick('請先登入', 'Please log in', 'ログインしてください', '로그인해 주세요'),
-    loginDesc: pick('登入後即可查看購物車並完成結帳。', 'Log in to view your cart and complete checkout.', 'ログインするとカートを確認して決済できます。', '로그인하면 장바구니를 보고 결제를 완료할 수 있습니다.'),
+    loginTitle: pick('購物車是空的', 'Your cart is empty', 'カートは空です', '장바구니가 비어 있습니다'),
+    loginDesc: pick('登入可以自動帶入會員資料，也可以直接以訪客身份結帳。', 'Log in to prefill your details, or continue as a guest.', 'ログインして情報を自動入力するか、ゲストとして購入できます。', '로그인하거나 게스트로 계속할 수 있습니다.'),
     loginNow: pick('立即登入', 'Log in now', '今すぐログイン', '지금 로그인'),
     successTitle: pick('訂單已完成', 'Order completed', '注文が完了しました', '주문이 완료되었습니다'),
     successDesc: pick('你的訂單已送出，可前往我的訂單查看明細。', 'Your order has been placed. You can view details in My Orders.', 'ご注文は送信されました。マイ注文で詳細を確認できます。', '주문이 완료되었습니다. 내 주문에서 상세를 확인할 수 있습니다.'),
@@ -67,7 +78,7 @@ export default function Cart() {
     backToShop: pick('回到商店', 'Back to Shop', 'ショップへ戻る', '상점으로 돌아가기'),
     orderSummary: pick('訂單摘要', 'Order Summary', '注文概要', '주문 요약'),
     subtotal: pick('小計', 'Subtotal', '小計', '소계'),
-    loginBeforeCheckout: pick('請先登入後再結帳。', 'Please log in before checkout.', 'チェックアウト前にログインしてください。', '결제 전에 로그인해 주세요.'),
+    loginBeforeCheckout: pick('已有會員帳號？登入後可自動帶入資料；也可以直接以訪客身份結帳。', 'Have an account? Log in to prefill your details, or continue as a guest.', '会員の方はログインすると情報を自動入力できます。ゲスト購入も可能です。', '회원은 로그인하면 정보를 자동 입력할 수 있습니다. 게스트 구매도 가능합니다.'),
     placeOrder: pick('送出訂單', 'Place Order', '注文を送信', '주문하기'),
     checkoutFailed: pick('結帳失敗，請稍後再試。', 'Checkout failed. Please try again later.', 'チェックアウトに失敗しました。後でもう一度お試しください。', '결제에 실패했습니다. 잠시 후 다시 시도해 주세요.'),
     unavailableCount: (count: number) => pick(`有 ${count} 個項目無法購買。`, `${count} unavailable item(s) found.`, `${count} 件の商品が購入できません。`, `구매할 수 없는 항목이 ${count}개 있습니다.`),
@@ -86,6 +97,15 @@ export default function Cart() {
     shippingAddress: pick('地址', 'Address', '住所', '주소'),
     shippingHint: pick('請填寫姓名、電話與地址，系統會自動保存，下次購買可直接帶入。', 'Fill in your name, phone, and address. We will save them for next time.', '氏名・電話・住所を入力すると、次回の購入時に自動入力されます。', '이름, 전화번호, 주소를 입력하면 다음 구매 때 자동으로 불러옵니다.'),
     shippingRequired: pick('請先填寫姓名、電話與地址，才能成立訂單。', 'Please complete your name, phone, and address before placing the order.', '注文する前に氏名・電話・住所を入力してください。', '주문하려면 이름, 전화번호, 주소를 먼저 입력해 주세요.'),
+    memberEmail: pick('會員 Email', 'Member email', '会員 Email', '회원 이메일'),
+    pointsBenefit: pick('點數折抵', 'Points discount', 'ポイント割引', '포인트 할인'),
+    pointsLookup: pick('輸入手機或 Email 後可查詢', 'Enter phone or email to check points', '電話番号またはメールでポイントを確認', '전화번호 또는 이메일로 포인트 확인'),
+    pointsUse: (points: number) => pick(`可用 ${points.toLocaleString()} 點`, `${points.toLocaleString()} points available`, `${points.toLocaleString()}ポイント利用可能`, `${points.toLocaleString()} 포인트 사용 가능`),
+    pointsConfirm: pick('確認使用點數', 'Confirm points', 'ポイントを確認', '포인트 사용 확인'),
+    pointsOtp: pick('輸入 Email 驗證碼', 'Enter email verification code', 'メール認証コードを入力', '이메일 인증 코드 입력'),
+    pointsSend: pick('發送驗證碼', 'Send verification code', '認証コードを送信', '인증 코드 보내기'),
+    pointsVerify: pick('驗證並使用點數', 'Verify and use points', '認証してポイントを使用', '인증하고 포인트 사용'),
+    pointsWaiting: pick('已找到會員，點數可用於本次訂單。', 'Member found. Points are available for this order.', '会員が見つかりました。ポイントを利用できます。', '회원을 찾았습니다. 포인트를 사용할 수 있습니다.'),
   };
 
   useEffect(() => {
@@ -111,24 +131,88 @@ export default function Cart() {
   }, [profile]);
 
   useEffect(() => {
-    const fetchPointBalance = async () => {
-      if (!user) {
-        setAvailablePoints(0);
-        return;
-      }
-      const { data } = await supabase.from('member_point_balances').select('current_points').eq('user_id', user.id).maybeSingle();
-      setAvailablePoints(Number(data?.current_points || 0));
-    };
-    void fetchPointBalance();
+    setCustomerEmail(user?.email || '');
   }, [user]);
+
+  useEffect(() => {
+    const token = sessionStorage.getItem('nestobi_guest_checkout_token') || crypto.randomUUID();
+    sessionStorage.setItem('nestobi_guest_checkout_token', token);
+    setGuestCheckoutToken(token);
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!guestPaymentHandled && !user && params.get('guestOrder') && params.get('paymentStatus') === 'paid') {
+      setGuestPaymentHandled(true);
+      void clearCart().then(() => setSuccess(true));
+    }
+  }, [user, clearCart, guestPaymentHandled]);
+
+  const lookupPoints = async () => {
+    if (!shippingPhone.trim() && !customerEmail.trim()) return;
+    setPointLoading(true);
+    setPointMessage(pick('查詢中，請稍候…', 'Loading points…', 'ポイントを確認中…', '포인트 조회 중…'));
+    const functionName = user ? 'lookup-member-points' : 'guest-lookup-member-points';
+    const { data, error } = await supabase.functions.invoke(functionName, { body: { phone: shippingPhone.trim(), email: customerEmail.trim().toLowerCase() } });
+    setPointLoading(false);
+    if (error || !data?.matched) {
+      setAvailablePoints(0);
+      setPointUsage(0);
+      setPointMessage(t.pointsLookup);
+      return;
+    }
+    setAvailablePoints(Number(data.availablePoints || 0));
+    setMemberToken(String(data.memberToken || ''));
+    setPointMessage(t.pointsWaiting);
+  };
+
+  const startPointRedemption = async () => {
+    if (pointUsage <= 0 || pointUsage > Math.min(availablePoints, Math.floor(subtotal))) return;
+    setPointLoading(true);
+    setPointMessage('');
+    const functionName = user ? 'create-points-redemption-session' : 'guest-create-points-redemption-session';
+    const { data, error } = await supabase.functions.invoke(functionName, { body: { requestedPoints: pointUsage, channel: 'email', memberToken, guestCheckoutToken } });
+    if (error || !data?.sessionId) {
+      setPointLoading(false);
+      setPointMessage('目前無法建立點數驗證，請稍後再試。');
+      return;
+    }
+    setPointSessionId(data.sessionId);
+    const otpFunctionName = user ? 'request-points-otp' : 'guest-request-points-otp';
+    const otpResult = await supabase.functions.invoke(otpFunctionName, { body: { sessionId: data.sessionId, channel: 'email', memberToken, guestCheckoutToken } });
+    setPointLoading(false);
+    if (otpResult.error || !otpResult.data?.otpRequestId) {
+      setPointMessage(otpResult.data?.error || '驗證碼發送失敗，請稍後再試。');
+      return;
+    }
+    setPointOtpRequestId(otpResult.data.otpRequestId);
+    setPointMessage(`驗證碼已寄送至 ${otpResult.data.maskedIdentifier || customerEmail}`);
+  };
+
+  const verifyPointRedemption = async () => {
+    if (!pointOtpRequestId || pointOtp.trim().length !== 6) return;
+    setPointLoading(true);
+    const functionName = user ? 'verify-points-otp' : 'guest-verify-points-otp';
+    const { data, error } = await supabase.functions.invoke(functionName, { body: { otpRequestId: pointOtpRequestId, otp: pointOtp.trim(), memberToken } });
+    setPointLoading(false);
+    if (error || !data?.success) {
+      setPointMessage(data?.error || '驗證碼錯誤，請重新輸入。');
+      return;
+    }
+    setPointUsage(Number(data.requestedPoints || pointUsage));
+    const usedPoints = Number(data.requestedPoints || pointUsage);
+    const discountAmount = Number(data.discountAmount || pointUsage);
+    setPointMessage(`已使用 ${usedPoints.toLocaleString()} 點，折抵 NT$${discountAmount.toLocaleString()}。剩餘可用 ${Math.max(0, availablePoints - usedPoints).toLocaleString()} 點`);
+    setPointModalOpen(false);
+  };
 
   const validCartItems = cartItems.filter(hasProduct);
   const unavailableCartItems = cartItems.filter((item) => !item.products);
   const subtotal = validCartItems.reduce((sum, item) => sum + item.products.price * item.quantity, 0);
-  const pointDiscount = paymentChoice === 'POINTS' ? subtotal : 0;
+  const pointDiscount = Math.min(pointUsage, availablePoints, Math.floor(subtotal));
   const payableSubtotal = Math.max(0, subtotal - pointDiscount);
   const pointsEarned = Math.floor(payableSubtotal / 100) * 5;
-  const shippingReady = shippingName.trim().length > 0 && shippingPhone.trim().length > 0 && shippingAddress.trim().length > 0;
+  const shippingReady = shippingName.trim().length > 0 && shippingPhone.trim().length > 0 && shippingAddress.trim().length > 0 && customerEmail.trim().length > 0;
 
   const handleRemoveUnavailableItems = async () => {
     if (checkoutLoading) return;
@@ -139,10 +223,6 @@ export default function Cart() {
   const handleCheckout = async () => {
     if (checkoutLoading) return;
     if (validCartItems.length === 0) return;
-    if (!user) {
-      navigate(`/auth/login?redirect=${encodeURIComponent('/cart')}`);
-      return;
-    }
     if (!shippingReady) {
       setCheckoutError(t.shippingRequired);
       return;
@@ -161,16 +241,14 @@ export default function Cart() {
         })),
       });
 
-      const checkout = await createShopCheckout(
-        pointDiscount,
-        paymentChoice === 'POINTS' ? 'CREDIT' : paymentChoice,
-        {
-          name: shippingName.trim(),
-          phone: shippingPhone.trim(),
-          address: shippingAddress.trim(),
-        },
-      );
-      await clearCart();
+      if (pointDiscount > 0 && !pointSessionId) {
+        setCheckoutError('請先完成點數驗證。');
+        setCheckoutLoading(false);
+        return;
+      }
+      const checkout = user
+        ? await createShopCheckout(pointDiscount, paymentChoice === 'POINTS' ? 'CREDIT' : paymentChoice, { name: shippingName.trim(), phone: shippingPhone.trim(), address: shippingAddress.trim(), email: customerEmail.trim() })
+        : await createGuestShopCheckout(pointDiscount, paymentChoice === 'POINTS' ? 'CREDIT' : paymentChoice, { name: shippingName.trim(), phone: shippingPhone.trim(), address: shippingAddress.trim(), email: customerEmail.trim() }, guestCheckoutToken, validCartItems.map(item => ({ productId: item.product_id, quantity: item.quantity })), pointDiscount > 0 ? pointSessionId : undefined);
 
       if (checkout.mode === 'newebpay') {
         if (!checkout.paymentUrl || !checkout.merchantId || !checkout.tradeInfo || !checkout.tradeSha || !checkout.version) {
@@ -187,6 +265,7 @@ export default function Cart() {
       }
 
       if (checkout.mode === 'points') {
+        await clearCart();
         trackPurchase({
           transaction_id: checkout.orderId,
           value: payableSubtotal,
@@ -240,7 +319,7 @@ export default function Cart() {
             </div>
             <h1 className="mb-2 text-2xl font-bold text-gray-900">{t.successTitle}</h1>
             <p className="mb-6 text-sm leading-6 text-gray-500">{t.successDesc}</p>
-            <button type="button" onClick={() => navigate('/member/orders')} className="commerce-primary-button">
+            <button type="button" onClick={() => navigate(user ? '/member/orders' : '/')} className="commerce-primary-button">
               {t.viewOrders}
             </button>
           </motion.div>
@@ -366,6 +445,10 @@ export default function Cart() {
                       />
                     </div>
                     <div>
+                      <label className="mb-1 block text-xs font-semibold text-gray-600">Email</label>
+                      <input type="email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} placeholder="name@example.com" className="commerce-field" disabled={checkoutLoading} />
+                    </div>
+                    <div>
                       <label className="mb-1 block text-xs font-semibold text-gray-600">{t.shippingAddress}</label>
                       <textarea
                         value={shippingAddress}
@@ -388,7 +471,7 @@ export default function Cart() {
                     { value: 'WEBATM' as const, label: t.webatm },
                     { value: 'ATM' as const, label: t.atm },
                     { value: 'CVS' as const, label: t.cvs },
-                    ...(availablePoints >= subtotal && subtotal > 0 ? [{ value: 'POINTS' as const, label: t.pointsPayment }] : []),
+                    ...(pointDiscount >= subtotal && subtotal > 0 ? [{ value: 'POINTS' as const, label: t.pointsPayment }] : []),
                   ]).map(option => (
                     <button
                       key={option.value}
@@ -404,6 +487,24 @@ export default function Cart() {
                   <span>{t.choosePayment}</span>
                   <span>{pick('可用', 'Available', '利用可能', '사용 가능')} {availablePoints.toLocaleString()} NP</span>
                 </div>
+                <div className="mt-4 rounded-2xl border border-stone-200 bg-white p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <span className="font-semibold text-stone-800">{t.pointsBenefit}</span>
+                    <button type="button" onClick={lookupPoints} disabled={pointLoading} className="text-xs font-bold text-[#8B6840] underline disabled:opacity-50">{pointLoading ? pick('載入中…', 'Loading…', '読み込み中…', '로드 중…') : pick('查詢點數', 'Check points', 'ポイント確認', '포인트 확인')}</button>
+                  </div>
+                  <input type="email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} onBlur={() => void lookupPoints()} placeholder={t.memberEmail} className="commerce-field mb-2" disabled={checkoutLoading} />
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-stone-500">{availablePoints > 0 ? t.pointsUse(availablePoints) : t.pointsLookup}</span>
+                    <button type="button" onClick={() => { setPointUsage(Math.min(availablePoints, Math.floor(subtotal))); setPointModalOpen(true); }} disabled={availablePoints <= 0 || subtotal <= 0} className="rounded-lg bg-[#2C1F10] px-3 py-2 text-xs font-bold text-white disabled:opacity-40">{pointDiscount > 0 ? `${pointDiscount} 點` : t.pointsBenefit}</button>
+                  </div>
+                  {pointUsage > 0 && pointSessionId && (
+                    <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold leading-6 text-emerald-800">
+                      <div>本次折抵：{pointUsage.toLocaleString()} 點（NT${pointDiscount.toLocaleString()}）</div>
+                      <div>剩餘可用餘額：{Math.max(0, availablePoints - pointUsage).toLocaleString()} 點</div>
+                    </div>
+                  )}
+                  {pointMessage && <p className="mt-2 text-xs font-semibold text-[#8B6840]">{pointMessage}</p>}
+                </div>
                 <div className="mt-3 flex justify-between border-t border-gray-100 pt-3 text-lg font-bold">
                   <span>{pick('Total', 'Total', 'Total', 'Total')}</span>
                   <span className="text-[#C09A6A]">{formatCurrency(payableSubtotal)}</span>
@@ -414,7 +515,7 @@ export default function Cart() {
                 </p>
               </div>
               {checkoutError && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-600">{checkoutError}</p>}
-              {!user && <p className="mb-3 rounded-lg bg-[#FEF9EC] px-3 py-2 text-center text-sm font-semibold text-[#8B6840]">{t.loginBeforeCheckout}</p>}
+              {!user && <p className="mb-3 rounded-lg bg-[#FEF9EC] px-3 py-2 text-center text-sm font-semibold text-[#8B6840]">{t.loginBeforeCheckout} <button type="button" onClick={() => navigate('/auth/login?redirect=%2Fcart')} className="underline">登入快速帶入資料</button></p>}
               <button type="button" onClick={handleCheckout} disabled={checkoutLoading || validCartItems.length === 0 || !shippingReady} className="commerce-primary-button w-full">
                 {checkoutLoading && <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />}
                 {t.placeOrder}
@@ -424,7 +525,21 @@ export default function Cart() {
         )}
       </main>
       <Footer />
+      {pointModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md overflow-hidden rounded-3xl bg-[#F7F5F1] shadow-2xl">
+            <div className="flex items-center justify-between bg-[#2C1F10] px-6 py-5 text-white">
+              <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10"><Mail className="h-5 w-5" /></span><div><p className="text-xs tracking-[0.16em] text-[#E8D2A9]">NESTOBI MEMBER</p><h2 className="mt-1 text-lg font-bold">{t.pointsBenefit}</h2></div></div>
+              <button type="button" onClick={() => setPointModalOpen(false)} className="text-2xl text-white/60 transition hover:text-white">×</button>
+            </div>
+            <div className="bg-white px-6 py-5">
+              <div className="border-b border-dashed border-stone-200 pb-4 text-sm text-stone-500"><div className="flex justify-between gap-4"><span>寄件人</span><strong className="text-stone-700">Nestobi 會員服務</strong></div><div className="mt-2 flex justify-between gap-4"><span>收件人</span><strong className="max-w-[220px] truncate text-stone-700">{customerEmail || '會員 Email'}</strong></div><div className="mt-2 flex justify-between gap-4"><span>主旨</span><strong className="text-stone-700">點數折抵驗證碼</strong></div></div>
+              {!pointOtpRequestId ? <><p className="mt-5 text-sm leading-6 text-stone-600">請選擇本次要折抵的點數，我們會將 6 位數驗證碼寄到會員信箱。</p><div className="mt-4 grid grid-cols-4 gap-2">{[100, 300, 500, Math.min(availablePoints, Math.floor(subtotal))].filter((value, index, values) => value > 0 && values.indexOf(value) === index).map(value => <button key={value} type="button" onClick={() => setPointUsage(value)} className={`rounded-xl border px-2 py-3 text-sm font-bold ${pointUsage === value ? 'border-[#2C1F10] bg-[#2C1F10] text-white' : 'border-stone-200'}`}>{value === Math.min(availablePoints, Math.floor(subtotal)) ? pick('全部', 'All', 'すべて', '전체') : value}</button>)}</div><input type="number" min="1" max={Math.min(availablePoints, Math.floor(subtotal))} value={pointUsage || ''} onChange={e => setPointUsage(Math.min(Math.max(0, Number(e.target.value)), Math.min(availablePoints, Math.floor(subtotal))))} className="commerce-field mt-3" /><p className="my-4 text-center text-lg font-bold text-[#8B6840]">折抵 NT${pointUsage.toLocaleString()}</p><button type="button" onClick={() => void startPointRedemption()} disabled={pointLoading || pointUsage <= 0} className="commerce-primary-button w-full">{pointLoading ? '載入中…' : t.pointsSend}</button></> : <><div className="mt-5 rounded-2xl bg-[#FEF9EC] p-4 text-center"><p className="text-sm font-semibold text-stone-600">驗證碼已寄出</p><p className="mt-1 text-xs text-stone-500">請查看信件並輸入驗證碼</p></div><label className="mb-2 mt-5 block text-sm font-semibold text-stone-700">{t.pointsOtp}</label><input inputMode="numeric" maxLength={6} value={pointOtp} onChange={e => setPointOtp(e.target.value.replace(/\D/g, ''))} placeholder="000000" className="commerce-field mb-3 text-center text-xl tracking-[0.5em]" /><button type="button" onClick={() => void verifyPointRedemption()} disabled={pointLoading || pointOtp.length !== 6} className="commerce-primary-button w-full">{pointLoading ? '載入中…' : t.pointsVerify}</button></>}
+              <p className="mt-4 text-center text-xs text-stone-400">驗證碼 5 分鐘內有效，請勿提供給他人。</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

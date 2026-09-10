@@ -176,6 +176,7 @@ Deno.serve(async (req: Request) => {
 
     const contentType = req.headers.get("content-type") || "";
     let merchantOrderNo: string | null = null;
+    const posToken = new URL(req.url).searchParams.get("posToken");
     let jsonUserId: string | null = null;
 
     if (contentType.includes("application/json")) {
@@ -219,7 +220,7 @@ Deno.serve(async (req: Request) => {
     const supabase = createServiceClient();
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id, user_id, total_amount, subtotal_amount, points_discount, merchant_order_no, payment_status, newebpay_status, newebpay_payment_type")
+      .select("id, user_id, points_member_id, total_amount, subtotal_amount, points_discount, merchant_order_no, payment_status, newebpay_status, newebpay_payment_type, order_channel")
       .eq("merchant_order_no", merchantOrderNo)
       .maybeSingle();
 
@@ -246,7 +247,9 @@ Deno.serve(async (req: Request) => {
       }
 
       if (!contentType.includes("application/json")) {
-        return Response.redirect(`${Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_SITE_URL") || "https://nestobi.com"}/member/orders?merchantOrderNo=${encodeURIComponent(merchantOrderNo)}`, 303);
+        const destination = order.order_channel === "pos" && posToken ? `/pos/pay/${encodeURIComponent(posToken)}` : order.user_id ? "/member/orders" : "/cart";
+        const query = order.order_channel === "pos" && posToken ? "paymentStatus=paid" : order.user_id ? `merchantOrderNo=${encodeURIComponent(merchantOrderNo)}` : `guestOrder=${encodeURIComponent(merchantOrderNo)}&paymentStatus=paid`;
+        return Response.redirect(`${Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_SITE_URL") || "https://nestobi.com"}${destination}?${query}`, 303);
       }
       return jsonResponse({ success: true, synced: false, reason: "already_paid" });
     }
@@ -291,7 +294,9 @@ Deno.serve(async (req: Request) => {
 
     if (!isPaid) {
       if (!contentType.includes("application/json")) {
-        return Response.redirect(`${Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_SITE_URL") || "https://nestobi.com"}/member/orders?merchantOrderNo=${encodeURIComponent(merchantOrderNo)}`, 303);
+        const destination = order.order_channel === "pos" && posToken ? `/pos/pay/${encodeURIComponent(posToken)}` : order.user_id ? "/member/orders" : "/cart";
+        const query = order.order_channel === "pos" && posToken ? "paymentStatus=unpaid" : order.user_id ? `merchantOrderNo=${encodeURIComponent(merchantOrderNo)}` : `guestOrder=${encodeURIComponent(merchantOrderNo)}&paymentStatus=unpaid`;
+        return Response.redirect(`${Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_SITE_URL") || "https://nestobi.com"}${destination}?${query}`, 303);
       }
       return jsonResponse({
         success: true,
@@ -319,6 +324,9 @@ Deno.serve(async (req: Request) => {
       })
       .eq("id", order.id);
 
+    const { error: captureError } = await supabase.rpc("capture_member_points", { p_order_id: order.id });
+    if (captureError) throw captureError;
+
     await supabase
       .from("purchase_records")
       .update({ status: "completed" })
@@ -336,7 +344,7 @@ Deno.serve(async (req: Request) => {
 
       if (!existingPoints) {
         await supabase.from("points").insert({
-          user_id: order.user_id,
+          user_id: order.points_member_id || order.user_id,
           amount: rewardPoints,
           transaction_type: "earned",
           reference_id: order.id,
@@ -357,7 +365,9 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!contentType.includes("application/json")) {
-      return Response.redirect(`${Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_SITE_URL") || "https://nestobi.com"}/member/orders?merchantOrderNo=${encodeURIComponent(merchantOrderNo)}`, 303);
+      const destination = order.order_channel === "pos" && posToken ? `/pos/pay/${encodeURIComponent(posToken)}` : order.user_id ? "/member/orders" : "/cart";
+      const query = order.order_channel === "pos" && posToken ? "paymentStatus=paid" : order.user_id ? `merchantOrderNo=${encodeURIComponent(merchantOrderNo)}` : `guestOrder=${encodeURIComponent(merchantOrderNo)}&paymentStatus=paid`;
+      return Response.redirect(`${Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_SITE_URL") || "https://nestobi.com"}${destination}?${query}`, 303);
     }
     return jsonResponse({
       success: true,

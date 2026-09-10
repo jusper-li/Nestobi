@@ -410,29 +410,8 @@ Deno.serve(async (req: Request) => {
     }
 
     if (pointsDiscount > 0) {
-      const { data: existingPoints } = await supabase
-        .from("points")
-        .select("id")
-        .eq("source_type", "order")
-        .eq("source_id", order.id)
-        .eq("transaction_type", "earned")
-        .eq("amount", pointsDiscount)
-        .ilike("description", "Order refund points reversal%");
-
-      if (!existingPoints || existingPoints.length === 0) {
-        const { error: pointError } = await supabase.from("points").insert({
-          user_id: order.user_id,
-          amount: pointsDiscount,
-          transaction_type: "earned",
-          reference_id: order.id,
-          source_type: "order",
-          source_id: order.id,
-          description: "Order refund points reversal",
-        });
-        if (pointError) {
-          return jsonResponse({ success: false, error: pointError.message }, 500);
-        }
-      }
+      const { error: pointRefundError } = await supabase.rpc("refund_member_points", { p_order_id: order.id });
+      if (pointRefundError) return jsonResponse({ success: false, error: "Point refund failed." }, 500);
     }
 
     const nextPaymentStatus = orderAmount > 0 || pointsDiscount > 0 ? "refunded" : currentPaymentStatus;

@@ -1,4 +1,6 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Fragment } from "react";
 import {
   Loader2,
   Store,
@@ -100,7 +102,7 @@ type SalesForm = {
 };
 
 type SearchResult = { user_id: string; display_name: string };
-type StoreAdminModule = "basic" | "stock" | "points" | "sales" | "recent";
+type StoreAdminModule = "basic" | "stock" | "points" | "sales" | "recent" | "pos" | "storepoints" | "productnew" | "managers" | "inventory" | "inventoryquery" | "fixedqr";
 
 const emptyStoreForm: StoreForm = {
   name: "",
@@ -216,6 +218,8 @@ function getHoursFormValue(hours: StoreLocation["hours"]) {
 
 export default function StoreAdminDashboard() {
   const { user, role, storeAssignments, hasStorePermission } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang);
   const pick = (zh: string, en: string, ja: string, ko: string) =>
@@ -266,6 +270,13 @@ export default function StoreAdminDashboard() {
   const qrTimerRef = useRef<number | null>(null);
   const qrDetectorRef = useRef<BarcodeDetector | null>(null);
   const qrProcessingRef = useRef(false);
+
+  const dedicatedModule = location.pathname.match(/\/member\/store-admin\/(basic|stock|points|sales|recent)$/)?.[1] as StoreAdminModule | undefined;
+  const isDedicatedModulePage = !!dedicatedModule;
+
+  useEffect(() => {
+    if (dedicatedModule) setActiveModule(dedicatedModule);
+  }, [dedicatedModule]);
 
   const isElevated = role === "admin" || role === "superadmin";
   const assignedStoreIds = useMemo(
@@ -392,8 +403,23 @@ export default function StoreAdminDashboard() {
   }, [pointQuery, redemptions]);
   const moduleNav = [
     {
+      key: "pos" as const,
+      label: "POS 快速結帳",
+      hint: "選商品、產生 QR Code，等待客人付款",
+    },
+    {
+      key: "storepoints" as const,
+      label: "門市點數 QR",
+      hint: "輸入消費金額，建立單筆點數抵用 QR Code",
+    },
+    {
+      key: "fixedqr" as const,
+      label: "固定收款 QR",
+      hint: "建立門市專屬固定入口 QR Code",
+    },
+    {
       key: "basic" as const,
-      label: pick("門市資料", "Store info", "店舗情報", "매장 정보"),
+      label: "門市資訊",
       hint: pick(
         "門市名稱、電話與地址",
         "Name, phone, address",
@@ -402,19 +428,34 @@ export default function StoreAdminDashboard() {
       ),
     },
     {
+      key: "managers" as const,
+      label: "門市管理員",
+      hint: "查看管理員與功能權限",
+    },
+    {
       key: "stock" as const,
-      label: pick(
-        "商品 / 庫存",
-        "Products / Stock",
-        "商品 / 在庫",
-        "상품 / 재고",
-      ),
+      label: "商品管理",
       hint: pick(
-        "新增商品、補貨、調整",
-        "Create, restock, adjust",
-        "商品追加・補充・調整",
-        "상품 추가·보충·조정",
+        "查看商品、價格與庫存",
+        "View products, prices, and stock",
+        "商品・価格・在庫を確認",
+        "상품·가격·재고 확인",
       ),
+    },
+    {
+      key: "productnew" as const,
+      label: "建立商品",
+      hint: "建立商品與初始庫存",
+    },
+    {
+      key: "inventory" as const,
+      label: "進貨紀錄",
+      hint: "管理進貨與庫存異動",
+    },
+    {
+      key: "inventoryquery" as const,
+      label: "商品 / 庫存查詢表",
+      hint: "搜尋商品與庫存異動紀錄",
     },
     {
       key: "points" as const,
@@ -1380,7 +1421,7 @@ export default function StoreAdminDashboard() {
         })}
       </div>
 
-      <section className="rounded-2xl bg-white p-5 shadow-sm">
+      {!isDedicatedModulePage && <section className="rounded-2xl bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
           <Shield className="h-5 w-5 text-amber-600" />
           <div>
@@ -1389,8 +1430,8 @@ export default function StoreAdminDashboard() {
             </h2>
             <p className="text-sm text-slate-500">
               {pick(
-                "先點選一個功能，再展開對應管理內容。",
-                "Pick one function to expand its workspace.",
+                "依分類選擇功能，開啟對應的獨立管理頁面。",
+                "Choose a category to open its dedicated management page.",
                 "機能を選ぶと、対応する操作画面が展開されます。",
                 "기능을 선택하면 해당 작업 영역이 펼쳐집니다.",
               )}
@@ -1399,12 +1440,21 @@ export default function StoreAdminDashboard() {
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {moduleNav.map((item) => {
-            const isActive = activeModule === item.key;
+            const isActive = isDedicatedModulePage && activeModule === item.key;
+            const category = ["pos", "storepoints", "fixedqr"].includes(item.key)
+              ? "門市交易"
+              : ["basic", "managers"].includes(item.key)
+                ? "門市與人員"
+                : ["stock", "productnew", "inventory", "inventoryquery"].includes(item.key)
+                  ? "商品與庫存"
+                  : "點數與報表";
+            const isCategoryStart = ["pos", "basic", "stock", "points"].includes(item.key);
             return (
+              <Fragment key={item.key}>
+                {isCategoryStart && <div className="col-span-full mt-2 border-b border-slate-100 pb-1 text-xs font-bold tracking-[0.18em] text-slate-400">{category}</div>}
               <button
-                key={item.key}
                 type="button"
-                onClick={() => setActiveModule(item.key)}
+                onClick={() => item.key === "pos" ? navigate("/member/store-admin/pos") : item.key === "storepoints" ? navigate("/member/store-admin/store-points") : item.key === "fixedqr" ? navigate("/member/store-admin/fixed-qr") : item.key === "stock" ? navigate("/member/store-admin/products") : item.key === "productnew" ? navigate("/member/store-admin/products/new") : item.key === "basic" ? navigate("/member/store-admin/info") : item.key === "managers" ? navigate("/member/store-admin/managers") : item.key === "inventory" ? navigate("/member/store-admin/inventory") : item.key === "inventoryquery" ? navigate("/member/store-admin/inventory/query") : navigate(`/member/store-admin/${item.key}`)}
                 className={`rounded-2xl border p-4 text-left transition ${
                   isActive
                     ? "border-amber-300 bg-amber-50 shadow-sm"
@@ -1424,11 +1474,12 @@ export default function StoreAdminDashboard() {
                     className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${isActive ? "bg-amber-600 text-white" : "bg-slate-100 text-slate-500"}`}
                   >
                     {isActive
-                      ? pick("展開中", "Open", "展開中", "열림")
-                      : pick("點開", "Open", "開く", "열기")}
+                      ? pick("目前頁面", "Current", "現在のページ", "현재 페이지")
+                      : pick("開啟", "Open", "開く", "열기")}
                   </span>
                 </div>
               </button>
+              </Fragment>
             );
           })}
         </div>
@@ -1441,8 +1492,9 @@ export default function StoreAdminDashboard() {
             <span>{activeModuleItem.hint}</span>
           </>
         </div>
-      </section>
+      </section>}
 
+      {isDedicatedModulePage && <>
       {activeModule === "basic" && (
         <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="rounded-2xl bg-white p-5 shadow-sm">
@@ -3052,6 +3104,7 @@ export default function StoreAdminDashboard() {
           </div>
         </div>
       )}
+      </>}
     </div>
   );
 }

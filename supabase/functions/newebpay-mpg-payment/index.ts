@@ -417,6 +417,10 @@ Deno.serve(async (req: Request) => {
     }
 
     if (checkout.payment_status === "paid") {
+      const { error: captureError } = await createServiceClient().rpc("capture_member_points", { p_order_id: checkout.order_id });
+      if (captureError) {
+        return jsonResponse({ success: false, error: "Point capture failed." }, 500);
+      }
       return jsonResponse({
         success: true,
         mode: "points",

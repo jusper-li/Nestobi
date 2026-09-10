@@ -229,7 +229,7 @@ Deno.serve(async (req: Request) => {
     const supabase = createServiceClient();
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id,user_id,total_amount,subtotal_amount,points_discount,payment_method,merchant_order_no,newebpay_status,newebpay_payment_type,shipping_address")
+      .select("id,user_id,points_member_id,total_amount,subtotal_amount,points_discount,payment_method,merchant_order_no,newebpay_status,newebpay_payment_type,shipping_address")
       .eq("merchant_order_no", merchantOrderNo)
       .maybeSingle();
 
@@ -250,6 +250,8 @@ Deno.serve(async (req: Request) => {
 
     if (tradeStatus === "SUCCESS") {
       if (order.newebpay_status === "success") {
+        const { error: duplicateCaptureError } = await supabase.rpc("capture_member_points", { p_order_id: order.id });
+        if (duplicateCaptureError) throw duplicateCaptureError;
         try {
           const duplicateInvoiceResult = await createEzpayInvoiceForOrder(supabase, order.id);
           if (!duplicateInvoiceResult.success && duplicateInvoiceResult.error) {
@@ -260,6 +262,9 @@ Deno.serve(async (req: Request) => {
         }
         return okResponse();
       }
+
+      const { error: captureError } = await supabase.rpc("capture_member_points", { p_order_id: order.id });
+      if (captureError) throw captureError;
 
       const { error: paidOrderError } = await supabase
         .from("orders")
@@ -296,7 +301,7 @@ Deno.serve(async (req: Request) => {
           .limit(1);
         if (!existingReward?.length) {
           const { error: pointError } = await supabase.from("points").insert({
-            user_id: order.user_id,
+            user_id: order.points_member_id || order.user_id,
             amount: rewardPoints,
             transaction_type: "earned",
             reference_id: order.id,
@@ -309,13 +314,13 @@ Deno.serve(async (req: Request) => {
       }
 
       const [profileRes, itemsRes] = await Promise.all([
-        supabase.from("tbl_mn5wgzh0").select("display_name, preferred_language").eq("user_id", order.user_id).maybeSingle(),
+        order.user_id ? supabase.from("tbl_mn5wgzh0").select("display_name, preferred_language").eq("user_id", order.user_id).maybeSingle() : Promise.resolve({ data: null }),
         supabase.from("purchase_records").select("quantity,unit_price,products(name)").eq("order_id", order.id),
       ]);
 
-      const authUser = await supabase.auth.admin.getUserById(order.user_id);
-      const displayName = String(profileRes.data?.display_name || authUser.data.user?.email || "");
-      const email = authUser.data.user?.email || "";
+      const authUser = order.user_id ? await supabase.auth.admin.getUserById(order.user_id) : { data: { user: null } };
+      const displayName = String(profileRes.data?.display_name || getShippingField(order.shipping_address, ["name", "customer_name"]) || authUser.data.user?.email || "");
+      const email = authUser.data.user?.email || getShippingField(order.shipping_address, ["email", "customer_email"]);
       const items = (itemsRes.data || []).map((item: any) => ({
         name: String(item.products?.name || ""),
         quantity: Number(item.quantity || 0),
@@ -357,6 +362,12 @@ Deno.serve(async (req: Request) => {
       return okResponse();
     }
 
+    const { error: releaseError } = await supabase.rpc("release_member_points", {
+      p_order_id: order.id,
+      p_reason: "payment_failed",
+    });
+    if (releaseError) throw releaseError;
+
     const { error: failedOrderError } = await supabase
       .from("orders")
       .update({
@@ -379,24 +390,12 @@ Deno.serve(async (req: Request) => {
       .update({ status: "cancelled" })
       .eq("order_id", order.id);
 
-    if (Number(order.points_discount || 0) > 0) {
-      await supabase.from("points").insert({
-        user_id: order.user_id,
-        amount: Number(order.points_discount || 0),
-        transaction_type: "earned",
-        reference_id: order.id,
-        source_type: "order",
-        source_id: order.id,
-        description: "NewebPay payment failed refund",
-      });
-    }
-
     await sendNotificationEmail(
       `付款失敗：${order.merchant_order_no}`,
       [
         `訂單編號：${order.merchant_order_no}`,
         `訂單 ID：${order.id}`,
-        `會員 ID：${order.user_id}`,
+        `會員 ID：${order.points_member_id || order.user_id || "guest"}`,
         `付款方式：${String(order.newebpay_payment_type || order.payment_method || "CREDIT")}`,
         `狀態：付款失敗`,
       ].join("\n"),

@@ -20,6 +20,7 @@ export interface ShippingInfo {
   name: string;
   phone: string;
   address: string;
+  email?: string;
 }
 
 async function ensureFreshSession() {
@@ -58,6 +59,29 @@ export async function createShopCheckout(
     throw new Error(data?.error || 'Checkout failed');
   }
 
+  return data as ShopCheckoutResponse;
+}
+
+export async function createGuestShopCheckout(
+  pointsToUse: number,
+  paymentMethod: NewebPayPaymentMethod,
+  shippingInfo: Required<ShippingInfo>,
+  guestCheckoutToken: string,
+  items: Array<{ productId: string; quantity: number }>,
+  pointSessionId?: string,
+): Promise<ShopCheckoutResponse> {
+  const { data, error } = await supabase.functions.invoke('guest-shop-checkout', {
+    body: {
+      pointsToUse,
+      paymentMethod,
+      guestCheckoutToken,
+      pointSessionId: pointSessionId || null,
+      items,
+      ...shippingInfo,
+    },
+  });
+  if (error) throw new Error(error.message || 'Checkout failed');
+  if (!data?.success) throw new Error(data?.error || 'Checkout failed');
   return data as ShopCheckoutResponse;
 }
 

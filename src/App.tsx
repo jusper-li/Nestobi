@@ -45,6 +45,17 @@ import PurchaseHistory from './pages/member/PurchaseHistory';
 import Points from './pages/member/Points';
 import Preferences from './pages/member/Preferences';
 import StoreAdminDashboard from './pages/storeadmin/StoreAdminDashboard';
+import StorePos from './pages/storeadmin/StorePos';
+import StorePointOrder from './pages/storeadmin/StorePointOrder';
+import StoreProducts from './pages/storeadmin/StoreProducts';
+import StoreInfo from './pages/storeadmin/StoreInfo';
+import StoreManagers from './pages/storeadmin/StoreManagers';
+import StoreInventory from './pages/storeadmin/StoreInventory';
+import StoreInventoryQuery from './pages/storeadmin/StoreInventoryQuery';
+import StoreFixedQr from './pages/storeadmin/StoreFixedQr';
+import PosPayment from './pages/pos/PosPayment';
+import StoreRedeem from './pages/store/StoreRedeem';
+import StoreFixedRedeem from './pages/store/StoreFixedRedeem';
 
 import ItineraryPlanner from './pages/ai/ItineraryPlanner';
 import Translator from './pages/ai/Translator';
@@ -123,7 +134,8 @@ function AppShell() {
     !pathname.startsWith('/superadmin') &&
     !pathname.startsWith('/vendor') &&
     !pathname.startsWith('/member/store-admin') &&
-    !pathname.startsWith('/store-admin');
+    !pathname.startsWith('/store-admin') &&
+    !pathname.startsWith('/pos/pay');
 
   return (
     <SiteSettingsProvider>
@@ -168,6 +180,9 @@ function AppShell() {
 
                 <Route path="/booking/:roomId" element={<UserRoute><BookingForm /></UserRoute>} />
                 <Route path="/cart" element={<Cart />} />
+                <Route path="/pos/pay/:paymentToken" element={<PosPayment />} />
+                <Route path="/store/redeem/:token" element={<StoreRedeem />} />
+                <Route path="/store/redeem/store/:token" element={<StoreFixedRedeem />} />
 
                 <Route path="/ai/itinerary" element={<UserRoute><ItineraryPlanner /></UserRoute>} />
                 <Route path="/ai/translator" element={<UserRoute><Translator /></UserRoute>} />
@@ -184,6 +199,20 @@ function AppShell() {
                   <Route path="points" element={<Points />} />
                   <Route path="preferences" element={<Preferences />} />
                   <Route path="store-admin" element={<StoreManagerRoute><StoreAdminDashboard /></StoreManagerRoute>} />
+                  <Route path="store-admin/basic" element={<StoreManagerRoute><StoreAdminDashboard /></StoreManagerRoute>} />
+                  <Route path="store-admin/info" element={<StoreManagerRoute><StoreInfo /></StoreManagerRoute>} />
+                  <Route path="store-admin/managers" element={<StoreManagerRoute><StoreManagers /></StoreManagerRoute>} />
+                  <Route path="store-admin/stock" element={<StoreManagerRoute><StoreAdminDashboard /></StoreManagerRoute>} />
+                  <Route path="store-admin/points" element={<StoreManagerRoute><StoreAdminDashboard /></StoreManagerRoute>} />
+                  <Route path="store-admin/sales" element={<StoreManagerRoute><StoreAdminDashboard /></StoreManagerRoute>} />
+                  <Route path="store-admin/recent" element={<StoreManagerRoute><StoreAdminDashboard /></StoreManagerRoute>} />
+                  <Route path="store-admin/products" element={<StoreManagerRoute><StoreProducts /></StoreManagerRoute>} />
+                  <Route path="store-admin/products/new" element={<StoreManagerRoute><StoreProducts createOnly /></StoreManagerRoute>} />
+                  <Route path="store-admin/inventory" element={<StoreManagerRoute><StoreInventory /></StoreManagerRoute>} />
+                  <Route path="store-admin/inventory/query" element={<StoreManagerRoute><StoreInventoryQuery /></StoreManagerRoute>} />
+                  <Route path="store-admin/pos" element={<StoreManagerRoute><StorePos /></StoreManagerRoute>} />
+                  <Route path="store-admin/store-points" element={<StoreManagerRoute><StorePointOrder /></StoreManagerRoute>} />
+                  <Route path="store-admin/fixed-qr" element={<StoreManagerRoute><StoreFixedQr /></StoreManagerRoute>} />
                 </Route>
 
                 <Route path="/vendor" element={<VendorRoute><VendorLayout /></VendorRoute>}>
