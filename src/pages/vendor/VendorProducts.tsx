@@ -921,10 +921,10 @@ export default function VendorProducts() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} onKeyDown={event => { if (event.key === 'Enter' && (event.target as HTMLElement).tagName === 'INPUT') event.preventDefault(); event.stopPropagation(); }} onClick={event => event.stopPropagation()} className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-100 p-5">
               <h3 className="font-semibold text-gray-900">{editing ? '編輯商品' : '新增商品'}</h3>
-              <button onClick={() => setShowModal(false)} className="rounded-xl p-2 hover:bg-gray-100"><X className="h-4 w-4" /></button>
+              <button type="button" onClick={() => setShowModal(false)} className="rounded-xl p-2 hover:bg-gray-100"><X className="h-4 w-4" /></button>
             </div>
             <div className="grid gap-4 p-5 md:grid-cols-2">
               <Field label="商品名稱 *"><input type="text" name="product-name" autoComplete="off" value={form.name} onChange={event => setField('name', event.target.value)} onKeyDown={event => { event.stopPropagation(); if (event.key === 'Enter') event.preventDefault(); }} onCompositionStart={event => event.stopPropagation()} onCompositionEnd={event => event.stopPropagation()} className="input" /></Field>
@@ -1064,8 +1064,8 @@ export default function VendorProducts() {
               </label>
             </div>
             <div className="flex justify-end gap-3 border-t border-gray-100 p-5">
-              <button onClick={() => setShowModal(false)} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">取消</button>
-              <button onClick={handleSave} disabled={saving || !form.name.trim()} className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60">
+              <button type="button" onClick={() => setShowModal(false)} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">取消</button>
+              <button type="button" onClick={() => void handleSave()} disabled={saving || !form.name.trim()} className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60">
                 {saving && <Loader2 className="h-4 w-4 animate-spin" />}
                 {editing ? '儲存變更' : '新增商品'}
               </button>
