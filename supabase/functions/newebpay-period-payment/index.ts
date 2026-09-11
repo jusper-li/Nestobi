@@ -314,7 +314,7 @@ Deno.serve(async (req: Request) => {
 
     const timestamp = Math.floor(Date.now() / 1000);
     const notifyURL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-period-webhook`;
-    const returnURL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-period-webhook?redirect=1`;
+    const returnURL = `${getSiteUrl(req)}/member/orders?payment=subscription&merchantOrderNo=${encodeURIComponent(merchantOrderNo)}`;
 
     const postDataParams = new URLSearchParams({
       RespondType: "JSON",
