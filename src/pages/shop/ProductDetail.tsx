@@ -303,7 +303,8 @@ export default function ProductDetail() {
     try {
       const result = await createSubscriptionCheckout(viewProduct.id, qty, subscriptionMonths);
       if (result.paymentUrl && result.merchantId && result.postData) {
-        submitNewebPayPeriodForm(result.paymentUrl, result.merchantId, result.postData);
+        if (!result.tradeSha) throw new Error('Subscription checkout signature is missing.');
+        submitNewebPayPeriodForm(result.paymentUrl, result.merchantId, result.postData, result.tradeSha);
       } else {
         throw new Error('Subscription checkout failed.');
       }

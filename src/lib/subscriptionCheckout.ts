@@ -10,6 +10,7 @@ export interface SubscriptionCheckoutResponse {
   paymentUrl?: string;
   merchantId?: string;
   postData?: string;
+  tradeSha?: string;
   returnUrl?: string;
   clientBackUrl?: string;
 }
@@ -55,6 +56,7 @@ export function submitNewebPayPeriodForm(
   paymentUrl: string,
   merchantId: string,
   postData: string,
+  tradeSha: string,
 ) {
   const form = document.createElement('form');
   form.method = 'POST';
@@ -63,6 +65,7 @@ export function submitNewebPayPeriodForm(
   const fields: Record<string, string> = {
     MerchantID_: merchantId,
     PostData_: postData,
+    TradeSha_: tradeSha,
   };
 
   Object.entries(fields).forEach(([name, value]) => {
