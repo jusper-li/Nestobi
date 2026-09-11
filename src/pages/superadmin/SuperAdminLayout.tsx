@@ -82,6 +82,7 @@ const SuperAdminLayout: React.FC = () => {
           { to: '/superadmin/products', icon: <ShoppingBag className="h-5 w-5" />, label: pick('商品管理', 'Products', '商品管理', '상품 관리') },
           { to: '/superadmin/product-categories', icon: <Tags className="h-5 w-5" />, label: pick('商品分類', 'Categories', '商品カテゴリ', '상품 분류') },
           { to: '/superadmin/orders', icon: <Package className="h-5 w-5" />, label: pick('商店訂單', 'Store orders', 'ショップ注文', '상점 주문') },
+          { to: '/superadmin/refunds', icon: <FileText className="h-5 w-5" />, label: pick('退款管理', 'Refunds', '返金管理', '환불 관리') },
           { to: '/superadmin/vendors', icon: <Store className="h-5 w-5" />, label: pick('供應商管理', 'Vendors', '仕入先管理', '공급업체 관리') },
         ],
       },

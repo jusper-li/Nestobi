@@ -743,20 +743,21 @@ const VendorOrders: React.FC = () => {
     setUpdating(`product:${item.id}`);
     try {
       if (status === 'cancelled' && item.orders?.payment_status === 'paid') {
-        await refundOrder(item.order_id);
-        await supabase
+        const refundResult = await refundOrder(item.order_id);
+        const { error: afterSalesError } = await supabase
           .from('after_sales_requests')
           .update({ status: 'resolved', updated_at: new Date().toISOString() })
           .eq('order_id', item.order_id)
           .eq('request_type', 'refund')
           .eq('status', 'pending');
+        if (afterSalesError) throw afterSalesError;
         await logAdminAction('refund_product_order', 'purchase_records', item.id, {
           order_id: item.order_id,
           vendor_id: vendorId,
           status,
         });
         await refresh();
-        setMessage('');
+        setMessage(refundResult.message || '退款已完成。');
         return;
       }
 

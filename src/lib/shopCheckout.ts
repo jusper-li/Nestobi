@@ -21,6 +21,18 @@ export interface ShippingInfo {
   phone: string;
   address: string;
   email?: string;
+  invoiceType?: 'personal' | 'company' | 'mobile_carrier' | 'donation';
+  buyerIdentifier?: string;
+  carrierType?: 'mobile' | 'natural_person';
+  carrierNumber?: string;
+  loveCode?: string;
+  shippingMethod?: 'home' | 'cvs';
+  logisticsType?: 'B2C' | 'C2C';
+  shipType?: '1' | '2' | '3' | '4';
+  storeId?: string;
+  storeName?: string;
+  storeTel?: string;
+  storeAddr?: string;
 }
 
 async function ensureFreshSession() {
@@ -65,7 +77,7 @@ export async function createShopCheckout(
 export async function createGuestShopCheckout(
   pointsToUse: number,
   paymentMethod: NewebPayPaymentMethod,
-  shippingInfo: Required<ShippingInfo>,
+  shippingInfo: ShippingInfo,
   guestCheckoutToken: string,
   items: Array<{ productId: string; quantity: number }>,
   pointSessionId?: string,

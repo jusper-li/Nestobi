@@ -17,12 +17,14 @@ interface NewebPayCredentials {
 class NewebPayRefundError extends Error {
   providerStatus: number;
   payload: Record<string, unknown>;
+  endpoint: string;
 
-  constructor(message: string, providerStatus: number, payload: Record<string, unknown>) {
+  constructor(message: string, providerStatus: number, payload: Record<string, unknown>, endpoint: string) {
     super(message);
     this.name = "NewebPayRefundError";
     this.providerStatus = providerStatus;
     this.payload = payload;
+    this.endpoint = endpoint;
   }
 }
 
@@ -147,10 +149,22 @@ async function refundCreditCard(
     Version: "1.1",
   });
 
-  const response = await fetch(credentials.refundUrl || "https://core.newebpay.com/API/CreditCard/Close", {
+  const endpoint = credentials.refundUrl || "https://core.newebpay.com/API/CreditCard/Close";
+  let endpointUrl: URL;
+  try {
+    endpointUrl = new URL(endpoint);
+  } catch {
+    throw new Error("NewebPay refund endpoint is invalid.");
+  }
+  if (!['core.newebpay.com', 'ccore.newebpay.com'].includes(endpointUrl.hostname) || endpointUrl.pathname !== '/API/CreditCard/Close') {
+    throw new Error("NewebPay refund endpoint must be the official CreditCard/Close URL.");
+  }
+  const response = await fetch(endpointUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
+      "Accept": "application/json",
+      "User-Agent": "Nestobi-NewebPay-Refund/1.0",
     },
     body,
   });
@@ -168,13 +182,16 @@ async function refundCreditCard(
     : null;
   const status = String(payload.Status ?? payload.status ?? result?.Status ?? "").toUpperCase();
   if (!response.ok || status !== "SUCCESS") {
-    const message = String(
+    const providerMessage = String(
       payload.Message
       ?? payload.message
       ?? result?.Message
       ?? (rawText.trim() || "NewebPay refund failed."),
     );
-    throw new NewebPayRefundError(message, response.status, payload);
+    const message = /access denied/i.test(providerMessage)
+      ? "NewebPay 拒絕退款請求（Access Denied）。請確認退款 API 網址、商店環境與來源 IP 白名單。"
+      : providerMessage.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 500);
+    throw new NewebPayRefundError(message, response.status, payload, endpointUrl.origin + endpointUrl.pathname);
   }
 
   return { payload, requestParams, providerStatus: response.status };
@@ -405,6 +422,7 @@ Deno.serve(async (req: Request) => {
             ? refundError.providerStatus
             : null,
           providerResponse,
+          providerEndpoint: refundError instanceof NewebPayRefundError ? refundError.endpoint : null,
         }, 502);
       }
     }

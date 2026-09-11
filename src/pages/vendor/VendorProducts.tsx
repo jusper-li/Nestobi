@@ -927,7 +927,7 @@ export default function VendorProducts() {
               <button onClick={() => setShowModal(false)} className="rounded-xl p-2 hover:bg-gray-100"><X className="h-4 w-4" /></button>
             </div>
             <div className="grid gap-4 p-5 md:grid-cols-2">
-              <Field label="商品名稱 *"><input value={form.name} onChange={event => setField('name', event.target.value)} className="input" /></Field>
+              <Field label="商品名稱 *"><input type="text" name="product-name" autoComplete="off" value={form.name} onChange={event => setField('name', event.target.value)} onKeyDown={event => { event.stopPropagation(); if (event.key === 'Enter') event.preventDefault(); }} onCompositionStart={event => event.stopPropagation()} onCompositionEnd={event => event.stopPropagation()} className="input" /></Field>
               <Field label="SKU"><input value={form.sku} onChange={event => setField('sku', event.target.value)} className="input" /></Field>
               <Field label="分類">
                 <select value={form.category_id} onChange={event => setField('category_id', event.target.value)} className="input">

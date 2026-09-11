@@ -33,6 +33,18 @@ interface ShopCheckoutRequest {
   phone?: string;
   address?: string;
   retryOrderId?: string;
+  invoiceType?: string;
+  buyerIdentifier?: string;
+  carrierType?: string;
+  carrierNumber?: string;
+  loveCode?: string;
+  shippingMethod?: string;
+  logisticsType?: string;
+  shipType?: string;
+  storeId?: string;
+  storeName?: string;
+  storeTel?: string;
+  storeAddr?: string;
 }
 
 interface NewebPayCredentials {
@@ -226,6 +238,26 @@ Deno.serve(async (req: Request) => {
     let shippingName = String(body.name || "").trim();
     let shippingPhone = String(body.phone || "").trim();
     let shippingAddress = String(body.address || "").trim();
+    const checkoutMetadata = {
+      invoice_type: String(body.invoiceType || "personal").trim(),
+      buyer_identifier: String(body.buyerIdentifier || "").trim(),
+      carrier_type: String(body.carrierType || "").trim(),
+      carrier_number: String(body.carrierNumber || "").trim(),
+      love_code: String(body.loveCode || "").trim(),
+      shipping_method: String(body.shippingMethod || "home").trim(),
+      logistics_type: String(body.logisticsType || "").trim(),
+      ship_type: String(body.shipType || "").trim(),
+      store_id: String(body.storeId || "").trim(),
+      store_name: String(body.storeName || "").trim(),
+      store_tel: String(body.storeTel || "").trim(),
+      store_addr: String(body.storeAddr || "").trim(),
+    };
+    if (!["personal", "company", "mobile_carrier", "donation"].includes(checkoutMetadata.invoice_type)) return jsonResponse({ success: false, error: "Invalid invoice type." }, 400);
+    if (checkoutMetadata.invoice_type === "company" && !/^\d{8}$/.test(checkoutMetadata.buyer_identifier)) return jsonResponse({ success: false, error: "A valid 8-digit business number is required." }, 400);
+    if (checkoutMetadata.invoice_type === "mobile_carrier" && !/^\/[A-Z0-9.+-]{7}$/.test(checkoutMetadata.carrier_number)) return jsonResponse({ success: false, error: "A valid mobile carrier is required." }, 400);
+    if (checkoutMetadata.invoice_type === "donation" && !/^\d{3,7}$/.test(checkoutMetadata.love_code)) return jsonResponse({ success: false, error: "A valid donation code is required." }, 400);
+    if (!["home", "cvs"].includes(checkoutMetadata.shipping_method)) return jsonResponse({ success: false, error: "Invalid shipping method." }, 400);
+    if (checkoutMetadata.shipping_method === "cvs" && !checkoutMetadata.store_id) return jsonResponse({ success: false, error: "A convenience store is required." }, 400);
 
     let checkout: {
       success: true;
@@ -358,6 +390,15 @@ Deno.serve(async (req: Request) => {
           error: checkoutError?.message || checkoutResult?.error || "Checkout failed.",
         }, 400);
       }
+
+      const serviceClient = createServiceClient();
+      const { data: currentOrder } = await serviceClient.from("orders").select("shipping_address").eq("id", checkoutResult.order_id).maybeSingle();
+      const shippingSnapshot = {
+        ...(currentOrder?.shipping_address && typeof currentOrder.shipping_address === "object" ? currentOrder.shipping_address : {}),
+        ...checkoutMetadata,
+      };
+      await serviceClient.from("orders").update({ shipping_address: shippingSnapshot, updated_at: new Date().toISOString() }).eq("id", checkoutResult.order_id).eq("user_id", user.id);
+      await serviceClient.from("purchase_records").update({ shipping_address: shippingSnapshot }).eq("order_id", checkoutResult.order_id).eq("user_id", user.id);
 
       checkout = checkoutResult as {
         success: true;

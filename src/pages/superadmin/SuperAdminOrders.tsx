@@ -1089,9 +1089,10 @@ const SuperAdminOrders: React.FC = () => {
                   <h2 className="mt-2 text-2xl font-bold text-gray-900">
                     #{selectedDetail.id.slice(-10).toUpperCase()}
                   </h2>
-                  <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-gray-500">
                     {selectedDetail.type === 'shop' ? '商店訂單' : '住宿訂單'} · {createdAt}
                   </p>
+                  {selectedDetail.type === 'shop' && <Link to="/superadmin/refunds" className="mt-3 inline-flex rounded-xl bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-800">退款管理</Link>}
                 </div>
                 <button
                   type="button"

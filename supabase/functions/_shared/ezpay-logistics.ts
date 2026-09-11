@@ -236,7 +236,11 @@ async function buildApiRequest(payload: Record<string, unknown>) {
 export async function decodeEzpayLogisticsCallback(payload: Record<string, unknown>) {
   const encryptedData = trimText(payload.EncryptData || payload.EncryptData_);
   if (!encryptedData) throw new Error("Missing logistics EncryptData.");
+  const receivedHash = trimText(payload.HashData || payload.HashData_).toUpperCase();
+  if (!receivedHash) throw new Error("Missing logistics HashData.");
   const { hashKey, hashIV } = getCredentials();
+  const expectedHash = await sha256UpperHex(`HashKey=${hashKey}&${encryptedData}&HashIV=${hashIV}`);
+  if (receivedHash !== expectedHash) throw new Error("Invalid logistics HashData.");
   const decrypted = await aes256CbcDecryptFromHex(encryptedData, hashKey, hashIV);
   const decoded = safeJsonParse(decrypted);
   if (!decoded || typeof decoded !== "object" || Array.isArray(decoded)) {

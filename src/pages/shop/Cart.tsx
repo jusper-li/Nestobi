@@ -61,6 +61,13 @@ export default function Cart() {
   const [shippingName, setShippingName] = useState('');
   const [shippingPhone, setShippingPhone] = useState('');
   const [shippingAddress, setShippingAddress] = useState('');
+  const [invoiceType, setInvoiceType] = useState<'personal' | 'company' | 'mobile_carrier' | 'donation'>('personal');
+  const [buyerIdentifier, setBuyerIdentifier] = useState('');
+  const [carrierNumber, setCarrierNumber] = useState('');
+  const [loveCode, setLoveCode] = useState('');
+  const [shippingMethod, setShippingMethod] = useState<'home' | 'cvs'>('home');
+  const [storeId, setStoreId] = useState('');
+  const [storeName, setStoreName] = useState('');
   const navigate = useNavigate();
 
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(normalizedLang, zh, en, ja, ko);
@@ -212,7 +219,8 @@ export default function Cart() {
   const pointDiscount = Math.min(pointUsage, availablePoints, Math.floor(subtotal));
   const payableSubtotal = Math.max(0, subtotal - pointDiscount);
   const pointsEarned = Math.floor(payableSubtotal / 100) * 5;
-  const shippingReady = shippingName.trim().length > 0 && shippingPhone.trim().length > 0 && shippingAddress.trim().length > 0 && customerEmail.trim().length > 0;
+  const invoiceReady = invoiceType === 'company' ? /^\d{8}$/.test(buyerIdentifier.trim()) : invoiceType === 'mobile_carrier' ? /^\/[A-Z0-9.+-]{7}$/.test(carrierNumber.trim()) : invoiceType === 'donation' ? /^\d{3,7}$/.test(loveCode.trim()) : true;
+  const shippingReady = shippingName.trim().length > 0 && shippingPhone.trim().length > 0 && shippingAddress.trim().length > 0 && customerEmail.trim().length > 0 && invoiceReady && (shippingMethod !== 'cvs' || storeId.trim().length > 0);
 
   const handleRemoveUnavailableItems = async () => {
     if (checkoutLoading) return;
@@ -246,9 +254,10 @@ export default function Cart() {
         setCheckoutLoading(false);
         return;
       }
+      const checkoutInfo = { name: shippingName.trim(), phone: shippingPhone.trim(), address: shippingAddress.trim(), email: customerEmail.trim(), invoiceType, buyerIdentifier: buyerIdentifier.trim(), carrierType: invoiceType === 'mobile_carrier' ? 'mobile' as const : undefined, carrierNumber: carrierNumber.trim(), loveCode: loveCode.trim(), shippingMethod, logisticsType: shippingMethod === 'cvs' ? 'C2C' as const : undefined, shipType: shippingMethod === 'cvs' ? '1' as const : undefined, storeId: storeId.trim(), storeName: storeName.trim() };
       const checkout = user
-        ? await createShopCheckout(pointDiscount, paymentChoice === 'POINTS' ? 'CREDIT' : paymentChoice, { name: shippingName.trim(), phone: shippingPhone.trim(), address: shippingAddress.trim(), email: customerEmail.trim() })
-        : await createGuestShopCheckout(pointDiscount, paymentChoice === 'POINTS' ? 'CREDIT' : paymentChoice, { name: shippingName.trim(), phone: shippingPhone.trim(), address: shippingAddress.trim(), email: customerEmail.trim() }, guestCheckoutToken, validCartItems.map(item => ({ productId: item.product_id, quantity: item.quantity })), pointDiscount > 0 ? pointSessionId : undefined);
+        ? await createShopCheckout(pointDiscount, paymentChoice === 'POINTS' ? 'CREDIT' : paymentChoice, checkoutInfo)
+        : await createGuestShopCheckout(pointDiscount, paymentChoice === 'POINTS' ? 'CREDIT' : paymentChoice, checkoutInfo, guestCheckoutToken, validCartItems.map(item => ({ productId: item.product_id, quantity: item.quantity })), pointDiscount > 0 ? pointSessionId : undefined);
 
       if (checkout.mode === 'newebpay') {
         if (!checkout.paymentUrl || !checkout.merchantId || !checkout.tradeInfo || !checkout.tradeSha || !checkout.version) {
@@ -458,6 +467,22 @@ export default function Cart() {
                         className="commerce-field resize-none"
                         disabled={checkoutLoading}
                       />
+                    </div>
+                    <div className="border-t border-[#E8D2A9] pt-3">
+                      <label className="mb-1 block text-xs font-semibold text-gray-600">發票類型</label>
+                      <select value={invoiceType} onChange={e => setInvoiceType(e.target.value as typeof invoiceType)} className="commerce-field" disabled={checkoutLoading}>
+                        <option value="personal">個人電子發票</option><option value="company">公司發票（統一編號）</option><option value="mobile_carrier">手機載具</option><option value="donation">捐贈發票</option>
+                      </select>
+                      {invoiceType === 'company' && <input inputMode="numeric" maxLength={8} value={buyerIdentifier} onChange={e => setBuyerIdentifier(e.target.value.replace(/\D/g, ''))} placeholder="統一編號 8 碼" className="commerce-field mt-2" disabled={checkoutLoading} />}
+                      {invoiceType === 'mobile_carrier' && <input value={carrierNumber} onChange={e => setCarrierNumber(e.target.value.toUpperCase())} placeholder="載具 /XXXXXXXX" className="commerce-field mt-2" disabled={checkoutLoading} />}
+                      {invoiceType === 'donation' && <input inputMode="numeric" value={loveCode} onChange={e => setLoveCode(e.target.value.replace(/\D/g, ''))} placeholder="捐贈碼" className="commerce-field mt-2" disabled={checkoutLoading} />}
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-gray-600">配送方式</label>
+                      <select value={shippingMethod} onChange={e => setShippingMethod(e.target.value as typeof shippingMethod)} className="commerce-field" disabled={checkoutLoading}>
+                        <option value="home">宅配</option><option value="cvs">超商取貨</option>
+                      </select>
+                      {shippingMethod === 'cvs' && <><input value={storeId} onChange={e => setStoreId(e.target.value.trim())} placeholder="超商門市代號" className="commerce-field mt-2" disabled={checkoutLoading} /><input value={storeName} onChange={e => setStoreName(e.target.value)} placeholder="門市名稱（選填）" className="commerce-field mt-2" disabled={checkoutLoading} /></>}
                     </div>
                   </div>
                 </div>

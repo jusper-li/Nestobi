@@ -240,9 +240,16 @@ Deno.serve(async (req: Request) => {
       Number(product.price || 0),
     );
     const monthlyAmount = Math.round(planAmount * quantity);
+    if (!Number.isSafeInteger(monthlyAmount) || monthlyAmount <= 0) {
+      return jsonResponse({ success: false, error: "Subscription amount must be greater than zero." }, 400);
+    }
     const merchantOrderNo = buildMerchantOrderNo(user.id);
     const periodPoint = String(new Date().getDate()).padStart(2, "0");
-    const itemDesc = buildItemDesc(String(product.name || "Coffee subscription"), quantity);
+    const itemDesc = buildItemDesc(String(product.name || "Coffee subscription"), quantity)
+      .replace(/[^\u4e00-\u9fffA-Za-z0-9 _]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 100) || "Coffee subscription";
     const customerEmail = String(user.email || "");
     const customerName = String(profileRes.data?.display_name || user.email || "");
     const customerPhone = String(profileRes.data?.phone || "");

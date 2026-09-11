@@ -17,6 +17,13 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const guestToken = String(body.guestCheckoutToken || "").trim(); const name = String(body.name || "").trim(); const phone = String(body.phone || "").trim(); const email = String(body.email || "").trim().toLowerCase(); const address = String(body.address || "").trim();
+    const checkoutMetadata = { invoice_type: String(body.invoiceType || "personal").trim(), buyer_identifier: String(body.buyerIdentifier || "").trim(), carrier_type: String(body.carrierType || "").trim(), carrier_number: String(body.carrierNumber || "").trim(), love_code: String(body.loveCode || "").trim(), shipping_method: String(body.shippingMethod || "home").trim(), logistics_type: String(body.logisticsType || "").trim(), ship_type: String(body.shipType || "").trim(), store_id: String(body.storeId || "").trim(), store_name: String(body.storeName || "").trim(), store_tel: String(body.storeTel || "").trim(), store_addr: String(body.storeAddr || "").trim() };
+    if (!["personal", "company", "mobile_carrier", "donation"].includes(checkoutMetadata.invoice_type)) return json({ success: false, error: "Invalid invoice type." }, 400);
+    if (checkoutMetadata.invoice_type === "company" && !/^\d{8}$/.test(checkoutMetadata.buyer_identifier)) return json({ success: false, error: "A valid 8-digit business number is required." }, 400);
+    if (checkoutMetadata.invoice_type === "mobile_carrier" && !/^\/[A-Z0-9.+-]{7}$/.test(checkoutMetadata.carrier_number)) return json({ success: false, error: "A valid mobile carrier is required." }, 400);
+    if (checkoutMetadata.invoice_type === "donation" && !/^\d{3,7}$/.test(checkoutMetadata.love_code)) return json({ success: false, error: "A valid donation code is required." }, 400);
+    if (!["home", "cvs"].includes(checkoutMetadata.shipping_method)) return json({ success: false, error: "Invalid shipping method." }, 400);
+    if (checkoutMetadata.shipping_method === "cvs" && !checkoutMetadata.store_id) return json({ success: false, error: "A convenience store is required." }, 400);
     const items = Array.isArray(body.items) ? body.items.map((item: any) => ({ product_id: String(item.productId || item.product_id || ""), quantity: Math.floor(Number(item.quantity || 0)) })).filter((item: any) => item.product_id && item.quantity > 0) : [];
     const method = String(body.paymentMethod || "CREDIT").toUpperCase() as PaymentMethod; const points = Math.floor(Number(body.pointsToUse || 0));
     if (!guestToken || !name || !phone || !email || !address || items.length === 0) return json({ success: false, error: "請完整填寫訂購資訊。" }, 400);
@@ -25,6 +32,10 @@ Deno.serve(async (req) => {
     const db = service();
     const { data: checkout, error } = await db.rpc("create_guest_shop_checkout_order", { p_merchant_order_no: merchantOrderNo, p_guest_checkout_token: guestToken, p_shipping_name: name, p_shipping_phone: phone, p_shipping_email: email, p_shipping_address: address, p_items: items, p_point_session_id: body.pointSessionId || null, p_points_to_use: points });
     if (error || !checkout?.success) return json({ success: false, error: error?.message || checkout?.error || "Checkout failed." }, 400);
+    const { data: currentOrder } = await db.from("orders").select("shipping_address").eq("id", checkout.order_id).maybeSingle();
+    const shippingSnapshot = { ...(currentOrder?.shipping_address && typeof currentOrder.shipping_address === "object" ? currentOrder.shipping_address : {}), ...checkoutMetadata };
+    await db.from("orders").update({ shipping_address: shippingSnapshot, updated_at: new Date().toISOString() }).eq("id", checkout.order_id);
+    await db.from("purchase_records").update({ shipping_address: shippingSnapshot }).eq("order_id", checkout.order_id);
     const base = siteUrl(req).replace(/\/$/, ""); const returnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-order-sync`; const clientBackUrl = `${base}/cart?guestOrder=${encodeURIComponent(merchantOrderNo)}`;
     if (Number(checkout.total_amount || 0) === 0) {
       const { error: captureError } = await db.rpc("capture_member_points", { p_order_id: checkout.order_id });
