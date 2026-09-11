@@ -268,6 +268,7 @@ export default function VendorProducts() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<ProductForm>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [descPreview, setDescPreview] = useState(false);
   const [subscriptionPeriods, setSubscriptionPeriods] = useState<SubscriptionPlanMonths[]>(DEFAULT_SUBSCRIPTION_PERIODS);
   const [subscriptionEnabled, setSubscriptionEnabled] = useState(false);
@@ -350,6 +351,7 @@ export default function VendorProducts() {
   const openAdd = () => {
     setEditing(null);
     resetForm();
+    setSaveError('');
     setSubscriptionPeriods(DEFAULT_SUBSCRIPTION_PERIODS);
     setSubscriptionEnabled(false);
     setShowModal(true);
@@ -363,6 +365,7 @@ export default function VendorProducts() {
     setSubscriptionPeriods(subscriptionInfo.periods.length > 0 ? subscriptionInfo.periods : DEFAULT_SUBSCRIPTION_PERIODS);
     setSubscriptionEnabled(focusSubscription || subscriptionInfo.configured);
     setDescPreview(false);
+    setSaveError('');
     setShowModal(true);
   };
 
@@ -487,35 +490,37 @@ export default function VendorProducts() {
       return;
     }
     setSaving(true);
-
-    const normalizedPeriods = subscriptionPeriods
-      .map((period) => normalizeSubscriptionPeriodValue(period))
-      .filter((period): period is SubscriptionPlanMonths => Boolean(period));
-    const finalSubscriptionPeriods =
-      normalizedPeriods.length > 0 ? Array.from(new Set(normalizedPeriods)) : DEFAULT_SUBSCRIPTION_PERIODS;
-    const baseSpecifications = normalizeSpecifications(form.specifications.filter((spec) => spec.name.trim() !== SUBSCRIPTION_SPEC_NAME));
-    const mergedSpecifications = subscriptionEnabled
-      ? [...baseSpecifications, { name: SUBSCRIPTION_SPEC_NAME, options: finalSubscriptionPeriods.map(String) }]
-      : baseSpecifications;
-    const mergedSubscriptionPlans = subscriptionEnabled
-      ? mergeSubscriptionPlans(finalSubscriptionPeriods, form.subscription_plans, Number(form.price) || 0)
-      : [];
-    const payload = {
-      ...toProductPayload(form, vendorId),
-      specifications: mergedSpecifications,
-      subscription_plans: mergedSubscriptionPlans,
-    };
-    if (editing) {
-      await supabase.from('products').update(payload).eq('id', editing.id).eq('vendor_id', vendorId);
-      await logAdminAction('update_product', 'products', editing.id, { name: payload.name, vendor_id: vendorId });
-    } else {
-      await supabase.from('products').insert(payload);
-      await logAdminAction('create_product', 'products', null, { name: payload.name, vendor_id: vendorId });
+    setSaveError('');
+    try {
+      const normalizedPeriods = subscriptionPeriods
+        .map((period) => normalizeSubscriptionPeriodValue(period))
+        .filter((period): period is SubscriptionPlanMonths => Boolean(period));
+      const finalSubscriptionPeriods =
+        normalizedPeriods.length > 0 ? Array.from(new Set(normalizedPeriods)) : DEFAULT_SUBSCRIPTION_PERIODS;
+      const baseSpecifications = normalizeSpecifications(form.specifications.filter((spec) => spec.name.trim() !== SUBSCRIPTION_SPEC_NAME));
+      const mergedSpecifications = subscriptionEnabled
+        ? [...baseSpecifications, { name: SUBSCRIPTION_SPEC_NAME, options: finalSubscriptionPeriods.map(String) }]
+        : baseSpecifications;
+      const mergedSubscriptionPlans = subscriptionEnabled
+        ? mergeSubscriptionPlans(finalSubscriptionPeriods, form.subscription_plans, Number(form.price) || 0)
+        : [];
+      const payload = {
+        ...toProductPayload(form, vendorId),
+        specifications: mergedSpecifications,
+        subscription_plans: mergedSubscriptionPlans,
+      };
+      const result = editing
+        ? await supabase.from('products').update(payload).eq('id', editing.id).eq('vendor_id', vendorId)
+        : await supabase.from('products').insert(payload);
+      if (result.error) throw result.error;
+      await logAdminAction(editing ? 'update_product' : 'create_product', 'products', editing?.id || null, { name: payload.name, vendor_id: vendorId });
+      await fetchProducts(vendorId);
+      setShowModal(false);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : '商品儲存失敗，請稍後再試');
+    } finally {
+      setSaving(false);
     }
-
-    await fetchProducts(vendorId);
-    setSaving(false);
-    setShowModal(false);
   };
 
   const handleDelete = async (id: string) => {
@@ -940,6 +945,7 @@ export default function VendorProducts() {
               <h3 className="font-semibold text-gray-900">{editing ? '編輯商品' : '新增商品'}</h3>
               <button type="button" onClick={() => setShowModal(false)} className="rounded-xl p-2 hover:bg-gray-100"><X className="h-4 w-4" /></button>
             </div>
+            {saveError && <div role="alert" className="mx-5 mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{saveError}</div>}
             <div className="grid gap-4 p-5 md:grid-cols-2">
               <Field label="商品名稱 *"><input type="text" name="product-name" autoComplete="off" value={form.name} onChange={event => setField('name', event.target.value)} className="input" /></Field>
               <Field label="SKU"><input value={form.sku} onChange={event => setField('sku', event.target.value)} className="input" /></Field>
