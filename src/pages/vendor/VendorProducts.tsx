@@ -615,7 +615,17 @@ export default function VendorProducts() {
   const selectedCount = scraperItems.filter(item => item.selected).length;
   const allSelected = scraperItems.length > 0 && selectedCount === scraperItems.length;
 
-  const setField = <K extends keyof ProductForm>(key: K, value: ProductForm[K]) => setForm(current => ({ ...current, [key]: value }));
+  const setField = <K extends keyof ProductForm>(key: K, value: ProductForm[K]) => {
+    const active = document.activeElement as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+    const start = active && 'selectionStart' in active ? active.selectionStart : null;
+    const end = active && 'selectionEnd' in active ? active.selectionEnd : null;
+    setForm(current => ({ ...current, [key]: value }));
+    if (active) requestAnimationFrame(() => {
+      if (!document.body.contains(active)) return;
+      active.focus({ preventScroll: true });
+      if (start !== null && end !== null && 'setSelectionRange' in active) active.setSelectionRange(start, end);
+    });
+  };
   const setBulkField = <K extends keyof ProductForm>(key: string, field: K, value: ProductForm[K]) => {
     setScraperItems(current => current.map(item => item.key === key ? { ...item, form: { ...item.form, [field]: value } } : item));
   };
@@ -921,13 +931,13 @@ export default function VendorProducts() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} onKeyDown={event => { if (event.key === 'Enter' && (event.target as HTMLElement).tagName === 'INPUT') event.preventDefault(); event.stopPropagation(); }} onClick={event => event.stopPropagation()} className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} onClick={event => event.stopPropagation()} className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-100 p-5">
               <h3 className="font-semibold text-gray-900">{editing ? '編輯商品' : '新增商品'}</h3>
               <button type="button" onClick={() => setShowModal(false)} className="rounded-xl p-2 hover:bg-gray-100"><X className="h-4 w-4" /></button>
             </div>
             <div className="grid gap-4 p-5 md:grid-cols-2">
-              <Field label="商品名稱 *"><input type="text" name="product-name" autoComplete="off" value={form.name} onChange={event => setField('name', event.target.value)} onKeyDown={event => { event.stopPropagation(); if (event.key === 'Enter') event.preventDefault(); }} onCompositionStart={event => event.stopPropagation()} onCompositionEnd={event => event.stopPropagation()} className="input" /></Field>
+              <Field label="商品名稱 *"><input type="text" name="product-name" autoComplete="off" value={form.name} onChange={event => setField('name', event.target.value)} className="input" /></Field>
               <Field label="SKU"><input value={form.sku} onChange={event => setField('sku', event.target.value)} className="input" /></Field>
               <Field label="分類">
                 <select value={form.category_id} onChange={event => setField('category_id', event.target.value)} className="input">
