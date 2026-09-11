@@ -454,25 +454,27 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={handleAdd}
-                disabled={!inStock || adding}
-                className="commerce-secondary-button"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                {labels.addCart}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleAdd().then(() => navigate('/cart'))}
-                disabled={!inStock || adding}
-                className="commerce-primary-button"
-              >
-                {labels.buyNow}
-              </button>
-            </div>
+            {!isSubscriptionProduct && (
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={handleAdd}
+                  disabled={!inStock || adding}
+                  className="commerce-secondary-button"
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  {labels.addCart}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAdd().then(() => navigate('/cart'))}
+                  disabled={!inStock || adding}
+                  className="commerce-primary-button"
+                >
+                  {labels.buyNow}
+                </button>
+              </div>
+            )}
 
             {isSubscriptionProduct && (
               <button
