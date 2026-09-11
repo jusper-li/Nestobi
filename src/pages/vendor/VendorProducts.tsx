@@ -615,17 +615,7 @@ export default function VendorProducts() {
   const selectedCount = scraperItems.filter(item => item.selected).length;
   const allSelected = scraperItems.length > 0 && selectedCount === scraperItems.length;
 
-  const setField = <K extends keyof ProductForm>(key: K, value: ProductForm[K]) => {
-    const active = document.activeElement as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
-    const start = active && 'selectionStart' in active ? active.selectionStart : null;
-    const end = active && 'selectionEnd' in active ? active.selectionEnd : null;
-    setForm(current => ({ ...current, [key]: value }));
-    if (active) requestAnimationFrame(() => {
-      if (!document.body.contains(active)) return;
-      active.focus({ preventScroll: true });
-      if (start !== null && end !== null && 'setSelectionRange' in active) active.setSelectionRange(start, end);
-    });
-  };
+  const setField = <K extends keyof ProductForm>(key: K, value: ProductForm[K]) => setForm(current => ({ ...current, [key]: value }));
   const setBulkField = <K extends keyof ProductForm>(key: string, field: K, value: ProductForm[K]) => {
     setScraperItems(current => current.map(item => item.key === key ? { ...item, form: { ...item.form, [field]: value } } : item));
   };
