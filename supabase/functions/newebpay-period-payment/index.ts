@@ -98,7 +98,7 @@ function getSiteUrl(req: Request) {
 
 function getPeriodGatewayUrl() {
   return Deno.env.get("NEWEBPAY_PERIOD_URL")
-    || "https://ccore.newebpay.com/MPG/period";
+    || "https://core.newebpay.com/MPG/period";
 }
 
 function normalizeSubscriptionPeriodValue(value: unknown): SubscriptionPlanMonths | null {
