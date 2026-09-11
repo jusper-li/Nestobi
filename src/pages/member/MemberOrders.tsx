@@ -54,6 +54,7 @@ export default function MemberOrders() {
   const orderLookupNo = searchParams.get('merchantOrderNo') || searchParams.get('orderNumber') || '';
   const merchantOrderNo = searchParams.get('merchantOrderNo') || '';
   const syncAttemptedRef = useRef<string | null>(null);
+  const subscriptionPollRef = useRef<string | null>(null);
   const locale = normalizeLang(lang) as UiLang;
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
   const dateLocale = pickByLang(locale, 'zh-TW', 'en-US', 'ja-JP', 'ko-KR');
@@ -172,6 +173,32 @@ export default function MemberOrders() {
 
     void syncPaymentStatus();
   }, [ORDER_SYNC_URL, loading, merchantOrderNo, orders, user]);
+
+  // A periodic-payment callback is delivered in the background. Re-read the
+  // database briefly after the gateway return so the page never infers paid
+  // from the URL and still reflects a callback that arrives a few seconds late.
+  useEffect(() => {
+    if (!user || !merchantOrderNo || loading || subscriptionPollRef.current === merchantOrderNo) return;
+    const currentOrder = orders.find(order => order.merchant_order_no === merchantOrderNo || order.order_number === merchantOrderNo);
+    if (currentOrder?.payment_status === 'paid') return;
+
+    subscriptionPollRef.current = merchantOrderNo;
+    let cancelled = false;
+    const timers = [2000, 4000, 6000].map(delay => window.setTimeout(async () => {
+      if (cancelled) return;
+      const { data } = await supabase
+        .from('orders')
+        .select('*,invoices(invoice_status,invoice_number,invoice_date),logistics_shipments(logistics_status,logistics_type,lgs_no,store_print_no)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      if (!cancelled) setOrders(data || []);
+    }, delay));
+
+    return () => {
+      cancelled = true;
+      timers.forEach(window.clearTimeout);
+    };
+  }, [loading, merchantOrderNo, orders, user]);
 
   useEffect(() => {
     const trackCompletedPurchase = async () => {
