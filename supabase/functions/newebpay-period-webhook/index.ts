@@ -198,7 +198,9 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.text();
     const params = new URLSearchParams(body);
-    const tradeInfo = params.get("TradeInfo");
+    // NDNP periodic-payment callbacks use the encrypted `Period` field;
+    // retain TradeInfo support for gateways/proxies that normalize the name.
+    const tradeInfo = params.get("Period") || params.get("TradeInfo");
     const tradeSha = params.get("TradeSha");
 
     if (!tradeInfo) {
