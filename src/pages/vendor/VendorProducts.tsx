@@ -479,6 +479,13 @@ export default function VendorProducts() {
 
   const handleSave = async () => {
     if (!vendorId || !form.name.trim()) return;
+    if (subscriptionEnabled && subscriptionPeriods.some(period => {
+      const plan = form.subscription_plans.find(item => item.months === period);
+      return !plan || Number(plan.amount) <= 0;
+    })) {
+      alert('已啟用的訂閱方案每期金額必須大於 0，請先填寫方案金額。');
+      return;
+    }
     setSaving(true);
 
     const normalizedPeriods = subscriptionPeriods
@@ -615,7 +622,14 @@ export default function VendorProducts() {
   const selectedCount = scraperItems.filter(item => item.selected).length;
   const allSelected = scraperItems.length > 0 && selectedCount === scraperItems.length;
 
-  const setField = <K extends keyof ProductForm>(key: K, value: ProductForm[K]) => setForm(current => ({ ...current, [key]: value }));
+  const setField = <K extends keyof ProductForm>(key: K, value: ProductForm[K]) => setForm(current => {
+    const next = { ...current, [key]: value };
+    if (key === 'price' && subscriptionEnabled) {
+      const price = Number(value) || 0;
+      next.subscription_plans = current.subscription_plans.map(plan => (Number(plan.amount) > 0 ? plan : { ...plan, amount: price }));
+    }
+    return next;
+  });
   const setBulkField = <K extends keyof ProductForm>(key: string, field: K, value: ProductForm[K]) => {
     setScraperItems(current => current.map(item => item.key === key ? { ...item, form: { ...item.form, [field]: value } } : item));
   };
