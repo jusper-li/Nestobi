@@ -212,14 +212,22 @@ Deno.serve(async (req: Request) => {
       ? await supabase.from("categories").select("id,name,slug,parent_id").eq("id", product.category_id).maybeSingle()
       : { data: null };
 
-    const isSubscriptionCategory = String(category?.slug || "").startsWith("subscription-")
-      || category?.slug === "dlal-subscription";
+    const allowedPeriods = extractSubscriptionPeriods(product.specifications);
+    const hasSubscriptionSpecification = Array.isArray(product.specifications)
+      && product.specifications.some((spec) => (
+        spec && typeof spec === "object" && String((spec as { name?: unknown }).name ?? "").trim() === SUBSCRIPTION_SPEC_NAME
+      ));
+    const hasConfiguredSubscriptionPlans = Array.isArray(product.subscription_plans)
+      && product.subscription_plans.length > 0;
+    const isSubscriptionProduct = String(category?.slug || "").startsWith("subscription-")
+      || category?.slug === "dlal-subscription"
+      || hasConfiguredSubscriptionPlans
+      || hasSubscriptionSpecification;
 
-    if (!isSubscriptionCategory) {
+    if (!isSubscriptionProduct) {
       return jsonResponse({ success: false, error: "This product does not support subscriptions." }, 400);
     }
 
-    const allowedPeriods = extractSubscriptionPeriods((product as { specifications?: unknown } | null)?.specifications);
     const normalizedRequestedPeriod = normalizeSubscriptionPeriodValue(planMonths);
     if (!normalizedRequestedPeriod || !allowedPeriods.includes(normalizedRequestedPeriod)) {
       return jsonResponse({
