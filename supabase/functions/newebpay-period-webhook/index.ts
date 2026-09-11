@@ -37,6 +37,15 @@ function createServiceClient() {
   );
 }
 
+function redactCallbackPayload(value: unknown) {
+  if (!value || typeof value !== "object") return value;
+  const copy = { ...(value as Record<string, unknown>) };
+  for (const key of ["CardNo", "CardNumber", "CVV", "HashKey", "HashIV"]) {
+    if (key in copy) copy[key] = "[REDACTED]";
+  }
+  return copy;
+}
+
 async function aesDecrypt(hexData: string, key: string, iv: string): Promise<string> {
   const encoder = new TextEncoder();
   const encryptedBytes = new Uint8Array(
@@ -117,6 +126,7 @@ async function sendOrderEmail(
   recipientKind?: "customer" | "vendor" | "support" | "booking" | "order" | "system",
 ) {
   try {
+    const supabase = createServiceClient();
     await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -188,6 +198,8 @@ Deno.serve(async (req: Request) => {
   }
 
   const shouldRedirect = new URL(req.url).searchParams.get("redirect") === "1";
+  const supabase = createServiceClient();
+  let callbackLogId: string | undefined;
 
   try {
     const hashKey = Deno.env.get("NEWEBPAY_HASH_KEY") ?? "";
@@ -202,6 +214,16 @@ Deno.serve(async (req: Request) => {
     // retain TradeInfo support for gateways/proxies that normalize the name.
     const tradeInfo = params.get("Period") || params.get("TradeInfo");
     const tradeSha = params.get("TradeSha");
+    const callbackLog = await supabase.from("payment_callback_logs").insert({
+      provider: "newebpay",
+      payment_type: "period",
+      raw_payload: Object.fromEntries(params.entries()),
+      processed: false,
+    }).select("id").maybeSingle();
+    callbackLogId = callbackLog.data?.id;
+    if (callbackLog.error) {
+      console.warn("[newebpay-period-webhook] Failed to log callback:", callbackLog.error);
+    }
 
     if (!tradeInfo) {
       if (shouldRedirect) return redirectResponse();
@@ -222,11 +244,19 @@ Deno.serve(async (req: Request) => {
     const periodNo = String(result.PeriodNo || "");
     const tradeNo = String(result.TradeNo || "");
 
+    if (callbackLogId) {
+      await supabase.from("payment_callback_logs").update({
+        merchant_order_no: merchantOrderNo || null,
+        trade_no: tradeNo || null,
+        status: tradeStatus || null,
+        decrypted_payload: redactCallbackPayload(payload),
+      }).eq("id", callbackLogId);
+    }
+
     if (!merchantOrderNo && !periodNo && !tradeNo) {
       return jsonResponse({ success: false, error: "Missing subscription reference." }, 400);
     }
 
-    const supabase = createServiceClient();
     const subscriptionQuery = supabase
       .from("product_subscriptions")
       .select(`
@@ -288,6 +318,7 @@ Deno.serve(async (req: Request) => {
     const { data: existingOrder } = await existingOrderQuery.maybeSingle();
 
     if (existingOrder) {
+      if (callbackLogId) await supabase.from("payment_callback_logs").update({ processed: true }).eq("id", callbackLogId);
       return shouldRedirect ? redirectResponse(merchantOrderNo) : okResponse();
     }
 
@@ -344,7 +375,7 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (orderError || !order) {
-        return jsonResponse({
+      return jsonResponse({
           success: false,
           error: orderError?.message || "Unable to create subscription order.",
         }, 500);
@@ -431,6 +462,7 @@ Deno.serve(async (req: Request) => {
         console.warn("[newebpay-period-webhook] Invoice creation failed:", invoiceError);
       }
 
+      if (callbackLogId) await supabase.from("payment_callback_logs").update({ processed: true }).eq("id", callbackLogId);
       return shouldRedirect ? redirectResponse(merchantOrderNo) : okResponse();
     }
 
@@ -461,6 +493,7 @@ Deno.serve(async (req: Request) => {
       "payment-failed",
     );
 
+    if (callbackLogId) await supabase.from("payment_callback_logs").update({ processed: true }).eq("id", callbackLogId);
     return shouldRedirect ? redirectResponse(merchantOrderNo) : okResponse();
   } catch (error) {
     console.error("[newebpay-period-webhook] Error:", error);
