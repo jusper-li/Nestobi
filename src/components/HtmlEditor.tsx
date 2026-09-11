@@ -124,6 +124,8 @@ const HtmlEditor: React.FC<HtmlEditorProps> = ({
   const suppressChangeRef = useRef(false);
   const sourceSelectionRef = useRef<{ index: number; length: number }>({ index: 0, length: 0 });
   const visualSelectionRef = useRef<{ index: number; length: number } | null>(null);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   const openDialog = useCallback((action: InsertAction) => {
     setDialogAction(action);
@@ -166,7 +168,7 @@ const HtmlEditor: React.FC<HtmlEditorProps> = ({
 
     quill.on('text-change', () => {
       if (suppressChangeRef.current) return;
-      onChange(quill.root.innerHTML);
+      onChangeRef.current(quill.root.innerHTML);
     });
 
     quill.clipboard.dangerouslyPasteHTML(value || '', 'silent');
@@ -175,7 +177,7 @@ const HtmlEditor: React.FC<HtmlEditorProps> = ({
       quillRef.current = null;
       if (editorRootRef.current) editorRootRef.current.innerHTML = '';
     };
-  }, [onChange, openDialog, placeholder, value]);
+  }, [openDialog, placeholder]);
 
   useEffect(() => {
     const quill = quillRef.current;
