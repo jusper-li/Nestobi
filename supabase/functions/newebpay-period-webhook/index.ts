@@ -4,7 +4,7 @@ import { createEzpayInvoiceForOrder } from "../_shared/ezpay-invoice.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
@@ -202,6 +202,7 @@ Deno.serve(async (req: Request) => {
     const tradeSha = params.get("TradeSha");
 
     if (!tradeInfo) {
+      if (shouldRedirect) return redirectResponse();
       return jsonResponse({ success: false, error: "Missing TradeInfo." }, 400);
     }
 
