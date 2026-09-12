@@ -318,7 +318,9 @@ Deno.serve(async (req: Request) => {
 
     const timestamp = Math.floor(Date.now() / 1000);
     const notifyURL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-period-webhook`;
-    const returnURL = `${getSiteUrl(req)}/member/orders?payment=subscription&merchantOrderNo=${encodeURIComponent(merchantOrderNo)}`;
+    // NewebPay posts the ReturnURL form. Route it through a small Netlify
+    // handler so a POST is converted to a normal SPA GET instead of a 404.
+    const returnURL = `${getSiteUrl(req)}/.netlify/functions/newebpay-period-return?payment=subscription&merchantOrderNo=${encodeURIComponent(merchantOrderNo)}`;
 
     const postDataParams = new URLSearchParams({
       RespondType: "JSON",
