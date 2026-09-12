@@ -97,8 +97,12 @@ function getSiteUrl(req: Request) {
 }
 
 function getPeriodGatewayUrl() {
-  return Deno.env.get("NEWEBPAY_PERIOD_URL")
-    || "https://core.newebpay.com/MPG/period";
+  const environment = String(Deno.env.get("NEWEBPAY_ENV") || "production").trim().toLowerCase();
+  if (["sandbox", "test", "testing"].includes(environment)) {
+    return "https://ccore.newebpay.com/MPG/period";
+  }
+  // Production must never silently inherit a ccore/test URL from an old secret.
+  return "https://core.newebpay.com/MPG/period";
 }
 
 function normalizeSubscriptionPeriodValue(value: unknown): SubscriptionPlanMonths | null {
