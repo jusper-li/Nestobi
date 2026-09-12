@@ -30,6 +30,8 @@ interface Order {
   status: string;
   payment_status: string;
   payment_method: string;
+  order_channel?: string | null;
+  store_location_id?: string | null;
   discount_code: string;
   currency: string;
   created_at: string;
@@ -66,6 +68,7 @@ export default function MemberOrders() {
     noData: pick('目前沒有訂單', 'No orders yet', '注文はまだありません', '주문 내역이 없습니다'),
     summary: pick('訂單摘要', 'Order Summary', '注文概要', '주문 요약'),
     subscription: pick('訂閱方案', 'Subscription', 'サブスクリプション', '구독'),
+    store: pick('門市', 'Store', '店舗', '매장'),
     subscriptionPeriods: pick('訂閱期數', 'Subscription Period', '契約期間', '구독 기간'),
     items: pick('商品資訊', 'Product Items', '商品情報', '상품 정보'),
     logistics: pick('物流資訊', 'Logistics', '配送情報', '배송 정보'),
@@ -122,7 +125,7 @@ export default function MemberOrders() {
   };
 
   const [orders, setOrders] = useState<Order[]>([]);
-  const [orderCategory, setOrderCategory] = useState<'all' | 'booking' | 'product' | 'subscription'>('all');
+  const [orderCategory, setOrderCategory] = useState<'all' | 'product' | 'subscription' | 'store'>('all');
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, PurchaseRecord[]>>({});
@@ -577,8 +580,10 @@ export default function MemberOrders() {
   }
 
   const filteredOrders = orders.filter(order => {
+    const isStoreOrder = order.order_channel === 'pos';
     if (orderCategory === 'subscription') return order.is_subscription === true;
-    if (orderCategory === 'product') return order.is_subscription !== true;
+    if (orderCategory === 'store') return isStoreOrder;
+    if (orderCategory === 'product') return order.is_subscription !== true && !isStoreOrder;
     return true;
   });
 
@@ -600,7 +605,8 @@ export default function MemberOrders() {
         {([
           ['all', '全部'],
           ['product', '購物'],
-          ['subscription', '訂閱'],
+          ['subscription', t.subscription],
+          ['store', t.store],
         ] as const).map(([value, label]) => (
           <button key={value} type="button" onClick={() => setOrderCategory(value)} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${orderCategory === value ? 'bg-[#C09A6A] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
             {label}
