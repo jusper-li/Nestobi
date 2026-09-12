@@ -256,7 +256,9 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: false, error: "Subscription amount must be greater than zero." }, 400);
     }
     const merchantOrderNo = buildMerchantOrderNo(user.id);
-    const periodPoint = String(new Date().getDate()).padStart(2, "0");
+    // All recurring subscriptions are billed on the first day of each month.
+    // The initial authorization still runs immediately (PeriodStartType=2).
+    const periodPoint = "01";
     const itemDesc = buildItemDesc(String(product.name || "Coffee subscription"), quantity)
       .replace(/[^\u4e00-\u9fffA-Za-z0-9 _]/g, " ")
       .replace(/\s+/g, " ")
