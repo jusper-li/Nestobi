@@ -260,11 +260,11 @@ export default function MemberBookings() {
 
           return (
             <motion.article key={booking.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-              <div>
-                <div className="relative h-56 bg-gray-100 sm:h-72 lg:h-80">
+              <div className="flex gap-4">
+                <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-gray-100 sm:h-28 sm:w-28">
                   <img src={room?.image_url || 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=500'} alt={room?.name || t.room} className="h-full w-full object-cover" />
                 </div>
-                <div className="min-w-0 space-y-5 p-5 lg:p-6">
+                <div className="min-w-0 flex-1 space-y-4 p-4 lg:p-5">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0">
                       <p className="text-xs font-medium uppercase tracking-wide text-gray-400">#{booking.id.slice(-10).toUpperCase()}</p>
@@ -275,6 +275,14 @@ export default function MemberBookings() {
                       </p>
                     </div>
                     <span className={`rounded-full px-3 py-1.5 text-sm font-medium ${getStatusColor(booking.status)}`}>{getStatusLabel(booking.status, lang)}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-5">
+                    <Info label={t.bookingDate} value={formatDate(booking.check_in_date, dateLocale)} />
+                    <Info label={t.checkOut} value={formatDate(booking.check_out_date, dateLocale)} />
+                    <Info label={t.guests} value={`${booking.guests} ${t.guestUnit}`} />
+                    <Info label={t.total} value={formatCurrency(booking.total_price)} strong />
+                    <Info label={t.paymentStatus} value={paymentStatusLabel(booking)} />
                   </div>
 
                   <div className="rounded-2xl border border-[#EADCC7] bg-gradient-to-r from-[#FFF9EF] to-white p-4">
@@ -294,12 +302,12 @@ export default function MemberBookings() {
                     </div>
                   </div>
 
-                  <button type="button" onClick={() => setExpandedId(isExpanded ? null : booking.id)} className="flex w-full items-center justify-between rounded-xl border border-gray-100 px-3 py-2 text-sm font-medium text-gray-600 sm:hidden">
+                  <button type="button" onClick={() => setExpandedId(isExpanded ? null : booking.id)} className="flex w-full items-center justify-between rounded-xl border border-gray-100 px-3 py-2 text-sm font-medium text-gray-600">
                     {isExpanded ? t.hideDetails : t.viewDetails}
                     {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </button>
 
-                  <div className={`${isExpanded ? 'block' : 'hidden'} space-y-5 sm:block`}>
+                  <div className={`${isExpanded ? 'block' : 'hidden'} space-y-5`}>
                     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
                       <div className="space-y-5">
                         <SectionTitle icon={<Calendar className="h-4 w-4 text-[#C09A6A]" />} label={t.bookingInfo} />
