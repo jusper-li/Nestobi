@@ -208,8 +208,18 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: false, error: "NewebPay HashKey/HashIV are not configured." }, 500);
     }
 
-    const body = await req.text();
-    const params = new URLSearchParams(body);
+    const contentType = req.headers.get("content-type") || "";
+    const params = new URLSearchParams();
+    if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
+      const form = await req.formData();
+      for (const [key, value] of form.entries()) {
+        if (typeof value === "string") params.append(key, value);
+      }
+    } else {
+      const body = await req.text();
+      const parsed = new URLSearchParams(body);
+      for (const [key, value] of parsed.entries()) params.append(key, value);
+    }
     // NDNP periodic-payment callbacks use the encrypted `Period` field;
     // retain TradeInfo support for gateways/proxies that normalize the name.
     const tradeInfo = params.get("Period") || params.get("TradeInfo");
