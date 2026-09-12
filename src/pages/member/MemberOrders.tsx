@@ -40,6 +40,8 @@ interface Order {
     lgs_no?: string | null;
     store_print_no?: string | null;
   }> | null;
+  is_subscription?: boolean;
+  subscription_status?: string;
 }
 
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
@@ -62,6 +64,7 @@ export default function MemberOrders() {
     title: pick('我的訂單', 'My Orders', '注文', '내 주문'),
     noData: pick('目前沒有訂單', 'No orders yet', '注文はまだありません', '주문 내역이 없습니다'),
     summary: pick('訂單摘要', 'Order Summary', '注文概要', '주문 요약'),
+    subscription: pick('訂閱方案', 'Subscription', 'サブスクリプション', '구독'),
     items: pick('商品資訊', 'Product Items', '商品情報', '상품 정보'),
     logistics: pick('物流資訊', 'Logistics', '配送情報', '배송 정보'),
     afterSales: pick('售後服務', 'After-sales Service', 'アフターサービス', 'A/S 서비스'),
@@ -140,7 +143,24 @@ export default function MemberOrders() {
         .select('*,invoices(invoice_status,invoice_number,invoice_date),logistics_shipments(logistics_status,logistics_type,lgs_no,store_print_no)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-      setOrders(data || []);
+      const { data: subscriptions } = await supabase
+        .from('product_subscriptions')
+        .select('id,merchant_order_no,monthly_amount,status,newebpay_status,created_at,order_id,products(name,image_url)')
+        .eq('user_id', user.id)
+        .is('order_id', null)
+        .order('created_at', { ascending: false });
+      const pendingSubscriptions: Order[] = (subscriptions || []).map((subscription: any) => ({
+        id: subscription.id,
+        merchant_order_no: subscription.merchant_order_no,
+        total_amount: Number(subscription.monthly_amount || 0),
+        status: subscription.status || 'pending',
+        payment_status: subscription.newebpay_status === 'success' ? 'paid' : 'unpaid',
+        payment_method: 'newebpay_subscription',
+        discount_code: '', currency: 'TWD', created_at: subscription.created_at,
+        is_subscription: true,
+        subscription_status: subscription.status,
+      }));
+      setOrders([...(data || []), ...pendingSubscriptions]);
       setLoading(false);
     };
     void fetchOrders();
@@ -191,7 +211,20 @@ export default function MemberOrders() {
         .select('*,invoices(invoice_status,invoice_number,invoice_date),logistics_shipments(logistics_status,logistics_type,lgs_no,store_print_no)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-      if (!cancelled) setOrders(data || []);
+      const { data: subscriptions } = await supabase
+        .from('product_subscriptions')
+        .select('id,merchant_order_no,monthly_amount,status,newebpay_status,created_at,order_id')
+        .eq('user_id', user.id)
+        .is('order_id', null)
+        .order('created_at', { ascending: false });
+      const pendingSubscriptions: Order[] = (subscriptions || []).map((subscription: any) => ({
+        id: subscription.id, merchant_order_no: subscription.merchant_order_no,
+        total_amount: Number(subscription.monthly_amount || 0), status: subscription.status || 'pending',
+        payment_status: subscription.newebpay_status === 'success' ? 'paid' : 'unpaid',
+        payment_method: 'newebpay_subscription', discount_code: '', currency: 'TWD',
+        created_at: subscription.created_at, is_subscription: true, subscription_status: subscription.status,
+      }));
+      if (!cancelled) setOrders([...(data || []), ...pendingSubscriptions]);
     }, delay));
 
     return () => {
@@ -570,7 +603,7 @@ export default function MemberOrders() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-medium uppercase tracking-wide text-gray-400">#{order.id.slice(-10).toUpperCase()}</p>
-                    <h3 className="mt-1 text-lg font-bold text-gray-900">{t.summary}</h3>
+                    <h3 className="mt-1 text-lg font-bold text-gray-900">{order.is_subscription ? t.subscription : t.summary}</h3>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${getStatusColor(order.status)}`}>{getStatusLabel(order.status, lang)}</span>
@@ -617,7 +650,7 @@ export default function MemberOrders() {
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
                   <p className="text-lg font-bold text-[#2C1F10]">{formatCurrency(order.total_amount, order.currency || 'TWD')}</p>
                   <div className="flex flex-wrap items-center gap-2">
-                    {order.payment_status !== 'paid' && order.payment_status !== 'refunded' && (
+                    {!order.is_subscription && order.payment_status !== 'paid' && order.payment_status !== 'refunded' && (
                       <button
                         type="button"
                         onClick={() => void handleRetryPayment(order)}
