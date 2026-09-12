@@ -574,7 +574,6 @@ export default function MemberOrders() {
   const filteredOrders = orders.filter(order => {
     if (orderCategory === 'subscription') return order.is_subscription === true;
     if (orderCategory === 'product') return order.is_subscription !== true;
-    if (orderCategory === 'booking') return false;
     return true;
   });
 
@@ -595,11 +594,10 @@ export default function MemberOrders() {
       <div className="flex flex-wrap gap-2 rounded-xl bg-white p-2 shadow-sm">
         {([
           ['all', '全部'],
-          ['booking', '訂房'],
           ['product', '購物'],
           ['subscription', '訂閱'],
         ] as const).map(([value, label]) => (
-          <button key={value} type="button" onClick={() => value === 'booking' ? navigate('/member/bookings') : setOrderCategory(value)} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${orderCategory === value ? 'bg-[#C09A6A] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+          <button key={value} type="button" onClick={() => setOrderCategory(value)} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${orderCategory === value ? 'bg-[#C09A6A] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
             {label}
           </button>
         ))}
@@ -608,7 +606,7 @@ export default function MemberOrders() {
       {filteredOrders.length === 0 ? (
         <div className="rounded-2xl bg-white p-12 text-center shadow-sm">
           <ShoppingBag className="mx-auto mb-4 h-14 w-14 text-gray-200" />
-          <p className="text-gray-400">{orderCategory === 'booking' ? '訂房紀錄請至「我的訂房」查看' : t.noData}</p>
+          <p className="text-gray-400">{t.noData}</p>
         </div>
       ) : (
         filteredOrders.map((order, index) => {
