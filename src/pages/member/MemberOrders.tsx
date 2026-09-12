@@ -651,7 +651,7 @@ export default function MemberOrders() {
                   <Info label={t.paymentStatus} value={order.payment_status === 'paid' ? t.paid : t.unpaid} />
                   <Info label={t.logisticsStatus} value={shipment?.logistics_status || deliveryLabel(order.status)} />
                   <Info label={t.orderStatus} value={getStatusLabel(order.status, lang)} />
-                  {order.is_subscription && <Info label={t.subscriptionPeriods} value={order.subscription_periods || '-'} />}
+                  {order.is_subscription && <Info label={t.subscriptionPeriods} value={order.subscription_periods || '-'} wrap />}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-sm sm:hidden">
@@ -659,6 +659,7 @@ export default function MemberOrders() {
                   <Info label={t.summary} value={formatCurrency(order.total_amount, order.currency || 'TWD')} strong />
                   <Info label={t.paymentMethod} value={paymentMethodLabel(order.payment_method)} />
                   <Info label={t.logisticsStatus} value={shipment?.logistics_status || deliveryLabel(order.status)} />
+                  {order.is_subscription && <Info label={t.subscriptionPeriods} value={order.subscription_periods || '-'} wrap />}
                 </div>
 
                 <div className={`${isExpanded ? 'block' : 'hidden'} space-y-4`}>
@@ -763,11 +764,11 @@ export default function MemberOrders() {
   );
 }
 
-function Info({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
+function Info({ label, value, strong = false, wrap = false }: { label: string; value: string; strong?: boolean; wrap?: boolean }) {
   return (
     <div className="min-w-0">
       <p className="text-xs text-gray-400">{label}</p>
-      <p className={`mt-0.5 truncate ${strong ? 'font-bold text-[#2C1F10]' : 'font-medium text-gray-800'}`}>{value}</p>
+      <p className={`mt-0.5 ${wrap ? 'whitespace-normal break-words' : 'truncate'} ${strong ? 'font-bold text-[#2C1F10]' : 'font-medium text-gray-800'}`}>{value}</p>
     </div>
   );
 }
