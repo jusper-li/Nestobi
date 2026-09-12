@@ -338,6 +338,7 @@ Deno.serve(async (req: Request) => {
         .select("display_name,preferred_language")
         .eq("user_id", subscription.user_id)
         .maybeSingle();
+      const { data: authUser } = await supabase.auth.admin.getUserById(subscription.user_id);
 
       const itemName = String(product?.name || "Coffee subscription");
       const unitPrice = paidAmount / Math.max(1, Number(subscription.quantity || 1));
@@ -419,7 +420,10 @@ Deno.serve(async (req: Request) => {
         .eq("id", subscription.id);
 
       const displayName = String(profile?.display_name || subscription.customer_name || "");
-      const email = String(subscription.customer_email || "");
+      // Older subscriptions may not have copied customer_email. Resolve the
+      // authenticated email as a safe fallback so paid subscriptions still
+      // receive the order confirmation.
+      const email = String(subscription.customer_email || authUser.user?.email || "");
       const language = String(profile?.preferred_language || "zh-TW");
 
       if (email) {
