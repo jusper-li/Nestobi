@@ -147,9 +147,9 @@ export default function MemberOrders() {
         .from('product_subscriptions')
         .select('id,merchant_order_no,monthly_amount,status,newebpay_status,created_at,order_id,products(name,image_url)')
         .eq('user_id', user.id)
-        .is('order_id', null)
         .order('created_at', { ascending: false });
-      const pendingSubscriptions: Order[] = (subscriptions || []).map((subscription: any) => ({
+      const orderIds = new Set((data || []).map((order: any) => order.id));
+      const pendingSubscriptions: Order[] = (subscriptions || []).filter((subscription: any) => !subscription.order_id || !orderIds.has(subscription.order_id)).map((subscription: any) => ({
         id: subscription.id,
         merchant_order_no: subscription.merchant_order_no,
         total_amount: Number(subscription.monthly_amount || 0),
@@ -215,9 +215,9 @@ export default function MemberOrders() {
         .from('product_subscriptions')
         .select('id,merchant_order_no,monthly_amount,status,newebpay_status,created_at,order_id')
         .eq('user_id', user.id)
-        .is('order_id', null)
         .order('created_at', { ascending: false });
-      const pendingSubscriptions: Order[] = (subscriptions || []).map((subscription: any) => ({
+      const orderIds = new Set((data || []).map((order: any) => order.id));
+      const pendingSubscriptions: Order[] = (subscriptions || []).filter((subscription: any) => !subscription.order_id || !orderIds.has(subscription.order_id)).map((subscription: any) => ({
         id: subscription.id, merchant_order_no: subscription.merchant_order_no,
         total_amount: Number(subscription.monthly_amount || 0), status: subscription.status || 'pending',
         payment_status: subscription.newebpay_status === 'success' ? 'paid' : 'unpaid',
