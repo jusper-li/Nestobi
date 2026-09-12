@@ -70,6 +70,7 @@ export default function MemberOrders() {
     afterSales: pick('售後服務', 'After-sales Service', 'アフターサービス', 'A/S 서비스'),
     orderNo: pick('訂單編號', 'Order No.', '注文番号', '주문 번호'),
     orderDate: pick('訂單日期', 'Order Date', '注文日', '주문일'),
+    orderStatus: pick('訂單狀態', 'Order Status', '注文状況', '주문 상태'),
     paymentMethod: pick('付款方式', 'Payment Method', '支払い方法', '결제 방식'),
     paymentStatus: pick('付款狀態', 'Payment Status', '支払い状況', '결제 상태'),
     logisticsStatus: pick('物流狀態', 'Logistics Status', '配送状況', '배송 상태'),
@@ -632,6 +633,16 @@ export default function MemberOrders() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-7">
+                  <Info label={t.orderNo} value={`#${order.id.slice(-10).toUpperCase()}`} />
+                  <Info label={t.orderDate} value={formatDate(order.created_at, dateLocale)} />
+                  <Info label={t.summary} value={formatCurrency(order.total_amount, order.currency || 'TWD')} strong />
+                  <Info label={t.paymentMethod} value={paymentMethodLabel(order.payment_method)} />
+                  <Info label={t.paymentStatus} value={order.payment_status === 'paid' ? t.paid : t.unpaid} />
+                  <Info label={t.logisticsStatus} value={shipment?.logistics_status || deliveryLabel(order.status)} />
+                  <Info label={t.orderStatus} value={getStatusLabel(order.status, lang)} />
+                </div>
+
                 <div className="grid grid-cols-2 gap-3 text-sm sm:hidden">
                   <Info label={t.orderDate} value={formatDate(order.created_at, dateLocale)} />
                   <Info label={t.summary} value={formatCurrency(order.total_amount, order.currency || 'TWD')} strong />
@@ -639,7 +650,7 @@ export default function MemberOrders() {
                   <Info label={t.logisticsStatus} value={shipment?.logistics_status || deliveryLabel(order.status)} />
                 </div>
 
-                <div className={`${isExpanded ? 'block' : 'hidden'} space-y-4 sm:block`}>
+                <div className={`${isExpanded ? 'block' : 'hidden'} space-y-4`}>
                   <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
                     <Info label={t.orderNo} value={`#${order.id.slice(-10).toUpperCase()}`} />
                     <Info label={t.orderDate} value={formatDate(order.created_at, dateLocale)} />
