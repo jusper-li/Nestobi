@@ -599,7 +599,7 @@ export default function MemberOrders() {
           ['product', '購物'],
           ['subscription', '訂閱'],
         ] as const).map(([value, label]) => (
-          <button key={value} type="button" onClick={() => setOrderCategory(value)} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${orderCategory === value ? 'bg-[#C09A6A] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+          <button key={value} type="button" onClick={() => value === 'booking' ? navigate('/member/bookings') : setOrderCategory(value)} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${orderCategory === value ? 'bg-[#C09A6A] text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
             {label}
           </button>
         ))}
