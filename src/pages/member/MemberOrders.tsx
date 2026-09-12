@@ -42,6 +42,7 @@ interface Order {
   }> | null;
   is_subscription?: boolean;
   subscription_status?: string;
+  subscription_periods?: string;
 }
 
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
@@ -65,6 +66,7 @@ export default function MemberOrders() {
     noData: pick('目前沒有訂單', 'No orders yet', '注文はまだありません', '주문 내역이 없습니다'),
     summary: pick('訂單摘要', 'Order Summary', '注文概要', '주문 요약'),
     subscription: pick('訂閱方案', 'Subscription', 'サブスクリプション', '구독'),
+    subscriptionPeriods: pick('訂閱期數', 'Subscription Period', '契約期間', '구독 기간'),
     items: pick('商品資訊', 'Product Items', '商品情報', '상품 정보'),
     logistics: pick('物流資訊', 'Logistics', '配送情報', '배송 정보'),
     afterSales: pick('售後服務', 'After-sales Service', 'アフターサービス', 'A/S 서비스'),
@@ -147,7 +149,7 @@ export default function MemberOrders() {
         .order('created_at', { ascending: false });
       const { data: subscriptions } = await supabase
         .from('product_subscriptions')
-        .select('id,merchant_order_no,monthly_amount,status,newebpay_status,created_at,order_id,products(name,image_url)')
+        .select('id,merchant_order_no,monthly_amount,status,newebpay_status,period_times,billing_cycle_count,created_at,order_id,products(name,image_url)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       const orderIds = new Set((data || []).map((order: any) => order.id));
@@ -161,6 +163,7 @@ export default function MemberOrders() {
         discount_code: '', currency: 'TWD', created_at: subscription.created_at,
         is_subscription: true,
         subscription_status: subscription.status,
+        subscription_periods: subscription.period_times === 'NE' ? '每月' : `${subscription.period_times || '-'} 期（已扣款 ${subscription.billing_cycle_count || 0} 期）`,
       }));
       setOrders([...(data || []), ...pendingSubscriptions]);
       setLoading(false);
@@ -215,7 +218,7 @@ export default function MemberOrders() {
         .order('created_at', { ascending: false });
       const { data: subscriptions } = await supabase
         .from('product_subscriptions')
-        .select('id,merchant_order_no,monthly_amount,status,newebpay_status,created_at,order_id')
+        .select('id,merchant_order_no,monthly_amount,status,newebpay_status,period_times,billing_cycle_count,created_at,order_id')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       const orderIds = new Set((data || []).map((order: any) => order.id));
@@ -225,6 +228,7 @@ export default function MemberOrders() {
         payment_status: subscription.newebpay_status === 'success' ? 'paid' : 'unpaid',
         payment_method: 'newebpay_subscription', discount_code: '', currency: 'TWD',
         created_at: subscription.created_at, is_subscription: true, subscription_status: subscription.status,
+        subscription_periods: subscription.period_times === 'NE' ? '每月' : `${subscription.period_times || '-'} 期（已扣款 ${subscription.billing_cycle_count || 0} 期）`,
       }));
       if (!cancelled) setOrders([...(data || []), ...pendingSubscriptions]);
     }, delay));
@@ -641,6 +645,7 @@ export default function MemberOrders() {
                   <Info label={t.paymentStatus} value={order.payment_status === 'paid' ? t.paid : t.unpaid} />
                   <Info label={t.logisticsStatus} value={shipment?.logistics_status || deliveryLabel(order.status)} />
                   <Info label={t.orderStatus} value={getStatusLabel(order.status, lang)} />
+                  {order.is_subscription && <Info label={t.subscriptionPeriods} value={order.subscription_periods || '-'} />}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-sm sm:hidden">
