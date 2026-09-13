@@ -599,6 +599,14 @@ const VendorOrders: React.FC = () => {
     setQueryingPayment(true);
     setDetailError('');
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('[order-sync] session debug', {
+        hasSession: Boolean(session),
+        hasAccessToken: Boolean(session?.access_token),
+      });
+      if (!session?.access_token) {
+        throw new Error('登入狀態已失效，請重新登入後再試');
+      }
       const { data, error } = await supabase.functions.invoke('newebpay-order-sync', { body: { merchantOrderNo } });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || '藍新付款查詢失敗');

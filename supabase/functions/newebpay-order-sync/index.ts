@@ -311,16 +311,18 @@ Deno.serve(async (req: Request) => {
         ? await isVendorSubscriptionOwner(supabase, jsonUserId, order.vendor_id || null)
         : await isVendorOrderOwner(supabase, jsonUserId, order.id))
       : false;
-    console.log("[order-sync] authorization", {
+    const authDebug = {
       authorizationHeaderExists: Boolean(req.headers.get("Authorization")),
       userFound: Boolean(jsonUserId),
       userId: jsonUserId,
       roleDetected: role,
       adminAllowed: adminVerified || vendorVerified,
-    });
+    };
+    console.log("[order-sync] auth debug", authDebug);
     if (jsonUserId) console.log("[order-sync] admin verified", { userId: jsonUserId, verified: adminVerified, roleFound: Boolean(role), role, vendorVerified });
     if (jsonUserId && order.user_id !== jsonUserId && !adminVerified && !vendorVerified) {
-      return jsonResponse({ success: false, stage: "authorization", error: "Admin access required", userAuthenticated: true, roleDetected: role }, 403);
+      const reason = !role ? "No role found in tbl_user_auth" : `Role '${role}' is not allowed for this order`;
+      return jsonResponse({ success: false, stage: "authorization", reason, userAuthenticated: Boolean(jsonUserId), roleDetected: role, adminAllowed: authDebug.adminAllowed }, 403);
     }
 
     if (orderTable === "orders" && String(order.payment_status || "").toLowerCase() === "paid" && String(order.newebpay_status || "").toLowerCase() === "success") {
