@@ -160,6 +160,19 @@ async function isElevatedUser(supabase: ReturnType<typeof createServiceClient>, 
   return data?.role === "admin" || data?.role === "superadmin";
 }
 
+async function isVendorOrderOwner(supabase: ReturnType<typeof createServiceClient>, userId: string, orderId: string) {
+  const { data } = await supabase
+    .from("purchase_records")
+    .select("products(vendor_id)")
+    .eq("order_id", orderId);
+  const vendorIds = (data || [])
+    .map((row: any) => row.products?.vendor_id)
+    .filter(Boolean);
+  if (!vendorIds.length) return false;
+  const { data: vendor } = await supabase.from("vendors").select("id").eq("user_id", userId).in("id", vendorIds).maybeSingle();
+  return Boolean(vendor);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -232,7 +245,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: false, error: "Order not found." }, 404);
     }
 
-    if (jsonUserId && order.user_id !== jsonUserId && !(await isElevatedUser(supabase, jsonUserId))) {
+    if (jsonUserId && order.user_id !== jsonUserId && !(await isElevatedUser(supabase, jsonUserId)) && !(await isVendorOrderOwner(supabase, jsonUserId, order.id))) {
       return jsonResponse({ success: false, error: "Forbidden." }, 403);
     }
 

@@ -579,6 +579,27 @@ const VendorOrders: React.FC = () => {
     }
   };
 
+  const queryProductPayment = async () => {
+    const merchantOrderNo = detailShopOrder?.merchant_order_no;
+    if (!merchantOrderNo) {
+      setDetailError('此訂單沒有藍新訂單編號，無法查詢付款狀態');
+      return;
+    }
+    setQueryingPayment(true);
+    setDetailError('');
+    try {
+      const { data, error } = await supabase.functions.invoke('newebpay-order-sync', { body: { merchantOrderNo } });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || '藍新付款查詢失敗');
+      setDetailShopOrder(current => current ? { ...current, payment_status: data.paymentStatus || current.payment_status, newebpay_status: data.newebpayStatus || current.newebpay_status, newebpay_trade_no: data.tradeNo || current.newebpay_trade_no } : current);
+      setMessage(data.synced ? '藍新查詢完成，訂單付款狀態已同步' : '藍新查詢完成，付款狀態未變更');
+    } catch (error) {
+      setDetailError(error instanceof Error ? error.message : '藍新付款查詢失敗');
+    } finally {
+      setQueryingPayment(false);
+    }
+  };
+
   const closeDetail = () => {
     setSelectedDetail(null);
     setDetailError('');
@@ -992,7 +1013,11 @@ const VendorOrders: React.FC = () => {
                 ) : selectedDetail.kind === 'product' ? (
                   <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
                     <div className="space-y-6">
-                      <DetailCard title="訂單資料" icon={<Receipt className="h-4 w-4" />}>
+                      <DetailCard title="訂單資料" icon={<Receipt className="h-4 w-4" />} actions={(
+                        <button type="button" onClick={() => void queryProductPayment()} disabled={queryingPayment} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60">
+                          {queryingPayment ? '查詢中…' : '查詢藍新付款狀態'}
+                        </button>
+                      )}>
                         <div className="grid gap-4 md:grid-cols-2">
                           <DetailField label={labels.orderNumber} value={detailShopOrder?.id ? `#${detailShopOrder.id.slice(-10).toUpperCase()}` : '-'} mono />
                           <DetailField label={labels.orderPaymentStatus} value={getPaymentLabel(detailShopOrder?.payment_status)} />
