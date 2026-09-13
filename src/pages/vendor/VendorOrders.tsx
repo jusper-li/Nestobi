@@ -573,7 +573,18 @@ const VendorOrders: React.FC = () => {
       } : current);
       setMessage(`藍新查詢完成：已授權 ${data.result?.alreadyTimes ?? 0} 期`);
     } catch (error) {
-      setDetailError(error instanceof Error ? error.message : '藍新付款查詢失敗');
+      let detail = error instanceof Error ? error.message : '藍新付款查詢失敗';
+      try {
+        const context = (error as { context?: Response })?.context;
+        if (context) {
+          const payload = await context.clone().json();
+          detail = payload?.error || payload?.message || JSON.stringify(payload);
+        }
+      } catch {
+        // Keep the original error message when the response is not JSON.
+      }
+      console.error('NewebPay query failed:', error);
+      setDetailError(detail);
     } finally {
       setQueryingPayment(false);
     }
@@ -594,7 +605,18 @@ const VendorOrders: React.FC = () => {
       setDetailShopOrder(current => current ? { ...current, payment_status: data.paymentStatus || current.payment_status, newebpay_status: data.newebpayStatus || current.newebpay_status, newebpay_trade_no: data.tradeNo || current.newebpay_trade_no } : current);
       setMessage(data.synced ? '藍新查詢完成，訂單付款狀態已同步' : '藍新查詢完成，付款狀態未變更');
     } catch (error) {
-      setDetailError(error instanceof Error ? error.message : '藍新付款查詢失敗');
+      let detail = error instanceof Error ? error.message : '藍新付款查詢失敗';
+      try {
+        const context = (error as { context?: Response })?.context;
+        if (context) {
+          const payload = await context.clone().json();
+          detail = payload?.error || payload?.message || JSON.stringify(payload);
+        }
+      } catch {
+        // Keep the original error message when the response is not JSON.
+      }
+      console.error('NewebPay query failed:', error);
+      setDetailError(detail);
     } finally {
       setQueryingPayment(false);
     }
