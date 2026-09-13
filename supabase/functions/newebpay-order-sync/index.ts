@@ -252,58 +252,10 @@ Deno.serve(async (req: Request) => {
     console.log("[order-sync] order found", { merchantOrderNo, found: Boolean(order) });
 
     if (!order) {
-      // Subscription checkouts may not have an `orders` row until the first
-      // successful periodic callback. Route those requests through the
-      // existing periodic query function instead of the MPG query API.
-      const { data: subscription } = await supabase
-        .from("product_subscriptions")
-        .select("id, user_id, merchant_order_no")
-        .eq("merchant_order_no", merchantOrderNo)
-        .maybeSingle();
-      if (subscription && authHeaderForQuery) {
-        console.log("[order-sync] payment method", { merchantOrderNo, paymentMethod: "newebpay_subscription" });
-        console.log("[order-sync] calling period query", { merchantOrderNo });
-        stage = "period-query";
-        const periodResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-period-query`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: authHeaderForQuery },
-          body: JSON.stringify({ merchantOrderNo }),
-        });
-        const periodBody = await periodResponse.text();
-        console.log("[order-sync] period query response", { status: periodResponse.status, ok: periodResponse.ok });
-        console.log("[order-sync] Cloud Run response", { configured: false, status: null });
-        if (!periodResponse.ok) {
-          return jsonResponse({ success: false, stage: "period-query", status: periodResponse.status, response: periodBody.slice(0, 1000) }, 502);
-        }
-        return new Response(periodBody, {
-          status: periodResponse.status,
-          headers: { ...corsHeaders, "Content-Type": periodResponse.headers.get("content-type") || "application/json" },
-        });
-      }
       return jsonResponse({ success: false, error: "Order not found." }, 404);
     }
 
     console.log("[order-sync] payment method", { merchantOrderNo, paymentMethod: order.payment_method || "unknown" });
-
-    if (String(order.payment_method || "").toLowerCase() === "newebpay_subscription" && authHeaderForQuery) {
-      console.log("[order-sync] calling period query", { merchantOrderNo });
-      stage = "period-query";
-      const periodResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-period-query`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: authHeaderForQuery },
-        body: JSON.stringify({ merchantOrderNo }),
-      });
-      const periodBody = await periodResponse.text();
-      console.log("[order-sync] period query response", { status: periodResponse.status, ok: periodResponse.ok });
-      console.log("[order-sync] Cloud Run response", { configured: false, status: null });
-      if (!periodResponse.ok) {
-        return jsonResponse({ success: false, stage: "period-query", status: periodResponse.status, response: periodBody.slice(0, 1000) }, 502);
-      }
-      return new Response(periodBody, {
-        status: periodResponse.status,
-        headers: { ...corsHeaders, "Content-Type": periodResponse.headers.get("content-type") || "application/json" },
-      });
-    }
 
     const adminVerified = jsonUserId ? await isElevatedUser(supabase, jsonUserId) : false;
     if (jsonUserId) console.log("[order-sync] admin verified", { userId: jsonUserId, verified: adminVerified });
@@ -356,6 +308,20 @@ Deno.serve(async (req: Request) => {
     });
 
     const raw = await response.text();
+    console.log("[order-sync] NewebPay response", {
+      status: response.status,
+      ok: response.ok,
+      contentType: response.headers.get("content-type"),
+      preview: raw.slice(0, 1000),
+    });
+    if (!response.ok) {
+      return jsonResponse({
+        success: false,
+        stage: "newebpay",
+        providerHttpStatus: response.status,
+        providerResponse: raw.slice(0, 1000),
+      }, response.status);
+    }
     let parsed: any;
     try {
       parsed = JSON.parse(raw);
@@ -367,6 +333,24 @@ Deno.serve(async (req: Request) => {
     const status = String(parsed?.Status ?? parsed?.status ?? "").toUpperCase();
     const tradeStatus = String(result?.TradeStatus ?? result?.tradeStatus ?? "");
     const isPaid = status === "SUCCESS" && tradeStatus === "1";
+
+    // Phase one is query-only: expose the provider result without changing
+    // local payment, subscription, points, invoice, or order records.
+    if (contentType.includes("application/json")) {
+      return jsonResponse({
+        success: true,
+        stage: "newebpay",
+        merchantOrderNo,
+        paymentStatus: isPaid ? "paid" : order.payment_status,
+        paid: isPaid,
+        providerHttpStatus: response.status,
+        providerResponse: raw.slice(0, 1000),
+        queryStatus: status,
+        tradeStatus,
+        tradeNo: result?.TradeNo ?? null,
+        amount: result?.Amt ?? result?.TradeAmt ?? amt,
+      });
+    }
 
     if (!isPaid) {
       if (!contentType.includes("application/json")) {
