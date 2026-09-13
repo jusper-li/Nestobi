@@ -24,30 +24,43 @@ async function elevated(db: ReturnType<typeof service>, userId: string) {
 }
 
 Deno.serve(async req => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+  if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: cors });
   if (req.method !== "POST") return json({ success: false, error: "Method not allowed" }, 405);
   try {
+    const merchantId = Deno.env.get("NEWEBPAY_MERCHANT_ID") || "";
+    const hashKey = Deno.env.get("NEWEBPAY_HASH_KEY") || "";
+    const hashIV = Deno.env.get("NEWEBPAY_HASH_IV") || "";
+    console.log("[newebpay-period-query] environment", {
+      merchantIdExists: Boolean(merchantId),
+      hashKeyExists: Boolean(hashKey),
+      hashIvExists: Boolean(hashIV),
+    });
+    if (!merchantId || !hashKey || !hashIV) return json({ success: false, error: "Missing NewebPay environment configuration" }, 500);
     const header = req.headers.get("Authorization");
     if (!header) return json({ success: false, error: "Authentication required." }, 401);
     const { data: { user } } = await authClient(header).auth.getUser();
     if (!user) return json({ success: false, error: "Invalid session." }, 401);
     const body = await req.json().catch(() => ({}));
+    console.log({ bodyKeys: Object.keys(body ?? {}), merchantOrderNo: body?.merchantOrderNo ?? null });
     const subscriptionId = String(body.subscriptionId || "").trim();
-    if (!subscriptionId) return json({ success: false, error: "subscriptionId is required." }, 400);
+    const requestedMerchantOrderNo = String(body.merchantOrderNo || "").trim();
+    if (!subscriptionId && !requestedMerchantOrderNo) return json({ success: false, error: "merchantOrderNo is required" }, 400);
     const db = service();
-    const { data: subscription, error: subscriptionError } = await db.from("product_subscriptions").select("id,user_id,vendor_id,merchant_order_no,newebpay_period_no,monthly_amount,billing_cycle_count,status,period_times,order_id").eq("id", subscriptionId).maybeSingle();
+    let subscriptionQuery = db.from("product_subscriptions").select("id,user_id,vendor_id,merchant_order_no,newebpay_period_no,monthly_amount,billing_cycle_count,status,period_times,order_id");
+    subscriptionQuery = subscriptionId ? subscriptionQuery.eq("id", subscriptionId) : subscriptionQuery.eq("merchant_order_no", requestedMerchantOrderNo);
+    const { data: subscription, error: subscriptionError } = await subscriptionQuery.maybeSingle();
     if (subscriptionError) throw subscriptionError;
     if (!subscription) return json({ success: false, error: "Subscription not found." }, 404);
     const isOwner = subscription.user_id === user.id || (subscription.vendor_id && (await db.from("vendors").select("id").eq("id", subscription.vendor_id).eq("user_id", user.id).maybeSingle()).data);
     if (!isOwner && !(await elevated(db, user.id))) return json({ success: false, error: "Forbidden." }, 403);
-    const merchantId = Deno.env.get("NEWEBPAY_MERCHANT_ID") || "";
-    const hashKey = Deno.env.get("NEWEBPAY_HASH_KEY") || "";
-    const hashIV = Deno.env.get("NEWEBPAY_HASH_IV") || "";
-    if (!merchantId || !hashKey || !hashIV) return json({ success: false, error: "NewebPay credentials are not configured." }, 500);
     const requestData = new URLSearchParams({ RespondType: "JSON", Version: "1.0", TimeStamp: String(Math.floor(Date.now() / 1000)), MerOrderNo: subscription.merchant_order_no || "" });
     if (subscription.newebpay_period_no) requestData.set("PeriodNo", subscription.newebpay_period_no);
-    const response = await fetch("https://core.newebpay.com/MPG/period/query", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ MerchantID_: merchantId, PostData_: await encryptHex(requestData.toString(), hashKey, hashIV) }).toString() });
+    const endpoint = "https://core.newebpay.com/MPG/period/query";
+    console.log({ endpoint, merchantOrderNo: subscription.merchant_order_no, requestReady: true });
+    const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ MerchantID_: merchantId, PostData_: await encryptHex(requestData.toString(), hashKey, hashIV) }).toString() });
     const raw = await response.text();
+    const safePreview = raw.slice(0, 500).replace(/(CardNo|CardNumber|CVV|HashKey|HashIV)\s*[:=]\s*[^,&\s}]+/gi, "$1=[REDACTED]");
+    console.log({ httpStatus: response.status, ok: response.ok, responsePreview: safePreview });
     let gatewayResponse: any = null;
     const encrypted = (() => {
       try {
@@ -56,11 +69,14 @@ Deno.serve(async req => {
         return String(parsed.Period || parsed.period || "").trim();
       } catch {
         const form = new URLSearchParams(raw);
-        return String(form.get("Period") || form.get("period") || "").trim();
+        const value = String(form.get("Period") || form.get("period") || "").trim();
+        return value || (/^[0-9a-f]+$/i.test(raw.trim()) ? raw.trim() : "");
       }
     })();
-    if (!encrypted) return json({ success: false, error: `NewebPay query failed (${response.status}).`, gatewayStatus: gatewayResponse?.Status || gatewayResponse?.status || null, gatewayMessage: gatewayResponse?.Message || gatewayResponse?.message || raw.slice(0, 180) }, 502);
+    if (!response.ok) return json({ success: false, provider: "newebpay", providerHttpStatus: response.status, providerResponse: safePreview }, 502);
+    if (!encrypted) return json({ success: false, provider: "newebpay", error: "NewebPay response did not include Period.", providerCode: gatewayResponse?.Status || gatewayResponse?.status || null, providerMessage: gatewayResponse?.Message || gatewayResponse?.message || safePreview }, 502);
     const payload = JSON.parse(await decryptHex(encrypted, hashKey, hashIV));
+    console.log("[newebpay-period-query] decrypt success", { merchantOrderNo: subscription.merchant_order_no, periodPresent: Boolean(payload) });
     const result = payload.Result || payload.result || {};
     const queryStatus = String(payload.Status || payload.status || "").toUpperCase();
     const alreadyTimes = Math.max(0, Number(result.AlreadyTimes || 0));
