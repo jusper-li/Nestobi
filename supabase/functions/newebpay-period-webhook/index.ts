@@ -220,6 +220,10 @@ Deno.serve(async (req: Request) => {
       const parsed = new URLSearchParams(body);
       for (const [key, value] of parsed.entries()) params.append(key, value);
     }
+    console.log("[NewebPay Subscription Notify Received]", {
+      contentType,
+      bodyKeys: Array.from(params.keys()),
+    });
     // NDNP periodic-payment callbacks use the encrypted `Period` field;
     // retain TradeInfo support for gateways/proxies that normalize the name.
     const tradeInfo = params.get("Period") || params.get("TradeInfo");
@@ -250,9 +254,22 @@ Deno.serve(async (req: Request) => {
     const payload = JSON.parse(await aesDecrypt(tradeInfo, hashKey, hashIV));
     const result = payload.Result ?? payload;
     const tradeStatus = String(payload.Status ?? params.get("Status") ?? result.Status ?? "").toUpperCase();
-    const merchantOrderNo = String(result.MerchantOrderNo || "");
+    // NDNP uses MerOrderNo (the request/response field in the periodic
+    // payment protocol). Keep MerchantOrderNo as a compatibility fallback for
+    // gateways or proxies that normalize the field name.
+    const merchantOrderNo = String(
+      result.MerOrderNo ?? result.MerchantOrderNo ?? payload.MerOrderNo ?? payload.MerchantOrderNo ?? "",
+    ).trim();
     const periodNo = String(result.PeriodNo || "");
     const tradeNo = String(result.TradeNo || "");
+    console.log("[newebpay-period-webhook] decrypted subscription result", {
+      status: tradeStatus,
+      message: String(payload.Message ?? result.Message ?? ""),
+      merOrderNo: merchantOrderNo,
+      periodNo,
+      amount: result.AlterAmt ?? result.PeriodAmt ?? null,
+      periodTimes: result.PeriodTimes ?? null,
+    });
 
     if (callbackLogId) {
       await supabase.from("payment_callback_logs").update({
@@ -304,6 +321,12 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: false, error: "Subscription not found." }, 404);
     }
 
+    console.log("[newebpay-period-webhook] subscription reference", {
+      merchantOrderNo,
+      periodNo,
+      orderFound: Boolean(subscription.order_id),
+    });
+
     const now = new Date();
     const payAt = parseNewebPayDate(result.PayTime ?? result.AuthTime ?? now.toISOString());
     const gatewayTradeNo = tradeNo || null;
@@ -313,6 +336,12 @@ Deno.serve(async (req: Request) => {
     const totalCycles = subscription.period_times === "NE" ? null : Math.max(0, Math.floor(Number(subscription.period_times || 0)));
     const nextBillAt = nextBillingDate(now, String(subscription.period_times || "NE"));
     const subscriptionOrderNo = buildRecurringOrderNo(subscription.id, cycleNo, gatewayTradeNo);
+
+    // A retried callback for the same periodic authorization must be a no-op.
+    if (gatewayPeriodNo && subscription.newebpay_period_no === gatewayPeriodNo) {
+      if (callbackLogId) await supabase.from("payment_callback_logs").update({ processed: true }).eq("id", callbackLogId);
+      return shouldRedirect ? redirectResponse(merchantOrderNo) : okResponse();
+    }
 
     let existingOrderQuery = supabase
       .from("orders")
@@ -325,7 +354,20 @@ Deno.serve(async (req: Request) => {
       existingOrderQuery = existingOrderQuery.eq("merchant_order_no", merchantOrderNo);
     }
 
-    const { data: existingOrder } = await existingOrderQuery.maybeSingle();
+    const { data: existingOrder, error: existingOrderError } = await existingOrderQuery.maybeSingle();
+    if (existingOrderError) {
+      console.error("[newebpay-period-webhook] Order lookup failed", {
+        merchantOrderNo,
+        periodNo,
+        error: existingOrderError,
+      });
+      throw existingOrderError;
+    }
+    console.log("[newebpay-period-webhook] order lookup", {
+      merchantOrderNo,
+      periodNo,
+      orderFound: Boolean(existingOrder),
+    });
 
     if (existingOrder) {
       if (callbackLogId) await supabase.from("payment_callback_logs").update({ processed: true }).eq("id", callbackLogId);
@@ -406,7 +448,7 @@ Deno.serve(async (req: Request) => {
 
       const nextStatus = totalCycles && cycleNo >= totalCycles ? "expired" : "active";
 
-      await supabase
+      const { error: subscriptionUpdateError } = await supabase
         .from("product_subscriptions")
         .update({
           order_id: order.id,
@@ -428,6 +470,19 @@ Deno.serve(async (req: Request) => {
           updated_at: now.toISOString(),
         })
         .eq("id", subscription.id);
+      if (subscriptionUpdateError) {
+        console.error("[newebpay-period-webhook] Subscription update failed", {
+          merchantOrderNo,
+          periodNo,
+          error: subscriptionUpdateError,
+        });
+        throw subscriptionUpdateError;
+      }
+      console.log("[newebpay-period-webhook] Subscription update succeeded", {
+        merchantOrderNo,
+        periodNo,
+        paidPeriods: cycleNo,
+      });
 
       const displayName = String(profile?.display_name || subscription.customer_name || "");
       // Older subscriptions may not have copied customer_email. Resolve the
@@ -480,7 +535,7 @@ Deno.serve(async (req: Request) => {
       return shouldRedirect ? redirectResponse(merchantOrderNo) : okResponse();
     }
 
-    await supabase
+    const { error: failedSubscriptionUpdateError } = await supabase
       .from("product_subscriptions")
       .update({
         newebpay_period_no: gatewayPeriodNo || subscription.newebpay_period_no,
@@ -494,6 +549,14 @@ Deno.serve(async (req: Request) => {
         updated_at: now.toISOString(),
       })
       .eq("id", subscription.id);
+    if (failedSubscriptionUpdateError) {
+      console.error("[newebpay-period-webhook] Failed subscription update failed", {
+        merchantOrderNo,
+        periodNo,
+        error: failedSubscriptionUpdateError,
+      });
+      throw failedSubscriptionUpdateError;
+    }
 
     await sendNotificationEmail(
       `定期便付款失敗：${subscription.merchant_order_no}`,
