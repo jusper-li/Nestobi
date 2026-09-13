@@ -171,6 +171,19 @@ async function isVendorSubscriptionOwner(supabase: ReturnType<typeof createServi
   return Boolean(data);
 }
 
+async function isVendorSubscriptionOrderOwner(
+  supabase: ReturnType<typeof createServiceClient>,
+  userId: string,
+  orderId: string,
+) {
+  const { data: subscription } = await supabase
+    .from("product_subscriptions")
+    .select("vendor_id")
+    .eq("order_id", orderId)
+    .maybeSingle();
+  return isVendorSubscriptionOwner(supabase, userId, subscription?.vendor_id || null);
+}
+
 async function isVendorOrderOwner(supabase: ReturnType<typeof createServiceClient>, userId: string, orderId: string) {
   const { data } = await supabase
     .from("purchase_records")
@@ -309,7 +322,9 @@ Deno.serve(async (req: Request) => {
     const vendorVerified = jsonUserId
       ? (orderTable === "product_subscriptions"
         ? await isVendorSubscriptionOwner(supabase, jsonUserId, order.vendor_id || null)
-        : await isVendorOrderOwner(supabase, jsonUserId, order.id))
+        : (String(order.payment_method || "").toLowerCase() === "newebpay_subscription"
+          ? await isVendorSubscriptionOrderOwner(supabase, jsonUserId, order.id)
+          : await isVendorOrderOwner(supabase, jsonUserId, order.id)))
       : false;
     const authDebug = {
       authorizationHeaderExists: Boolean(req.headers.get("Authorization")),
