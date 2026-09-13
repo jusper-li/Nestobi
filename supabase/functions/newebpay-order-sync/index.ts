@@ -160,6 +160,17 @@ async function isElevatedUser(supabase: ReturnType<typeof createServiceClient>, 
   return data?.role === "admin" || data?.role === "superadmin";
 }
 
+async function getUserRole(supabase: ReturnType<typeof createServiceClient>, userId: string) {
+  const { data } = await supabase.from("tbl_user_auth").select("role").eq("user_id", userId).maybeSingle();
+  return String(data?.role || "").toLowerCase() || null;
+}
+
+async function isVendorSubscriptionOwner(supabase: ReturnType<typeof createServiceClient>, userId: string, vendorId: string | null) {
+  if (!vendorId) return false;
+  const { data } = await supabase.from("vendors").select("id").eq("id", vendorId).eq("user_id", userId).maybeSingle();
+  return Boolean(data);
+}
+
 async function isVendorOrderOwner(supabase: ReturnType<typeof createServiceClient>, userId: string, orderId: string) {
   const { data } = await supabase
     .from("purchase_records")
@@ -255,7 +266,7 @@ Deno.serve(async (req: Request) => {
     if (!order) {
       const { data: subscription, error: subscriptionError } = await supabase
         .from("product_subscriptions")
-        .select("id,user_id,merchant_order_no,monthly_amount,newebpay_status,status,period_times,billing_cycle_count,order_id")
+        .select("id,user_id,vendor_id,merchant_order_no,monthly_amount,newebpay_status,status,period_times,billing_cycle_count,order_id")
         .eq("merchant_order_no", merchantOrderNo)
         .maybeSingle();
       if (subscriptionError) {
@@ -265,6 +276,7 @@ Deno.serve(async (req: Request) => {
         order = {
           id: subscription.order_id || subscription.id,
           user_id: subscription.user_id,
+          vendor_id: subscription.vendor_id,
           total_amount: subscription.monthly_amount,
           merchant_order_no: subscription.merchant_order_no,
           payment_status: subscription.newebpay_status === "success" ? "paid" : "unpaid",
@@ -284,10 +296,16 @@ Deno.serve(async (req: Request) => {
 
     console.log("[order-sync] payment method", { merchantOrderNo, paymentMethod: order.payment_method || "unknown" });
 
-    const adminVerified = jsonUserId ? await isElevatedUser(supabase, jsonUserId) : false;
-    if (jsonUserId) console.log("[order-sync] admin verified", { userId: jsonUserId, verified: adminVerified });
-    if (jsonUserId && order.user_id !== jsonUserId && !adminVerified && !(await isVendorOrderOwner(supabase, jsonUserId, order.id))) {
-      return jsonResponse({ success: false, error: "Forbidden." }, 403);
+    const role = jsonUserId ? await getUserRole(supabase, jsonUserId) : null;
+    const adminVerified = role === "admin" || role === "superadmin";
+    const vendorVerified = jsonUserId
+      ? (orderTable === "product_subscriptions"
+        ? await isVendorSubscriptionOwner(supabase, jsonUserId, order.vendor_id || null)
+        : await isVendorOrderOwner(supabase, jsonUserId, order.id))
+      : false;
+    if (jsonUserId) console.log("[order-sync] admin verified", { userId: jsonUserId, verified: adminVerified, roleFound: Boolean(role), role, vendorVerified });
+    if (jsonUserId && order.user_id !== jsonUserId && !adminVerified && !vendorVerified) {
+      return jsonResponse({ success: false, stage: "authorization", error: "Admin access required", userAuthenticated: true, roleDetected: role }, 403);
     }
 
     if (orderTable === "orders" && String(order.payment_status || "").toLowerCase() === "paid" && String(order.newebpay_status || "").toLowerCase() === "success") {
