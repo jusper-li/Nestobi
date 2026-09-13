@@ -115,6 +115,7 @@ interface SubscriptionOrderLine {
   customer_email?: string | null;
   customer_phone?: string | null;
   newebpay_trade_no?: string | null;
+  newebpay_period_no?: string | null;
   newebpay_auth_code?: string | null;
   newebpay_card_no?: string | null;
   newebpay_payment_type?: string | null;
@@ -288,6 +289,7 @@ const VendorOrders: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
   const [updating, setUpdating] = useState<string | null>(null);
+  const [queryingPayment, setQueryingPayment] = useState(false);
   const [message, setMessage] = useState('');
   const [selectedDetail, setSelectedDetail] = useState<VendorOrderItem | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -549,6 +551,31 @@ const VendorOrders: React.FC = () => {
       setDetailError(error instanceof Error ? error.message : labels.updateFailed);
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  const querySubscriptionPayment = async () => {
+    if (!detailSubscription) return;
+    setQueryingPayment(true);
+    setDetailError('');
+    try {
+      const { data, error } = await supabase.functions.invoke('newebpay-period-query', {
+        body: { subscriptionId: detailSubscription.id },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || '藍新付款查詢失敗');
+      setDetailSubscription(current => current ? {
+        ...current,
+        billing_cycle_count: data.result?.alreadyTimes ?? current.billing_cycle_count,
+        status: data.updated?.status || current.status,
+        newebpay_status: data.updated?.newebpay_status || current.newebpay_status,
+        newebpay_period_no: data.result?.periodNo || current.newebpay_period_no,
+      } : current);
+      setMessage(`藍新查詢完成：已授權 ${data.result?.alreadyTimes ?? 0} 期`);
+    } catch (error) {
+      setDetailError(error instanceof Error ? error.message : '藍新付款查詢失敗');
+    } finally {
+      setQueryingPayment(false);
     }
   };
 
@@ -1099,7 +1126,11 @@ const VendorOrders: React.FC = () => {
                 ) : selectedDetail.kind === 'subscription' ? (
                   <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
                     <div className="space-y-6">
-                      <DetailCard title="訂閱資料" icon={<Receipt className="h-4 w-4" />}>
+                      <DetailCard title="訂閱資料" icon={<Receipt className="h-4 w-4" />} actions={(
+                        <button type="button" onClick={() => void querySubscriptionPayment()} disabled={queryingPayment} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60">
+                          {queryingPayment ? '查詢中…' : '查詢藍新付款狀態'}
+                        </button>
+                      )}>
                         <div className="grid gap-4 md:grid-cols-2">
                           <DetailField label={labels.orderNumber} value={detailSubscription?.id ? `#${detailSubscription.id.slice(-10).toUpperCase()}` : '-'} mono />
                           <DetailField label={labels.paymentStatus} value={subscriptionStatusLabels[detailSubscription?.status || ''] || detailSubscription?.status || '-'} />
@@ -1563,13 +1594,13 @@ function SubscriptionCard({
   );
 }
 
-function DetailCard({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
+function DetailCard({ title, icon, actions, children }: { title: string; icon?: React.ReactNode; actions?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
-      <h3 className="mb-4 flex items-center gap-2 text-base font-bold text-gray-900">
-        {icon}
-        {title}
-      </h3>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="flex items-center gap-2 text-base font-bold text-gray-900">{icon}{title}</h3>
+        {actions}
+      </div>
       {children}
     </section>
   );
