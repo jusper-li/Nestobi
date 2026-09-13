@@ -48,7 +48,15 @@ Deno.serve(async req => {
     if (subscription.newebpay_period_no) requestData.set("PeriodNo", subscription.newebpay_period_no);
     const response = await fetch("https://core.newebpay.com/MPG/period/query", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ MerchantID_: merchantId, PostData_: await encryptHex(requestData.toString(), hashKey, hashIV) }).toString() });
     const raw = await response.text();
-    const encrypted = (() => { try { const parsed = JSON.parse(raw); return parsed.Period || parsed.period || ""; } catch { return ""; } })();
+    const encrypted = (() => {
+      try {
+        const parsed = JSON.parse(raw);
+        return String(parsed.Period || parsed.period || "").trim();
+      } catch {
+        const form = new URLSearchParams(raw);
+        return String(form.get("Period") || form.get("period") || "").trim();
+      }
+    })();
     if (!encrypted) return json({ success: false, error: `NewebPay query failed (${response.status}).`, raw: raw.slice(0, 300) }, 502);
     const payload = JSON.parse(await decryptHex(encrypted, hashKey, hashIV));
     const result = payload.Result || payload.result || {};
