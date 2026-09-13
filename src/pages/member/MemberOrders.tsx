@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AlertCircle, CheckCircle, ChevronDown, ChevronUp, CreditCard, Heart, Headphones, Package, Receipt, RotateCcw, Search, ShoppingBag, Star, Truck } from 'lucide-react';
+import { AlertCircle, CheckCircle, ChevronDown, ChevronUp, CreditCard, Heart, Headphones, Package, Receipt, RotateCcw, ShoppingBag, Star } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -365,12 +365,6 @@ export default function MemberOrders() {
     return method;
   };
 
-  const estimatedArrival = (createdAt: string) => {
-    const date = new Date(createdAt);
-    date.setDate(date.getDate() + 3);
-    return formatDate(date.toISOString(), dateLocale);
-  };
-
   const showMessage = (type: 'success' | 'error', text: string) => {
     setActionMessage({ type, text });
     window.setTimeout(() => setActionMessage(null), 3000);
@@ -623,9 +617,7 @@ export default function MemberOrders() {
         filteredOrders.map((order, index) => {
           const items = details[order.id] || [];
           const isExpanded = expandedId === order.id;
-          const invoice = order.invoices?.[0] || null;
           const shipment = order.logistics_shipments?.[0] || null;
-          const trackingNumber = shipment?.lgs_no || shipment?.store_print_no || '';
 
           return (
             <motion.article key={order.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="overflow-hidden rounded-2xl bg-white shadow-sm">
@@ -660,33 +652,6 @@ export default function MemberOrders() {
                   <Info label={t.paymentMethod} value={paymentMethodLabel(order.payment_method)} />
                   <Info label={t.logisticsStatus} value={shipment?.logistics_status || deliveryLabel(order.status)} />
                   {order.is_subscription && <Info label={t.subscriptionPeriods} value={order.subscription_periods || '-'} wrap />}
-                </div>
-
-                <div className={`${isExpanded ? 'block' : 'hidden'} space-y-4`}>
-                  <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                    <Info label={t.orderNo} value={`#${order.id.slice(-10).toUpperCase()}`} />
-                    <Info label={t.orderDate} value={formatDate(order.created_at, dateLocale)} />
-                    <Info label={t.paymentMethod} value={paymentMethodLabel(order.payment_method)} />
-                    <Info label={t.paymentStatus} value={order.payment_status === 'paid' ? t.paid : t.unpaid} />
-                    <Info label={t.logisticsStatus} value={shipment?.logistics_status || deliveryLabel(order.status)} />
-                    <Info label={t.invoiceStatus} value={invoice?.invoice_status || t.invoicePending} />
-                    <Info label={t.recommendations} value={order.discount_code || t.notProvided} />
-                    <Info label={t.summary} value={formatCurrency(order.total_amount, order.currency || 'TWD')} strong />
-                  </div>
-
-                  <section className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                    <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900"><Truck className="h-4 w-4 text-[#0D9488]" />{t.logistics}</h4>
-                    <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                      <Info label={t.company} value={shipment?.logistics_type || t.notProvided} />
-                      <Info label={t.trackingNo} value={trackingNumber || t.notProvided} />
-                      <Info label={t.deliveryStatus} value={shipment?.logistics_status || deliveryLabel(order.status)} />
-                      <Info label={t.estimatedArrival} value={estimatedArrival(order.created_at)} />
-                    </div>
-                    <button type="button" disabled={!trackingNumber} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">
-                      <Search className="h-4 w-4" />
-                      {t.queryLogistics}
-                    </button>
-                  </section>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
