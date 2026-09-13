@@ -556,22 +556,28 @@ const VendorOrders: React.FC = () => {
 
   const querySubscriptionPayment = async () => {
     if (!detailSubscription) return;
+    const merchantOrderNo = detailSubscription.orders?.merchant_order_no;
+    if (!merchantOrderNo) {
+      setDetailError('此訂閱沒有藍新訂單編號，無法查詢付款狀態');
+      return;
+    }
     setQueryingPayment(true);
     setDetailError('');
     try {
-      const { data, error } = await supabase.functions.invoke('newebpay-period-query', {
-        body: { subscriptionId: detailSubscription.id },
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('[order-sync] session debug', {
+        hasSession: Boolean(session),
+        hasAccessToken: Boolean(session?.access_token),
+      });
+      if (!session?.access_token) {
+        throw new Error('登入狀態已失效，請重新登入後再試');
+      }
+      const { data, error } = await supabase.functions.invoke('newebpay-order-sync', {
+        body: { merchantOrderNo },
       });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || '藍新付款查詢失敗');
-      setDetailSubscription(current => current ? {
-        ...current,
-        billing_cycle_count: data.result?.alreadyTimes ?? current.billing_cycle_count,
-        status: data.updated?.status || current.status,
-        newebpay_status: data.updated?.newebpay_status || current.newebpay_status,
-        newebpay_period_no: data.result?.periodNo || current.newebpay_period_no,
-      } : current);
-      setMessage(`藍新查詢完成：已授權 ${data.result?.alreadyTimes ?? 0} 期`);
+      setMessage('藍新查詢完成');
     } catch (error) {
       let detail = error instanceof Error ? error.message : '藍新付款查詢失敗';
       try {
