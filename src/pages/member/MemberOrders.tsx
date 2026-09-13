@@ -185,9 +185,15 @@ export default function MemberOrders() {
       syncAttemptedRef.current = merchantOrderNo;
 
       try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+        if (!accessToken) return;
         const response = await fetch(ORDER_SYNC_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
           body: JSON.stringify({ merchantOrderNo }),
         });
         const result = await response.json().catch(() => ({}));
