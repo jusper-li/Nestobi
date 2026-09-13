@@ -239,7 +239,8 @@ Deno.serve(async (req: Request) => {
 
     stage = "order-lookup";
     const supabase = createServiceClient();
-    const { data: order, error: orderError } = await supabase
+    console.log("[order-sync] lookup", { merchantOrderNo, paymentType: "unknown" });
+    const { data: regularOrder, error: orderError } = await supabase
       .from("orders")
       .select("id, user_id, points_member_id, total_amount, subtotal_amount, points_discount, merchant_order_no, payment_status, payment_method, newebpay_status, newebpay_payment_type, order_channel")
       .eq("merchant_order_no", merchantOrderNo)
@@ -249,10 +250,36 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: false, error: orderError.message }, 500);
     }
 
-    console.log("[order-sync] order found", { merchantOrderNo, found: Boolean(order) });
+    let order: any = regularOrder;
+    let orderTable = "orders";
+    if (!order) {
+      const { data: subscription, error: subscriptionError } = await supabase
+        .from("product_subscriptions")
+        .select("id,user_id,merchant_order_no,monthly_amount,newebpay_status,status,period_times,billing_cycle_count,order_id")
+        .eq("merchant_order_no", merchantOrderNo)
+        .maybeSingle();
+      if (subscriptionError) {
+        return jsonResponse({ success: false, stage: "order-lookup", merchantOrderNo, error: subscriptionError.message }, 500);
+      }
+      if (subscription) {
+        order = {
+          id: subscription.order_id || subscription.id,
+          user_id: subscription.user_id,
+          total_amount: subscription.monthly_amount,
+          merchant_order_no: subscription.merchant_order_no,
+          payment_status: subscription.newebpay_status === "success" ? "paid" : "unpaid",
+          payment_method: "newebpay_subscription",
+          newebpay_status: subscription.newebpay_status,
+          order_channel: "subscription",
+        };
+        orderTable = "product_subscriptions";
+      }
+    }
+
+    console.log("[order-sync] lookup result", { found: Boolean(order), table: orderTable });
 
     if (!order) {
-      return jsonResponse({ success: false, error: "Order not found." }, 404);
+      return jsonResponse({ success: false, stage: "order-lookup", merchantOrderNo, error: "Order not found" }, 404);
     }
 
     console.log("[order-sync] payment method", { merchantOrderNo, paymentMethod: order.payment_method || "unknown" });
@@ -263,7 +290,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: false, error: "Forbidden." }, 403);
     }
 
-    if (String(order.payment_status || "").toLowerCase() === "paid" && String(order.newebpay_status || "").toLowerCase() === "success") {
+    if (orderTable === "orders" && String(order.payment_status || "").toLowerCase() === "paid" && String(order.newebpay_status || "").toLowerCase() === "success") {
       try {
         const invoiceResult = await createEzpayInvoiceForOrder(supabase, order.id);
         if (!invoiceResult.success && invoiceResult.error) {
