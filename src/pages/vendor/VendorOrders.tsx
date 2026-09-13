@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
@@ -97,6 +97,7 @@ interface SubscriptionOrderLine {
   product_id: string;
   vendor_id?: string | null;
   order_id?: string | null;
+  merchant_order_no?: string | null;
   quantity: number;
   monthly_amount: number;
   period_type?: string | null;
@@ -521,7 +522,7 @@ const VendorOrders: React.FC = () => {
             : Promise.resolve({ data: null }),
           supabase
             .from('product_subscriptions')
-            .select('id,user_id,product_id,vendor_id,order_id,quantity,monthly_amount,period_type,period_point,period_start_type,period_times,billing_cycle_count,status,next_bill_at,last_billed_at,started_at,ended_at,expires_at,shipping_address,customer_name,customer_email,customer_phone,newebpay_trade_no,newebpay_auth_code,newebpay_card_no,newebpay_payment_type,newebpay_respond_code,newebpay_status,newebpay_paid_at,notes,created_at,updated_at,products(id,name,image_url,sku,vendor_id),orders!product_subscriptions_order_id_fkey(id,user_id,status,payment_status,payment_method,merchant_order_no,newebpay_status,total_amount,currency,created_at,shipping_address)')
+            .select('id,user_id,product_id,vendor_id,order_id,merchant_order_no,quantity,monthly_amount,period_type,period_point,period_start_type,period_times,billing_cycle_count,status,next_bill_at,last_billed_at,started_at,ended_at,expires_at,shipping_address,customer_name,customer_email,customer_phone,newebpay_trade_no,newebpay_auth_code,newebpay_card_no,newebpay_payment_type,newebpay_respond_code,newebpay_status,newebpay_paid_at,notes,created_at,updated_at,products(id,name,image_url,sku,vendor_id),orders!product_subscriptions_order_id_fkey(id,user_id,status,payment_status,payment_method,merchant_order_no,newebpay_status,total_amount,currency,created_at,shipping_address)')
             .eq('id', item.subscription.id)
             .maybeSingle(),
         ]);
@@ -556,7 +557,7 @@ const VendorOrders: React.FC = () => {
 
   const querySubscriptionPayment = async () => {
     if (!detailSubscription) return;
-    const merchantOrderNo = detailSubscription.orders?.merchant_order_no;
+    const merchantOrderNo = detailSubscription.merchant_order_no || detailSubscription.orders?.merchant_order_no;
     if (!merchantOrderNo) {
       setDetailError('此訂閱沒有藍新訂單編號，無法查詢付款狀態');
       return;
