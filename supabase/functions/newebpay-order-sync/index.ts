@@ -115,7 +115,7 @@ async function getRewardPoints(
 
   if (error) {
     console.warn("[newebpay-order-sync] Failed to calculate reward points:", error);
-    return 0;
+    throw error;
   }
 
   return Math.max(0, Math.floor(Number(data || 0)));
@@ -181,6 +181,7 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ success: false, error: "Method not allowed" }, 405);
   }
 
+  let stage = "request";
   try {
     console.log("[order-sync] request received", { method: req.method });
     const credentials = await getNewebPayCredentials();
@@ -200,6 +201,7 @@ Deno.serve(async (req: Request) => {
         return jsonResponse({ success: false, error: "Authentication required." }, 401);
       }
       authHeaderForQuery = authHeader;
+      stage = "authentication";
       const authClient = createAuthClient(authHeader);
       const { data: { user }, error: userError } = await authClient.auth.getUser();
       if (userError || !user) {
@@ -233,7 +235,9 @@ Deno.serve(async (req: Request) => {
     if (!merchantOrderNo) {
       return jsonResponse({ success: false, error: "Missing merchantOrderNo." }, 400);
     }
+    console.log("[order-sync] input", { orderId: null, merchantOrderNo });
 
+    stage = "order-lookup";
     const supabase = createServiceClient();
     const { data: order, error: orderError } = await supabase
       .from("orders")
@@ -259,6 +263,7 @@ Deno.serve(async (req: Request) => {
       if (subscription && authHeaderForQuery) {
         console.log("[order-sync] payment method", { merchantOrderNo, paymentMethod: "newebpay_subscription" });
         console.log("[order-sync] calling period query", { merchantOrderNo });
+        stage = "period-query";
         const periodResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-period-query`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: authHeaderForQuery },
@@ -266,6 +271,10 @@ Deno.serve(async (req: Request) => {
         });
         const periodBody = await periodResponse.text();
         console.log("[order-sync] period query response", { status: periodResponse.status, ok: periodResponse.ok });
+        console.log("[order-sync] Cloud Run response", { configured: false, status: null });
+        if (!periodResponse.ok) {
+          return jsonResponse({ success: false, stage: "period-query", status: periodResponse.status, response: periodBody.slice(0, 1000) }, 502);
+        }
         return new Response(periodBody, {
           status: periodResponse.status,
           headers: { ...corsHeaders, "Content-Type": periodResponse.headers.get("content-type") || "application/json" },
@@ -278,6 +287,7 @@ Deno.serve(async (req: Request) => {
 
     if (String(order.payment_method || "").toLowerCase() === "newebpay_subscription" && authHeaderForQuery) {
       console.log("[order-sync] calling period query", { merchantOrderNo });
+      stage = "period-query";
       const periodResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-period-query`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: authHeaderForQuery },
@@ -285,6 +295,10 @@ Deno.serve(async (req: Request) => {
       });
       const periodBody = await periodResponse.text();
       console.log("[order-sync] period query response", { status: periodResponse.status, ok: periodResponse.ok });
+      console.log("[order-sync] Cloud Run response", { configured: false, status: null });
+      if (!periodResponse.ok) {
+        return jsonResponse({ success: false, stage: "period-query", status: periodResponse.status, response: periodBody.slice(0, 1000) }, 502);
+      }
       return new Response(periodBody, {
         status: periodResponse.status,
         headers: { ...corsHeaders, "Content-Type": periodResponse.headers.get("content-type") || "application/json" },
@@ -334,6 +348,7 @@ Deno.serve(async (req: Request) => {
       Amt: String(amt),
     });
 
+    stage = "provider-query";
     const response = await fetch(getQueryUrl(credentials.mpgUrl), {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -369,7 +384,8 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    await supabase
+    stage = "database-update";
+    const { error: orderUpdateError, data: orderUpdateData } = await supabase
       .from("orders")
       .update({
         status: "processing",
@@ -384,6 +400,10 @@ Deno.serve(async (req: Request) => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", order.id);
+    console.log("[order-sync] database update result", { ok: !orderUpdateError, updated: Boolean(orderUpdateData) });
+    if (orderUpdateError) {
+      return jsonResponse({ success: false, stage: "database-update", error: orderUpdateError.message }, 500);
+    }
 
     const { error: captureError } = await supabase.rpc("capture_member_points", { p_order_id: order.id });
     if (captureError) throw captureError;
@@ -448,6 +468,7 @@ Deno.serve(async (req: Request) => {
     }
     return jsonResponse({
       success: false,
+      stage,
       error: error instanceof Error ? error.message : "Order sync failed.",
     }, 500);
   }
