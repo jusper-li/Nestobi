@@ -48,9 +48,29 @@ function redactCallbackPayload(value: unknown) {
 
 async function aesDecrypt(hexData: string, key: string, iv: string): Promise<string> {
   const encoder = new TextEncoder();
-  const encryptedBytes = new Uint8Array(
-    (hexData.match(/.{1,2}/g) ?? []).map((byte) => parseInt(byte, 16))
-  );
+  let normalized = String(hexData || "").trim();
+  try {
+    normalized = decodeURIComponent(normalized);
+  } catch {
+    // formData normally decodes the value already; retain the raw value when
+    // a provider/proxy sends a malformed percent escape.
+  }
+  normalized = normalized.replace(/^['"]|['"]$/g, "").replace(/\s+/g, "");
+
+  let encryptedBytes: Uint8Array;
+  if (/^[0-9a-f]+$/i.test(normalized) && normalized.length % 2 === 0) {
+    encryptedBytes = new Uint8Array(
+      (normalized.match(/.{1,2}/g) ?? []).map((byte) => parseInt(byte, 16)),
+    );
+  } else {
+    // Keep compatibility with gateways/proxies that forward Period as
+    // base64 instead of the documented hexadecimal ciphertext.
+    const binary = atob(normalized);
+    encryptedBytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  }
+  if (encryptedBytes.length === 0 || encryptedBytes.length % 16 !== 0) {
+    throw new Error("Invalid NewebPay Period ciphertext length");
+  }
   const cryptoKey = await crypto.subtle.importKey(
     "raw",
     encoder.encode(key),
