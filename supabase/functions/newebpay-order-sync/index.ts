@@ -214,8 +214,16 @@ Deno.serve(async (req: Request) => {
       authHeaderForQuery = authHeader;
       stage = "authentication";
       const authClient = createAuthClient(authHeader);
-      const { data: { user }, error: userError } = await authClient.auth.getUser();
+      const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+      const { data: { user }, error: userError } = await authClient.auth.getUser(token);
       if (userError || !user) {
+        console.log("[order-sync] authorization", {
+          authorizationHeaderExists: true,
+          userFound: false,
+          userId: null,
+          roleDetected: null,
+          adminAllowed: false,
+        });
         return jsonResponse({ success: false, error: "Invalid or expired session." }, 401);
       }
       jsonUserId = user.id;
@@ -303,6 +311,13 @@ Deno.serve(async (req: Request) => {
         ? await isVendorSubscriptionOwner(supabase, jsonUserId, order.vendor_id || null)
         : await isVendorOrderOwner(supabase, jsonUserId, order.id))
       : false;
+    console.log("[order-sync] authorization", {
+      authorizationHeaderExists: Boolean(req.headers.get("Authorization")),
+      userFound: Boolean(jsonUserId),
+      userId: jsonUserId,
+      roleDetected: role,
+      adminAllowed: adminVerified || vendorVerified,
+    });
     if (jsonUserId) console.log("[order-sync] admin verified", { userId: jsonUserId, verified: adminVerified, roleFound: Boolean(role), role, vendorVerified });
     if (jsonUserId && order.user_id !== jsonUserId && !adminVerified && !vendorVerified) {
       return jsonResponse({ success: false, stage: "authorization", error: "Admin access required", userAuthenticated: true, roleDetected: role }, 403);
