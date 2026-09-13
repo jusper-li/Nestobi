@@ -182,6 +182,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    console.log("[order-sync] request received", { method: req.method });
     const credentials = await getNewebPayCredentials();
     if (!credentials.merchantId || !credentials.hashKey || !credentials.hashIV) {
       return jsonResponse({ success: false, error: "NewebPay credentials are not configured." }, 500);
@@ -191,18 +192,21 @@ Deno.serve(async (req: Request) => {
     let merchantOrderNo: string | null = null;
     const posToken = new URL(req.url).searchParams.get("posToken");
     let jsonUserId: string | null = null;
+    let authHeaderForQuery: string | null = null;
 
     if (contentType.includes("application/json")) {
       const authHeader = req.headers.get("Authorization");
       if (!authHeader) {
         return jsonResponse({ success: false, error: "Authentication required." }, 401);
       }
+      authHeaderForQuery = authHeader;
       const authClient = createAuthClient(authHeader);
       const { data: { user }, error: userError } = await authClient.auth.getUser();
       if (userError || !user) {
         return jsonResponse({ success: false, error: "Invalid or expired session." }, 401);
       }
       jsonUserId = user.id;
+      console.log("[order-sync] authenticated user", { userId: user.id });
       const body = await req.json().catch(() => ({}));
       merchantOrderNo = typeof body?.merchantOrderNo === "string" ? body.merchantOrderNo : null;
     } else if (contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data")) {
@@ -233,7 +237,7 @@ Deno.serve(async (req: Request) => {
     const supabase = createServiceClient();
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id, user_id, points_member_id, total_amount, subtotal_amount, points_discount, merchant_order_no, payment_status, newebpay_status, newebpay_payment_type, order_channel")
+      .select("id, user_id, points_member_id, total_amount, subtotal_amount, points_discount, merchant_order_no, payment_status, payment_method, newebpay_status, newebpay_payment_type, order_channel")
       .eq("merchant_order_no", merchantOrderNo)
       .maybeSingle();
 
@@ -241,11 +245,55 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: false, error: orderError.message }, 500);
     }
 
+    console.log("[order-sync] order found", { merchantOrderNo, found: Boolean(order) });
+
     if (!order) {
+      // Subscription checkouts may not have an `orders` row until the first
+      // successful periodic callback. Route those requests through the
+      // existing periodic query function instead of the MPG query API.
+      const { data: subscription } = await supabase
+        .from("product_subscriptions")
+        .select("id, user_id, merchant_order_no")
+        .eq("merchant_order_no", merchantOrderNo)
+        .maybeSingle();
+      if (subscription && authHeaderForQuery) {
+        console.log("[order-sync] payment method", { merchantOrderNo, paymentMethod: "newebpay_subscription" });
+        console.log("[order-sync] calling period query", { merchantOrderNo });
+        const periodResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-period-query`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: authHeaderForQuery },
+          body: JSON.stringify({ merchantOrderNo }),
+        });
+        const periodBody = await periodResponse.text();
+        console.log("[order-sync] period query response", { status: periodResponse.status, ok: periodResponse.ok });
+        return new Response(periodBody, {
+          status: periodResponse.status,
+          headers: { ...corsHeaders, "Content-Type": periodResponse.headers.get("content-type") || "application/json" },
+        });
+      }
       return jsonResponse({ success: false, error: "Order not found." }, 404);
     }
 
-    if (jsonUserId && order.user_id !== jsonUserId && !(await isElevatedUser(supabase, jsonUserId)) && !(await isVendorOrderOwner(supabase, jsonUserId, order.id))) {
+    console.log("[order-sync] payment method", { merchantOrderNo, paymentMethod: order.payment_method || "unknown" });
+
+    if (String(order.payment_method || "").toLowerCase() === "newebpay_subscription" && authHeaderForQuery) {
+      console.log("[order-sync] calling period query", { merchantOrderNo });
+      const periodResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-period-query`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: authHeaderForQuery },
+        body: JSON.stringify({ merchantOrderNo }),
+      });
+      const periodBody = await periodResponse.text();
+      console.log("[order-sync] period query response", { status: periodResponse.status, ok: periodResponse.ok });
+      return new Response(periodBody, {
+        status: periodResponse.status,
+        headers: { ...corsHeaders, "Content-Type": periodResponse.headers.get("content-type") || "application/json" },
+      });
+    }
+
+    const adminVerified = jsonUserId ? await isElevatedUser(supabase, jsonUserId) : false;
+    if (jsonUserId) console.log("[order-sync] admin verified", { userId: jsonUserId, verified: adminVerified });
+    if (jsonUserId && order.user_id !== jsonUserId && !adminVerified && !(await isVendorOrderOwner(supabase, jsonUserId, order.id))) {
       return jsonResponse({ success: false, error: "Forbidden." }, 403);
     }
 
