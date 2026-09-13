@@ -59,8 +59,10 @@ Deno.serve(async req => {
     const update = { newebpay_period_no: result.PeriodNo || subscription.newebpay_period_no, billing_cycle_count: alreadyTimes, status: nextStatus, newebpay_status: queryStatus === "SUCCESS" ? "success" : queryStatus.toLowerCase(), next_bill_at: result.NextAuthDate ? new Date(result.NextAuthDate).toISOString() : null, updated_at: new Date().toISOString() };
     const { data: updated, error: updateError } = await db.from("product_subscriptions").update(update).eq("id", subscription.id).select("id,billing_cycle_count,status,newebpay_status,next_bill_at").single();
     if (updateError) throw updateError;
-    if (alreadyTimes > 0 && subscription.order_id) {
-      const { error: orderError } = await db.from("orders").update({ payment_status: "paid", newebpay_status: "success", payment_method: "newebpay_subscription", updated_at: new Date().toISOString() }).eq("id", subscription.order_id);
+    if (alreadyTimes > 0) {
+      let orderUpdate = db.from("orders").update({ payment_status: "paid", newebpay_status: "success", payment_method: "newebpay_subscription", updated_at: new Date().toISOString() });
+      orderUpdate = subscription.order_id ? orderUpdate.eq("id", subscription.order_id) : orderUpdate.eq("subscription_id", subscription.id);
+      const { error: orderError } = await orderUpdate;
       if (orderError) throw orderError;
     }
     return json({ success: true, queryStatus, result: { merOrderNo: result.MerOrderNo || result.MerchantOrderNo || null, periodNo: result.PeriodNo || null, mandateStatus, alreadyTimes, totalTimes: result.TotalTimes || null, nextAuthDate: result.NextAuthDate || null }, updated });
