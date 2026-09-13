@@ -434,6 +434,35 @@ Deno.serve(async (req: Request) => {
         }, 500);
       }
 
+      // Keep the order created when the subscription started in sync with
+      // the successful first charge. Otherwise that original order can stay
+      // marked unpaid while only the recurring-cycle order is paid.
+      if (subscription.order_id && subscription.order_id !== order.id) {
+        const { error: initialOrderUpdateError } = await supabase
+          .from("orders")
+          .update({
+            payment_status: "paid",
+            newebpay_status: "success",
+            newebpay_trade_no: gatewayTradeNo,
+            newebpay_auth_code: result.AuthCode ?? null,
+            newebpay_card_no: result.CardNo ?? null,
+            newebpay_respond_code: result.RespondCode ?? null,
+            newebpay_payment_type: result.PaymentType ?? null,
+            newebpay_paid_at: payAt,
+            updated_at: now.toISOString(),
+          })
+          .eq("id", subscription.order_id);
+
+        if (initialOrderUpdateError) {
+          console.error("[newebpay-period-webhook] Initial order update failed", {
+            merchantOrderNo,
+            periodNo,
+            error: initialOrderUpdateError,
+          });
+          throw initialOrderUpdateError;
+        }
+      }
+
       await supabase.from("purchase_records").insert({
         order_id: order.id,
         user_id: subscription.user_id,
