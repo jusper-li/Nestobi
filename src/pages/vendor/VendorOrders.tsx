@@ -517,7 +517,7 @@ const VendorOrders: React.FC = () => {
         const userId = item.subscription.user_id;
         const [profileRes, subscriptionRes] = await Promise.all([
           userId
-            ? supabase.from('tbl_mn5wgzh0').select('user_id, display_name, phone, email').eq('user_id', userId).maybeSingle()
+            ? supabase.from('tbl_mn5wgzh0').select('user_id, display_name, phone').eq('user_id', userId).maybeSingle()
             : Promise.resolve({ data: null }),
           supabase
             .from('product_subscriptions')
