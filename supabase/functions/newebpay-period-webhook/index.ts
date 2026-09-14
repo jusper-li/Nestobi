@@ -103,6 +103,22 @@ function safeEquals(a: string, b: string) {
   return diff === 0;
 }
 
+function parseDecryptedPeriod(value: string): Record<string, unknown> {
+  const text = value.replace(/^\uFEFF/, "").trim();
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed && typeof parsed === "object") return parsed as Record<string, unknown>;
+  } catch {
+    // Some NDNP integrations request RespondType=String. Accept that form
+    // as well as the documented JSON response.
+  }
+  const params = new URLSearchParams(text);
+  const result: Record<string, unknown> = {};
+  for (const [key, item] of params.entries()) result[key] = item;
+  if (Object.keys(result).length === 0) throw new Error("Unable to parse decrypted NewebPay Period response");
+  return result;
+}
+
 function parseNewebPayDate(value: unknown) {
   if (typeof value !== "string" || value.length === 0) return new Date().toISOString();
   if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value;
@@ -271,7 +287,12 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const payload = JSON.parse(await aesDecrypt(tradeInfo, hashKey, hashIV));
+    const decryptedPeriod = await aesDecrypt(tradeInfo, hashKey, hashIV);
+    console.log("[newebpay-period-webhook] decrypted payload received", {
+      length: decryptedPeriod.length,
+      preview: decryptedPeriod.slice(0, 300),
+    });
+    const payload = parseDecryptedPeriod(decryptedPeriod);
     const result = payload.Result ?? payload;
     const tradeStatus = String(payload.Status ?? params.get("Status") ?? result.Status ?? "").toUpperCase();
     // NDNP uses MerOrderNo (the request/response field in the periodic
@@ -623,6 +644,14 @@ Deno.serve(async (req: Request) => {
     return shouldRedirect ? redirectResponse(merchantOrderNo) : okResponse();
   } catch (error) {
     console.error("[newebpay-period-webhook] Error:", error);
+    if (callbackLogId) {
+      const message = error instanceof Error ? error.message : "Webhook processing failed.";
+      const { error: logError } = await supabase
+        .from("payment_callback_logs")
+        .update({ error_message: message })
+        .eq("id", callbackLogId);
+      if (logError) console.error("[newebpay-period-webhook] Failed to record error:", logError);
+    }
     if (new URL(req.url).searchParams.get("redirect") === "1") {
       return redirectResponse();
     }
