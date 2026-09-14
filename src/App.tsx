@@ -93,6 +93,7 @@ import SuperAdminProducts from './pages/superadmin/SuperAdminProducts';
 import SuperAdminProductDetail from './pages/superadmin/SuperAdminProductDetail';
 import SuperAdminProductCategories from './pages/superadmin/SuperAdminProductCategories';
 import SuperAdminOrders from './pages/superadmin/SuperAdminOrders';
+import SuperAdminInvoiceTracks from './pages/superadmin/SuperAdminInvoiceTracks';
 import SuperAdminRefunds from './pages/superadmin/SuperAdminRefunds';
 import SuperAdminAIAnalytics from './pages/superadmin/SuperAdminAIAnalytics';
 import SuperAdminChatbot from './pages/superadmin/SuperAdminChatbot';
@@ -272,6 +273,7 @@ function AppShell() {
                   <Route path="products/new" element={<SuperAdminProductForm />} />
                   <Route path="products/:id" element={<SuperAdminProductForm />} />
                   <Route path="orders" element={<SuperAdminOrders />} />
+                  <Route path="invoice-tracks" element={<SuperAdminInvoiceTracks />} />
                   <Route path="refunds" element={<SuperAdminRefunds />} />
                   <Route path="engagement" element={<EngagementManagement mode="superadmin" />} />
                   <Route path="revenue" element={<SuperAdminRevenue />} />
