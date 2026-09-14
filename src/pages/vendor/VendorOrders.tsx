@@ -22,6 +22,28 @@ import { logAdminAction } from '../../lib/auditLog';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, formatDateTime, getStatusColor, getStatusLabel } from '../../lib/utils';
 
+async function sendShippingNotification(email: string | null | undefined, merchantOrderNo: string, status: string) {
+  if (!email || status !== 'shipped') return;
+  try {
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'notification',
+        to: email,
+        data: {
+          subject: `訂單已出貨：${merchantOrderNo}`,
+          message: `您的訂單 ${merchantOrderNo} 已出貨。`,
+          lang: 'zh-TW',
+          recipientKind: 'customer',
+        },
+      }),
+    });
+  } catch (error) {
+    console.warn('[vendor-orders] shipping notification failed:', error);
+  }
+}
+
 interface Booking {
   id: string;
   user_id: string;
@@ -864,6 +886,12 @@ const VendorOrders: React.FC = () => {
           .eq('status', 'pending');
       }
       await logAdminAction('update_product_order_status', 'purchase_records', item.id, { order_id: item.order_id, status, vendor_id: vendorId });
+      const shippingAddress = item.orders?.shipping_address || null;
+      await sendShippingNotification(
+        shippingAddress?.customer_email || shippingAddress?.email || shippingAddress?.buyer_email,
+        item.orders?.merchant_order_no || item.order_id,
+        status,
+      );
       await refresh();
       setMessage('');
     } catch (error) {
