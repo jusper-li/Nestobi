@@ -45,6 +45,7 @@ interface Order {
   is_subscription?: boolean;
   subscription_status?: string;
   subscription_periods?: string;
+  subscription_product?: { name?: string | null; image_url?: string | null } | null;
 }
 
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
@@ -167,6 +168,7 @@ export default function MemberOrders() {
         is_subscription: true,
         subscription_status: subscription.status,
         subscription_periods: subscription.period_times === 'NE' ? '每月' : `${subscription.period_times || '-'} 期（已扣款 ${subscription.billing_cycle_count || 0} 期）`,
+        subscription_product: subscription.products || null,
       }));
       setOrders([...(data || []), ...pendingSubscriptions]);
       setLoading(false);
@@ -689,7 +691,16 @@ export default function MemberOrders() {
                   <section>
                     <h4 className="mb-3 flex items-center gap-1.5 font-medium text-gray-700"><Package className="h-4 w-4" />{t.items}</h4>
                     <div className="space-y-3">
-                      {items.map(item => (
+                      {order.is_subscription && order.subscription_product ? (
+                        <div className="flex gap-3 rounded-xl border border-gray-100 p-3">
+                          <img src={order.subscription_product.image_url || 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=120'} alt={order.subscription_product.name || t.subscription} className="h-20 w-20 flex-shrink-0 rounded-lg object-cover" />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-gray-900">{order.subscription_product.name || t.subscription}</p>
+                            <p className="mt-1 text-sm text-gray-500">{t.subscriptionPeriods}: {order.subscription_periods || '-'}</p>
+                            <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600"><span>{t.qty}: 1</span><span className="font-semibold text-gray-900">{formatCurrency(order.total_amount, order.currency || 'TWD')}</span></div>
+                          </div>
+                        </div>
+                      ) : items.map(item => (
                         <div key={item.id} className="flex gap-3 rounded-xl border border-gray-100 p-3">
                           <img src={item.products?.image_url || 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=120'} alt={item.products?.name || t.unknown} className="h-20 w-20 flex-shrink-0 rounded-lg object-cover" />
                           <div className="min-w-0 flex-1">
