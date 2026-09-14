@@ -1400,7 +1400,7 @@ function VendorOrderTableHeader({ category }: { category: 'product' | 'subscript
   const labels = category === 'subscription'
     ? ['建立日期', '訂單編號', '訂購人', '電話', '月費', '付款狀態', '付款方式', '期數 0/3', '出貨狀態', '訂閱狀態', '查看']
     : category === 'booking'
-      ? ['建立日期', '訂單編號', '訂房人', '電話', '總金額', '付款狀態', '付款方式', '入住日期', '退房日期', '訂房狀態', '查看']
+      ? ['建立日期', '訂單編號', '訂房人', '電話', '總金額', '付款狀態', '付款方式', '入住狀態', '退房日期', '訂房狀態', '查看']
       : ['日期', '編號', '訂購人', '電話', '金額', '付款狀態', '付款方式', '期數', '出貨狀態', '訂單狀態', '查看'];
   return (
     <div className="grid min-w-[1180px] grid-cols-[100px_130px_150px_120px_110px_110px_150px_80px_120px_120px_80px] gap-3 rounded-xl bg-gray-100 px-4 py-3 text-xs font-bold text-gray-600">
@@ -1562,7 +1562,7 @@ function BookingCard({
   return (
     <>
       <div className="grid grid-cols-[100px_130px_150px_120px_110px_110px_150px_80px_120px_120px_80px] items-center gap-3 text-sm">
-        <span className="text-gray-600">{formatDate(item.created_at)}</span><span className="font-semibold text-gray-800">#{item.id.slice(0, 8).toUpperCase()}</span><span className="truncate text-gray-700">{customer?.display_name || item.user_id || '—'}</span><span className="text-gray-600">{customer?.phone || '—'}</span><span className="font-bold text-emerald-700">{formatCurrency(item.total_price)}</span><span>{paymentLabel}</span><span>{getPaymentMethodLabel(item.payment_method)}</span><span>—</span><span>—</span><select value={item.status} onChange={(event) => onUpdate(item.id, event.target.value)} disabled={busy} className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs" aria-label={labels.statusManagement}>{BOOKING_STATUS_EDIT_OPTIONS.map(status => <option key={status} value={status}>{getStatusLabel(status, locale)}</option>)}</select><button type="button" onClick={onViewDetail} className="rounded-lg border border-gray-200 px-2 py-1 text-xs">查看</button>
+        <span className="text-gray-600">{formatDate(item.created_at)}</span><span className="font-semibold text-gray-800">#{item.id.slice(0, 8).toUpperCase()}</span><span className="truncate text-gray-700">{customer?.display_name || item.user_id || '—'}</span><span className="text-gray-600">{customer?.phone || '—'}</span><span className="font-bold text-emerald-700">{formatCurrency(item.total_price)}</span><span>{paymentLabel}</span><span>{getPaymentMethodLabel(item.payment_method)}</span><span>{getStatusLabel(item.status, locale)}</span><span>{formatDate(item.check_out_date)}</span><select value={item.status} onChange={(event) => onUpdate(item.id, event.target.value)} disabled={busy} className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs" aria-label={labels.statusManagement}>{BOOKING_STATUS_EDIT_OPTIONS.map(status => <option key={status} value={status}>{getStatusLabel(status, locale)}</option>)}</select><button type="button" onClick={onViewDetail} className="rounded-lg border border-gray-200 px-2 py-1 text-xs">查看</button>
       </div>
       <div className="hidden">
     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -1756,6 +1756,7 @@ function getPaymentMethodLabel(method?: string | null) {
 }
 
 export default VendorOrders;
+
 
 
 
