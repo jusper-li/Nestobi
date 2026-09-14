@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronRight, Gift, Lock, Receipt, Truck, User } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -579,3 +579,4 @@ export default function Checkout() {
     </div>
   );
 }
+

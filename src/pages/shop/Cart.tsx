@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AlertTriangle, CheckCircle, Mail, Minus, Plus, ShieldCheck, ShoppingBag, Trash2 } from 'lucide-react';
@@ -471,7 +471,7 @@ export default function Cart() {
                     <div className="border-t border-[#E8D2A9] pt-3">
                       <label className="mb-1 block text-xs font-semibold text-gray-600">發票類型</label>
                       <select value={invoiceType} onChange={e => setInvoiceType(e.target.value as typeof invoiceType)} className="commerce-field" disabled={checkoutLoading}>
-                        <option value="personal">個人電子發票</option><option value="company">公司發票（統一編號）</option><option value="mobile_carrier">手機載具</option><option value="donation">捐贈發票</option>
+                        <option value="personal">個人電子發票</option><option value="company">公司發票（統一編號）</option><option value="mobile_carrier">電子條碼（手機載具）</option><option value="donation">捐贈發票</option>
                       </select>
                       {invoiceType === 'company' && <input inputMode="numeric" maxLength={8} value={buyerIdentifier} onChange={e => setBuyerIdentifier(e.target.value.replace(/\D/g, ''))} placeholder="統一編號 8 碼" className="commerce-field mt-2" disabled={checkoutLoading} />}
                       {invoiceType === 'mobile_carrier' && <input value={carrierNumber} onChange={e => setCarrierNumber(e.target.value.toUpperCase())} placeholder="載具 /XXXXXXXX" className="commerce-field mt-2" disabled={checkoutLoading} />}
@@ -568,3 +568,4 @@ export default function Cart() {
     </div>
   );
 }
+
