@@ -1449,7 +1449,7 @@ function ProductOrderCard({
         </select>
         <button type="button" onClick={onViewDetail} className="rounded-lg border border-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50">查看</button>
       </div>
-      <div className="mt-4 border-t border-gray-100 pt-3">
+      <div className="hidden">
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -1559,7 +1559,7 @@ function BookingCard({
       <div className="grid grid-cols-[100px_130px_150px_120px_110px_110px_150px_120px_120px_80px] items-center gap-3 text-sm">
         <span className="text-gray-600">{formatDate(item.created_at)}</span><span className="font-semibold text-gray-800">#{item.id.slice(0, 8).toUpperCase()}</span><span className="truncate text-gray-700">{customer?.display_name || item.user_id || '—'}</span><span className="text-gray-600">{customer?.phone || '—'}</span><span className="font-bold text-emerald-700">{formatCurrency(item.total_price)}</span><span>{paymentLabel}</span><span>{getPaymentMethodLabel(item.payment_method)}</span><span>—</span><select value={item.status} onChange={(event) => onUpdate(item.id, event.target.value)} disabled={busy} className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs" aria-label={labels.statusManagement}>{BOOKING_STATUS_EDIT_OPTIONS.map(status => <option key={status} value={status}>{getStatusLabel(status, locale)}</option>)}</select><button type="button" onClick={onViewDetail} className="rounded-lg border border-gray-200 px-2 py-1 text-xs">查看</button>
       </div>
-      <div className="mt-4 border-t border-gray-100 pt-3">
+      <div className="hidden">
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
@@ -1651,7 +1651,7 @@ function SubscriptionCard({
       <div className="grid grid-cols-[100px_130px_150px_120px_110px_110px_150px_120px_120px_80px] items-center gap-3 text-sm">
         <span className="text-gray-600">{formatDate(item.created_at)}</span><span className="font-semibold text-gray-800">#{(item.order_id || item.id).slice(0, 8).toUpperCase()}</span><span className="truncate text-gray-700">{customer?.display_name || item.customer_name || item.orders?.user_id || '—'}</span><span className="text-gray-600">{customer?.phone || item.customer_phone || '—'}</span><span className="font-bold text-cyan-700">{formatCurrency(item.monthly_amount || 0)}</span><span>{paymentLabel}</span><span>{getPaymentMethodLabel(item.orders?.payment_method || 'newebpay_subscription')}</span><span>—</span><select value={item.status} onChange={(event) => onUpdate(item, event.target.value)} disabled={busy} className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs" aria-label={labels.statusManagement}>{SUBSCRIPTION_STATUS_EDIT_OPTIONS.map(status => <option key={status} value={status}>{statusLabels[status] || status}</option>)}</select><button type="button" onClick={onViewDetail} className="rounded-lg border border-gray-200 px-2 py-1 text-xs">查看</button>
       </div>
-      <div className="mt-4 border-t border-gray-100 pt-3">
+      <div className="hidden">
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -1751,4 +1751,5 @@ function getPaymentMethodLabel(method?: string | null) {
 }
 
 export default VendorOrders;
+
 
