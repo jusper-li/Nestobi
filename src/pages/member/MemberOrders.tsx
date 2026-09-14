@@ -705,7 +705,7 @@ export default function MemberOrders() {
                           <img src={item.products?.image_url || 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=120'} alt={item.products?.name || t.unknown} className="h-20 w-20 flex-shrink-0 rounded-lg object-cover" />
                           <div className="min-w-0 flex-1">
                             <p className="font-semibold text-gray-900">{item.products?.name || t.unknown}</p>
-                            <p className="mt-1 text-sm text-gray-500">{t.spec}: {(() => {
+                            <p className="mt-1 text-sm text-gray-500">{(() => {
                               const spec = item.products?.specifications?.find(entry => entry.name && entry.name !== '訂閱期數' && ((entry.options && entry.options.length > 0) || entry.value));
                               if (spec) return `${spec.name}: ${(spec.options || [spec.value]).filter(Boolean).join('、')}`;
                               const details = [item.products?.origin, item.products?.roast_level, item.products?.processing_method].filter(Boolean);
