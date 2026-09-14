@@ -96,6 +96,12 @@ async function sha256Hex(data: string): Promise<string> {
     .toUpperCase();
 }
 
+async function secretFingerprint(value: string | null) {
+  if (!value) return null;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("").slice(0, 12);
+}
+
 function safeEquals(a: string, b: string) {
   if (a.length !== b.length) return false;
   let diff = 0;
@@ -242,6 +248,22 @@ Deno.serve(async (req: Request) => {
   try {
     const hashKey = Deno.env.get("NEWEBPAY_HASH_KEY") ?? "";
     const hashIV = Deno.env.get("NEWEBPAY_HASH_IV") ?? "";
+    const merchantId = Deno.env.get("NEWEBPAY_MERCHANT_ID") ?? "";
+    console.log("[period-notify] secrets", {
+      merchantIdExists: Boolean(merchantId),
+      merchantIdLength: merchantId.length,
+      merchantIdFingerprint: await secretFingerprint(merchantId),
+      hashKeyLength: hashKey.length,
+      hashIvLength: hashIV.length,
+      rawMerchantIdLength: merchantId.length,
+      trimmedMerchantIdLength: merchantId.trim().length,
+      rawHashKeyLength: hashKey.length,
+      rawHashIvLength: hashIV.length,
+      hashKeyFingerprint: await secretFingerprint(hashKey),
+      hashIvFingerprint: await secretFingerprint(hashIV),
+      trimmedHashKeyLength: hashKey.trim().length,
+      trimmedHashIvLength: hashIV.trim().length,
+    });
     if (!hashKey || !hashIV) {
       return jsonResponse({ success: false, error: "NewebPay HashKey/HashIV are not configured." }, 500);
     }
