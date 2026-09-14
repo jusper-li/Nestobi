@@ -126,7 +126,7 @@ export default function MemberOrders() {
   };
 
   const [orders, setOrders] = useState<Order[]>([]);
-  const [orderCategory, setOrderCategory] = useState<'all' | 'product' | 'subscription' | 'store'>('all');
+  const [orderCategory, setOrderCategory] = useState<'product' | 'subscription' | 'store'>('product');
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, PurchaseRecord[]>>({});
@@ -586,7 +586,7 @@ export default function MemberOrders() {
     if (orderCategory === 'subscription') return order.is_subscription === true;
     if (orderCategory === 'store') return isStoreOrder;
     if (orderCategory === 'product') return order.is_subscription !== true && !isStoreOrder;
-    return true;
+    return order.is_subscription !== true && !isStoreOrder;
   });
 
   return (
@@ -605,7 +605,6 @@ export default function MemberOrders() {
 
       <div className="flex flex-wrap gap-2 rounded-xl bg-white p-2 shadow-sm">
         {([
-          ['all', '全部'],
           ['product', '購物'],
           ['subscription', t.subscription],
           ['store', t.store],
