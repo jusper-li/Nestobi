@@ -23,7 +23,7 @@ import {
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, formatDateTime } from '../../lib/utils';
 
-type TabType = 'shop' | 'booking';
+type TabType = 'shop' | 'subscription' | 'store' | 'booking';
 
 type PaymentStatus = 'paid' | 'unpaid' | 'refunded' | string;
 type OrderStatus = 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled' | 'confirmed' | string;
@@ -35,6 +35,8 @@ interface ShopOrderListRow {
   status: OrderStatus;
   payment_status: PaymentStatus;
   payment_method: string | null;
+  order_channel?: string | null;
+  is_subscription?: boolean;
   created_at: string;
   updated_at?: string | null;
   display_name?: string;
@@ -435,7 +437,8 @@ const SuperAdminOrders: React.FC = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    setTab(params.get('tab') === 'booking' ? 'booking' : 'shop');
+    const requestedTab = params.get('tab');
+    setTab(requestedTab === 'subscription' || requestedTab === 'store' || requestedTab === 'booking' ? requestedTab : 'shop');
     setSearch(params.get('q') || '');
   }, [location.search]);
 
@@ -449,7 +452,7 @@ const SuperAdminOrders: React.FC = () => {
       const [{ data: orders }, { data: bookings }] = await Promise.all([
         supabase
           .from('orders')
-          .select('id,user_id,total_amount,status,payment_status,payment_method,created_at,updated_at')
+          .select('id,user_id,total_amount,status,payment_status,payment_method,order_channel,created_at,updated_at')
           .order('created_at', { ascending: false }),
         supabase
           .from('tbl_bookings')
@@ -468,7 +471,9 @@ const SuperAdminOrders: React.FC = () => {
         profileMap = Object.fromEntries((profiles || []).map((p: any) => [p.user_id, p.display_name]));
       }
 
-      setShopOrders((orders || []).map((o: any) => ({ ...o, display_name: profileMap[o.user_id] || '' })));
+      const { data: subscriptions } = await supabase.from('product_subscriptions').select('order_id').not('order_id', 'is', null);
+      const subscriptionIds = new Set((subscriptions || []).map((row: any) => row.order_id));
+      setShopOrders((orders || []).map((o: any) => ({ ...o, is_subscription: subscriptionIds.has(o.id) || o.payment_method === 'newebpay_subscription', display_name: profileMap[o.user_id] || '' })));
       setBookingOrders((bookings || []).map((b: any) => ({
         ...b,
         display_name: profileMap[b.user_id] || '',
@@ -617,11 +622,16 @@ const SuperAdminOrders: React.FC = () => {
   const bookingRevenue = bookingOrders.filter((o) => o.payment_status === 'paid').reduce((sum, o) => sum + Number(o.total_price || 0), 0);
 
   const filteredShop = shopOrders.filter((o) => {
+    if (tab === 'subscription' && !o.is_subscription) return false;
+    if (tab === 'store' && o.order_channel !== 'pos') return false;
+    if (tab === 'shop' && (o.is_subscription || o.order_channel === 'pos')) return false;
     const q = search.toLowerCase();
     const matchSearch = !search || o.id.toLowerCase().includes(q) || (o.display_name || '').toLowerCase().includes(q);
     const matchStatus = statusFilter === 'all' || o.status === statusFilter;
     return matchSearch && matchStatus;
   });
+  const subscriptionOrderCount = shopOrders.filter((o) => o.is_subscription).length;
+  const storeOrderCount = shopOrders.filter((o) => o.order_channel === 'pos').length;
 
   const filteredBookings = bookingOrders.filter((b) => {
     const q = search.toLowerCase();
@@ -872,10 +882,10 @@ const SuperAdminOrders: React.FC = () => {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
-          { icon: <ShoppingBag className="h-5 w-5 text-amber-600" />, label: '商店訂單', value: shopOrders.length, color: 'bg-amber-50' },
+          { icon: <ShoppingBag className="h-5 w-5 text-amber-600" />, label: '商品訂單', value: shopOrders.length - subscriptionOrderCount - storeOrderCount, color: 'bg-amber-50' },
+          { icon: <Receipt className="h-5 w-5 text-purple-600" />, label: '訂閱訂單', value: subscriptionOrderCount, color: 'bg-purple-50' },
+          { icon: <Store className="h-5 w-5 text-orange-600" />, label: '門市訂單', value: storeOrderCount, color: 'bg-orange-50' },
           { icon: <BedDouble className="h-5 w-5 text-teal-600" />, label: '住宿訂單', value: bookingOrders.length, color: 'bg-teal-50' },
-          { icon: <DollarSign className="h-5 w-5 text-green-600" />, label: '商店營收', value: formatCurrency(shopRevenue), color: 'bg-green-50' },
-          { icon: <DollarSign className="h-5 w-5 text-blue-600" />, label: '住宿營收', value: formatCurrency(bookingRevenue), color: 'bg-blue-50' },
         ].map((item, index) => (
           <motion.div
             key={item.label}
@@ -893,8 +903,10 @@ const SuperAdminOrders: React.FC = () => {
 
       <div className="flex w-fit gap-1.5 rounded-xl bg-gray-100 p-1">
         {([
-          ['shop', PAGE_LABELS.tabShop, ShoppingBag],
-          ['booking', PAGE_LABELS.tabBooking, BedDouble],
+            ['shop', PAGE_LABELS.tabShop, ShoppingBag],
+            ['subscription', '訂閱訂單', Receipt],
+            ['store', '門市訂單', Store],
+            ['booking', PAGE_LABELS.tabBooking, BedDouble],
         ] as const).map(([key, label, Icon]) => (
           <button
             key={key}
@@ -918,17 +930,17 @@ const SuperAdminOrders: React.FC = () => {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={tab === 'shop' ? PAGE_LABELS.searchShop : PAGE_LABELS.searchBooking}
+            placeholder={tab === 'booking' ? PAGE_LABELS.searchBooking : PAGE_LABELS.searchShop}
             className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
           />
         </div>
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-gray-400" />
           <div className="flex flex-wrap gap-1.5">
-            {(tab === 'shop' ? shopStatuses : bookingStatuses).map((value) => {
-              const labels: Record<string, string> = tab === 'shop'
-                ? { ...SHOP_STATUS_LABELS, all: '全部' }
-                : { ...BOOKING_STATUS_LABELS, all: '全部' };
+            {(tab === 'booking' ? bookingStatuses : shopStatuses).map((value) => {
+              const labels: Record<string, string> = tab === 'booking'
+                ? { ...BOOKING_STATUS_LABELS, all: '全部' }
+                : { ...SHOP_STATUS_LABELS, all: '全部' };
               return (
                 <button
                   key={value}
@@ -949,7 +961,7 @@ const SuperAdminOrders: React.FC = () => {
           <div className="flex justify-center py-16">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" />
           </div>
-        ) : tab === 'shop' ? (
+        ) : tab !== 'booking' ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="border-b border-gray-100 bg-gray-50">
@@ -1054,7 +1066,7 @@ const SuperAdminOrders: React.FC = () => {
       </div>
 
       <p className="text-right text-xs text-gray-400">
-        目前顯示 {tab === 'shop' ? filteredShop.length : filteredBookings.length} 筆
+        目前顯示 {tab !== 'booking' ? filteredShop.length : filteredBookings.length} 筆
       </p>
 
       <AnimatePresence>
