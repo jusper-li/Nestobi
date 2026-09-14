@@ -450,7 +450,7 @@ const SuperAdminOrders: React.FC = () => {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [{ data: orders }, { data: bookings }] = await Promise.all([
+      const [{ data: orders }, { data: bookings }, { data: subscriptions }] = await Promise.all([
         supabase
           .from('orders')
           .select('id,user_id,total_amount,status,payment_status,payment_method,order_channel,created_at,updated_at')
@@ -459,11 +459,16 @@ const SuperAdminOrders: React.FC = () => {
           .from('tbl_bookings')
           .select('id,user_id,total_price,status,payment_status,payment_method,check_in_date,check_out_date,guests,created_at,updated_at,tbl_rooms(name)')
           .order('created_at', { ascending: false }),
+        supabase
+          .from('product_subscriptions')
+          .select('id,user_id,merchant_order_no,monthly_amount,status,newebpay_status,newebpay_payment_type,customer_name,created_at,updated_at,billing_cycle_count,period_times')
+          .order('created_at', { ascending: false }),
       ]);
 
       const allUserIds = Array.from(new Set([
         ...(orders || []).map((o: any) => o.user_id),
         ...(bookings || []).map((b: any) => b.user_id),
+        ...(subscriptions || []).map((s: any) => s.user_id),
       ]));
 
       let profileMap: Record<string, string> = {};
@@ -472,9 +477,28 @@ const SuperAdminOrders: React.FC = () => {
         profileMap = Object.fromEntries((profiles || []).map((p: any) => [p.user_id, p.display_name]));
       }
 
-      const { data: subscriptions } = await supabase.from('product_subscriptions').select('order_id').not('order_id', 'is', null);
-      const subscriptionIds = new Set((subscriptions || []).map((row: any) => row.order_id));
-      setShopOrders((orders || []).map((o: any) => ({ ...o, is_subscription: subscriptionIds.has(o.id) || o.payment_method === 'newebpay_subscription', display_name: profileMap[o.user_id] || '' })));
+      const regularOrders = (orders || []).map((o: any) => ({
+        ...o,
+        is_subscription: o.payment_method === 'newebpay_subscription',
+        display_name: profileMap[o.user_id] || '',
+      }));
+      const subscriptionOrders = (subscriptions || []).map((s: any) => ({
+        id: s.id,
+        user_id: s.user_id,
+        total_amount: Number(s.monthly_amount || 0),
+        status: s.status || 'pending',
+        payment_status: ['success', 'paid', '1'].includes(String(s.newebpay_status || '').toLowerCase()) ? 'paid' : 'unpaid',
+        payment_method: 'newebpay_subscription',
+        order_channel: 'web',
+        created_at: s.created_at,
+        updated_at: s.updated_at,
+        is_subscription: true,
+        display_name: s.customer_name || profileMap[s.user_id] || '',
+        merchant_order_no: s.merchant_order_no,
+        billing_cycle_count: s.billing_cycle_count,
+        period_times: s.period_times,
+      }));
+      setShopOrders([...regularOrders, ...subscriptionOrders]);
       setBookingOrders((bookings || []).map((b: any) => ({
         ...b,
         display_name: profileMap[b.user_id] || '',
@@ -541,7 +565,35 @@ const SuperAdminOrders: React.FC = () => {
             .eq('id', detail.id)
             .maybeSingle();
 
-        const shopRow = (orderData as unknown as ShopOrderDetail) || null;
+        let shopRow = (orderData as unknown as ShopOrderDetail) || null;
+        if (!shopRow) {
+          const { data: subscription } = await supabase
+            .from('product_subscriptions')
+            .select('id,user_id,merchant_order_no,monthly_amount,status,newebpay_status,newebpay_payment_type,customer_name,customer_email,customer_phone,newebpay_trade_no,newebpay_paid_at,created_at,updated_at,billing_cycle_count,period_times')
+            .eq('id', detail.id)
+            .maybeSingle();
+          if (subscription) {
+            shopRow = {
+              id: subscription.id,
+              user_id: subscription.user_id,
+              total_amount: Number(subscription.monthly_amount || 0),
+              subtotal_amount: Number(subscription.monthly_amount || 0),
+              status: subscription.status || 'pending',
+              payment_method: 'newebpay_subscription',
+              payment_status: ['success', 'paid', '1'].includes(String(subscription.newebpay_status || '').toLowerCase()) ? 'paid' : 'unpaid',
+              merchant_order_no: subscription.merchant_order_no,
+              newebpay_status: subscription.newebpay_status,
+              newebpay_trade_no: subscription.newebpay_trade_no,
+              newebpay_payment_type: subscription.newebpay_payment_type,
+              newebpay_paid_at: subscription.newebpay_paid_at,
+              customer_name: subscription.customer_name,
+              customer_email: subscription.customer_email,
+              customer_phone: subscription.customer_phone,
+              created_at: subscription.created_at,
+              updated_at: subscription.updated_at,
+            } as ShopOrderDetail;
+          }
+        }
         setShopDetail(shopRow);
         if (shopRow?.id) {
           void fetchInvoiceDetail(shopRow.id);
