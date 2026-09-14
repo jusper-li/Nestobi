@@ -168,7 +168,11 @@ async function isElevatedUser(supabase: ReturnType<typeof createServiceClient>, 
 }
 
 async function getUserRole(supabase: ReturnType<typeof createServiceClient>, userId: string) {
-  const { data } = await supabase.from("tbl_user_auth").select("role").eq("user_id", userId).maybeSingle();
+  const { data, error } = await supabase.from("tbl_user_auth").select("role").eq("user_id", userId).maybeSingle();
+  if (error) {
+    console.error("[order-sync] role lookup failed", { userId, error: error.message });
+    return null;
+  }
   return String(data?.role || "").toLowerCase() || null;
 }
 
@@ -325,7 +329,10 @@ Deno.serve(async (req: Request) => {
     console.log("[order-sync] payment method", { merchantOrderNo, paymentMethod: order.payment_method || "unknown" });
 
     const role = jsonUserId ? await getUserRole(supabase, jsonUserId) : null;
-    const adminVerified = role === "admin" || role === "superadmin";
+    // This is the same authorization source used by the existing admin Edge
+    // Functions: tbl_user_auth.role. Keep the accepted roles centralized so
+    // the diagnostic reflects the real project policy.
+    const adminVerified = new Set(["admin", "superadmin"]).has(role || "");
     const vendorVerified = jsonUserId
       ? (orderTable === "product_subscriptions"
         ? await isVendorSubscriptionOwner(supabase, jsonUserId, order.vendor_id || null)
