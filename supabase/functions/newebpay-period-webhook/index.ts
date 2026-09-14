@@ -10,9 +10,7 @@ const corsHeaders = {
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
-    // NewebPay retries when Notify does not receive HTTP 200. Always ACK the
-    // callback transport; processing errors are retained in logs instead.
-    status: 200,
+    status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
@@ -318,13 +316,13 @@ Deno.serve(async (req: Request) => {
 
     if (!tradeInfo) {
       if (shouldRedirect) return redirectResponse();
-      return jsonResponse({ success: false, error: "Missing TradeInfo." }, 400);
+      return jsonResponse({ success: false, stage: "decrypt", error: "Missing Period." }, 500);
     }
 
     if (tradeSha) {
       const expectedSha = await sha256Hex(`HashKey=${hashKey}&${tradeInfo}&HashIV=${hashIV}`);
       if (!safeEquals(tradeSha.toUpperCase(), expectedSha)) {
-        return jsonResponse({ success: false, error: "Invalid TradeSha." }, 400);
+        return jsonResponse({ success: false, stage: "decrypt", error: "Invalid TradeSha." }, 500);
       }
     }
 
@@ -365,7 +363,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!merchantOrderNo && !periodNo && !tradeNo) {
-      return jsonResponse({ success: false, error: "Missing subscription reference." }, 400);
+      return jsonResponse({ success: false, stage: "subscription-lookup", error: "Missing subscription reference." }, 500);
     }
 
     const subscriptionQuery = supabase
@@ -402,7 +400,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!subscription) {
-      return jsonResponse({ success: false, error: "Subscription not found." }, 404);
+      return jsonResponse({ success: false, stage: "subscription-lookup", error: "Subscription not found." }, 500);
     }
 
     console.log("[newebpay-period-webhook] subscription reference", {
@@ -702,7 +700,7 @@ Deno.serve(async (req: Request) => {
     if (new URL(req.url).searchParams.get("redirect") === "1") {
       return redirectResponse();
     }
-    console.log("[newebpay-notify] response 200", { error: error instanceof Error ? error.message : "Webhook processing failed." });
+    console.log("[newebpay-notify] response 500", { error: error instanceof Error ? error.message : "Webhook processing failed." });
     return jsonResponse({
       success: false,
       error: error instanceof Error ? error.message : "Webhook processing failed.",
