@@ -19,6 +19,7 @@ import {
   X,
   MessageSquare,
   Receipt,
+  Store,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, formatDateTime } from '../../lib/utils';
