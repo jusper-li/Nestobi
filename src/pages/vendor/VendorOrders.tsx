@@ -1401,7 +1401,7 @@ function VendorOrderTableHeader({ category }: { category: 'product' | 'subscript
     ? ['建立日期', '訂單編號', '訂購人', '電話', '月費', '付款狀態', '付款方式', '期數 0/3', '出貨狀態', '訂閱狀態', '查看']
     : category === 'booking'
       ? ['建立日期', '訂單編號', '訂房人', '電話', '總金額', '付款狀態', '付款方式', '入住狀態', '退房日期', '訂房狀態', '查看']
-      : ['日期', '編號', '訂購人', '電話', '金額', '付款狀態', '付款方式', '期數', '出貨狀態', '訂單狀態', '查看'];
+      : ['日期', '編號', '訂購人', '電話', '金額', '付款狀態', '付款方式', '', '出貨狀態', '訂單狀態', '查看'];
   return (
     <div className="grid min-w-[1180px] grid-cols-[100px_130px_150px_120px_110px_110px_150px_80px_120px_120px_80px] gap-3 rounded-xl bg-gray-100 px-4 py-3 text-xs font-bold text-gray-600">
       {labels.map(label => <span key={label}>{label}</span>)}
@@ -1756,6 +1756,7 @@ function getPaymentMethodLabel(method?: string | null) {
 }
 
 export default VendorOrders;
+
 
 
 
