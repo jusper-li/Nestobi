@@ -1188,6 +1188,15 @@ const VendorOrders: React.FC = () => {
                 ) : selectedDetail.kind === 'subscription' ? (
                   <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
                     <div className="space-y-6">
+                      <DetailCard title="商品資訊" icon={<Package className="h-4 w-4" />}>
+                        <div className="flex items-center gap-4 rounded-2xl bg-gray-50 p-4">
+                          <img src={detailSubscription?.products?.image_url || 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=120'} alt={detailSubscription?.products?.name || labels.subscriptionOrder} className="h-20 w-20 rounded-xl object-cover" />
+                          <div>
+                            <p className="font-semibold text-gray-900">{detailSubscription?.products?.name || labels.subscriptionOrder}</p>
+                            <p className="mt-1 text-sm text-gray-500">數量：{detailSubscription?.quantity || 1}　每期：{formatCurrency(detailSubscription?.monthly_amount || 0)}</p>
+                          </div>
+                        </div>
+                      </DetailCard>
                       <DetailCard title="訂閱資料" icon={<Receipt className="h-4 w-4" />} actions={(
                         <button type="button" onClick={() => void querySubscriptionPayment()} disabled={queryingPayment} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60">
                           {queryingPayment ? '查詢中…' : '查詢藍新付款狀態'}
