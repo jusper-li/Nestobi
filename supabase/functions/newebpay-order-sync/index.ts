@@ -365,40 +365,34 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: true, synced: false, reason: "already_paid" });
     }
 
-    // NDNP subscription mandates use the dedicated encrypted period query API.
-    // Do not send MPG QueryTradeInfo fields for subscription orders.
+    // NDNP subscriptions are reconciled by the provider Notify callback. The
+    // periodic query endpoint is not available for this merchant and returns
+    // 403, so never route subscription checks through /MPG/period/query.
     if (String(order.payment_method || "").toLowerCase() === "newebpay_subscription" || orderTable === "product_subscriptions") {
-      stage = "provider-query";
       const { data: subscription } = await supabase
         .from("product_subscriptions")
         .select("id,order_id,merchant_order_no,newebpay_period_no,monthly_amount,billing_cycle_count,status,period_times")
         .eq(orderTable === "product_subscriptions" ? "id" : "order_id", order.id)
         .maybeSingle();
-      const periodOrderNo = subscription?.merchant_order_no || order.merchant_order_no;
-      if (!periodOrderNo) return jsonResponse({ success: false, stage: "provider-query", error: "Missing subscription merchant order number" }, 400);
-      const inner = new URLSearchParams({ RespondType: "JSON", Version: "1.0", TimeStamp: String(Math.floor(Date.now() / 1000)), MerOrderNo: periodOrderNo });
-      if (subscription?.newebpay_period_no) inner.set("PeriodNo", subscription.newebpay_period_no);
-      const endpoint = `${credentials.mpgUrl ? new URL(credentials.mpgUrl).origin : "https://core.newebpay.com"}/MPG/period/query`;
-      const encrypted = await aesEncrypt(inner.toString(), credentials.hashKey, credentials.hashIV);
-      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ MerchantID_: credentials.merchantId, PostData_: encrypted }).toString() });
-      const raw = await response.text();
-      console.log("[order-sync] NewebPay response", { status: response.status, ok: response.ok, contentType: response.headers.get("content-type"), preview: raw.slice(0, 1000) });
-      if (!response.ok) return jsonResponse({ success: false, stage: "newebpay", providerHttpStatus: response.status, providerResponse: raw.slice(0, 1000) }, response.status);
-      const envelope = JSON.parse(raw);
-      const periodCipher = String(envelope.Period || envelope.period || "");
-      const periodPayload = JSON.parse(await aesDecrypt(periodCipher, credentials.hashKey, credentials.hashIV));
-      const periodResult = periodPayload.Result || periodPayload.result || {};
-      const queryStatus = String(periodPayload.Status || periodPayload.status || "").toUpperCase();
-      const alreadyTimes = Math.max(0, Number(periodResult.AlreadyTimes || 0));
-      if (subscription) {
-        const { error: subUpdateError } = await supabase.from("product_subscriptions").update({ billing_cycle_count: alreadyTimes, newebpay_period_no: periodResult.PeriodNo || subscription.newebpay_period_no, newebpay_status: queryStatus === "SUCCESS" ? "success" : queryStatus.toLowerCase(), status: String(periodResult.Status) === "1" ? "active" : subscription.status, updated_at: new Date().toISOString() }).eq("id", subscription.id);
-        if (subUpdateError) return jsonResponse({ success: false, stage: "database-update", error: subUpdateError.message }, 500);
-        if (alreadyTimes > 0 && subscription.order_id) {
-          const { error: orderUpdateError } = await supabase.from("orders").update({ payment_status: "paid", newebpay_status: "success", payment_method: "newebpay_subscription", updated_at: new Date().toISOString() }).eq("id", subscription.order_id);
-          if (orderUpdateError) return jsonResponse({ success: false, stage: "database-update", error: orderUpdateError.message }, 500);
-        }
-      }
-      return jsonResponse({ success: true, synced: alreadyTimes > 0, merchantOrderNo: periodOrderNo, status: queryStatus, paid: alreadyTimes > 0, periodNo: periodResult.PeriodNo || null, paidPeriods: alreadyTimes, totalPeriods: periodResult.TotalTimes || null, rawStatus: periodResult.Status ?? null });
+      const subscriptionStatus = String(subscription?.newebpay_status || order.newebpay_status || "pending");
+      const paid = subscriptionStatus === "success" || String(subscription?.status || "") === "active";
+      console.log("[order-sync] subscription status", {
+        merchantOrderNo: subscription?.merchant_order_no || order.merchant_order_no,
+        status: subscription?.status || order.status || null,
+        newebpayStatus: subscriptionStatus,
+        paid,
+        source: "newebpay-period-webhook",
+      });
+      return jsonResponse({
+        success: true,
+        synced: false,
+        source: "newebpay-period-webhook",
+        merchantOrderNo: subscription?.merchant_order_no || order.merchant_order_no,
+        paymentStatus: paid ? "paid" : "unpaid",
+        newebpayStatus: subscriptionStatus,
+        paidPeriods: Number(subscription?.billing_cycle_count || 0),
+        message: "Subscription status is updated by NewebPay Notify.",
+      });
     }
 
     const amt = Math.round(Number(order.total_amount || 0));
