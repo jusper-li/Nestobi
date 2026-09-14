@@ -35,7 +35,7 @@ interface Order {
   discount_code: string;
   currency: string;
   created_at: string;
-  invoices?: Array<{ invoice_status: string; invoice_number?: string | null; invoice_date?: string | null }> | null;
+  invoices?: Array<{ invoice_status: string; invoice_number?: string | null; invoice_date?: string | null; buyer_identifier?: string | null; carrier_type?: string | null; carrier_number?: string | null; love_code?: string | null }> | null;
   logistics_shipments?: Array<{
     logistics_status: string;
     logistics_type?: string | null;
@@ -85,6 +85,10 @@ export default function MemberOrders() {
     unpaid: pick('未付款', 'Unpaid', '未払い', '미결제'),
     creditCard: pick('信用卡', 'Credit Card', 'クレジットカード', '신용카드'),
     invoicePending: pick('待開立', 'Pending', '発行待ち', '발행 대기'),
+    invoiceInfo: pick('發票資訊', 'Invoice Information', '請求書情報', '영수증 정보'),
+    invoiceNumber: pick('發票號碼', 'Invoice No.', '請求書番号', '영수증 번호'),
+    invoiceBuyer: pick('統一編號', 'Business No.', '法人番号', '사업자 번호'),
+    invoiceCarrier: pick('電子條碼', 'Electronic Barcode', '電子バーコード', '전자 바코드'),
     spec: pick('規格', 'Spec', '規格', '규격'),
     qty: pick('數量', 'Qty', '数量', '수량'),
     unitPrice: pick('單價', 'Unit Price', '単価', '단가'),
@@ -148,7 +152,7 @@ export default function MemberOrders() {
       }
       const { data } = await supabase
         .from('orders')
-        .select('*,invoices(invoice_status,invoice_number,invoice_date),logistics_shipments(logistics_status,logistics_type,lgs_no,store_print_no)')
+        .select('*,invoices(invoice_status,invoice_number,invoice_date,buyer_identifier,carrier_type,carrier_number,love_code),logistics_shipments(logistics_status,logistics_type,lgs_no,store_print_no)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       const { data: subscriptions } = await supabase
@@ -224,7 +228,7 @@ export default function MemberOrders() {
       if (cancelled) return;
       const { data } = await supabase
         .from('orders')
-        .select('*,invoices(invoice_status,invoice_number,invoice_date),logistics_shipments(logistics_status,logistics_type,lgs_no,store_print_no)')
+        .select('*,invoices(invoice_status,invoice_number,invoice_date,buyer_identifier,carrier_type,carrier_number,love_code),logistics_shipments(logistics_status,logistics_type,lgs_no,store_print_no)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       const { data: subscriptions } = await supabase
@@ -625,6 +629,7 @@ export default function MemberOrders() {
           const items = details[order.id] || [];
           const isExpanded = expandedId === order.id;
           const shipment = order.logistics_shipments?.[0] || null;
+          const invoice = order.invoices?.[0] || null;
 
           return (
             <motion.article key={order.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="overflow-hidden rounded-2xl bg-white shadow-sm">
@@ -718,6 +723,16 @@ export default function MemberOrders() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </section>
+
+                  <section className="rounded-xl border border-gray-100 p-4">
+                    <h4 className="mb-3 flex items-center gap-1.5 font-medium text-gray-700"><Receipt className="h-4 w-4" />{t.invoiceInfo}</h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                      <Info label={t.invoiceStatus} value={invoice?.invoice_status === 'issued' ? '已開立' : invoice?.invoice_status === 'failed' ? '開立失敗' : t.invoicePending} />
+                      <Info label={t.invoiceNumber} value={invoice?.invoice_number || '-'} />
+                      <Info label={t.invoiceBuyer} value={invoice?.buyer_identifier || '-'} />
+                      <Info label={t.invoiceCarrier} value={invoice?.carrier_number || invoice?.love_code || '個人電子發票'} wrap />
                     </div>
                   </section>
 
