@@ -8,7 +8,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { translateProductsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
-import { formatCurrency, formatDate, getStatusColor, getStatusLabel } from '../../lib/utils';
+import { formatCurrency, formatDate, formatDateTime, getStatusColor, getStatusLabel } from '../../lib/utils';
 import { useSiteSettings } from '../../contexts/SiteSettingsContext';
 import { trackPurchase } from '../../lib/analytics';
 import { submitNewebPayMpgForm } from '../../lib/shopCheckout';
@@ -653,7 +653,7 @@ export default function MemberOrders() {
 
                 <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-7">
                   <Info label={t.orderNo} value={`#${order.id.slice(-10).toUpperCase()}`} />
-                  <Info label={t.orderDate} value={formatDate(order.created_at, dateLocale)} />
+                  <Info label={t.orderDate} value={formatDateTime(order.created_at, dateLocale)} />
                   <Info label={t.summary} value={formatCurrency(order.total_amount, order.currency || 'TWD')} strong />
                   <Info label={t.paymentMethod} value={paymentMethodLabel(order.payment_method)} />
                   <Info label={t.paymentStatus} value={order.payment_status === 'paid' ? t.paid : t.unpaid} />
@@ -663,7 +663,7 @@ export default function MemberOrders() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-sm sm:hidden">
-                  <Info label={t.orderDate} value={formatDate(order.created_at, dateLocale)} />
+                  <Info label={t.orderDate} value={formatDateTime(order.created_at, dateLocale)} />
                   <Info label={t.summary} value={formatCurrency(order.total_amount, order.currency || 'TWD')} strong />
                   <Info label={t.paymentMethod} value={paymentMethodLabel(order.payment_method)} />
                   <Info label={t.logisticsStatus} value={shipment?.logistics_status || deliveryLabel(order.status)} />
