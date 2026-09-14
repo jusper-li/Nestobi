@@ -97,6 +97,18 @@ function getSiteUrl(req: Request) {
   return "https://nestobi.com";
 }
 
+async function notifyOrderCreated(data: Record<string, unknown>) {
+  try {
+    await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "order-confirmation", to: "", data: { ...data, recipientKind: "order" } }),
+    });
+  } catch (error) {
+    console.warn("[newebpay-period-payment] order notification failed:", error);
+  }
+}
+
 function getPeriodGatewayUrl() {
   const environment = String(Deno.env.get("NEWEBPAY_ENV") || "production").trim().toLowerCase();
   if (["sandbox", "test", "testing"].includes(environment)) {
@@ -363,6 +375,16 @@ Deno.serve(async (req: Request) => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", subscription.id);
+
+    await notifyOrderCreated({
+      displayName: customerName,
+      items: [{ name: itemDesc, quantity, price: monthlyAmount / Math.max(1, quantity) }],
+      totalAmount: monthlyAmount,
+      lang: "zh-TW",
+      merchantOrderNo,
+      paymentStatus: "pending",
+      orderStatus: "pending",
+    });
 
     return jsonResponse({
       success: true,

@@ -10,6 +10,11 @@ const sha256 = async (value: string) => { const bytes = await crypto.subtle.dige
 const encrypt = async (value: string, key: string, iv: string) => { const cryptoKey = await crypto.subtle.importKey("raw", new TextEncoder().encode(key), { name: "AES-CBC" }, false, ["encrypt"]); const encrypted = await crypto.subtle.encrypt({ name: "AES-CBC", iv: new TextEncoder().encode(iv) }, cryptoKey, new TextEncoder().encode(value)); return Array.from(new Uint8Array(encrypted)).map(v => v.toString(16).padStart(2, "0")).join(""); };
 const flags = (method: PaymentMethod) => ({ CREDIT: method === "CREDIT" ? "1" : "0", WEBATM: method === "WEBATM" ? "1" : "0", VACC: method === "ATM" ? "1" : "0", CVS: method === "CVS" ? "1" : "0", BARCODE: method === "BARCODE" ? "1" : "0", UNIONPAY: "0", APPLEPAY: "0", ANDROIDPAY: "0" });
 const siteUrl = (req: Request) => Deno.env.get("SITE_URL") || Deno.env.get("PUBLIC_SITE_URL") || req.headers.get("Origin") || "https://nestobi.com";
+const notifyOrderCreated = async (data: Record<string, unknown>) => {
+  try {
+    await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "order-confirmation", to: "", data: { ...data, recipientKind: "order" } }) });
+  } catch (error) { console.warn("[guest-shop-checkout] order notification failed:", error); }
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -36,6 +41,15 @@ Deno.serve(async (req) => {
     const shippingSnapshot = { ...(currentOrder?.shipping_address && typeof currentOrder.shipping_address === "object" ? currentOrder.shipping_address : {}), ...checkoutMetadata };
     await db.from("orders").update({ shipping_address: shippingSnapshot, updated_at: new Date().toISOString() }).eq("id", checkout.order_id);
     await db.from("purchase_records").update({ shipping_address: shippingSnapshot }).eq("order_id", checkout.order_id);
+    await notifyOrderCreated({
+      displayName: name,
+      items: (checkout.items || []).map((item: any) => ({ name: String(item.name || ""), quantity: Number(item.quantity || 0), price: Number(item.unit_price || item.price || 0) })),
+      totalAmount: Number(checkout.total_amount || 0),
+      lang: "zh-TW",
+      merchantOrderNo,
+      paymentStatus: Number(checkout.total_amount || 0) === 0 ? "paid" : "pending",
+      orderStatus: "pending",
+    });
     const base = siteUrl(req).replace(/\/$/, ""); const returnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/newebpay-order-sync`; const clientBackUrl = `${base}/cart?guestOrder=${encodeURIComponent(merchantOrderNo)}`;
     if (Number(checkout.total_amount || 0) === 0) {
       const { error: captureError } = await db.rpc("capture_member_points", { p_order_id: checkout.order_id });
