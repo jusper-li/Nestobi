@@ -15,7 +15,7 @@ interface NewebPayCredentials {
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
-    status,
+    status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
@@ -207,6 +207,7 @@ Deno.serve(async (req: Request) => {
     const params = new URLSearchParams(body);
     const tradeInfo = params.get("TradeInfo");
     const tradeSha = params.get("TradeSha");
+    console.log("[newebpay-notify] received", { bodyKeys: Array.from(params.keys()) });
 
     if (!tradeInfo || !tradeSha) {
       return jsonResponse({ success: false, error: "Missing TradeInfo or TradeSha." }, 400);
@@ -218,9 +219,11 @@ Deno.serve(async (req: Request) => {
     }
 
     const payload = JSON.parse(await aesDecrypt(tradeInfo, credentials.hashKey, credentials.hashIV));
+    console.log("[newebpay-notify] decrypted", { hasResult: Boolean(payload?.Result || payload?.result) });
     const result = payload.Result ?? payload;
     const merchantOrderNo = result.MerchantOrderNo;
     const tradeStatus = payload.Status ?? params.get("Status") ?? result.Status;
+    console.log("[newebpay-notify] payload parsed", { merchantOrderNo: merchantOrderNo || null });
 
     if (!merchantOrderNo) {
       return jsonResponse({ success: false, error: "Missing MerchantOrderNo." }, 400);
@@ -240,6 +243,7 @@ Deno.serve(async (req: Request) => {
     if (!order) {
       return jsonResponse({ success: false, error: "Order not found." }, 404);
     }
+    console.log("[newebpay-notify] order found", { merchantOrderNo, found: true });
 
     const callbackAmount = Number(result.Amt ?? result.Amount);
     const orderAmount = Math.round(Number(order.total_amount || 0));
@@ -345,6 +349,7 @@ Deno.serve(async (req: Request) => {
           "paid",
         );
       }
+      console.log("[newebpay-notify] payment updated", { merchantOrderNo, status: "paid" });
 
       try {
         const invoiceResult = await createEzpayInvoiceForOrder(supabase, order.id);
@@ -355,6 +360,7 @@ Deno.serve(async (req: Request) => {
         console.warn("[newebpay-mpg-webhook] Invoice creation failed:", invoiceError);
       }
 
+      console.log("[newebpay-notify] response 200");
       return okResponse();
     }
 
@@ -402,9 +408,11 @@ Deno.serve(async (req: Request) => {
       "payment-failed",
     );
 
+    console.log("[newebpay-notify] response 200");
     return okResponse();
   } catch (error) {
     console.error("[newebpay-mpg-webhook] Error:", error);
+    console.log("[newebpay-notify] response 200", { error: error instanceof Error ? error.message : "Webhook processing failed." });
     return jsonResponse({
       success: false,
       error: error instanceof Error ? error.message : "Webhook processing failed.",

@@ -10,7 +10,9 @@ const corsHeaders = {
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
-    status,
+    // NewebPay retries when Notify does not receive HTTP 200. Always ACK the
+    // callback transport; processing errors are retained in logs instead.
+    status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
@@ -260,6 +262,7 @@ Deno.serve(async (req: Request) => {
       contentType,
       bodyKeys: Array.from(params.keys()),
     });
+    console.log("[newebpay-notify] received", { contentType, bodyKeys: Array.from(params.keys()) });
     // NDNP periodic-payment callbacks use the encrypted `Period` field;
     // retain TradeInfo support for gateways/proxies that normalize the name.
     const tradeInfo = params.get("Period") || params.get("TradeInfo");
@@ -288,11 +291,13 @@ Deno.serve(async (req: Request) => {
     }
 
     const decryptedPeriod = await aesDecrypt(tradeInfo, hashKey, hashIV);
+    console.log("[newebpay-notify] decrypted", { length: decryptedPeriod.length });
     console.log("[newebpay-period-webhook] decrypted payload received", {
       length: decryptedPeriod.length,
       preview: decryptedPeriod.slice(0, 300),
     });
     const payload = parseDecryptedPeriod(decryptedPeriod);
+    console.log("[newebpay-notify] payload parsed", { hasResult: Boolean(payload.Result || payload.result) });
     const result = payload.Result ?? payload;
     const tradeStatus = String(payload.Status ?? params.get("Status") ?? result.Status ?? "").toUpperCase();
     // NDNP uses MerOrderNo (the request/response field in the periodic
@@ -367,6 +372,7 @@ Deno.serve(async (req: Request) => {
       periodNo,
       orderFound: Boolean(subscription.order_id),
     });
+    console.log("[newebpay-notify] order found", { merchantOrderNo, found: true });
 
     const now = new Date();
     const payAt = parseNewebPayDate(result.PayTime ?? result.AuthTime ?? now.toISOString());
@@ -553,6 +559,7 @@ Deno.serve(async (req: Request) => {
         periodNo,
         paidPeriods: cycleNo,
       });
+      console.log("[newebpay-notify] payment updated", { merchantOrderNo, paidPeriods: cycleNo });
 
       const displayName = String(profile?.display_name || subscription.customer_name || "");
       // Older subscriptions may not have copied customer_email. Resolve the
@@ -602,6 +609,7 @@ Deno.serve(async (req: Request) => {
       }
 
       if (callbackLogId) await supabase.from("payment_callback_logs").update({ processed: true }).eq("id", callbackLogId);
+      console.log("[newebpay-notify] response 200");
       return shouldRedirect ? redirectResponse(merchantOrderNo) : okResponse();
     }
 
@@ -641,6 +649,7 @@ Deno.serve(async (req: Request) => {
     );
 
     if (callbackLogId) await supabase.from("payment_callback_logs").update({ processed: true }).eq("id", callbackLogId);
+    console.log("[newebpay-notify] response 200");
     return shouldRedirect ? redirectResponse(merchantOrderNo) : okResponse();
   } catch (error) {
     console.error("[newebpay-period-webhook] Error:", error);
@@ -655,6 +664,7 @@ Deno.serve(async (req: Request) => {
     if (new URL(req.url).searchParams.get("redirect") === "1") {
       return redirectResponse();
     }
+    console.log("[newebpay-notify] response 200", { error: error instanceof Error ? error.message : "Webhook processing failed." });
     return jsonResponse({
       success: false,
       error: error instanceof Error ? error.message : "Webhook processing failed.",
