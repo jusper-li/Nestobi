@@ -60,6 +60,14 @@ async function aesEncrypt(data: string, key: string, iv: string): Promise<string
     .join("");
 }
 
+async function aesDecrypt(hexData: string, key: string, iv: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const encryptedBytes = new Uint8Array((hexData.match(/.{1,2}/g) ?? []).map((byte) => parseInt(byte, 16)));
+  const cryptoKey = await crypto.subtle.importKey("raw", encoder.encode(key), { name: "AES-CBC" }, false, ["decrypt"]);
+  const decrypted = await crypto.subtle.decrypt({ name: "AES-CBC", iv: encoder.encode(iv) }, cryptoKey, encryptedBytes);
+  return new TextDecoder().decode(decrypted);
+}
+
 async function sha256Hex(data: string): Promise<string> {
   const buffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(data));
   return Array.from(new Uint8Array(buffer))
@@ -401,6 +409,17 @@ Deno.serve(async (req: Request) => {
     });
 
     const postData = await aesEncrypt(plainText, hashKey, hashIV);
+    let decryptedForDebug = "";
+    try {
+      decryptedForDebug = await aesDecrypt(postData, hashKey, hashIV);
+    } catch {
+      decryptedForDebug = "";
+    }
+    console.log("[period-payment] roundtrip", {
+      decryptSuccess: Boolean(decryptedForDebug),
+      containsVersion: decryptedForDebug.includes("Version=1.5"),
+      equalsOriginal: decryptedForDebug === plainText,
+    });
     const tradeSha = await sha256Hex(`HashKey=${hashKey}&${postData}&HashIV=${hashIV}`);
     console.log("[subscription-create] calling NewebPay", {
       endpoint: paymentUrl,
