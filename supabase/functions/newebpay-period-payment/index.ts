@@ -364,45 +364,52 @@ Deno.serve(async (req: Request) => {
     // handler so a POST is converted to a normal SPA GET instead of a 404.
     const returnURL = `${getSiteUrl(req)}/.netlify/functions/newebpay-period-return?payment=subscription&merchantOrderNo=${encodeURIComponent(merchantOrderNo)}`;
 
-    const payload: Record<string, string> = {
-      RespondType: "JSON",
-      TimeStamp: timestamp.toString(),
-      Version: "1.5",
-      LangType: "zh-Tw",
-      MerOrderNo: merchantOrderNo,
-      ProdDesc: itemDesc,
-      PeriodType: "M",
-      PeriodAmt: String(monthlyAmount),
-      PeriodPoint: periodPoint,
-      PeriodStartType: "2",
-      PeriodTimes: periodTimes,
-      PayerEmail: customerEmail,
-      PaymentInfo: "Y",
-      OrderInfo: "N",
-      EmailModify: "1",
-      NotifyURL: notifyURL,
-      ReturnURL: returnURL,
-    };
+    const params = new URLSearchParams();
+    params.set("RespondType", "JSON");
+    params.set("TimeStamp", String(timestamp));
+    params.set("Version", "1.5");
+    params.set("LangType", "zh-Tw");
+    params.set("MerOrderNo", merchantOrderNo);
+    params.set("ProdDesc", itemDesc);
+    params.set("PeriodType", "M");
+    params.set("PeriodAmt", String(monthlyAmount));
+    params.set("PeriodPoint", periodPoint);
+    params.set("PeriodStartType", "2");
+    params.set("PeriodTimes", periodTimes);
+    params.set("PayerEmail", customerEmail);
+    params.set("PaymentInfo", "Y");
+    params.set("OrderInfo", "N");
+    params.set("EmailModify", "1");
+    params.set("NotifyURL", notifyURL);
+    params.set("ReturnURL", returnURL);
 
-    console.log("[period-payment] payload debug", {
-      hasVersion: Boolean(payload.Version),
-      version: payload.Version || null,
-      keys: Object.keys(payload),
+    console.log("[period-payment] final payload check", {
+      version: "1.5",
+      hasVersion: params.get("Version") === "1.5",
+      keys: [...params.keys()],
     });
     const requiredFields = ["RespondType", "TimeStamp", "Version", "MerOrderNo", "PeriodType", "PeriodAmt", "PeriodPoint", "PeriodStartType", "PeriodTimes", "NotifyURL", "ReturnURL"];
-    const missingField = requiredFields.find((field) => !payload[field]?.trim());
+    const missingField = requiredFields.find((field) => !params.get(field)?.trim());
     if (missingField) {
       throw new Error(missingField === "Version" ? "NewebPay Version missing" : `NewebPay required field missing: ${missingField}`);
     }
 
-    const plainText = new URLSearchParams(payload).toString();
+    const plainText = params.toString();
     console.log("[period-payment] payload encoded", {
       hasVersionInPlainText: plainText.includes("Version=1.5"),
+      plaintextByteLength: new TextEncoder().encode(plainText).length,
     });
 
     const postData = await aesEncrypt(plainText, hashKey, hashIV);
     const tradeSha = await sha256Hex(`HashKey=${hashKey}&${postData}&HashIV=${hashIV}`);
-    console.log("[subscription-create] calling NewebPay", { endpoint: paymentUrl, merchantOrderNo });
+    console.log("[subscription-create] calling NewebPay", {
+      endpoint: paymentUrl,
+      merchantOrderNo,
+      merchantIdFieldPresent: Boolean(merchantId),
+      postDataFieldPresent: Boolean(postData),
+      contentType: "application/x-www-form-urlencoded",
+      ciphertextLength: postData.length,
+    });
 
     await supabase
       .from("product_subscriptions")
