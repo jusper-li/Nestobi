@@ -13,6 +13,7 @@ export interface SubscriptionCheckoutResponse {
   returnUrl?: string;
   clientBackUrl?: string;
 }
+export type SubscriptionInvoice = { invoiceType: 'personal' | 'company' | 'mobile_carrier' | 'donation'; buyerIdentifier?: string; carrierNumber?: string; loveCode?: string };
 
 async function ensureFreshSession() {
   const { data: { session } } = await supabase.auth.getSession();
@@ -33,11 +34,12 @@ export async function createSubscriptionCheckout(
   productId: string,
   quantity: number,
   planMonths: SubscriptionPlanMonths,
+  invoice?: SubscriptionInvoice,
 ): Promise<SubscriptionCheckoutResponse> {
   await ensureFreshSession();
 
   const { data, error } = await supabase.functions.invoke('newebpay-period-payment', {
-    body: { productId, quantity, planMonths },
+    body: { productId, quantity, planMonths, invoice },
   });
 
   if (error) {

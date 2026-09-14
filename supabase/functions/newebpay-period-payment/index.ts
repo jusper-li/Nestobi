@@ -11,6 +11,7 @@ interface PeriodCheckoutRequest {
   productId: string;
   quantity?: number;
   planMonths?: number | "NE";
+  invoice?: { invoiceType?: string; buyerIdentifier?: string; carrierNumber?: string; loveCode?: string };
 }
 
 type SubscriptionPlanMonths = 3 | 6 | 12 | "NE";
@@ -277,6 +278,7 @@ Deno.serve(async (req: Request) => {
       name: customerName,
       email: customerEmail,
       phone: customerPhone,
+      invoice: body.invoice || { invoiceType: "personal" },
     };
 
     const { data: subscription, error: subscriptionError } = await supabase

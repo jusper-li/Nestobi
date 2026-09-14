@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ChevronRight, Heart, Minus, Plus, ShoppingCart, Star } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Heart, Minus, Plus, ShoppingCart, Star, FileText } from 'lucide-react';
 import Footer from '../../components/Footer';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
@@ -114,6 +114,10 @@ export default function ProductDetail() {
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [subscriptionMonths, setSubscriptionMonths] = useState<SubscriptionPlanMonths>(12);
+  const [invoiceType, setInvoiceType] = useState<'personal' | 'company' | 'mobile_carrier' | 'donation'>('personal');
+  const [buyerIdentifier, setBuyerIdentifier] = useState('');
+  const [carrierNumber, setCarrierNumber] = useState('');
+  const [loveCode, setLoveCode] = useState('');
   const { isFavorite, loading: favoriteLoading, toggleFavorite } = useMemberFavorite(user?.id, 'product', id);
 
   useEffect(() => {
@@ -298,10 +302,13 @@ export default function ProductDetail() {
       navigate('/auth/login');
       return;
     }
+    if (invoiceType === 'company' && !/^\d{8}$/.test(buyerIdentifier.trim())) { window.alert('請輸入 8 碼統一編號'); return; }
+    if (invoiceType === 'mobile_carrier' && !/^\/[A-Z0-9.+-]{7}$/.test(carrierNumber.trim().toUpperCase())) { window.alert('請輸入正確手機條碼（/ 開頭，共 8 碼）'); return; }
+    if (invoiceType === 'donation' && !/^\d{3,7}$/.test(loveCode.trim())) { window.alert('請輸入 3 至 7 碼捐贈碼'); return; }
 
     setSubscribing(true);
     try {
-      const result = await createSubscriptionCheckout(viewProduct.id, qty, subscriptionMonths);
+      const result = await createSubscriptionCheckout(viewProduct.id, qty, subscriptionMonths, { invoiceType, buyerIdentifier: buyerIdentifier.trim(), carrierNumber: carrierNumber.trim(), loveCode: loveCode.trim() });
       if (result.paymentUrl && result.merchantId && result.postData) {
         submitNewebPayPeriodForm(result.paymentUrl, result.merchantId, result.postData);
       } else {
@@ -453,6 +460,18 @@ export default function ProductDetail() {
                 </button>
               </div>
             </div>
+
+            {isSubscriptionProduct && (
+              <div className="rounded-2xl border border-gray-200 bg-white p-4">
+                <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700"><FileText className="h-4 w-4" />電子發票</p>
+                <select value={invoiceType} onChange={(e) => setInvoiceType(e.target.value as typeof invoiceType)} className="w-full rounded-xl border px-3 py-2 text-sm">
+                  <option value="personal">個人電子發票</option><option value="company">企業發票（統一編號）</option><option value="mobile_carrier">手機條碼載具</option><option value="donation">捐贈發票</option>
+                </select>
+                {invoiceType === 'company' && <input inputMode="numeric" maxLength={8} value={buyerIdentifier} onChange={(e) => setBuyerIdentifier(e.target.value.replace(/\D/g, ''))} placeholder="統一編號 8 碼" className="mt-2 w-full rounded-xl border px-3 py-2 text-sm" />}
+                {invoiceType === 'mobile_carrier' && <input value={carrierNumber} onChange={(e) => setCarrierNumber(e.target.value.toUpperCase())} placeholder="載具 /XXXXXXXX" className="mt-2 w-full rounded-xl border px-3 py-2 text-sm" />}
+                {invoiceType === 'donation' && <input inputMode="numeric" value={loveCode} onChange={(e) => setLoveCode(e.target.value.replace(/\D/g, ''))} placeholder="捐贈碼" className="mt-2 w-full rounded-xl border px-3 py-2 text-sm" />}
+              </div>
+            )}
 
             {!isSubscriptionProduct && (
               <div className="grid grid-cols-2 gap-3">
