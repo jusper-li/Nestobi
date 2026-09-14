@@ -203,7 +203,11 @@ export default function MemberOrders() {
           body: JSON.stringify({ merchantOrderNo }),
         });
         const result = await response.json().catch(() => ({}));
-        if (response.ok && (result.synced || result.success)) {
+        // A successful query response can still mean "pending" (especially
+        // for subscriptions reconciled by Notify). Reload only when the
+        // provider actually synced a payment; reloading on every success
+        // creates a request/reload loop.
+        if (response.ok && result.synced === true) {
           window.location.reload();
         }
       } catch {
