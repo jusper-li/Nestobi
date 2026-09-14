@@ -41,6 +41,7 @@ import MemberDashboard from './pages/member/MemberDashboard';
 import Profile from './pages/member/Profile';
 import MemberBookings from './pages/member/MemberBookings';
 import MemberOrders from './pages/member/MemberOrders';
+import MemberInvoices from './pages/member/MemberInvoices';
 import PurchaseHistory from './pages/member/PurchaseHistory';
 import Points from './pages/member/Points';
 import Preferences from './pages/member/Preferences';
@@ -196,6 +197,7 @@ function AppShell() {
                   <Route path="profile" element={<Profile />} />
                   <Route path="bookings" element={<MemberBookings />} />
                   <Route path="orders" element={<MemberOrders />} />
+                  <Route path="invoices" element={<MemberInvoices />} />
                   <Route path="purchases" element={<PurchaseHistory />} />
                   <Route path="points" element={<Points />} />
                   <Route path="preferences" element={<Preferences />} />

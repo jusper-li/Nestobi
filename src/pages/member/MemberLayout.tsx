@@ -34,6 +34,7 @@ export default function MemberLayout() {
     { to: '/member/profile', icon: <User className="h-5 w-5" />, label: t.profile },
     { to: '/member/bookings', icon: <BedDouble className="h-5 w-5" />, label: t.bookings },
     { to: '/member/orders', icon: <ShoppingBag className="h-5 w-5" />, label: t.orders },
+    { to: '/member/invoices', icon: <Receipt className="h-5 w-5" />, label: pick('我的發票', 'My Invoices', '請求書', '내 영수증') },
     { to: '/member/purchases', icon: <Receipt className="h-5 w-5" />, label: t.purchases },
     { to: '/member/points', icon: <Star className="h-5 w-5" />, label: t.points },
     ...(storeAssignments.length > 0
@@ -124,4 +125,3 @@ export default function MemberLayout() {
     </div>
   );
 }
-
