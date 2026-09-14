@@ -952,7 +952,7 @@ const VendorOrders: React.FC = () => {
         <div className="space-y-3 overflow-x-auto">
           <VendorOrderTableHeader />
           {filtered.map((item, index) => (
-            <motion.div key={item.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.03 }} className="min-w-[1100px] rounded-2xl bg-white p-5 shadow-sm">
+            <motion.div key={item.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.03 }} className="min-w-[1180px] rounded-2xl bg-white p-5 shadow-sm">
               {item.kind === 'product' ? (
               <ProductOrderCard
                   item={item.productOrder}
@@ -1398,8 +1398,8 @@ const VendorOrders: React.FC = () => {
 
 function VendorOrderTableHeader() {
   return (
-    <div className="grid min-w-[1100px] grid-cols-[100px_130px_150px_120px_110px_110px_150px_120px_120px_80px] gap-3 rounded-xl bg-gray-100 px-4 py-3 text-xs font-bold text-gray-600">
-      {['日期', '編號', '訂購人', '電話', '金額', '付款狀態', '付款方式', '出貨狀態', '訂單狀態', '查看'].map(label => <span key={label}>{label}</span>)}
+    <div className="grid min-w-[1180px] grid-cols-[100px_130px_150px_120px_110px_110px_150px_80px_120px_120px_80px] gap-3 rounded-xl bg-gray-100 px-4 py-3 text-xs font-bold text-gray-600">
+      {['日期', '編號', '訂購人', '電話', '金額', '付款狀態', '付款方式', '期數', '出貨狀態', '訂單狀態', '查看'].map(label => <span key={label}>{label}</span>)}
     </div>
   );
 }
@@ -1435,7 +1435,7 @@ function ProductOrderCard({
   };
   return (
     <>
-      <div className="grid grid-cols-[100px_130px_150px_120px_110px_110px_150px_120px_120px_80px] items-center gap-3 text-sm">
+      <div className="grid grid-cols-[100px_130px_150px_120px_110px_110px_150px_80px_120px_120px_80px] items-center gap-3 text-sm">
         <span className="text-gray-600">{formatDate(item.created_at)}</span>
         <span className="font-semibold text-gray-800">#{item.order_id.slice(0, 8).toUpperCase()}</span>
         <span className="truncate text-gray-700">{customer?.display_name || item.orders?.shipping_address?.customer_name || item.orders?.user_id || '—'}</span>
@@ -1556,8 +1556,8 @@ function BookingCard({
   const busy = updating === `booking:${item.id}`;
   return (
     <>
-      <div className="grid grid-cols-[100px_130px_150px_120px_110px_110px_150px_120px_120px_80px] items-center gap-3 text-sm">
-        <span className="text-gray-600">{formatDate(item.created_at)}</span><span className="font-semibold text-gray-800">#{item.id.slice(0, 8).toUpperCase()}</span><span className="truncate text-gray-700">{customer?.display_name || item.user_id || '—'}</span><span className="text-gray-600">{customer?.phone || '—'}</span><span className="font-bold text-emerald-700">{formatCurrency(item.total_price)}</span><span>{paymentLabel}</span><span>{getPaymentMethodLabel(item.payment_method)}</span><span>—</span><select value={item.status} onChange={(event) => onUpdate(item.id, event.target.value)} disabled={busy} className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs" aria-label={labels.statusManagement}>{BOOKING_STATUS_EDIT_OPTIONS.map(status => <option key={status} value={status}>{getStatusLabel(status, locale)}</option>)}</select><button type="button" onClick={onViewDetail} className="rounded-lg border border-gray-200 px-2 py-1 text-xs">查看</button>
+      <div className="grid grid-cols-[100px_130px_150px_120px_110px_110px_150px_80px_120px_120px_80px] items-center gap-3 text-sm">
+        <span className="text-gray-600">{formatDate(item.created_at)}</span><span className="font-semibold text-gray-800">#{item.id.slice(0, 8).toUpperCase()}</span><span className="truncate text-gray-700">{customer?.display_name || item.user_id || '—'}</span><span className="text-gray-600">{customer?.phone || '—'}</span><span className="font-bold text-emerald-700">{formatCurrency(item.total_price)}</span><span>{paymentLabel}</span><span>{getPaymentMethodLabel(item.payment_method)}</span><span>—</span><span>—</span><select value={item.status} onChange={(event) => onUpdate(item.id, event.target.value)} disabled={busy} className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs" aria-label={labels.statusManagement}>{BOOKING_STATUS_EDIT_OPTIONS.map(status => <option key={status} value={status}>{getStatusLabel(status, locale)}</option>)}</select><button type="button" onClick={onViewDetail} className="rounded-lg border border-gray-200 px-2 py-1 text-xs">查看</button>
       </div>
       <div className="hidden">
     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -1648,8 +1648,8 @@ function SubscriptionCard({
   const busy = updating === `subscription:${item.id}`;
   return (
     <>
-      <div className="grid grid-cols-[100px_130px_150px_120px_110px_110px_150px_120px_120px_80px] items-center gap-3 text-sm">
-        <span className="text-gray-600">{formatDate(item.created_at)}</span><span className="font-semibold text-gray-800">#{(item.order_id || item.id).slice(0, 8).toUpperCase()}</span><span className="truncate text-gray-700">{customer?.display_name || item.customer_name || item.orders?.user_id || '—'}</span><span className="text-gray-600">{customer?.phone || item.customer_phone || '—'}</span><span className="font-bold text-cyan-700">{formatCurrency(item.monthly_amount || 0)}</span><span>{paymentLabel}</span><span>{getPaymentMethodLabel(item.orders?.payment_method || 'newebpay_subscription')}</span><span>—</span><select value={item.status} onChange={(event) => onUpdate(item, event.target.value)} disabled={busy} className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs" aria-label={labels.statusManagement}>{SUBSCRIPTION_STATUS_EDIT_OPTIONS.map(status => <option key={status} value={status}>{statusLabels[status] || status}</option>)}</select><button type="button" onClick={onViewDetail} className="rounded-lg border border-gray-200 px-2 py-1 text-xs">查看</button>
+      <div className="grid grid-cols-[100px_130px_150px_120px_110px_110px_150px_80px_120px_120px_80px] items-center gap-3 text-sm">
+        <span className="text-gray-600">{formatDate(item.created_at)}</span><span className="font-semibold text-gray-800">#{(item.order_id || item.id).slice(0, 8).toUpperCase()}</span><span className="truncate text-gray-700">{customer?.display_name || item.customer_name || item.orders?.user_id || '—'}</span><span className="text-gray-600">{customer?.phone || item.customer_phone || '—'}</span><span className="font-bold text-cyan-700">{formatCurrency(item.monthly_amount || 0)}</span><span>{paymentLabel}</span><span>{getPaymentMethodLabel(item.orders?.payment_method || 'newebpay_subscription')}</span><span>{item.billing_cycle_count ?? 0}/{item.period_times ?? 0}</span><span>—</span><select value={item.status} onChange={(event) => onUpdate(item, event.target.value)} disabled={busy} className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs" aria-label={labels.statusManagement}>{SUBSCRIPTION_STATUS_EDIT_OPTIONS.map(status => <option key={status} value={status}>{statusLabels[status] || status}</option>)}</select><button type="button" onClick={onViewDetail} className="rounded-lg border border-gray-200 px-2 py-1 text-xs">查看</button>
       </div>
       <div className="hidden">
     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -1751,5 +1751,7 @@ function getPaymentMethodLabel(method?: string | null) {
 }
 
 export default VendorOrders;
+
+
 
 
