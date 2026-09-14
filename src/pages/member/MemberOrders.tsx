@@ -19,7 +19,7 @@ interface PurchaseRecord {
   quantity: number;
   unit_price: number;
   total_price: number;
-  products: { id: string; name: string; image_url: string; sku?: string | null } | null;
+  products: { id: string; name: string; image_url: string; sku?: string | null; specifications?: { name?: string; options?: string[]; value?: string }[] | null } | null;
 }
 
 interface Order {
@@ -332,7 +332,7 @@ export default function MemberOrders() {
     }
     setExpandedId(orderId);
     if (!details[orderId]) {
-      const { data } = await supabase.from('purchase_records').select('*, products(id, name, image_url, sku)').eq('order_id', orderId);
+      const { data } = await supabase.from('purchase_records').select('*, products(id, name, image_url, sku, specifications)').eq('order_id', orderId);
       const rows = (data as PurchaseRecord[]) || [];
       if (locale === 'zh-TW') {
         setDetails(prev => ({ ...prev, [orderId]: rows }));
@@ -705,7 +705,10 @@ export default function MemberOrders() {
                           <img src={item.products?.image_url || 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=120'} alt={item.products?.name || t.unknown} className="h-20 w-20 flex-shrink-0 rounded-lg object-cover" />
                           <div className="min-w-0 flex-1">
                             <p className="font-semibold text-gray-900">{item.products?.name || t.unknown}</p>
-                            <p className="mt-1 text-sm text-gray-500">{t.spec}: {item.products?.sku || t.defaultSpec}</p>
+                            <p className="mt-1 text-sm text-gray-500">{t.spec}: {(() => {
+                              const spec = item.products?.specifications?.find(entry => entry.name && entry.name !== '訂閱期數' && ((entry.options && entry.options.length > 0) || entry.value));
+                              return spec ? `${spec.name}: ${(spec.options || [spec.value]).filter(Boolean).join('、')}` : (item.products?.sku || t.defaultSpec);
+                            })()}</p>
                             <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600">
                               <span>{t.qty}: {item.quantity}</span>
                               <span>{t.unitPrice}: {formatCurrency(item.unit_price)}</span>
