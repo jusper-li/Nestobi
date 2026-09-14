@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
@@ -291,6 +291,7 @@ const VendorOrders: React.FC = () => {
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
   const [updating, setUpdating] = useState<string | null>(null);
   const [queryingPayment, setQueryingPayment] = useState(false);
+  const queryingPaymentRef = useRef(false);
   const [message, setMessage] = useState('');
   const [selectedDetail, setSelectedDetail] = useState<VendorOrderItem | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -556,12 +557,14 @@ const VendorOrders: React.FC = () => {
   };
 
   const querySubscriptionPayment = async () => {
+    if (queryingPaymentRef.current) return;
     if (!detailSubscription) return;
     const merchantOrderNo = detailSubscription.merchant_order_no || detailSubscription.orders?.merchant_order_no;
     if (!merchantOrderNo) {
       setDetailError('此訂閱沒有藍新訂單編號，無法查詢付款狀態');
       return;
     }
+    queryingPaymentRef.current = true;
     setQueryingPayment(true);
     setDetailError('');
     try {
@@ -593,16 +596,19 @@ const VendorOrders: React.FC = () => {
       console.error('NewebPay query failed:', error);
       setDetailError(detail);
     } finally {
+      queryingPaymentRef.current = false;
       setQueryingPayment(false);
     }
   };
 
   const queryProductPayment = async () => {
+    if (queryingPaymentRef.current) return;
     const merchantOrderNo = detailShopOrder?.merchant_order_no;
     if (!merchantOrderNo) {
       setDetailError('此訂單沒有藍新訂單編號，無法查詢付款狀態');
       return;
     }
+    queryingPaymentRef.current = true;
     setQueryingPayment(true);
     setDetailError('');
     try {
@@ -633,6 +639,7 @@ const VendorOrders: React.FC = () => {
       console.error('NewebPay query failed:', error);
       setDetailError(detail);
     } finally {
+      queryingPaymentRef.current = false;
       setQueryingPayment(false);
     }
   };
