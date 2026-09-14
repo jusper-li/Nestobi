@@ -1324,7 +1324,7 @@ const VendorOrders: React.FC = () => {
                             { label: '建立時間', value: detailSubscription?.created_at ? formatDateTime(detailSubscription.created_at) : '-' },
                             { label: '訂閱狀態', value: subscriptionStatusLabels[detailSubscription?.status || ''] || detailSubscription?.status || '-' },
                             { label: '付款狀態', value: getPaymentLabel(detailSubscription?.orders?.payment_status) },
-                            { label: 'Merchant Order No.', value: detailSubscription?.orders?.merchant_order_no || detailSubscription?.order_id || '-', mono: true },
+                            { label: 'Merchant Order No.', value: detailSubscription?.merchant_order_no || detailSubscription?.orders?.merchant_order_no || detailSubscription?.order_id || '-', mono: true },
                             { label: '交易序號', value: detailSubscription?.newebpay_trade_no || '-', mono: true },
                             { label: '卡號末四碼', value: detailSubscription?.newebpay_card_no || '-' },
                             { label: '付款類型', value: detailSubscription?.newebpay_payment_type || '-' },

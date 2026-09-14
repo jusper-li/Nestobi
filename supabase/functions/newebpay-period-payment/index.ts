@@ -275,6 +275,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: false, error: "Subscription amount must be greater than zero." }, 400);
     }
     const merchantOrderNo = buildMerchantOrderNo(user.id);
+    console.log("[subscription-create] generated MerchantOrderNo", { merchantOrderNo });
     // Recurring subscriptions are billed on the same day of month they are
     // created. The initial authorization still runs immediately.
     const periodPoint = String(new Date().getDate()).padStart(2, "0");
@@ -328,6 +329,8 @@ Deno.serve(async (req: Request) => {
         error: subscriptionError?.message || "Unable to create subscription.",
       }, 400);
     }
+    console.log("[subscription-create] subscription row created", { subscriptionId: subscription.id });
+    console.log("[subscription-create] MerchantOrderNo saved", { subscriptionId: subscription.id, merchantOrderNo });
 
     const merchantId = Deno.env.get("NEWEBPAY_MERCHANT_ID") ?? "";
     const hashKey = Deno.env.get("NEWEBPAY_HASH_KEY") ?? "";
@@ -383,6 +386,7 @@ Deno.serve(async (req: Request) => {
 
     const postData = await aesEncrypt(postDataParams.toString(), hashKey, hashIV);
     const tradeSha = await sha256Hex(`HashKey=${hashKey}&${postData}&HashIV=${hashIV}`);
+    console.log("[subscription-create] calling NewebPay", { endpoint: paymentUrl, merchantOrderNo });
 
     await supabase
       .from("product_subscriptions")
@@ -408,6 +412,7 @@ Deno.serve(async (req: Request) => {
       paymentStatus: "pending",
       orderStatus: "pending",
     });
+    console.log("[subscription-create] NewebPay response", { endpoint: paymentUrl, merchantOrderNo, submitted: true });
 
     return jsonResponse({
       success: true,
