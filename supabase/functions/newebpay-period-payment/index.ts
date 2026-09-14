@@ -360,10 +360,19 @@ Deno.serve(async (req: Request) => {
       hashKeyFingerprint: await secretFingerprint(hashKey),
       hashIvFingerprint: await secretFingerprint(hashIV),
       endpoint: paymentUrl,
+      periodLength: null,
+      periodIsHex: null,
+      periodByteLength: null,
     });
 
     if (!merchantId || !hashKey || !hashIV) {
       return jsonResponse({ success: false, error: "NewebPay HashKey/HashIV are not configured." }, 500);
+    }
+    if (hashKey.length !== 32) {
+      return jsonResponse({ success: false, error: "Invalid NewebPay HashKey length" }, 500);
+    }
+    if (hashIV.length !== 16) {
+      return jsonResponse({ success: false, error: "Invalid NewebPay HashIV length" }, 500);
     }
 
     const timestamp = Math.floor(Date.now() / 1000);

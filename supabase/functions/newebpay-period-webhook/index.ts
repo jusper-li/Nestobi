@@ -263,9 +263,18 @@ Deno.serve(async (req: Request) => {
       hashIvFingerprint: await secretFingerprint(hashIV),
       trimmedHashKeyLength: hashKey.trim().length,
       trimmedHashIvLength: hashIV.trim().length,
+      periodLength: null,
+      periodIsHex: null,
+      periodByteLength: null,
     });
     if (!hashKey || !hashIV) {
       return jsonResponse({ success: false, error: "NewebPay HashKey/HashIV are not configured." }, 500);
+    }
+    if (hashKey.length !== 32) {
+      return jsonResponse({ success: false, error: "Invalid NewebPay HashKey length" }, 500);
+    }
+    if (hashIV.length !== 16) {
+      return jsonResponse({ success: false, error: "Invalid NewebPay HashIV length" }, 500);
     }
 
     const contentType = req.headers.get("content-type") || "";
@@ -289,6 +298,13 @@ Deno.serve(async (req: Request) => {
     // retain TradeInfo support for gateways/proxies that normalize the name.
     const tradeInfo = params.get("Period") || params.get("TradeInfo");
     const tradeSha = params.get("TradeSha");
+    const periodLength = tradeInfo?.length || 0;
+    const periodIsHex = Boolean(tradeInfo && /^[0-9a-f]+$/i.test(tradeInfo));
+    console.log("[period-notify] period diagnostics", {
+      periodLength,
+      periodIsHex,
+      periodByteLength: periodIsHex && periodLength % 2 === 0 ? periodLength / 2 : null,
+    });
     const callbackLog = await supabase.from("payment_callback_logs").insert({
       provider: "newebpay",
       payment_type: "period",
