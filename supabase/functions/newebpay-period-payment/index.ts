@@ -364,7 +364,7 @@ Deno.serve(async (req: Request) => {
     // handler so a POST is converted to a normal SPA GET instead of a 404.
     const returnURL = `${getSiteUrl(req)}/.netlify/functions/newebpay-period-return?payment=subscription&merchantOrderNo=${encodeURIComponent(merchantOrderNo)}`;
 
-    const postDataParams = new URLSearchParams({
+    const payload: Record<string, string> = {
       RespondType: "JSON",
       TimeStamp: timestamp.toString(),
       Version: "1.5",
@@ -382,9 +382,25 @@ Deno.serve(async (req: Request) => {
       EmailModify: "1",
       NotifyURL: notifyURL,
       ReturnURL: returnURL,
+    };
+
+    console.log("[period-payment] payload debug", {
+      hasVersion: Boolean(payload.Version),
+      version: payload.Version || null,
+      keys: Object.keys(payload),
+    });
+    const requiredFields = ["RespondType", "TimeStamp", "Version", "MerOrderNo", "PeriodType", "PeriodAmt", "PeriodPoint", "PeriodStartType", "PeriodTimes", "NotifyURL", "ReturnURL"];
+    const missingField = requiredFields.find((field) => !payload[field]?.trim());
+    if (missingField) {
+      throw new Error(missingField === "Version" ? "NewebPay Version missing" : `NewebPay required field missing: ${missingField}`);
+    }
+
+    const plainText = new URLSearchParams(payload).toString();
+    console.log("[period-payment] payload encoded", {
+      hasVersionInPlainText: plainText.includes("Version=1.5"),
     });
 
-    const postData = await aesEncrypt(postDataParams.toString(), hashKey, hashIV);
+    const postData = await aesEncrypt(plainText, hashKey, hashIV);
     const tradeSha = await sha256Hex(`HashKey=${hashKey}&${postData}&HashIV=${hashIV}`);
     console.log("[subscription-create] calling NewebPay", { endpoint: paymentUrl, merchantOrderNo });
 
