@@ -950,7 +950,7 @@ const VendorOrders: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-3 overflow-x-auto">
-          <VendorOrderTableHeader />
+          <VendorOrderTableHeader category={categoryFilter} />
           {filtered.map((item, index) => (
             <motion.div key={item.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.03 }} className="min-w-[1180px] rounded-2xl bg-white p-5 shadow-sm">
               {item.kind === 'product' ? (
@@ -1396,10 +1396,15 @@ const VendorOrders: React.FC = () => {
   );
 };
 
-function VendorOrderTableHeader() {
+function VendorOrderTableHeader({ category }: { category: 'product' | 'subscription' | 'booking' | 'all' }) {
+  const labels = category === 'subscription'
+    ? ['建立日期', '訂單編號', '訂購人', '電話', '月費', '付款狀態', '付款方式', '期數 0/3', '出貨狀態', '訂閱狀態', '查看']
+    : category === 'booking'
+      ? ['建立日期', '訂單編號', '訂房人', '電話', '總金額', '付款狀態', '付款方式', '入住日期', '退房日期', '訂房狀態', '查看']
+      : ['日期', '編號', '訂購人', '電話', '金額', '付款狀態', '付款方式', '期數', '出貨狀態', '訂單狀態', '查看'];
   return (
     <div className="grid min-w-[1180px] grid-cols-[100px_130px_150px_120px_110px_110px_150px_80px_120px_120px_80px] gap-3 rounded-xl bg-gray-100 px-4 py-3 text-xs font-bold text-gray-600">
-      {['日期', '編號', '訂購人', '電話', '金額', '付款狀態', '付款方式', '期數', '出貨狀態', '訂單狀態', '查看'].map(label => <span key={label}>{label}</span>)}
+      {labels.map(label => <span key={label}>{label}</span>)}
     </div>
   );
 }
@@ -1751,6 +1756,7 @@ function getPaymentMethodLabel(method?: string | null) {
 }
 
 export default VendorOrders;
+
 
 
 
