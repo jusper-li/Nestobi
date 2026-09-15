@@ -14,6 +14,7 @@ import {
   Home,
   Hotel,
   Languages,
+  Link2,
   LayoutDashboard,
   LogOut,
   Map,
@@ -92,6 +93,7 @@ export default function Navigation() {
       myPoints: pick('我的點數', 'My Points', 'ポイント', '내 포인트'),
       profile: pick('個人資料', 'Profile', 'プロフィール', '프로필'),
       preferences: pick('偏好設定', 'Preferences', '設定', '환경설정'),
+      lineBinding: pick('LINE 綁定', 'LINE Binding', 'LINE 連携', 'LINE 연동'),
       adminPanel: pick('管理後台', 'Admin', '管理画面', '관리'),
       superAdmin: pick('超級管理員', 'Super Admin', 'スーパー管理者', '최고 관리자'),
       logout: pick('登出', 'Logout', 'ログアウト', '로그아웃'),
@@ -171,6 +173,7 @@ export default function Navigation() {
     { to: '/member/points', label: labels.myPoints, icon: Star },
     { to: '/member/profile', label: labels.profile, icon: User },
     { to: '/member/preferences', label: labels.preferences, icon: Settings },
+    { to: '/member/line-binding', label: labels.lineBinding, icon: Link2 },
     { to: '/ai/passport', label: labels.travelPassport, icon: BookMarked },
   ] as const;
 
