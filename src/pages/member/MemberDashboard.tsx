@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BedDouble, BookMarked, ChevronRight, Edit2, ExternalLink, Heart, MapPin, Receipt, Save, Settings, ShoppingBag, Star, Ticket, Trash2, User, X } from 'lucide-react';
+import { BedDouble, BookMarked, ChevronRight, Edit2, ExternalLink, Heart, Link2, MapPin, Receipt, Save, Settings, ShoppingBag, Star, Store, Ticket, Trash2, User, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
@@ -66,7 +66,7 @@ type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 
 export default function MemberDashboard() {
   const [searchParams] = useSearchParams();
-  const { user, profile } = useAuth();
+  const { user, profile, storeAssignments } = useAuth();
   const { lang } = useLanguage();
   const locale = normalizeLang(lang) as UiLang;
   const pick = (zh: string, en: string, ja: string, ko: string) => pickByLang(locale, zh, en, ja, ko);
@@ -78,9 +78,12 @@ export default function MemberDashboard() {
     bookings: pick('我的訂房', 'My Bookings', '予約', '내 예약'),
     orders: pick('我的訂單', 'My Orders', '注文', '내 주문'),
     purchases: pick('消費紀錄', 'Consumption Records', '利用履歴', '소비 내역'),
+    invoices: pick('我的發票', 'My Invoices', '請求書', '내 영수증'),
     myPoints: pick('我的點數', 'My Points', 'マイポイント', '내 포인트'),
     preferences: pick('偏好設定', 'Preferences', '設定', '설정'),
     passport: pick('旅遊護照', 'Travel Passport', 'トラベルパスポート', '트래블 패스포트'),
+    lineBinding: pick('LINE 綁定', 'LINE Binding', 'LINE 連携', 'LINE 연동'),
+    storeAdmin: pick('門市管理', 'Store Admin', '店舗管理', '매장 관리'),
     recentBookings: pick('近期訂房', 'Recent Bookings', '最近の予約', '최근 예약'),
     recentOrders: pick('近期訂單', 'Recent Orders', '最近の注文', '최근 주문'),
     viewAll: pick('查看全部', 'View all', 'すべて表示', '전체 보기'),
@@ -211,10 +214,13 @@ export default function MemberDashboard() {
     { to: '/member/profile', icon: <User className="h-6 w-6" />, label: t.profile, color: 'bg-[#F0E4C8] text-[#2C1F10]' },
     { to: '/member/bookings', icon: <BedDouble className="h-6 w-6" />, label: t.bookings, color: 'bg-teal-50 text-[#0D9488]' },
     { to: '/member/orders', icon: <ShoppingBag className="h-6 w-6" />, label: t.orders, color: 'bg-purple-50 text-purple-600' },
+    { to: '/member/invoices', icon: <Receipt className="h-6 w-6" />, label: t.invoices, color: 'bg-blue-50 text-blue-600' },
     { to: '/member/purchases', icon: <Receipt className="h-6 w-6" />, label: t.purchases, color: 'bg-orange-50 text-orange-600' },
     { to: '/member/points', icon: <Star className="h-6 w-6" />, label: t.myPoints, color: 'bg-yellow-50 text-yellow-600' },
     { to: '/member/preferences', icon: <Settings className="h-6 w-6" />, label: t.preferences, color: 'bg-gray-50 text-gray-600' },
+    { to: '/member/line-binding', icon: <Link2 className="h-6 w-6" />, label: t.lineBinding, color: 'bg-green-50 text-green-600' },
     { to: '/ai/passport', icon: <BookMarked className="h-6 w-6" />, label: t.passport, color: 'bg-amber-50 text-amber-700' },
+    ...(storeAssignments.length > 0 ? [{ to: '/member/store-admin', icon: <Store className="h-6 w-6" />, label: t.storeAdmin, color: 'bg-indigo-50 text-indigo-600' }] : []),
   ];
 
   const completedBookings = bookings.filter(item => item.status === 'completed');
@@ -648,5 +654,4 @@ function ValueRow({
     </div>
   );
 }
-
 
