@@ -45,6 +45,7 @@ import MemberInvoices from './pages/member/MemberInvoices';
 import PurchaseHistory from './pages/member/PurchaseHistory';
 import Points from './pages/member/Points';
 import Preferences from './pages/member/Preferences';
+import MemberLineBinding from './pages/member/MemberLineBinding';
 import StoreAdminDashboard from './pages/storeadmin/StoreAdminDashboard';
 import StorePos from './pages/storeadmin/StorePos';
 import StorePointOrder from './pages/storeadmin/StorePointOrder';
@@ -203,6 +204,7 @@ function AppShell() {
                   <Route path="purchases" element={<PurchaseHistory />} />
                   <Route path="points" element={<Points />} />
                   <Route path="preferences" element={<Preferences />} />
+                  <Route path="line-binding" element={<MemberLineBinding />} />
                   <Route path="store-admin" element={<StoreManagerRoute><StoreAdminDashboard /></StoreManagerRoute>} />
                   <Route path="store-admin/basic" element={<StoreManagerRoute><StoreAdminDashboard /></StoreManagerRoute>} />
                   <Route path="store-admin/info" element={<StoreManagerRoute><StoreInfo /></StoreManagerRoute>} />

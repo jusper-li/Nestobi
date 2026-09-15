@@ -1,6 +1,6 @@
 ﻿import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { BedDouble, Home, LogOut, Menu, Receipt, Settings, ShoppingBag, Star, Store, User, X } from 'lucide-react';
+import { BedDouble, Home, Link2, LogOut, Menu, Receipt, Settings, ShoppingBag, Star, Store, User, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
@@ -41,6 +41,7 @@ export default function MemberLayout() {
       ? [{ to: '/member/store-admin', icon: <Store className="h-5 w-5" />, label: pick('門市管理', 'Store Admin', '店舗管理', '매장 관리') }]
       : []),
     { to: '/member/preferences', icon: <Settings className="h-5 w-5" />, label: t.preferences },
+    { to: '/member/line-binding', icon: <Link2 className="h-5 w-5" />, label: pick('LINE 綁定', 'LINE Binding', 'LINE 連携', 'LINE 연동') },
   ];
 
   const handleSignOut = async () => {
