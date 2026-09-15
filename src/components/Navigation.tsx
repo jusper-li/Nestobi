@@ -89,6 +89,7 @@ export default function Navigation() {
       memberCenter: pick('會員中心', 'Member Center', '会員中心', '회원센터'),
       myBookings: pick('我的訂房', 'My Bookings', '予約一覧', '내 예약'),
       myOrders: pick('我的訂單', 'My Orders', '注文一覧', '내 주문'),
+      myInvoices: pick('我的發票', 'My Invoices', '請求書', '내 영수증'),
       myPurchases: pick('消費紀錄', 'Purchase Records', '購入履歴', '구매 내역'),
       myPoints: pick('我的點數', 'My Points', 'ポイント', '내 포인트'),
       profile: pick('個人資料', 'Profile', 'プロフィール', '프로필'),
@@ -167,11 +168,12 @@ export default function Navigation() {
 
   const memberLinks = [
     { to: '/member', label: labels.memberCenter, icon: LayoutDashboard },
+    { to: '/member/profile', label: labels.profile, icon: User },
     { to: '/member/bookings', label: labels.myBookings, icon: Calendar },
     { to: '/member/orders', label: labels.myOrders, icon: History },
+    { to: '/member/invoices', label: labels.myInvoices, icon: Receipt },
     { to: '/member/purchases', label: labels.myPurchases, icon: Receipt },
     { to: '/member/points', label: labels.myPoints, icon: Star },
-    { to: '/member/profile', label: labels.profile, icon: User },
     { to: '/member/preferences', label: labels.preferences, icon: Settings },
     { to: '/member/line-binding', label: labels.lineBinding, icon: Link2 },
     { to: '/ai/passport', label: labels.travelPassport, icon: BookMarked },
