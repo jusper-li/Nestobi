@@ -56,3 +56,10 @@ export async function loadInventoryForecasts(): Promise<InventoryForecast[]> {
     return calculateInventoryForecast(input);
   });
 }
+
+export async function createPurchaseOrderDraft(items: Array<{ beanId: string; quantity: number; unitCost: number }>, notes = '') {
+  const payload = items.map(item => ({ bean_id: item.beanId, quantity: item.quantity, unit_cost: item.unitCost, source: 'smart_reorder' }));
+  const { data, error } = await supabase.rpc('create_inventory_purchase_order', { p_items: payload, p_notes: notes });
+  if (error) throw error;
+  return String(data);
+}
