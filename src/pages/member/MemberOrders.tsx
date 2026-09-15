@@ -569,6 +569,7 @@ export default function MemberOrders() {
 
   return (
     <div className="space-y-5">
+      <MemberBackLink />
       <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900">
         <ShoppingBag className="h-5 w-5 text-[#0D9488]" />
         {t.title}
@@ -738,7 +739,6 @@ export default function MemberOrders() {
 function Info({ label, value, strong = false, wrap = false }: { label: string; value: string; strong?: boolean; wrap?: boolean }) {
   return (
     <div className="min-w-0">
-      <MemberBackLink />
       <p className="text-xs text-gray-400">{label}</p>
       <p className={`mt-0.5 ${wrap ? 'whitespace-normal break-words' : 'truncate'} ${strong ? 'font-bold text-[#2C1F10]' : 'font-medium text-gray-800'}`}>{value}</p>
     </div>

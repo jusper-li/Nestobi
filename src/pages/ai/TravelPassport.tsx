@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import Navigation from '../../components/Navigation';
 import SEOHead from '../../components/SEOHead';
+import MemberBackLink from '../../components/MemberBackLink';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 
 interface Stamp {
@@ -161,6 +162,7 @@ export default function TravelPassport() {
       </div>
 
       <div className="mx-auto max-w-5xl px-4 py-8">
+        <MemberBackLink />
         {message && (
           <div className={`mb-4 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${message.type === 'success' ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
             {message.type === 'success' ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}

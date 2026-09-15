@@ -207,6 +207,7 @@ const PurchaseHistory: React.FC = () => {
 
   return (
     <div className="space-y-5">
+      <MemberBackLink />
       <div>
         <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900">
           <Receipt className="h-5 w-5 text-orange-500" />
@@ -324,7 +325,6 @@ function SummaryCard({ icon, label, value }: { icon: React.ReactNode; label: str
 function Info({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
   return (
     <div className="min-w-0">
-      <MemberBackLink />
       <p className="text-xs text-gray-400">{label}</p>
       <p className={`mt-0.5 truncate ${strong ? 'font-bold text-[#2C1F10]' : 'font-medium text-gray-800'}`}>{value}</p>
     </div>

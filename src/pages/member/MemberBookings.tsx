@@ -228,6 +228,7 @@ export default function MemberBookings() {
 
   return (
     <div className="space-y-5 lg:space-y-6">
+      <MemberBackLink />
       <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm lg:flex lg:items-center lg:justify-between">
         <div>
           <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900 lg:text-2xl">
@@ -441,7 +442,6 @@ function SectionTitle({ icon, label }: { icon?: ReactNode; label: string }) {
 function Info({ label, value, strong = false, prominent = false }: { label: string; value: string; strong?: boolean; prominent?: boolean }) {
   return (
     <div className={`min-w-0 rounded-xl border border-gray-100 bg-white px-3 py-2.5 ${prominent ? 'shadow-sm' : ''}`}>
-      <MemberBackLink />
       <p className="text-xs leading-5 text-gray-400">{label}</p>
       <p className={`mt-0.5 break-words leading-6 ${prominent ? 'text-base' : 'text-sm'} ${strong ? 'font-bold text-[#2C1F10]' : 'font-medium text-gray-800'}`}>{value}</p>
     </div>
