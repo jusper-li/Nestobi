@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Filter } from 'lucide-react';
+import { ShoppingBag, Filter, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { logAdminAction } from '../../lib/auditLog';
@@ -14,6 +14,7 @@ const AdminOrders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -31,6 +32,8 @@ const AdminOrders: React.FC = () => {
     await logAdminAction('update_order_status', 'orders', orderId, { status: newStatus });
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
   };
+
+  const handleDelete = async (orderId: string) => { if (!window.confirm('確定要刪除此訂單？訂單會保留紀錄並標記為已取消。')) return; setDeletingId(orderId); try { const { error } = await supabase.rpc('admin_cancel_order', { p_order_type: 'shop', p_order_id: orderId }); if (error) throw error; await fetchOrders(); } catch (e) { window.alert(e instanceof Error ? e.message : '刪除失敗'); } finally { setDeletingId(null); } };
 
   const STATUS_LABELS: Record<string, string> = { pending: '待處理', processing: '處理中', completed: '已完成', cancelled: '已取消', all: '全部' };
 
@@ -64,6 +67,7 @@ const AdminOrders: React.FC = () => {
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">付款</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">狀態</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">日期</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -88,6 +92,7 @@ const AdminOrders: React.FC = () => {
                       </select>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500">{formatDate(order.created_at)}</td>
+                    <td className="px-4 py-3"><button type="button" onClick={() => void handleDelete(order.id)} disabled={deletingId === order.id} className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2 py-1 text-xs text-red-600 disabled:opacity-50"><Trash2 size={13} />{deletingId === order.id ? '處理中' : '刪除'}</button></td>
                   </motion.tr>
                 ))}
               </tbody>

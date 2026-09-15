@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -19,6 +19,7 @@ import {
   MessageSquare,
   Receipt,
   Store,
+  Trash2,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, formatDateTime } from '../../lib/utils';
@@ -434,6 +435,7 @@ const SuperAdminOrders: React.FC = () => {
   const [detailActivityLogs, setDetailActivityLogs] = useState<ActivityLog[]>([]);
   const [detailAfterSales, setDetailAfterSales] = useState<AfterSalesRequest[]>([]);
   const [detailActionLoading, setDetailActionLoading] = useState(false);
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -656,6 +658,8 @@ const SuperAdminOrders: React.FC = () => {
       setDetailLoading(false);
     }
   };
+
+  const handleDeleteOrder = async (type: 'shop' | 'subscription' | 'booking', id: string) => { if (!window.confirm('確定要刪除此訂單？訂單會保留紀錄並標記為已取消。')) return; setDeletingOrderId(id); try { const { error } = await supabase.rpc('admin_cancel_order', { p_order_type: type, p_order_id: id }); if (error) throw error; await fetchAll(); } catch (e) { window.alert(e instanceof Error ? e.message : '刪除失敗'); } finally { setDeletingOrderId(null); } };
 
   const closeDetail = () => {
     setSelectedDetail(null);
@@ -1021,13 +1025,13 @@ const SuperAdminOrders: React.FC = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">金額</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">付款</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">狀態</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">建立時間</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">建立時間</th><th className="px-4 py-3 text-left text-xs font-medium text-gray-500">操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filteredShop.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-gray-400">{PAGE_LABELS.emptyShop}</td>
+                    <td colSpan={7} className="py-12 text-center text-gray-400">{PAGE_LABELS.emptyShop}</td>
                   </tr>
                 ) : filteredShop.map((order, index) => (
                   <motion.tr
@@ -1056,7 +1060,7 @@ const SuperAdminOrders: React.FC = () => {
                         {formatStatusLabel('shop', order.status)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-400">{formatDate(order.created_at)}</td>
+                    <td className="px-4 py-3 text-xs text-gray-400">{formatDate(order.created_at)}</td><td className="px-4 py-3"><button type="button" onClick={(event) => { event.stopPropagation(); void handleDeleteOrder(order.is_subscription ? 'subscription' : 'shop', order.id); }} disabled={deletingOrderId === order.id} className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2 py-1 text-xs text-red-600"><Trash2 size={13} />刪除</button></td>
                   </motion.tr>
                 ))}
               </tbody>
@@ -1106,7 +1110,7 @@ const SuperAdminOrders: React.FC = () => {
                       <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_COLORS[booking.status] || 'bg-gray-100 text-gray-600'}`}>
                         {formatStatusLabel('booking', booking.status)}
                       </span>
-                    </td>
+                    </td><td className="px-4 py-3"><button type="button" onClick={(event) => { event.stopPropagation(); void handleDeleteOrder('booking', booking.id); }} disabled={deletingOrderId === booking.id} className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2 py-1 text-xs text-red-600"><Trash2 size={13} />刪除</button></td>
                   </motion.tr>
                 ))}
               </tbody>
@@ -1573,3 +1577,4 @@ function NoteBlock({ label, value }: { label: string; value: string }) {
 }
 
 export default SuperAdminOrders;
+
