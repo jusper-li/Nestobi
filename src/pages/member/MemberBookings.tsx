@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { translateRoomsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
+import MemberBackLink from '../../components/MemberBackLink';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate, formatDateTime, getStatusColor, getStatusLabel } from '../../lib/utils';
 
@@ -440,6 +441,7 @@ function SectionTitle({ icon, label }: { icon?: ReactNode; label: string }) {
 function Info({ label, value, strong = false, prominent = false }: { label: string; value: string; strong?: boolean; prominent?: boolean }) {
   return (
     <div className={`min-w-0 rounded-xl border border-gray-100 bg-white px-3 py-2.5 ${prominent ? 'shadow-sm' : ''}`}>
+      <MemberBackLink />
       <p className="text-xs leading-5 text-gray-400">{label}</p>
       <p className={`mt-0.5 break-words leading-6 ${prominent ? 'text-base' : 'text-sm'} ${strong ? 'font-bold text-[#2C1F10]' : 'font-medium text-gray-800'}`}>{value}</p>
     </div>

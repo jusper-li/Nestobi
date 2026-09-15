@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { translateProductsOnDemand, translateRoomsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
+import MemberBackLink from '../../components/MemberBackLink';
 
 interface PurchaseRecord {
   id: string;
@@ -323,6 +324,7 @@ function SummaryCard({ icon, label, value }: { icon: React.ReactNode; label: str
 function Info({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
   return (
     <div className="min-w-0">
+      <MemberBackLink />
       <p className="text-xs text-gray-400">{label}</p>
       <p className={`mt-0.5 truncate ${strong ? 'font-bold text-[#2C1F10]' : 'font-medium text-gray-800'}`}>{value}</p>
     </div>

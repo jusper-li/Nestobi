@@ -1,10 +1,11 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bell, CheckCircle, DollarSign, Eye, EyeOff, Globe, Lock, Settings, Sun } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
+import MemberBackLink from '../../components/MemberBackLink';
 
 interface Prefs {
   notifications_email: boolean;
@@ -204,6 +205,7 @@ const Preferences: React.FC = () => {
 
   return (
     <div className="space-y-5">
+      <MemberBackLink />
       <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900">
         <Settings className="h-5 w-5 text-gray-600" />
         {text.title}
@@ -384,4 +386,3 @@ const Preferences: React.FC = () => {
 };
 
 export default Preferences;
-

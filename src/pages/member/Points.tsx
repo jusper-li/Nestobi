@@ -5,6 +5,7 @@ import QRCode from 'qrcode';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
+import MemberBackLink from '../../components/MemberBackLink';
 import { buildMemberQrPayload } from '../../lib/memberQr';
 import { supabase } from '../../lib/supabase';
 import { formatDate } from '../../lib/utils';
@@ -132,6 +133,7 @@ export default function Points() {
 
   return (
     <div className="space-y-6">
+      <MemberBackLink />
       <div>
         <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900">
           <Coins className="h-5 w-5 text-amber-600" />

@@ -7,6 +7,7 @@ import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { translateProductsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
+import MemberBackLink from '../../components/MemberBackLink';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDateTime, getStatusColor, getStatusLabel } from '../../lib/utils';
 import { useSiteSettings } from '../../contexts/SiteSettingsContext';
@@ -737,6 +738,7 @@ export default function MemberOrders() {
 function Info({ label, value, strong = false, wrap = false }: { label: string; value: string; strong?: boolean; wrap?: boolean }) {
   return (
     <div className="min-w-0">
+      <MemberBackLink />
       <p className="text-xs text-gray-400">{label}</p>
       <p className={`mt-0.5 ${wrap ? 'whitespace-normal break-words' : 'truncate'} ${strong ? 'font-bold text-[#2C1F10]' : 'font-medium text-gray-800'}`}>{value}</p>
     </div>

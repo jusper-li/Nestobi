@@ -1,9 +1,10 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, FileText, Globe, MapPin, Phone, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
+import MemberBackLink from '../../components/MemberBackLink';
 
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 
@@ -84,6 +85,7 @@ const Profile: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <MemberBackLink />
       <div className="rounded-2xl bg-white p-6 shadow-sm">
         <h2 className="mb-6 flex items-center gap-2 text-xl font-bold text-gray-900">
           <User className="h-5 w-5 text-[#2C1F10]" />
@@ -206,5 +208,4 @@ const Profile: React.FC = () => {
 };
 
 export default Profile;
-
 
