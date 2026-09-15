@@ -98,22 +98,6 @@ function safeEquals(a: string, b: string) {
   return diff === 0;
 }
 
-function parseDecryptedPeriod(value: string): Record<string, unknown> {
-  const text = value.replace(/^\uFEFF/, "").trim();
-  try {
-    const parsed = JSON.parse(text);
-    if (parsed && typeof parsed === "object") return parsed as Record<string, unknown>;
-  } catch {
-    // Some NDNP integrations request RespondType=String. Accept that form
-    // as well as the documented JSON response.
-  }
-  const params = new URLSearchParams(text);
-  const result: Record<string, unknown> = {};
-  for (const [key, item] of params.entries()) result[key] = item;
-  if (Object.keys(result).length === 0) throw new Error("Unable to parse decrypted NewebPay Period response");
-  return result;
-}
-
 function parseNewebPayDate(value: unknown) {
   if (typeof value !== "string" || value.length === 0) return new Date().toISOString();
   if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value;
@@ -310,11 +294,9 @@ Deno.serve(async (req: Request) => {
 
     const decryptedPeriod = await aesDecrypt(tradeInfo, hashKey, hashIV);
     console.log("[newebpay-notify] decrypted", { length: decryptedPeriod.length });
-    console.log("[newebpay-period-webhook] decrypted payload received", {
-      length: decryptedPeriod.length,
-      preview: decryptedPeriod.slice(0, 300),
-    });
-    const payload = parseDecryptedPeriod(decryptedPeriod);
+    // NDNP requests RespondType=JSON, so follow the proven 0100.TW flow and
+    // parse the decrypted response as JSON without alternate reinterpretation.
+    const payload = JSON.parse(decryptedPeriod) as Record<string, unknown>;
     console.log("[newebpay-notify] payload parsed", { hasResult: Boolean(payload.Result || payload.result) });
     const result = payload.Result ?? payload;
     const tradeStatus = String(payload.Status ?? params.get("Status") ?? result.Status ?? "").toUpperCase();
