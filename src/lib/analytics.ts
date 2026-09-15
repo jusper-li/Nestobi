@@ -25,6 +25,22 @@ export interface TrackPurchaseOptions {
   items?: AnalyticsItem[];
 }
 
+/** Event names shared by the storefront and GA4 custom reports. */
+export const GA_EVENTS = {
+  pageView: 'page_view',
+  viewItem: 'view_item',
+  addToCart: 'add_to_cart',
+  beginCheckout: 'begin_checkout',
+  addPaymentInfo: 'add_payment_info',
+  purchase: 'purchase',
+  login: 'login',
+  signUp: 'sign_up',
+  lineBindOpen: 'line_bind_open_link',
+  lineBindStart: 'line_bind_start',
+  lineBindSuccess: 'line_bind_success',
+  lineBindFailure: 'line_bind_failure',
+} as const;
+
 export function trackAnalyticsEvent(eventName: string, params: Record<string, unknown> = {}) {
   if (typeof window === 'undefined' || typeof window.gtag !== 'function') return;
   window.gtag('event', eventName, params);
@@ -35,7 +51,7 @@ export function trackAddToCart(params: {
   value: number;
   items: AnalyticsItem[];
 }) {
-  trackAnalyticsEvent('add_to_cart', {
+  trackAnalyticsEvent(GA_EVENTS.addToCart, {
     currency: params.currency || 'TWD',
     value: params.value,
     items: params.items,
@@ -48,7 +64,7 @@ export function trackBeginCheckout(params: {
   items: AnalyticsItem[];
   coupon?: string;
 }) {
-  trackAnalyticsEvent('begin_checkout', {
+  trackAnalyticsEvent(GA_EVENTS.beginCheckout, {
     currency: params.currency || 'TWD',
     value: params.value,
     coupon: params.coupon,
@@ -57,7 +73,7 @@ export function trackBeginCheckout(params: {
 }
 
 export function trackPurchase(params: TrackPurchaseOptions) {
-  trackAnalyticsEvent('purchase', {
+  trackAnalyticsEvent(GA_EVENTS.purchase, {
     transaction_id: params.transaction_id,
     currency: params.currency || 'TWD',
     value: params.value,
@@ -66,5 +82,13 @@ export function trackPurchase(params: TrackPurchaseOptions) {
     coupon: params.coupon,
     affiliation: params.affiliation || 'Nestobi',
     items: params.items || [],
+  });
+}
+
+export function trackViewItem(item: AnalyticsItem, value = item.price, currency = 'TWD') {
+  trackAnalyticsEvent(GA_EVENTS.viewItem, {
+    currency,
+    value,
+    items: [item],
   });
 }

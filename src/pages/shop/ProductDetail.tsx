@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberFavorite } from '../../hooks/useMemberFavorite';
+import { trackAnalyticsEvent, trackViewItem, GA_EVENTS } from '../../lib/analytics';
 import { translateCategoriesFromCacheOnly, translateCategoriesOnDemand, translateProductsFromCacheOnly, translateProductsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { sanitizeHtml } from '../../lib/security';
@@ -131,6 +132,12 @@ export default function ProductDetail() {
 
       const loaded = p as Product;
       setProduct(loaded);
+      trackViewItem({
+        item_id: loaded.id,
+        item_name: loaded.name,
+        price: Number(loaded.price) || 0,
+        quantity: 1,
+      });
       setQty(1);
       setActiveImage(null);
       const loadedSubscriptionSpec = loaded.specifications?.find((spec) => spec.name.trim() === SUBSCRIPTION_SPEC_NAME) || null;
@@ -307,6 +314,12 @@ export default function ProductDetail() {
     if (invoiceType === 'donation' && !/^\d{3,7}$/.test(loveCode.trim())) { window.alert('請輸入 3 至 7 碼捐贈碼'); return; }
 
     setSubscribing(true);
+    trackAnalyticsEvent(GA_EVENTS.addPaymentInfo, {
+      currency: 'TWD',
+      value: Number(viewProduct.price) * qty,
+      payment_type: 'newebpay_subscription',
+      items: [{ item_id: viewProduct.id, item_name: viewProduct.name, price: Number(viewProduct.price) || 0, quantity: qty }],
+    });
     try {
       const result = await createSubscriptionCheckout(viewProduct.id, qty, subscriptionMonths, { invoiceType, buyerIdentifier: buyerIdentifier.trim(), carrierNumber: carrierNumber.trim(), loveCode: loveCode.trim() });
       if (result.paymentUrl && result.merchantId && result.postData) {
