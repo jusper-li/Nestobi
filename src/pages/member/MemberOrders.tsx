@@ -8,7 +8,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { translateProductsOnDemand } from '../../lib/contentTranslations';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
 import { supabase } from '../../lib/supabase';
-import { formatCurrency, formatDate, formatDateTime, getStatusColor, getStatusLabel } from '../../lib/utils';
+import { formatCurrency, formatDateTime, getStatusColor, getStatusLabel } from '../../lib/utils';
 import { useSiteSettings } from '../../contexts/SiteSettingsContext';
 import { trackPurchase } from '../../lib/analytics';
 import { submitNewebPayMpgForm } from '../../lib/shopCheckout';
@@ -134,7 +134,7 @@ export default function MemberOrders() {
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [details, setDetails] = useState<Record<string, PurchaseRecord[]>>({});
-  const [afterSalesRequests, setAfterSalesRequests] = useState<Record<string, true>>({});
+  const [, setAfterSalesRequests] = useState<Record<string, true>>({});
   const [favoriteProductIds, setFavoriteProductIds] = useState<Record<string, true>>({});
   const [reviewedItems, setReviewedItems] = useState<Record<string, true>>({});
   const [reviewingOrderId, setReviewingOrderId] = useState<string | null>(null);
@@ -386,37 +386,6 @@ export default function MemberOrders() {
     window.setTimeout(() => setActionMessage(null), 3000);
   };
 
-  const persistAfterSalesRequest = async (orderId: string, type: 'return' | 'refund') => {
-    if (!user) {
-      showMessage('error', t.actionFailed);
-      return;
-    }
-    const order = orders.find(item => item.id === orderId);
-    if (type === 'refund' && (order?.payment_status !== 'paid' || order.status === 'completed')) {
-      showMessage('error', t.refundUnavailable);
-      return;
-    }
-    setBusyAction(`${orderId}:${type}`);
-    try {
-      const { error } = await supabase
-        .from('after_sales_requests')
-        .upsert({
-          user_id: user.id,
-          order_id: orderId,
-          request_type: type,
-          status: 'pending',
-          message: `${type} request from member order page`,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id,order_id,request_type' });
-      if (error) throw error;
-      setAfterSalesRequests(prev => ({ ...prev, [`${orderId}:${type}`]: true }));
-      showMessage('success', t.requestSent);
-    } catch {
-      showMessage('error', t.actionFailed);
-    } finally {
-      setBusyAction(null);
-    }
-  };
 
   const orderProductIds = (items: PurchaseRecord[]) => items.map(item => item.product_id || item.products?.id).filter(Boolean) as string[];
 

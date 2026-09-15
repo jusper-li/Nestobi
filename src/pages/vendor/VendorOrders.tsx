@@ -52,6 +52,7 @@ interface Booking {
   guests: number;
   total_price: number;
   payment_status?: string | null;
+  payment_method?: string | null;
   status: string;
   created_at: string;
   tbl_rooms?: { name: string; location: string } | null;

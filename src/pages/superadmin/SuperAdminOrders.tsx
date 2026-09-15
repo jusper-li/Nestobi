@@ -3,7 +3,6 @@ import { useLocation, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Clock3,
-  DollarSign,
   ExternalLink,
   Filter,
   Mail,
@@ -671,8 +670,6 @@ const SuperAdminOrders: React.FC = () => {
     setDetailAfterSales([]);
   };
 
-  const shopRevenue = shopOrders.filter((o) => o.payment_status === 'paid').reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
-  const bookingRevenue = bookingOrders.filter((o) => o.payment_status === 'paid').reduce((sum, o) => sum + Number(o.total_price || 0), 0);
 
   const filteredShop = shopOrders.filter((o) => {
     if (tab === 'subscription' && !o.is_subscription) return false;
