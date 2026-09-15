@@ -279,10 +279,15 @@ const SuperAdminUsers: React.FC = () => {
     }
 
     const userIds = data.map((user: any) => user.user_id);
-    const [{ data: profiles }, emailMap] = await Promise.all([
-      supabase.from('tbl_mn5wgzh0').select('user_id, display_name').in('user_id', userIds),
-      fetchEmails(userIds),
-    ]);
+    const loadProfiles = async () => {
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const result = await supabase.from('tbl_mn5wgzh0').select('user_id, display_name').in('user_id', userIds);
+        if (!result.error) return result.data || [];
+        if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 250));
+      }
+      return [];
+    };
+    const [profiles, emailMap] = await Promise.all([loadProfiles(), fetchEmails(userIds)]);
     const profileMap = Object.fromEntries((profiles || []).map((profile: any) => [profile.user_id, profile.display_name]));
 
     const rows = data.map((user: any) => ({ ...user, display_name: profileMap[user.user_id] || '', email: emailMap[user.user_id] || '' }));
