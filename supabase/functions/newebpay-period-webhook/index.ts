@@ -48,26 +48,15 @@ function redactCallbackPayload(value: unknown) {
 
 async function aesDecrypt(hexData: string, key: string, iv: string): Promise<string> {
   const encoder = new TextEncoder();
-  let normalized = String(hexData || "").trim();
-  try {
-    normalized = decodeURIComponent(normalized);
-  } catch {
-    // formData normally decodes the value already; retain the raw value when
-    // a provider/proxy sends a malformed percent escape.
+  // Match the proven 0100.TW implementation: NewebPay Period is a
+  // hexadecimal AES ciphertext. Do not URL-decode, trim, strip quotes,
+  // remove whitespace, or fall back to Base64 before decrypting.
+  if (!/^[0-9a-f]+$/i.test(hexData) || hexData.length % 2 !== 0) {
+    throw new Error("Invalid NewebPay Period ciphertext");
   }
-  normalized = normalized.replace(/^['"]|['"]$/g, "").replace(/\s+/g, "");
-
-  let encryptedBytes: Uint8Array;
-  if (/^[0-9a-f]+$/i.test(normalized) && normalized.length % 2 === 0) {
-    encryptedBytes = new Uint8Array(
-      (normalized.match(/.{1,2}/g) ?? []).map((byte) => parseInt(byte, 16)),
-    );
-  } else {
-    // Keep compatibility with gateways/proxies that forward Period as
-    // base64 instead of the documented hexadecimal ciphertext.
-    const binary = atob(normalized);
-    encryptedBytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-  }
+  const encryptedBytes = new Uint8Array(
+    (hexData.match(/.{1,2}/g) ?? []).map((byte) => parseInt(byte, 16)),
+  );
   if (encryptedBytes.length === 0 || encryptedBytes.length % 16 !== 0) {
     throw new Error("Invalid NewebPay Period ciphertext length");
   }
@@ -276,25 +265,18 @@ Deno.serve(async (req: Request) => {
     }
 
     const contentType = req.headers.get("content-type") || "";
+    const formData = await req.formData();
+    const periodValue = formData.get("Period");
+    const tradeInfo = typeof periodValue === "string" ? periodValue : null;
     const params = new URLSearchParams();
-    if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
-      const form = await req.formData();
-      for (const [key, value] of form.entries()) {
-        if (typeof value === "string") params.append(key, value);
-      }
-    } else {
-      const body = await req.text();
-      const parsed = new URLSearchParams(body);
-      for (const [key, value] of parsed.entries()) params.append(key, value);
+    for (const [key, value] of formData.entries()) {
+      if (typeof value === "string") params.append(key, value);
     }
     console.log("[NewebPay Subscription Notify Received]", {
       contentType,
       bodyKeys: Array.from(params.keys()),
     });
     console.log("[newebpay-notify] received", { contentType, bodyKeys: Array.from(params.keys()) });
-    // NDNP periodic-payment callbacks use the encrypted `Period` field;
-    // retain TradeInfo support for gateways/proxies that normalize the name.
-    const tradeInfo = params.get("Period") || params.get("TradeInfo");
     const tradeSha = params.get("TradeSha");
     const periodLength = tradeInfo?.length || 0;
     const periodIsHex = Boolean(tradeInfo && /^[0-9a-f]+$/i.test(tradeInfo));
