@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, BedDouble, Package, Building, Users, BarChart2, LogOut, Menu, Plane, FileText, Coffee, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, BedDouble, Package, Building, Users, BarChart2, LogOut, Menu, Plane, FileText, Coffee, MessageSquare, PackageSearch } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { normalizeLang, pickByLang } from '../../lib/i18n';
@@ -20,6 +20,7 @@ function getNavLinks(pick: (zh: string, en: string, ja: string, ko: string) => s
     { to: '/admin/orders', icon: <ShoppingBag className="w-5 h-5" />, label: pick('根本在旅行訂單', 'Genbon Orders', '根本在旅行の注文', '근본재여행 주문'), permission: 'manage_orders' },
     { to: '/admin/rooms', icon: <BedDouble className="w-5 h-5" />, label: pick('nestobi 住宿', 'nestobi Stays', 'nestobi 宿泊', 'nestobi 숙소'), permission: 'manage_rooms' },
     { to: '/admin/products', icon: <Package className="w-5 h-5" />, label: pick('根本在旅行商品', 'Genbon Products', '根本在旅行の商品', '근본재여행 상품'), permission: 'manage_products' },
+    { to: '/admin/inventory/reorder', icon: <PackageSearch className="w-5 h-5" />, label: pick('智慧叫豆', 'Smart Bean Reorder', 'スマート豆発注', '스마트 원두 발주'), permission: 'manage_products' },
     { to: '/admin/vendors', icon: <Building className="w-5 h-5" />, label: pick('廠商管理', 'Vendors', 'ベンダー管理', '업체 관리'), permission: 'manage_vendors' },
     { to: '/admin/users', icon: <Users className="w-5 h-5" />, label: pick('會員管理', 'Members', '会員管理', '회원 관리'), permission: 'manage_users' },
     { to: '/admin/blog', icon: <Coffee className="w-5 h-5" />, label: pick('咖啡旅行家文章', 'Coffee Traveler Articles', 'コーヒートラベラー記事', '커피 트래블러 글'), permission: 'manage_blog' },

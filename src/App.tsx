@@ -76,6 +76,7 @@ import AdminOrders from './pages/admin/AdminOrders';
 import AdminUsers from './pages/admin/AdminUsers';
 import AIAnalytics from './pages/admin/AIAnalytics';
 import AdminStaticPages from './pages/admin/AdminStaticPages';
+import AdminInventoryReorder from './pages/admin/AdminInventoryReorder';
 
 import SuperAdminLayout from './pages/superadmin/SuperAdminLayout';
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
@@ -251,6 +252,7 @@ function AppShell() {
                   <Route path="users" element={<PermissionRoute permission="manage_users"><AdminUsers /></PermissionRoute>} />
                   <Route path="ai-analytics" element={<PermissionRoute permission="view_ai"><AIAnalytics /></PermissionRoute>} />
                   <Route path="static-pages" element={<PermissionRoute permission="manage_static_pages"><AdminStaticPages /></PermissionRoute>} />
+                  <Route path="inventory/reorder" element={<AdminInventoryReorder />} />
                   <Route path="blog" element={<PermissionRoute permission="manage_blog"><AdminBlog /></PermissionRoute>} />
                   <Route path="blog/new" element={<PermissionRoute permission="manage_blog"><AdminBlogForm /></PermissionRoute>} />
                   <Route path="blog/:id" element={<PermissionRoute permission="manage_blog"><AdminBlogForm /></PermissionRoute>} />
