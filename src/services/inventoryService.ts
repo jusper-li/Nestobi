@@ -63,3 +63,23 @@ export async function createPurchaseOrderDraft(items: Array<{ beanId: string; qu
   if (error) throw error;
   return String(data);
 }
+
+export interface PurchaseOrderSummary { id: string; orderNo: string; status: string; totalEstimatedCost: number; createdAt: string; itemCount: number; }
+export interface InventoryLocationOption { id: string; name: string; }
+
+export async function loadPurchaseOrderSummaries(): Promise<PurchaseOrderSummary[]> {
+  const { data, error } = await supabase.from('purchase_orders').select('id,order_no,status,total_estimated_cost,created_at,purchase_order_items(id)').order('created_at', { ascending: false }).limit(30);
+  if (error) throw error;
+  return ((data || []) as Row[]).map(row => ({ id: String(row.id), orderNo: String(row.order_no), status: String(row.status), totalEstimatedCost: asNumber(row.total_estimated_cost), createdAt: String(row.created_at), itemCount: Array.isArray(row.purchase_order_items) ? row.purchase_order_items.length : 0 }));
+}
+
+export async function loadInventoryLocations(): Promise<InventoryLocationOption[]> {
+  const { data, error } = await supabase.from('inventory_locations').select('id,name').eq('is_active', true).order('name');
+  if (error) throw error;
+  return ((data || []) as Row[]).map(row => ({ id: String(row.id), name: String(row.name) }));
+}
+
+export async function receivePurchaseOrder(orderId: string, locationId: string) {
+  const { error } = await supabase.rpc('receive_inventory_purchase_order', { p_order_id: orderId, p_location_id: locationId });
+  if (error) throw error;
+}
