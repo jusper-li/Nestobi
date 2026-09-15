@@ -26,6 +26,7 @@ import {
   Settings,
   ShoppingCart,
   Star,
+  Store,
   User,
   X,
   HelpCircle,
@@ -39,7 +40,7 @@ import { fetchSiteContentBlocks, getBlockText, indexBlocks, type SiteContentBloc
 type UiLang = 'zh-TW' | 'en' | 'ja' | 'ko';
 
 export default function Navigation() {
-  const { user, profile, role, signOut } = useAuth();
+  const { user, profile, role, signOut, storeAssignments } = useAuth();
   const { totalItems } = useCart();
   const { lang, setLang } = useLanguage();
   const navigate = useNavigate();
@@ -95,6 +96,7 @@ export default function Navigation() {
       profile: pick('個人資料', 'Profile', 'プロフィール', '프로필'),
       preferences: pick('偏好設定', 'Preferences', '設定', '환경설정'),
       lineBinding: pick('LINE 綁定', 'LINE Binding', 'LINE 連携', 'LINE 연동'),
+      storeAdmin: pick('門市管理', 'Store Admin', '店舗管理', '매장 관리'),
       adminPanel: pick('管理後台', 'Admin', '管理画面', '관리'),
       superAdmin: pick('超級管理員', 'Super Admin', 'スーパー管理者', '최고 관리자'),
       logout: pick('登出', 'Logout', 'ログアウト', '로그아웃'),
@@ -177,6 +179,7 @@ export default function Navigation() {
     { to: '/member/preferences', label: labels.preferences, icon: Settings },
     { to: '/member/line-binding', label: labels.lineBinding, icon: Link2 },
     { to: '/ai/passport', label: labels.travelPassport, icon: BookMarked },
+    ...(storeAssignments.length > 0 ? [{ to: '/member/store-admin', label: labels.storeAdmin, icon: Store }] : []),
   ] as const;
 
   const menuLinks = [
