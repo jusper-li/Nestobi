@@ -143,6 +143,11 @@ const SuperAdminUsers: React.FC = () => {
   const [recordEditing, setRecordEditing] = useState(false);
   const [recordSaving, setRecordSaving] = useState(false);
   const [recordDraft, setRecordDraft] = useState<RecordDraft>({});
+  const [grantOpen, setGrantOpen] = useState(false);
+  const [grantAmount, setGrantAmount] = useState('');
+  const [grantNote, setGrantNote] = useState('');
+  const [grantSaving, setGrantSaving] = useState(false);
+  const [grantMessage, setGrantMessage] = useState('');
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -538,6 +543,20 @@ const SuperAdminUsers: React.FC = () => {
     } finally {
       setRecordSaving(false);
     }
+  };
+
+  const grantPoints = async () => {
+    if (!viewUser) return;
+    const amount = Math.floor(Number(grantAmount));
+    if (!Number.isInteger(amount) || amount <= 0) { setGrantMessage('請輸入大於 0 的點數。'); return; }
+    setGrantSaving(true); setGrantMessage('');
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-grant-points', { body: { user_id: viewUser.user_id, amount, note: grantNote.trim() } });
+      if (error || !data?.success) throw new Error(data?.error || error?.message || '點數贈送失敗。');
+      setGrantOpen(false); setGrantAmount(''); setGrantNote(''); setGrantMessage(`已贈送 ${amount.toLocaleString()} 點並建立紀錄。`);
+      await openDetail(viewUser);
+    } catch (error: any) { setGrantMessage(error?.message || '點數贈送失敗。'); }
+    finally { setGrantSaving(false); }
   };
 
   const updateRole = async (userId: string, role: string) => {
@@ -1027,7 +1046,9 @@ const SuperAdminUsers: React.FC = () => {
                   <>
                     <div className="mb-4 flex items-center justify-between rounded-xl bg-amber-50 p-4">
                       <span className="text-sm font-medium text-amber-800">點數總覽</span>
+                      <button type="button" onClick={() => { setGrantMessage(''); setGrantOpen(true); }} className="rounded-lg bg-amber-700 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-800">贈送點數</button>
                     </div>
+                    {grantMessage && <p className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{grantMessage}</p>}
                     {detail.points.length === 0 ? (
                       <div className="py-10 text-center text-gray-400"><Award className="mx-auto mb-2 h-8 w-8 opacity-30" /><p className="text-sm">尚無點數紀錄</p></div>
                     ) : (
@@ -1053,6 +1074,23 @@ const SuperAdminUsers: React.FC = () => {
                   </>
                 )}
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {grantOpen && viewUser && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4" onClick={() => !grantSaving && setGrantOpen(false)}>
+            <motion.div initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }} onClick={event => event.stopPropagation()} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+              <div className="flex items-center justify-between"><h3 className="text-lg font-bold text-gray-900">贈送會員點數</h3><button type="button" onClick={() => setGrantOpen(false)} disabled={grantSaving} className="rounded-lg p-1 text-gray-400 hover:bg-gray-100"><X className="h-5 w-5" /></button></div>
+              <p className="mt-2 text-sm text-gray-500">會員：{viewUser.display_name || viewUser.email || viewUser.user_id}</p>
+              <label className="mt-5 block text-sm font-semibold text-gray-700">點數</label>
+              <input type="number" min="1" max="10000000" value={grantAmount} onChange={event => setGrantAmount(event.target.value)} className="mt-2 w-full rounded-xl border px-3 py-2.5" placeholder="例如 100" />
+              <label className="mt-4 block text-sm font-semibold text-gray-700">備註（選填）</label>
+              <textarea value={grantNote} onChange={event => setGrantNote(event.target.value)} maxLength={500} rows={3} className="mt-2 w-full rounded-xl border px-3 py-2.5" placeholder="贈送原因" />
+              {grantMessage && <p className="mt-3 text-sm text-red-600">{grantMessage}</p>}
+              <button type="button" onClick={() => void grantPoints()} disabled={grantSaving} className="mt-5 w-full rounded-xl bg-amber-700 px-4 py-3 font-semibold text-white disabled:opacity-50">{grantSaving ? '處理中...' : '確認贈送並建立紀錄'}</button>
             </motion.div>
           </motion.div>
         )}
